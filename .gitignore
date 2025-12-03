@@ -1,0 +1,59 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+venv/
+env/
+ENV/
+.pytest_cache/
+.coverage*
+htmlcov/
+.ipynb_checkpoints
+*.log
+.DS_Store
+
+# Virtual environment
+.venv/
+
+# Temporary recordings
+governance_*/
+recordings/*.mp4
+*.gif
+
+# Allow dashboard src/lib (overrides Python lib/ rule above)
+!dashboard/src/lib/
+
+# Node modules
+node_modules/
+
+# Vite temporary files
+*.timestamp-*.mjs
+
+# Data files
+data/*.csv
+data/*.npy
+.env
+
+# Contracts environment (private keys)
+contracts/.env
+
+# Foundry (Solidity)
+contracts/cache/
+contracts/out/
+contracts/foundry.lock
