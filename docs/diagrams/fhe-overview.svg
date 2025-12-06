@@ -61,7 +61,7 @@
   <!-- Encrypted Data Received -->
   <rect x="370" y="170" width="180" height="50" rx="8" fill="#D1D5DB" stroke="#9CA3AF" stroke-width="2"/>
   <text x="460" y="190" font-family="Arial, sans-serif" font-size="11" fill="#374151" text-anchor="middle">Datos Encriptados</text>
-  <text x="460" y="208" font-family="Arial, sans-serif" font-size="14" fill="#6B7280" text-anchor="middle" font-family="monospace">🔒 @#$%&amp;*!...</text>
+  <text x="460" y="208" font-family="monospace" font-size="14" fill="#6B7280" text-anchor="middle">🔒 @#$%&amp;*!...</text>
 
   <!-- ML Model -->
   <rect x="370" y="240" width="180" height="80" rx="8" fill="url(#orangeGrad)" filter="url(#shadow)"/>
@@ -72,7 +72,7 @@
   <!-- Encrypted Result -->
   <rect x="370" y="340" width="180" height="50" rx="8" fill="#D1D5DB" stroke="#9CA3AF" stroke-width="2"/>
   <text x="460" y="360" font-family="Arial, sans-serif" font-size="11" fill="#374151" text-anchor="middle">Predicción Encriptada</text>
-  <text x="460" y="378" font-family="Arial, sans-serif" font-size="14" fill="#6B7280" text-anchor="middle" font-family="monospace">🔒 *&amp;^%$#@...</text>
+  <text x="460" y="378" font-family="monospace" font-size="14" fill="#6B7280" text-anchor="middle">🔒 *&amp;^%$#@...</text>
 
   <!-- Arrows -->
   <!-- Encrypt arrow -->
