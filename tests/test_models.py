@@ -569,3 +569,413 @@ class TestLogisticRegression:
         # Both should achieve reasonable accuracy
         for acc in accuracies.values():
             assert acc > 0.6
+
+
+class TestDecisionTree:
+    """Tests for Decision Tree models."""
+
+    @pytest.fixture
+    def regression_data(self):
+        """Create regression data for testing."""
+        np.random.seed(42)
+        X = np.random.randn(200, 4)
+        # Non-linear relationship
+        y = np.sin(X[:, 0]) + 0.5 * X[:, 1] ** 2 + np.random.randn(200) * 0.1
+        return X, y
+
+    @pytest.fixture
+    def classification_data(self):
+        """Create classification data for testing."""
+        np.random.seed(42)
+        n_samples = 200
+
+        # Generate two clusters
+        X_class0 = np.random.randn(n_samples // 2, 3) + np.array([-2, -2, -2])
+        X_class1 = np.random.randn(n_samples // 2, 3) + np.array([2, 2, 2])
+
+        X = np.vstack([X_class0, X_class1])
+        y = np.array([0] * (n_samples // 2) + [1] * (n_samples // 2))
+
+        idx = np.random.permutation(n_samples)
+        return X[idx], y[idx]
+
+    def test_tree_config_defaults(self):
+        """Test TreeConfig default values."""
+        from sdk.models import TreeConfig
+
+        config = TreeConfig()
+        assert config.max_depth == 3
+        assert config.n_epochs == 100
+        assert config.temperature == 1.0
+
+    def test_tree_config_validation(self):
+        """Test TreeConfig validation."""
+        from sdk.models import TreeConfig
+
+        with pytest.raises(ValueError, match="max_depth"):
+            TreeConfig(max_depth=0)
+
+        with pytest.raises(ValueError, match="temperature"):
+            TreeConfig(temperature=0)
+
+    def test_decision_tree_initialization(self):
+        """Test DecisionTree initialization."""
+        from sdk.models import DecisionTree, TreeConfig
+
+        config = TreeConfig(max_depth=3)
+        tree = DecisionTree(config=config)
+
+        assert tree.max_depth == 3
+        assert tree.n_internal_nodes == 7  # 2^3 - 1
+        assert tree.n_leaves == 8  # 2^3
+        assert tree.state == ModelState.INITIALIZED
+
+    def test_decision_tree_fit(self, regression_data):
+        """Test DecisionTree training."""
+        from sdk.models import DecisionTree, TreeConfig
+
+        X, y = regression_data
+
+        config = TreeConfig(max_depth=3, n_epochs=50, learning_rate=0.1)
+        tree = DecisionTree(config=config)
+        tree.fit(X, y)
+
+        assert tree.is_fitted
+        assert tree.state == ModelState.TRAINED
+        assert tree.thresholds is not None
+        assert tree.leaf_values is not None
+
+    def test_decision_tree_predict(self, regression_data):
+        """Test DecisionTree prediction."""
+        from sdk.models import DecisionTree, TreeConfig
+
+        X, y = regression_data
+
+        config = TreeConfig(max_depth=3, n_epochs=100, learning_rate=0.1)
+        tree = DecisionTree(config=config)
+        tree.fit(X, y)
+
+        predictions = tree.predict(X)
+
+        assert predictions.shape == y.shape
+        # Predictions should be finite
+        assert np.all(np.isfinite(predictions))
+
+    def test_decision_tree_loss_decreases(self, regression_data):
+        """Test that loss decreases during training."""
+        from sdk.models import DecisionTree, TreeConfig
+
+        X, y = regression_data
+
+        config = TreeConfig(max_depth=3, n_epochs=50, learning_rate=0.1)
+        tree = DecisionTree(config=config)
+        tree.fit(X, y)
+
+        # Loss should generally decrease
+        losses = tree.history.losses
+        assert losses[-1] < losses[0]
+
+    def test_decision_tree_factory(self):
+        """Test creating DecisionTree via factory."""
+        tree = FHEModel.DecisionTree()
+        from sdk.models import DecisionTree
+        assert isinstance(tree, DecisionTree)
+
+    def test_decision_tree_regressor(self, regression_data):
+        """Test DecisionTreeRegressor."""
+        from sdk.models import DecisionTreeRegressor, TreeConfig
+
+        X, y = regression_data
+
+        config = TreeConfig(max_depth=3, n_epochs=50)
+        tree = DecisionTreeRegressor(config=config)
+        tree.fit(X, y)
+
+        predictions = tree.predict(X)
+        assert predictions.shape == y.shape
+
+    def test_decision_tree_get_set_params(self, regression_data):
+        """Test parameter serialization."""
+        from sdk.models import DecisionTree, TreeConfig
+
+        X, y = regression_data
+
+        config = TreeConfig(max_depth=2, n_epochs=50)
+        tree = DecisionTree(config=config)
+        tree.fit(X, y)
+
+        params = tree.get_params()
+        assert params["max_depth"] == 2
+        assert params["thresholds"] is not None
+        assert params["leaf_values"] is not None
+
+        # Set params on new tree
+        tree2 = DecisionTree(config=TreeConfig(max_depth=2))
+        tree2.set_params(params)
+
+        np.testing.assert_array_almost_equal(
+            tree.thresholds, tree2.thresholds
+        )
+
+    def test_decision_tree_repr(self):
+        """Test string representation."""
+        from sdk.models import DecisionTree, TreeConfig
+
+        config = TreeConfig(max_depth=3)
+        tree = DecisionTree(config=config)
+        repr_str = repr(tree)
+
+        assert "DecisionTree" in repr_str
+        assert "depth=3" in repr_str
+        assert "leaves=8" in repr_str
+
+
+class TestKMeans:
+    """Tests for K-Means clustering."""
+
+    @pytest.fixture
+    def cluster_data(self):
+        """Create clustered data for testing."""
+        np.random.seed(42)
+        n_samples = 300
+
+        # Generate 3 clusters
+        cluster1 = np.random.randn(n_samples // 3, 2) + np.array([0, 0])
+        cluster2 = np.random.randn(n_samples // 3, 2) + np.array([5, 5])
+        cluster3 = np.random.randn(n_samples // 3, 2) + np.array([10, 0])
+
+        X = np.vstack([cluster1, cluster2, cluster3])
+        y_true = np.array([0] * (n_samples // 3) + [1] * (n_samples // 3) + [2] * (n_samples // 3))
+
+        idx = np.random.permutation(n_samples)
+        return X[idx], y_true[idx]
+
+    def test_kmeans_config_defaults(self):
+        """Test KMeansConfig default values."""
+        from sdk.models import KMeansConfig
+
+        config = KMeansConfig()
+        assert config.n_clusters == 3
+        assert config.max_iter == 100
+        assert config.temperature == 1.0
+
+    def test_kmeans_config_validation(self):
+        """Test KMeansConfig validation."""
+        from sdk.models import KMeansConfig
+
+        with pytest.raises(ValueError, match="n_clusters"):
+            KMeansConfig(n_clusters=0)
+
+        with pytest.raises(ValueError, match="temperature"):
+            KMeansConfig(temperature=0)
+
+    def test_kmeans_initialization(self):
+        """Test KMeans initialization."""
+        from sdk.models import KMeans, KMeansConfig
+
+        config = KMeansConfig(n_clusters=5)
+        kmeans = KMeans(config=config)
+
+        assert kmeans.n_clusters == 5
+        assert kmeans.state == ModelState.INITIALIZED
+
+    def test_kmeans_init_shortcut(self):
+        """Test KMeans with n_clusters shortcut."""
+        from sdk.models import KMeans
+
+        kmeans = KMeans(n_clusters=4)
+        assert kmeans.n_clusters == 4
+
+    def test_kmeans_fit(self, cluster_data):
+        """Test KMeans training."""
+        from sdk.models import KMeans, KMeansConfig
+
+        X, _ = cluster_data
+
+        config = KMeansConfig(n_clusters=3, n_init=5)
+        kmeans = KMeans(config=config)
+        kmeans.fit(X)
+
+        assert kmeans.is_fitted
+        assert kmeans.state == ModelState.TRAINED
+        assert kmeans.centroids is not None
+        assert kmeans.centroids.shape == (3, 2)
+        assert kmeans.inertia_ is not None
+
+    def test_kmeans_predict(self, cluster_data):
+        """Test KMeans prediction."""
+        from sdk.models import KMeans
+
+        X, _ = cluster_data
+
+        kmeans = KMeans(n_clusters=3)
+        kmeans.fit(X)
+
+        labels = kmeans.predict(X)
+
+        assert labels.shape == (len(X),)
+        assert set(labels).issubset({0, 1, 2})
+
+    def test_kmeans_predict_proba(self, cluster_data):
+        """Test KMeans soft predictions."""
+        from sdk.models import KMeans
+
+        X, _ = cluster_data
+
+        kmeans = KMeans(n_clusters=3)
+        kmeans.fit(X)
+
+        probs = kmeans.predict_proba(X)
+
+        assert probs.shape == (len(X), 3)
+        # Probabilities should sum to 1
+        np.testing.assert_array_almost_equal(
+            probs.sum(axis=1), np.ones(len(X))
+        )
+        # All probabilities should be non-negative
+        assert np.all(probs >= 0)
+
+    def test_kmeans_transform(self, cluster_data):
+        """Test KMeans transform."""
+        from sdk.models import KMeans
+
+        X, _ = cluster_data
+
+        kmeans = KMeans(n_clusters=3)
+        kmeans.fit(X)
+
+        distances = kmeans.transform(X)
+
+        assert distances.shape == (len(X), 3)
+        # Distances should be non-negative
+        assert np.all(distances >= 0)
+
+    def test_kmeans_fit_predict(self, cluster_data):
+        """Test fit_predict method."""
+        from sdk.models import KMeans
+
+        X, _ = cluster_data
+
+        kmeans = KMeans(n_clusters=3)
+        labels = kmeans.fit_predict(X)
+
+        assert labels.shape == (len(X),)
+        assert kmeans.is_fitted
+
+    def test_kmeans_inertia_decreases(self, cluster_data):
+        """Test that multiple initializations find good solution."""
+        from sdk.models import KMeans, KMeansConfig
+
+        X, _ = cluster_data
+
+        # Single init vs multiple inits
+        config_single = KMeansConfig(n_clusters=3, n_init=1, random_state=42)
+        config_multi = KMeansConfig(n_clusters=3, n_init=10, random_state=42)
+
+        kmeans_single = KMeans(config=config_single)
+        kmeans_multi = KMeans(config=config_multi)
+
+        kmeans_single.fit(X)
+        kmeans_multi.fit(X)
+
+        # Multiple inits should find equal or better solution
+        assert kmeans_multi.inertia_ <= kmeans_single.inertia_ * 1.5
+
+    def test_kmeans_init_methods(self, cluster_data):
+        """Test different initialization methods."""
+        from sdk.models import KMeans, KMeansConfig, InitMethod
+
+        X, _ = cluster_data
+
+        for method in InitMethod:
+            config = KMeansConfig(n_clusters=3, init_method=method, n_init=1)
+            kmeans = KMeans(config=config)
+            kmeans.fit(X)
+
+            assert kmeans.is_fitted
+            assert kmeans.centroids.shape == (3, 2)
+
+    def test_kmeans_factory(self):
+        """Test creating KMeans via factory."""
+        kmeans = FHEModel.KMeans(n_clusters=4)
+        from sdk.models import KMeans
+        assert isinstance(kmeans, KMeans)
+        assert kmeans.n_clusters == 4
+
+    def test_minibatch_kmeans(self, cluster_data):
+        """Test MiniBatchKMeans."""
+        from sdk.models import MiniBatchKMeans
+
+        X, _ = cluster_data
+
+        kmeans = MiniBatchKMeans(n_clusters=3, batch_size=50)
+        kmeans.fit(X)
+
+        assert kmeans.is_fitted
+        assert kmeans.centroids.shape == (3, 2)
+
+        labels = kmeans.predict(X)
+        assert set(labels).issubset({0, 1, 2})
+
+    def test_kmeans_score(self, cluster_data):
+        """Test score method."""
+        from sdk.models import KMeans
+
+        X, _ = cluster_data
+
+        kmeans = KMeans(n_clusters=3)
+        kmeans.fit(X)
+
+        score = kmeans.score(X)
+        # Score is negative inertia, should be negative
+        assert score <= 0
+
+    def test_kmeans_get_set_params(self, cluster_data):
+        """Test parameter serialization."""
+        from sdk.models import KMeans
+
+        X, _ = cluster_data
+
+        kmeans = KMeans(n_clusters=3)
+        kmeans.fit(X)
+
+        params = kmeans.get_params()
+        assert params["n_clusters"] == 3
+        assert params["centroids"] is not None
+        assert params["inertia"] is not None
+
+        # Set params on new model
+        kmeans2 = KMeans(n_clusters=3)
+        kmeans2.set_params(params)
+
+        np.testing.assert_array_almost_equal(
+            kmeans.centroids, kmeans2.centroids
+        )
+
+    def test_kmeans_sklearn_compatible_attrs(self, cluster_data):
+        """Test sklearn-compatible attribute names."""
+        from sdk.models import KMeans
+
+        X, _ = cluster_data
+
+        kmeans = KMeans(n_clusters=3)
+        kmeans.fit(X)
+
+        # Check sklearn-compatible aliases
+        assert kmeans.cluster_centers_ is not None
+        assert kmeans.inertia_ is not None
+        assert kmeans.n_iter_ > 0
+
+        np.testing.assert_array_equal(
+            kmeans.centroids, kmeans.cluster_centers_
+        )
+
+    def test_kmeans_repr(self):
+        """Test string representation."""
+        from sdk.models import KMeans
+
+        kmeans = KMeans(n_clusters=5)
+        repr_str = repr(kmeans)
+
+        assert "KMeans" in repr_str
+        assert "n_clusters=5" in repr_str

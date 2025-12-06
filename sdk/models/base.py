@@ -284,3 +284,73 @@ class FHEModel:
         from .logistic_regression import LogisticRegression
 
         return LogisticRegression(**kwargs)
+
+    @staticmethod
+    def DecisionTree(**kwargs) -> "BaseFHEModel":
+        """Create a Decision Tree model.
+
+        Args:
+            **kwargs: Arguments passed to DecisionTree constructor.
+
+        Returns:
+            DecisionTree model instance.
+        """
+        from .decision_tree import DecisionTree
+
+        return DecisionTree(**kwargs)
+
+    @staticmethod
+    def DecisionTreeClassifier(**kwargs) -> "BaseFHEModel":
+        """Create a Decision Tree Classifier.
+
+        Args:
+            **kwargs: Arguments passed to DecisionTreeClassifier constructor.
+
+        Returns:
+            DecisionTreeClassifier model instance.
+        """
+        from .decision_tree import DecisionTreeClassifier
+
+        return DecisionTreeClassifier(**kwargs)
+
+    @staticmethod
+    def DecisionTreeRegressor(**kwargs) -> "BaseFHEModel":
+        """Create a Decision Tree Regressor.
+
+        Args:
+            **kwargs: Arguments passed to DecisionTreeRegressor constructor.
+
+        Returns:
+            DecisionTreeRegressor model instance.
+        """
+        from .decision_tree import DecisionTreeRegressor
+
+        return DecisionTreeRegressor(**kwargs)
+
+    @staticmethod
+    def KMeans(**kwargs) -> "BaseFHEModel":
+        """Create a K-Means clustering model.
+
+        Args:
+            **kwargs: Arguments passed to KMeans constructor.
+
+        Returns:
+            KMeans model instance.
+        """
+        from .kmeans import KMeans
+
+        return KMeans(**kwargs)
+
+    @staticmethod
+    def MiniBatchKMeans(**kwargs) -> "BaseFHEModel":
+        """Create a Mini-batch K-Means clustering model.
+
+        Args:
+            **kwargs: Arguments passed to MiniBatchKMeans constructor.
+
+        Returns:
+            MiniBatchKMeans model instance.
+        """
+        from .kmeans import MiniBatchKMeans
+
+        return MiniBatchKMeans(**kwargs)

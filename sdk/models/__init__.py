@@ -13,14 +13,42 @@ from .base import (
 )
 from .linear_regression import LinearRegression
 from .logistic_regression import LogisticRegression, SigmoidApproximation
+from .decision_tree import (
+    DecisionTree,
+    DecisionTreeClassifier,
+    DecisionTreeRegressor,
+    TreeConfig,
+    TreeType,
+    SplitFunction,
+)
+from .kmeans import (
+    KMeans,
+    MiniBatchKMeans,
+    KMeansConfig,
+    InitMethod,
+)
 
 __all__ = [
+    # Base
     "BaseFHEModel",
     "FHEModel",
-    "LinearRegression",
-    "LogisticRegression",
     "ModelConfig",
     "ModelState",
-    "SigmoidApproximation",
     "TrainingHistory",
+    # Linear models
+    "LinearRegression",
+    "LogisticRegression",
+    "SigmoidApproximation",
+    # Decision trees
+    "DecisionTree",
+    "DecisionTreeClassifier",
+    "DecisionTreeRegressor",
+    "TreeConfig",
+    "TreeType",
+    "SplitFunction",
+    # Clustering
+    "KMeans",
+    "MiniBatchKMeans",
+    "KMeansConfig",
+    "InitMethod",
 ]
