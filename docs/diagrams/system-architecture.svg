@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 700">
+  <defs>
+    <linearGradient id="clientGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4F46E5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7C3AED;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="serverGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10B981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="blockchainGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F59E0B;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#D97706;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="apiGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#EC4899;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#DB2777;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="2" dy="4" stdDeviation="5" flood-opacity="0.15"/>
+    </filter>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#64748B"/>
+    </marker>
+    <marker id="arrowBlue" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#4F46E5"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#10B981"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1000" height="700" fill="#F8FAFC"/>
+
+  <!-- Title -->
+  <text x="500" y="35" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#1E293B" text-anchor="middle">
+    Arquitectura del Sistema Xcapit FHE-ML
+  </text>
+  <text x="500" y="58" font-family="Arial, sans-serif" font-size="13" fill="#64748B" text-anchor="middle">
+    Machine Learning Preservando Privacidad con Encriptacion Homomorfica
+  </text>
+
+  <!-- Client Layer -->
+  <rect x="30" y="85" width="300" height="280" rx="15" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="2" filter="url(#shadow)"/>
+  <text x="180" y="115" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#4338CA" text-anchor="middle">CLIENTE SDK</text>
+  <text x="180" y="135" font-family="Arial, sans-serif" font-size="11" fill="#6366F1" text-anchor="middle">Python / JavaScript</text>
+
+  <!-- Client Components -->
+  <g transform="translate(50, 155)">
+    <rect x="0" y="0" width="120" height="50" rx="8" fill="url(#clientGrad)"/>
+    <text x="60" y="22" font-family="Arial, sans-serif" font-size="11" fill="white" text-anchor="middle">Encriptacion</text>
+    <text x="60" y="38" font-family="Arial, sans-serif" font-size="10" fill="#E0E7FF" text-anchor="middle">CKKS Context</text>
+  </g>
+
+  <g transform="translate(190, 155)">
+    <rect x="0" y="0" width="120" height="50" rx="8" fill="url(#clientGrad)"/>
+    <text x="60" y="22" font-family="Arial, sans-serif" font-size="11" fill="white" text-anchor="middle">Key Manager</text>
+    <text x="60" y="38" font-family="Arial, sans-serif" font-size="10" fill="#E0E7FF" text-anchor="middle">pk, sk, evk</text>
+  </g>
+
+  <g transform="translate(50, 220)">
+    <rect x="0" y="0" width="260" height="45" rx="8" fill="white" stroke="#A5B4FC" stroke-width="2"/>
+    <text x="130" y="20" font-family="Arial, sans-serif" font-size="11" fill="#4338CA" text-anchor="middle">Data Preprocessing</text>
+    <text x="130" y="35" font-family="monospace" font-size="9" fill="#6366F1" text-anchor="middle">normalize() → encrypt() → serialize()</text>
+  </g>
+
+  <g transform="translate(50, 280)">
+    <rect x="0" y="0" width="260" height="45" rx="8" fill="white" stroke="#A5B4FC" stroke-width="2"/>
+    <text x="130" y="20" font-family="Arial, sans-serif" font-size="11" fill="#4338CA" text-anchor="middle">Result Decryption</text>
+    <text x="130" y="35" font-family="monospace" font-size="9" fill="#6366F1" text-anchor="middle">deserialize() → decrypt() → postprocess()</text>
+  </g>
+
+  <!-- API Gateway -->
+  <rect x="360" y="85" width="150" height="280" rx="15" fill="#FDF4FF" stroke="#F5D0FE" stroke-width="2" filter="url(#shadow)"/>
+  <text x="435" y="115" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#A21CAF" text-anchor="middle">API GATEWAY</text>
+  <text x="435" y="135" font-family="Arial, sans-serif" font-size="11" fill="#C026D3" text-anchor="middle">FastAPI / REST</text>
+
+  <g transform="translate(375, 155)">
+    <rect x="0" y="0" width="120" height="40" rx="6" fill="url(#apiGrad)"/>
+    <text x="60" y="25" font-family="Arial, sans-serif" font-size="10" fill="white" text-anchor="middle">/encrypt</text>
+  </g>
+  <g transform="translate(375, 205)">
+    <rect x="0" y="0" width="120" height="40" rx="6" fill="url(#apiGrad)"/>
+    <text x="60" y="25" font-family="Arial, sans-serif" font-size="10" fill="white" text-anchor="middle">/train</text>
+  </g>
+  <g transform="translate(375, 255)">
+    <rect x="0" y="0" width="120" height="40" rx="6" fill="url(#apiGrad)"/>
+    <text x="60" y="25" font-family="Arial, sans-serif" font-size="10" fill="white" text-anchor="middle">/predict</text>
+  </g>
+  <g transform="translate(375, 305)">
+    <rect x="0" y="0" width="120" height="40" rx="6" fill="url(#apiGrad)"/>
+    <text x="60" y="25" font-family="Arial, sans-serif" font-size="10" fill="white" text-anchor="middle">/models</text>
+  </g>
+
+  <!-- ML Server -->
+  <rect x="540" y="85" width="300" height="280" rx="15" fill="#F0FDF4" stroke="#BBF7D0" stroke-width="2" filter="url(#shadow)"/>
+  <text x="690" y="115" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#166534" text-anchor="middle">ML SERVER</text>
+  <text x="690" y="135" font-family="Arial, sans-serif" font-size="11" fill="#22C55E" text-anchor="middle">FHE Computation Engine</text>
+
+  <!-- ML Models -->
+  <g transform="translate(560, 155)">
+    <rect x="0" y="0" width="120" height="45" rx="8" fill="url(#serverGrad)"/>
+    <text x="60" y="20" font-family="Arial, sans-serif" font-size="10" fill="white" text-anchor="middle">LinearRegression</text>
+    <text x="60" y="35" font-family="monospace" font-size="8" fill="#D1FAE5" text-anchor="middle">y = Xw + b</text>
+  </g>
+  <g transform="translate(700, 155)">
+    <rect x="0" y="0" width="120" height="45" rx="8" fill="url(#serverGrad)"/>
+    <text x="60" y="20" font-family="Arial, sans-serif" font-size="10" fill="white" text-anchor="middle">LogisticRegression</text>
+    <text x="60" y="35" font-family="monospace" font-size="8" fill="#D1FAE5" text-anchor="middle">sigmoid(Xw + b)</text>
+  </g>
+  <g transform="translate(560, 210)">
+    <rect x="0" y="0" width="120" height="45" rx="8" fill="url(#serverGrad)"/>
+    <text x="60" y="20" font-family="Arial, sans-serif" font-size="10" fill="white" text-anchor="middle">DecisionTree</text>
+    <text x="60" y="35" font-family="monospace" font-size="8" fill="#D1FAE5" text-anchor="middle">soft-branches</text>
+  </g>
+  <g transform="translate(700, 210)">
+    <rect x="0" y="0" width="120" height="45" rx="8" fill="url(#serverGrad)"/>
+    <text x="60" y="20" font-family="Arial, sans-serif" font-size="10" fill="white" text-anchor="middle">KMeans</text>
+    <text x="60" y="35" font-family="monospace" font-size="8" fill="#D1FAE5" text-anchor="middle">soft-assignment</text>
+  </g>
+
+  <!-- TenSEAL Engine -->
+  <g transform="translate(560, 270)">
+    <rect x="0" y="0" width="260" height="80" rx="8" fill="white" stroke="#86EFAC" stroke-width="2"/>
+    <text x="130" y="22" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#166534" text-anchor="middle">TenSEAL Engine</text>
+    <text x="130" y="42" font-family="Arial, sans-serif" font-size="10" fill="#374151" text-anchor="middle">CKKS Operations</text>
+    <text x="70" y="62" font-family="monospace" font-size="9" fill="#6B7280">+ - x</text>
+    <text x="130" y="62" font-family="monospace" font-size="9" fill="#6B7280">rotate</text>
+    <text x="200" y="62" font-family="monospace" font-size="9" fill="#6B7280">rescale</text>
+  </g>
+
+  <!-- Blockchain Layer -->
+  <rect x="870" y="85" width="110" height="280" rx="15" fill="#FFFBEB" stroke="#FDE68A" stroke-width="2" filter="url(#shadow)"/>
+  <text x="925" y="115" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#92400E" text-anchor="middle">BLOCKCHAIN</text>
+  <text x="925" y="135" font-family="Arial, sans-serif" font-size="10" fill="#B45309" text-anchor="middle">Arbitrum</text>
+
+  <g transform="translate(880, 155)">
+    <rect x="0" y="0" width="90" height="55" rx="6" fill="url(#blockchainGrad)"/>
+    <text x="45" y="22" font-family="Arial, sans-serif" font-size="9" fill="white" text-anchor="middle">Model</text>
+    <text x="45" y="36" font-family="Arial, sans-serif" font-size="9" fill="white" text-anchor="middle">Registry</text>
+    <text x="45" y="50" font-family="monospace" font-size="7" fill="#FEF3C7" text-anchor="middle">hash + metadata</text>
+  </g>
+
+  <g transform="translate(880, 220)">
+    <rect x="0" y="0" width="90" height="55" rx="6" fill="url(#blockchainGrad)"/>
+    <text x="45" y="22" font-family="Arial, sans-serif" font-size="9" fill="white" text-anchor="middle">Computation</text>
+    <text x="45" y="36" font-family="Arial, sans-serif" font-size="9" fill="white" text-anchor="middle">Verifier</text>
+    <text x="45" y="50" font-family="monospace" font-size="7" fill="#FEF3C7" text-anchor="middle">audit trail</text>
+  </g>
+
+  <g transform="translate(880, 285)">
+    <rect x="0" y="0" width="90" height="55" rx="6" fill="url(#blockchainGrad)"/>
+    <text x="45" y="22" font-family="Arial, sans-serif" font-size="9" fill="white" text-anchor="middle">Access</text>
+    <text x="45" y="36" font-family="Arial, sans-serif" font-size="9" fill="white" text-anchor="middle">Control</text>
+    <text x="45" y="50" font-family="monospace" font-size="7" fill="#FEF3C7" text-anchor="middle">permissions</text>
+  </g>
+
+  <!-- Arrows between layers -->
+  <path d="M 330 225 L 355 225" stroke="#4F46E5" stroke-width="2" fill="none" marker-end="url(#arrowBlue)"/>
+  <path d="M 510 225 L 535 225" stroke="#EC4899" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+  <path d="M 840 225 L 865 225" stroke="#10B981" stroke-width="2" fill="none" marker-end="url(#arrowGreen)"/>
+
+  <!-- Data Flow Section -->
+  <rect x="30" y="400" width="820" height="130" rx="12" fill="white" stroke="#E2E8F0" stroke-width="2" filter="url(#shadow)"/>
+  <text x="440" y="425" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#1E293B" text-anchor="middle">
+    Flujo de Datos: Prediccion con Privacidad
+  </text>
+
+  <!-- Flow steps -->
+  <g transform="translate(50, 445)">
+    <circle cx="20" cy="20" r="20" fill="#4F46E5"/>
+    <text x="20" y="25" font-family="Arial, sans-serif" font-size="14" fill="white" text-anchor="middle">1</text>
+    <text x="20" y="55" font-family="Arial, sans-serif" font-size="9" fill="#374151" text-anchor="middle">Datos</text>
+    <text x="20" y="67" font-family="Arial, sans-serif" font-size="9" fill="#374151" text-anchor="middle">Originales</text>
+  </g>
+
+  <path d="M 90 465 L 130 465" stroke="#64748B" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+
+  <g transform="translate(150, 445)">
+    <circle cx="20" cy="20" r="20" fill="#4F46E5"/>
+    <text x="20" y="25" font-family="Arial, sans-serif" font-size="14" fill="white" text-anchor="middle">2</text>
+    <text x="20" y="55" font-family="Arial, sans-serif" font-size="9" fill="#374151" text-anchor="middle">Encriptar</text>
+    <text x="20" y="67" font-family="Arial, sans-serif" font-size="9" fill="#374151" text-anchor="middle">CKKS</text>
+  </g>
+
+  <path d="M 190 465 L 230 465" stroke="#64748B" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+
+  <g transform="translate(250, 445)">
+    <circle cx="20" cy="20" r="20" fill="#EC4899"/>
+    <text x="20" y="25" font-family="Arial, sans-serif" font-size="14" fill="white" text-anchor="middle">3</text>
+    <text x="20" y="55" font-family="Arial, sans-serif" font-size="9" fill="#374151" text-anchor="middle">Enviar</text>
+    <text x="20" y="67" font-family="Arial, sans-serif" font-size="9" fill="#374151" text-anchor="middle">API</text>
+  </g>
+
+  <path d="M 290 465 L 330 465" stroke="#64748B" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+
+  <g transform="translate(350, 445)">
+    <circle cx="20" cy="20" r="20" fill="#10B981"/>
+    <text x="20" y="25" font-family="Arial, sans-serif" font-size="14" fill="white" text-anchor="middle">4</text>
+    <text x="20" y="55" font-family="Arial, sans-serif" font-size="9" fill="#374151" text-anchor="middle">Computar</text>
+    <text x="20" y="67" font-family="Arial, sans-serif" font-size="9" fill="#374151" text-anchor="middle">FHE</text>
+  </g>
+
+  <path d="M 390 465 L 430 465" stroke="#64748B" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+
+  <g transform="translate(450, 445)">
+    <circle cx="20" cy="20" r="20" fill="#F59E0B"/>
+    <text x="20" y="25" font-family="Arial, sans-serif" font-size="14" fill="white" text-anchor="middle">5</text>
+    <text x="20" y="55" font-family="Arial, sans-serif" font-size="9" fill="#374151" text-anchor="middle">Verificar</text>
+    <text x="20" y="67" font-family="Arial, sans-serif" font-size="9" fill="#374151" text-anchor="middle">Chain</text>
+  </g>
+
+  <path d="M 490 465 L 530 465" stroke="#64748B" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+
+  <g transform="translate(550, 445)">
+    <circle cx="20" cy="20" r="20" fill="#EC4899"/>
+    <text x="20" y="25" font-family="Arial, sans-serif" font-size="14" fill="white" text-anchor="middle">6</text>
+    <text x="20" y="55" font-family="Arial, sans-serif" font-size="9" fill="#374151" text-anchor="middle">Retornar</text>
+    <text x="20" y="67" font-family="Arial, sans-serif" font-size="9" fill="#374151" text-anchor="middle">E(result)</text>
+  </g>
+
+  <path d="M 590 465 L 630 465" stroke="#64748B" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+
+  <g transform="translate(650, 445)">
+    <circle cx="20" cy="20" r="20" fill="#4F46E5"/>
+    <text x="20" y="25" font-family="Arial, sans-serif" font-size="14" fill="white" text-anchor="middle">7</text>
+    <text x="20" y="55" font-family="Arial, sans-serif" font-size="9" fill="#374151" text-anchor="middle">Descifrar</text>
+    <text x="20" y="67" font-family="Arial, sans-serif" font-size="9" fill="#374151" text-anchor="middle">sk</text>
+  </g>
+
+  <path d="M 690 465 L 730 465" stroke="#64748B" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+
+  <g transform="translate(750, 445)">
+    <circle cx="20" cy="20" r="20" fill="#10B981"/>
+    <text x="20" y="25" font-family="Arial, sans-serif" font-size="14" fill="white" text-anchor="middle">8</text>
+    <text x="20" y="55" font-family="Arial, sans-serif" font-size="9" fill="#374151" text-anchor="middle">Resultado</text>
+    <text x="20" y="67" font-family="Arial, sans-serif" font-size="9" fill="#374151" text-anchor="middle">Privado</text>
+  </g>
+
+  <!-- Key Points -->
+  <rect x="30" y="550" width="940" height="130" rx="12" fill="#F0FDF4" stroke="#86EFAC" stroke-width="2"/>
+  <text x="500" y="580" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#166534" text-anchor="middle">
+    Garantias de Privacidad
+  </text>
+
+  <g transform="translate(60, 600)">
+    <circle cx="10" cy="10" r="10" fill="#10B981"/>
+    <text x="10" y="14" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle">1</text>
+    <text x="30" y="15" font-family="Arial, sans-serif" font-size="11" fill="#374151">Datos NUNCA salen del cliente en texto plano</text>
+  </g>
+
+  <g transform="translate(60, 635)">
+    <circle cx="10" cy="10" r="10" fill="#10B981"/>
+    <text x="10" y="14" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle">2</text>
+    <text x="30" y="15" font-family="Arial, sans-serif" font-size="11" fill="#374151">Servidor ML opera sobre datos encriptados sin poder verlos</text>
+  </g>
+
+  <g transform="translate(500, 600)">
+    <circle cx="10" cy="10" r="10" fill="#10B981"/>
+    <text x="10" y="14" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle">3</text>
+    <text x="30" y="15" font-family="Arial, sans-serif" font-size="11" fill="#374151">Blockchain registra hash de modelo y operaciones</text>
+  </g>
+
+  <g transform="translate(500, 635)">
+    <circle cx="10" cy="10" r="10" fill="#10B981"/>
+    <text x="10" y="14" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle">4</text>
+    <text x="30" y="15" font-family="Arial, sans-serif" font-size="11" fill="#374151">Solo el cliente puede descifrar resultados (tiene sk)</text>
+  </g>
+
+</svg>
