@@ -31,6 +31,25 @@ from .models import (
     ModelConfig,
     ModelState,
     SigmoidApproximation,
+    # Decision Trees
+    DecisionTree,
+    DecisionTreeClassifier,
+    DecisionTreeRegressor,
+    TreeConfig,
+    TreeType,
+    SplitFunction,
+    # Clustering
+    KMeans,
+    MiniBatchKMeans,
+    KMeansConfig,
+    InitMethod,
+)
+from .blockchain import (
+    BlockchainConnector,
+    ModelRegistryClient,
+    NetworkConfig,
+    Network,
+    NETWORK_CONFIGS,
 )
 
 __version__ = "0.1.0"
@@ -48,14 +67,33 @@ __all__ = [
     "SecureDataLoader",
     "ValidationError",
     "check_fhe_compatibility",
-    # Models
+    # Models - Base
     "BaseFHEModel",
     "FHEModel",
-    "LinearRegression",
-    "LogisticRegression",
     "ModelConfig",
     "ModelState",
+    # Models - Linear
+    "LinearRegression",
+    "LogisticRegression",
     "SigmoidApproximation",
+    # Models - Decision Trees
+    "DecisionTree",
+    "DecisionTreeClassifier",
+    "DecisionTreeRegressor",
+    "TreeConfig",
+    "TreeType",
+    "SplitFunction",
+    # Models - Clustering
+    "KMeans",
+    "MiniBatchKMeans",
+    "KMeansConfig",
+    "InitMethod",
+    # Blockchain
+    "BlockchainConnector",
+    "ModelRegistryClient",
+    "NetworkConfig",
+    "Network",
+    "NETWORK_CONFIGS",
     # Version
     "__version__",
 ]
