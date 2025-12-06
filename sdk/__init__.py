@@ -1,1 +1,44 @@
-"""Xcapit FHE-ML SDK - Privacy-preserving machine learning."""
+"""Xcapit FHE-ML SDK - Privacy-preserving machine learning.
+
+This SDK provides tools for training machine learning models
+on encrypted data using Fully Homomorphic Encryption (FHE).
+
+Example:
+    >>> from xcapit_fhe import SecureDataLoader
+    >>> loader = SecureDataLoader()
+    >>> encrypted_data = loader.encrypt(df)
+"""
+
+from .encryption import (
+    CKKSEncryptor,
+    CKKSParameters,
+    EncryptedMatrix,
+    EncryptedVector,
+    FHEContextManager,
+    SecurityLevel,
+)
+from .utils import (
+    EncryptedDataset,
+    SecureDataLoader,
+    ValidationError,
+    check_fhe_compatibility,
+)
+
+__version__ = "0.1.0"
+
+__all__ = [
+    # Encryption
+    "CKKSEncryptor",
+    "CKKSParameters",
+    "EncryptedMatrix",
+    "EncryptedVector",
+    "FHEContextManager",
+    "SecurityLevel",
+    # Utils
+    "EncryptedDataset",
+    "SecureDataLoader",
+    "ValidationError",
+    "check_fhe_compatibility",
+    # Version
+    "__version__",
+]
