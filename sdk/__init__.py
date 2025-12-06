@@ -27,8 +27,10 @@ from .models import (
     BaseFHEModel,
     FHEModel,
     LinearRegression,
+    LogisticRegression,
     ModelConfig,
     ModelState,
+    SigmoidApproximation,
 )
 
 __version__ = "0.1.0"
@@ -50,8 +52,10 @@ __all__ = [
     "BaseFHEModel",
     "FHEModel",
     "LinearRegression",
+    "LogisticRegression",
     "ModelConfig",
     "ModelState",
+    "SigmoidApproximation",
     # Version
     "__version__",
 ]

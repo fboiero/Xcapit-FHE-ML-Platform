@@ -10,8 +10,10 @@ from sdk.models import (
     BaseFHEModel,
     FHEModel,
     LinearRegression,
+    LogisticRegression,
     ModelConfig,
     ModelState,
+    SigmoidApproximation,
     TrainingHistory,
 )
 from sdk.utils import SecureDataLoader
@@ -328,3 +330,242 @@ class TestLinearRegression:
         assert "LinearRegression" in repr_str
         assert "lr=0.1" in repr_str
         assert "initialized" in repr_str
+
+
+class TestLogisticRegression:
+    """Tests for LogisticRegression model."""
+
+    @pytest.fixture
+    def binary_data(self):
+        """Create binary classification data."""
+        np.random.seed(42)
+        n_samples = 200
+
+        # Generate two clusters
+        X_class0 = np.random.randn(n_samples // 2, 3) + np.array([-2, -2, -2])
+        X_class1 = np.random.randn(n_samples // 2, 3) + np.array([2, 2, 2])
+
+        X = np.vstack([X_class0, X_class1])
+        y = np.array([0] * (n_samples // 2) + [1] * (n_samples // 2))
+
+        # Shuffle
+        idx = np.random.permutation(n_samples)
+        return X[idx], y[idx].astype(float)
+
+    @pytest.fixture
+    def loader(self):
+        """Create SecureDataLoader fixture."""
+        return SecureDataLoader(normalize=True)
+
+    def test_model_initialization(self):
+        """Test model initialization."""
+        model = LogisticRegression(learning_rate=0.1, n_epochs=50)
+        assert model.state == ModelState.INITIALIZED
+        assert not model.is_fitted
+        assert model.sigmoid_approx == SigmoidApproximation.DEGREE3
+
+    def test_sigmoid_approximation_options(self):
+        """Test different sigmoid approximation methods."""
+        for approx in SigmoidApproximation:
+            model = LogisticRegression(sigmoid_approx=approx)
+            assert model.sigmoid_approx == approx
+
+    def test_fit_binary_classification(self, binary_data, loader):
+        """Test training on binary classification data."""
+        X, y = binary_data
+
+        df = pd.DataFrame(X, columns=["a", "b", "c"])
+        df["label"] = y
+
+        encrypted = loader.encrypt(df, target_column="label")
+
+        model = LogisticRegression(learning_rate=0.5, n_epochs=100)
+        model.fit(encrypted)
+
+        assert model.is_fitted
+        assert model.state == ModelState.TRAINED
+        assert len(model.weights) == 3
+
+    def test_predict_proba(self, binary_data, loader):
+        """Test probability prediction."""
+        X, y = binary_data
+        df = pd.DataFrame(X, columns=["a", "b", "c"])
+        df["label"] = y
+
+        encrypted = loader.encrypt(df, target_column="label")
+
+        model = LogisticRegression(learning_rate=0.5, n_epochs=100)
+        model.fit(encrypted)
+
+        probs = model.predict_proba(encrypted.X)
+        probs_decrypted = loader.encryptor.decrypt_vector(probs)
+
+        # Probabilities should be between 0 and 1
+        assert np.all(probs_decrypted >= 0)
+        assert np.all(probs_decrypted <= 1)
+
+    def test_predict_classes(self, binary_data, loader):
+        """Test class prediction."""
+        X, y = binary_data
+        df = pd.DataFrame(X, columns=["a", "b", "c"])
+        df["label"] = y
+
+        encrypted = loader.encrypt(df, target_column="label")
+
+        model = LogisticRegression(learning_rate=0.5, n_epochs=100)
+        model.fit(encrypted)
+
+        predictions = model.predict(encrypted.X)
+        preds_decrypted = loader.encryptor.decrypt_vector(predictions)
+
+        # Predictions should be 0 or 1
+        unique_preds = np.unique(np.round(preds_decrypted))
+        assert len(unique_preds) <= 2
+
+    def test_accuracy_score(self, binary_data, loader):
+        """Test accuracy computation."""
+        X, y = binary_data
+        df = pd.DataFrame(X, columns=["a", "b", "c"])
+        df["label"] = y
+
+        encrypted = loader.encrypt(df, target_column="label")
+
+        model = LogisticRegression(learning_rate=0.5, n_epochs=200)
+        model.fit(encrypted)
+
+        # Normalize X for scoring
+        X_norm = (X - X.min(axis=0)) / (X.max(axis=0) - X.min(axis=0) + 1e-8)
+        X_norm = 2 * X_norm - 1
+
+        accuracy = model.score(X_norm, y)
+        # Should achieve reasonable accuracy on separable data
+        assert accuracy > 0.7
+
+    def test_predict_plaintext(self, binary_data, loader):
+        """Test plaintext prediction methods."""
+        X, y = binary_data
+        df = pd.DataFrame(X, columns=["a", "b", "c"])
+        df["label"] = y
+
+        encrypted = loader.encrypt(df, target_column="label")
+
+        model = LogisticRegression(learning_rate=0.5, n_epochs=100)
+        model.fit(encrypted)
+
+        # Normalize for prediction
+        X_norm = (X - X.min(axis=0)) / (X.max(axis=0) - X.min(axis=0) + 1e-8)
+        X_norm = 2 * X_norm - 1
+
+        probs = model.predict_proba_plaintext(X_norm)
+        preds = model.predict_plaintext(X_norm)
+
+        assert probs.shape == (200,)
+        assert preds.shape == (200,)
+        assert np.all((preds == 0) | (preds == 1))
+
+    def test_custom_threshold(self, binary_data, loader):
+        """Test custom classification threshold."""
+        X, y = binary_data
+        df = pd.DataFrame(X, columns=["a", "b", "c"])
+        df["label"] = y
+
+        encrypted = loader.encrypt(df, target_column="label")
+
+        # High threshold should predict more 0s
+        model_high = LogisticRegression(
+            learning_rate=0.5,
+            n_epochs=100,
+            threshold=0.9,
+        )
+        model_high.fit(encrypted)
+
+        # Low threshold should predict more 1s
+        model_low = LogisticRegression(
+            learning_rate=0.5,
+            n_epochs=100,
+            threshold=0.1,
+        )
+        model_low.fit(encrypted)
+
+        X_norm = (X - X.min(axis=0)) / (X.max(axis=0) - X.min(axis=0) + 1e-8)
+        X_norm = 2 * X_norm - 1
+
+        preds_high = model_high.predict_plaintext(X_norm)
+        preds_low = model_low.predict_plaintext(X_norm)
+
+        # High threshold should have fewer 1s than low threshold
+        assert np.sum(preds_high) <= np.sum(preds_low)
+
+    def test_loss_decreases(self, binary_data, loader):
+        """Test that loss decreases during training."""
+        X, y = binary_data
+        df = pd.DataFrame(X, columns=["a", "b", "c"])
+        df["label"] = y
+
+        encrypted = loader.encrypt(df, target_column="label")
+
+        model = LogisticRegression(learning_rate=0.3, n_epochs=50)
+        model.fit(encrypted)
+
+        # Loss should generally decrease
+        assert model.history.losses[-1] < model.history.losses[0]
+
+    def test_factory_creation(self):
+        """Test creating LogisticRegression via factory."""
+        model = FHEModel.LogisticRegression(learning_rate=0.2)
+        assert isinstance(model, LogisticRegression)
+        assert model.config.learning_rate == 0.2
+
+    def test_repr(self):
+        """Test string representation."""
+        model = LogisticRegression(
+            learning_rate=0.1,
+            sigmoid_approx=SigmoidApproximation.DEGREE5,
+        )
+        repr_str = repr(model)
+        assert "LogisticRegression" in repr_str
+        assert "lr=0.1" in repr_str
+        assert "degree5" in repr_str
+
+    def test_polynomial_sigmoid_values(self):
+        """Test that polynomial sigmoid produces valid probabilities."""
+        model = LogisticRegression()
+        model._initialize_weights(3)
+        model._state = ModelState.TRAINED
+
+        # Test input range
+        x = np.linspace(-5, 5, 100)
+        probs = model._sigmoid_polynomial(x)
+
+        # All outputs should be in [0, 1]
+        assert np.all(probs >= 0)
+        assert np.all(probs <= 1)
+
+        # Should be monotonically increasing
+        assert np.all(np.diff(probs) >= -0.01)  # Allow small numerical errors
+
+    def test_comparison_different_sigmoid_approx(self, binary_data, loader):
+        """Test different sigmoid approximations produce similar results."""
+        X, y = binary_data
+        df = pd.DataFrame(X, columns=["a", "b", "c"])
+        df["label"] = y
+
+        encrypted = loader.encrypt(df, target_column="label")
+
+        accuracies = {}
+        for approx in [SigmoidApproximation.LINEAR, SigmoidApproximation.DEGREE3]:
+            model = LogisticRegression(
+                learning_rate=0.5,
+                n_epochs=100,
+                sigmoid_approx=approx,
+            )
+            model.fit(encrypted)
+
+            X_norm = (X - X.min(axis=0)) / (X.max(axis=0) - X.min(axis=0) + 1e-8)
+            X_norm = 2 * X_norm - 1
+
+            accuracies[approx] = model.score(X_norm, y)
+
+        # Both should achieve reasonable accuracy
+        for acc in accuracies.values():
+            assert acc > 0.6

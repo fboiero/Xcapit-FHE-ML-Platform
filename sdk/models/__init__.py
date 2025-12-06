@@ -12,12 +12,15 @@ from .base import (
     TrainingHistory,
 )
 from .linear_regression import LinearRegression
+from .logistic_regression import LogisticRegression, SigmoidApproximation
 
 __all__ = [
     "BaseFHEModel",
     "FHEModel",
     "LinearRegression",
+    "LogisticRegression",
     "ModelConfig",
     "ModelState",
+    "SigmoidApproximation",
     "TrainingHistory",
 ]
