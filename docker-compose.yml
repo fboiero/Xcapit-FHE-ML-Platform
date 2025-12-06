@@ -1,0 +1,113 @@
+version: '3.8'
+
+services:
+  # ============ API Service ============
+  api:
+    build:
+      context: .
+      target: production
+    image: xcapit-fhe-ml:latest
+    container_name: xcapit-fhe-api
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=info
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    volumes:
+      - model_data:/app/data
+
+  # ============ API with FHE Support ============
+  api-fhe:
+    build:
+      context: .
+      target: fhe
+    image: xcapit-fhe-ml:fhe
+    container_name: xcapit-fhe-api-full
+    ports:
+      - "8001:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=info
+      - FHE_ENABLED=true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    volumes:
+      - model_data:/app/data
+      - fhe_keys:/app/keys
+    profiles:
+      - fhe
+
+  # ============ Development Service ============
+  dev:
+    build:
+      context: .
+      target: development
+    image: xcapit-fhe-ml:dev
+    container_name: xcapit-fhe-dev
+    ports:
+      - "8000:8000"
+      - "8888:8888"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=debug
+    volumes:
+      - .:/app
+      - model_data:/app/data
+    command: uvicorn sdk.api.server:app --host 0.0.0.0 --port 8000 --reload
+    profiles:
+      - dev
+
+  # ============ Jupyter Notebook ============
+  jupyter:
+    build:
+      context: .
+      target: development
+    image: xcapit-fhe-ml:dev
+    container_name: xcapit-fhe-jupyter
+    ports:
+      - "8888:8888"
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - .:/app
+      - notebooks:/app/notebooks
+    command: jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token=''
+    profiles:
+      - jupyter
+
+  # ============ Test Runner ============
+  test:
+    build:
+      context: .
+      target: development
+    image: xcapit-fhe-ml:dev
+    container_name: xcapit-fhe-test
+    volumes:
+      - .:/app
+    command: pytest tests/ -v --cov=sdk --cov-report=term-missing
+    profiles:
+      - test
+
+volumes:
+  model_data:
+    driver: local
+  fhe_keys:
+    driver: local
+  notebooks:
+    driver: local
+
+networks:
+  default:
+    name: xcapit-fhe-network

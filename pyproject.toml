@@ -29,9 +29,15 @@ dev = [
 deploy = [
     "py-solc-x>=2.0.0",
 ]
+api = [
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "pydantic>=2.5.0",
+]
 
 [project.scripts]
 xcapit-fhe = "sdk.cli:main"
+xcapit-fhe-api = "sdk.api.server:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
