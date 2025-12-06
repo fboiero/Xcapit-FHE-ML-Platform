@@ -23,6 +23,13 @@ from .utils import (
     ValidationError,
     check_fhe_compatibility,
 )
+from .models import (
+    BaseFHEModel,
+    FHEModel,
+    LinearRegression,
+    ModelConfig,
+    ModelState,
+)
 
 __version__ = "0.1.0"
 
@@ -39,6 +46,12 @@ __all__ = [
     "SecureDataLoader",
     "ValidationError",
     "check_fhe_compatibility",
+    # Models
+    "BaseFHEModel",
+    "FHEModel",
+    "LinearRegression",
+    "ModelConfig",
+    "ModelState",
     # Version
     "__version__",
 ]
