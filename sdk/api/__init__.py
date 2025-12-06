@@ -8,5 +8,15 @@ Provides HTTP endpoints for:
 """
 
 from .server import create_app, app
+from .client import FHEMLClient, connect, APIError, ConnectionError
 
-__all__ = ["create_app", "app"]
+__all__ = [
+    # Server
+    "create_app",
+    "app",
+    # Client
+    "FHEMLClient",
+    "connect",
+    "APIError",
+    "ConnectionError",
+]
