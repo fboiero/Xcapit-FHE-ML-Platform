@@ -1,0 +1,306 @@
+{
+  "version": "4.3.7",
+  "timestamp": "2026-01-24T21:16:40.447020",
+  "contract": "/contracts",
+  "execution_time": 44.146955,
+  "summary": {
+    "CRITICAL": 0,
+    "HIGH": 0,
+    "MEDIUM": 3,
+    "LOW": 6,
+    "INFO": 6
+  },
+  "findings": [
+    {
+      "id": "slither-incorrect-equality-0",
+      "type": "incorrect-equality",
+      "severity": "Medium",
+      "confidence": 0.9,
+      "location": {
+        "file": "ModelRegistryV2.sol",
+        "line": 154,
+        "function": "modelExists"
+      },
+      "message": "ModelRegistryV2.modelExists(bytes32) (ModelRegistryV2.sol#154-157) uses a dangerous strict equality:",
+      "description": "[ModelRegistryV2.modelExists(bytes32)](../tmp/miesc_slither_qca2mby8/ModelRegistryV2.sol#L154-L157) uses a dangerous strict equality:\n\t- [models[modelId].createdAt == 0](../tmp/miesc_slither_qca2mby8/ModelRegistryV2.sol#L155)\n",
+      "recommendation": "Review and fix the vulnerability",
+      "swc_id": null,
+      "cwe_id": null,
+      "owasp_category": null,
+      "source_contract": "/contracts/ConsortiumGovernanceV2.sol",
+      "source_tool": "slither"
+    },
+    {
+      "id": "slither-missing-zero-check-1",
+      "type": "missing-zero-check",
+      "severity": "Low",
+      "confidence": 0.75,
+      "location": {
+        "file": "lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol",
+        "line": 43,
+        "function": "newOwner"
+      },
+      "message": "Ownable2Step.transferOwnership(address).newOwner (lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol#43) lacks a zero-check on :",
+      "description": "[Ownable2Step.transferOwnership(address).newOwner](../tmp/miesc_slither_qca2mby8/lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol#L43) lacks a zero-check on :\n\t\t- [_pendingOwner = newOwner](../tmp/miesc_slither_qca2mby8/lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol#L44)\n",
+      "recommendation": "Review and fix the vulnerability",
+      "swc_id": null,
+      "cwe_id": null,
+      "owasp_category": null,
+      "source_contract": "/contracts/ConsortiumGovernanceV2.sol",
+      "source_tool": "slither"
+    },
+    {
+      "id": "slither-timestamp-2",
+      "type": "timestamp",
+      "severity": "Low",
+      "confidence": 0.75,
+      "location": {
+        "file": "ModelRegistryV2.sol",
+        "line": 491,
+        "function": "isAuthorized"
+      },
+      "message": "ModelRegistryV2.isAuthorized(bytes32,address) (ModelRegistryV2.sol#491-493) uses timestamp for comparisons",
+      "description": "[ModelRegistryV2.isAuthorized(bytes32,address)](../tmp/miesc_slither_qca2mby8/ModelRegistryV2.sol#L491-L493) uses timestamp for comparisons\n\tDangerous comparisons:\n\t- [models[modelId].owner == addr || authorized[modelId][addr]](../tmp/miesc_slither_qca2mby8/ModelRegistryV2.sol#L492)\n",
+      "recommendation": "Review and fix the vulnerability",
+      "swc_id": "SWC-116",
+      "cwe_id": null,
+      "owasp_category": "SC08: Bad Randomness / Front-Running",
+      "source_contract": "/contracts/ConsortiumGovernanceV2.sol",
+      "source_tool": "slither"
+    },
+    {
+      "id": "slither-assembly-3",
+      "type": "assembly",
+      "severity": "Info",
+      "confidence": 0.9,
+      "location": {
+        "file": "lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol",
+        "line": 66,
+        "function": "getAddressSlot"
+      },
+      "message": "StorageSlot.getAddressSlot(bytes32) (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#66-70) uses assembly",
+      "description": "[StorageSlot.getAddressSlot(bytes32)](../tmp/miesc_slither_qca2mby8/lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L66-L70) uses assembly\n\t- [INLINE ASM](../tmp/miesc_slither_qca2mby8/lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L67-L69)\n",
+      "recommendation": "Review and fix the vulnerability",
+      "swc_id": null,
+      "cwe_id": null,
+      "owasp_category": null,
+      "source_contract": "/contracts/ConsortiumGovernanceV2.sol",
+      "source_tool": "slither"
+    },
+    {
+      "id": "slither-assembly-4",
+      "type": "assembly",
+      "severity": "Info",
+      "confidence": 0.9,
+      "location": {
+        "file": "lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol",
+        "line": 102,
+        "function": "getInt256Slot"
+      },
+      "message": "StorageSlot.getInt256Slot(bytes32) (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#102-106) uses assembly",
+      "description": "[StorageSlot.getInt256Slot(bytes32)](../tmp/miesc_slither_qca2mby8/lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L102-L106) uses assembly\n\t- [INLINE ASM](../tmp/miesc_slither_qca2mby8/lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L103-L105)\n",
+      "recommendation": "Review and fix the vulnerability",
+      "swc_id": null,
+      "cwe_id": null,
+      "owasp_category": null,
+      "source_contract": "/contracts/ConsortiumGovernanceV2.sol",
+      "source_tool": "slither"
+    },
+    {
+      "id": "slither-incorrect-equality-0",
+      "type": "incorrect-equality",
+      "severity": "Medium",
+      "confidence": 0.9,
+      "location": {
+        "file": "ModelRegistryV2.sol",
+        "line": 154,
+        "function": "modelExists"
+      },
+      "message": "ModelRegistryV2.modelExists(bytes32) (ModelRegistryV2.sol#154-157) uses a dangerous strict equality:",
+      "description": "[ModelRegistryV2.modelExists(bytes32)](../tmp/miesc_slither_qca2mby8/ModelRegistryV2.sol#L154-L157) uses a dangerous strict equality:\n\t- [models[modelId].createdAt == 0](../tmp/miesc_slither_qca2mby8/ModelRegistryV2.sol#L155)\n",
+      "recommendation": "Review and fix the vulnerability",
+      "swc_id": null,
+      "cwe_id": null,
+      "owasp_category": null,
+      "source_contract": "/contracts/ComputationVerifierV2.sol",
+      "source_tool": "slither"
+    },
+    {
+      "id": "slither-missing-zero-check-1",
+      "type": "missing-zero-check",
+      "severity": "Low",
+      "confidence": 0.75,
+      "location": {
+        "file": "lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol",
+        "line": 43,
+        "function": "newOwner"
+      },
+      "message": "Ownable2Step.transferOwnership(address).newOwner (lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol#43) lacks a zero-check on :",
+      "description": "[Ownable2Step.transferOwnership(address).newOwner](../tmp/miesc_slither_qca2mby8/lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol#L43) lacks a zero-check on :\n\t\t- [_pendingOwner = newOwner](../tmp/miesc_slither_qca2mby8/lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol#L44)\n",
+      "recommendation": "Review and fix the vulnerability",
+      "swc_id": null,
+      "cwe_id": null,
+      "owasp_category": null,
+      "source_contract": "/contracts/ComputationVerifierV2.sol",
+      "source_tool": "slither"
+    },
+    {
+      "id": "slither-timestamp-2",
+      "type": "timestamp",
+      "severity": "Low",
+      "confidence": 0.75,
+      "location": {
+        "file": "ModelRegistryV2.sol",
+        "line": 491,
+        "function": "isAuthorized"
+      },
+      "message": "ModelRegistryV2.isAuthorized(bytes32,address) (ModelRegistryV2.sol#491-493) uses timestamp for comparisons",
+      "description": "[ModelRegistryV2.isAuthorized(bytes32,address)](../tmp/miesc_slither_qca2mby8/ModelRegistryV2.sol#L491-L493) uses timestamp for comparisons\n\tDangerous comparisons:\n\t- [models[modelId].owner == addr || authorized[modelId][addr]](../tmp/miesc_slither_qca2mby8/ModelRegistryV2.sol#L492)\n",
+      "recommendation": "Review and fix the vulnerability",
+      "swc_id": "SWC-116",
+      "cwe_id": null,
+      "owasp_category": "SC08: Bad Randomness / Front-Running",
+      "source_contract": "/contracts/ComputationVerifierV2.sol",
+      "source_tool": "slither"
+    },
+    {
+      "id": "slither-assembly-3",
+      "type": "assembly",
+      "severity": "Info",
+      "confidence": 0.9,
+      "location": {
+        "file": "lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol",
+        "line": 66,
+        "function": "getAddressSlot"
+      },
+      "message": "StorageSlot.getAddressSlot(bytes32) (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#66-70) uses assembly",
+      "description": "[StorageSlot.getAddressSlot(bytes32)](../tmp/miesc_slither_qca2mby8/lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L66-L70) uses assembly\n\t- [INLINE ASM](../tmp/miesc_slither_qca2mby8/lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L67-L69)\n",
+      "recommendation": "Review and fix the vulnerability",
+      "swc_id": null,
+      "cwe_id": null,
+      "owasp_category": null,
+      "source_contract": "/contracts/ComputationVerifierV2.sol",
+      "source_tool": "slither"
+    },
+    {
+      "id": "slither-assembly-4",
+      "type": "assembly",
+      "severity": "Info",
+      "confidence": 0.9,
+      "location": {
+        "file": "lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol",
+        "line": 102,
+        "function": "getInt256Slot"
+      },
+      "message": "StorageSlot.getInt256Slot(bytes32) (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#102-106) uses assembly",
+      "description": "[StorageSlot.getInt256Slot(bytes32)](../tmp/miesc_slither_qca2mby8/lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L102-L106) uses assembly\n\t- [INLINE ASM](../tmp/miesc_slither_qca2mby8/lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L103-L105)\n",
+      "recommendation": "Review and fix the vulnerability",
+      "swc_id": null,
+      "cwe_id": null,
+      "owasp_category": null,
+      "source_contract": "/contracts/ComputationVerifierV2.sol",
+      "source_tool": "slither"
+    },
+    {
+      "id": "slither-incorrect-equality-0",
+      "type": "incorrect-equality",
+      "severity": "Medium",
+      "confidence": 0.9,
+      "location": {
+        "file": "ModelRegistryV2.sol",
+        "line": 154,
+        "function": "modelExists"
+      },
+      "message": "ModelRegistryV2.modelExists(bytes32) (ModelRegistryV2.sol#154-157) uses a dangerous strict equality:",
+      "description": "[ModelRegistryV2.modelExists(bytes32)](../tmp/miesc_slither_qca2mby8/ModelRegistryV2.sol#L154-L157) uses a dangerous strict equality:\n\t- [models[modelId].createdAt == 0](../tmp/miesc_slither_qca2mby8/ModelRegistryV2.sol#L155)\n",
+      "recommendation": "Review and fix the vulnerability",
+      "swc_id": null,
+      "cwe_id": null,
+      "owasp_category": null,
+      "source_contract": "/contracts/ModelRegistryV2.sol",
+      "source_tool": "slither"
+    },
+    {
+      "id": "slither-missing-zero-check-1",
+      "type": "missing-zero-check",
+      "severity": "Low",
+      "confidence": 0.75,
+      "location": {
+        "file": "lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol",
+        "line": 43,
+        "function": "newOwner"
+      },
+      "message": "Ownable2Step.transferOwnership(address).newOwner (lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol#43) lacks a zero-check on :",
+      "description": "[Ownable2Step.transferOwnership(address).newOwner](../tmp/miesc_slither_qca2mby8/lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol#L43) lacks a zero-check on :\n\t\t- [_pendingOwner = newOwner](../tmp/miesc_slither_qca2mby8/lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol#L44)\n",
+      "recommendation": "Review and fix the vulnerability",
+      "swc_id": null,
+      "cwe_id": null,
+      "owasp_category": null,
+      "source_contract": "/contracts/ModelRegistryV2.sol",
+      "source_tool": "slither"
+    },
+    {
+      "id": "slither-timestamp-2",
+      "type": "timestamp",
+      "severity": "Low",
+      "confidence": 0.75,
+      "location": {
+        "file": "ModelRegistryV2.sol",
+        "line": 491,
+        "function": "isAuthorized"
+      },
+      "message": "ModelRegistryV2.isAuthorized(bytes32,address) (ModelRegistryV2.sol#491-493) uses timestamp for comparisons",
+      "description": "[ModelRegistryV2.isAuthorized(bytes32,address)](../tmp/miesc_slither_qca2mby8/ModelRegistryV2.sol#L491-L493) uses timestamp for comparisons\n\tDangerous comparisons:\n\t- [models[modelId].owner == addr || authorized[modelId][addr]](../tmp/miesc_slither_qca2mby8/ModelRegistryV2.sol#L492)\n",
+      "recommendation": "Review and fix the vulnerability",
+      "swc_id": "SWC-116",
+      "cwe_id": null,
+      "owasp_category": "SC08: Bad Randomness / Front-Running",
+      "source_contract": "/contracts/ModelRegistryV2.sol",
+      "source_tool": "slither"
+    },
+    {
+      "id": "slither-assembly-3",
+      "type": "assembly",
+      "severity": "Info",
+      "confidence": 0.9,
+      "location": {
+        "file": "lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol",
+        "line": 66,
+        "function": "getAddressSlot"
+      },
+      "message": "StorageSlot.getAddressSlot(bytes32) (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#66-70) uses assembly",
+      "description": "[StorageSlot.getAddressSlot(bytes32)](../tmp/miesc_slither_qca2mby8/lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L66-L70) uses assembly\n\t- [INLINE ASM](../tmp/miesc_slither_qca2mby8/lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L67-L69)\n",
+      "recommendation": "Review and fix the vulnerability",
+      "swc_id": null,
+      "cwe_id": null,
+      "owasp_category": null,
+      "source_contract": "/contracts/ModelRegistryV2.sol",
+      "source_tool": "slither"
+    },
+    {
+      "id": "slither-assembly-4",
+      "type": "assembly",
+      "severity": "Info",
+      "confidence": 0.9,
+      "location": {
+        "file": "lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol",
+        "line": 102,
+        "function": "getInt256Slot"
+      },
+      "message": "StorageSlot.getInt256Slot(bytes32) (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#102-106) uses assembly",
+      "description": "[StorageSlot.getInt256Slot(bytes32)](../tmp/miesc_slither_qca2mby8/lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L102-L106) uses assembly\n\t- [INLINE ASM](../tmp/miesc_slither_qca2mby8/lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L103-L105)\n",
+      "recommendation": "Review and fix the vulnerability",
+      "swc_id": null,
+      "cwe_id": null,
+      "owasp_category": null,
+      "source_contract": "/contracts/ModelRegistryV2.sol",
+      "source_tool": "slither"
+    }
+  ],
+  "tools_used": [
+    "slither",
+    "solhint",
+    "mythril"
+  ],
+  "llm_insights": {}
+}
