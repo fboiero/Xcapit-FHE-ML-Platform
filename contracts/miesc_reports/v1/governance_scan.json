@@ -1,0 +1,68 @@
+{
+  "contract": "src/v2/ConsortiumGovernanceV2.sol",
+  "timestamp": "2026-01-24T18:08:58.469165",
+  "version": "4.3.7",
+  "summary": {
+    "CRITICAL": 0,
+    "HIGH": 0,
+    "MEDIUM": 0,
+    "LOW": 0,
+    "INFO": 0
+  },
+  "total_findings": 0,
+  "results": [
+    {
+      "tool": "slither",
+      "contract": "src/v2/ConsortiumGovernanceV2.sol",
+      "status": "error",
+      "findings": [],
+      "execution_time": 9.7153160572052,
+      "timestamp": "2026-01-24T18:08:37.206642",
+      "metadata": {
+        "exit_code": 1,
+        "stderr": "/Users/fboiero/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020\n  warnings.warn(\n'forge clean' running (wd: /private/var/folders/38/s7h03tpx0h98shwqgy4_c7lw0000gq/T/miesc_slither_b65l8q94)\n'forge config --json' running\n'forge build --build-info ConsortiumGovernanceV2.sol' running (wd: /private/var/folders/38/s7h03tpx0h98shwqgy4_c7lw0000gq/T/miesc_slither_b65l8q94)\n'forge' returned non-zero exit code 1\nCompiling 7 files with Solc 0.8.20\nstdout: Solc 0.8.20 finished in 129.37ms\nError: Compiler run failed:\nstderr: Error: Compiler error (/solidity/libyul/backends/evm/AsmCodeGen.cpp:68):Stack too deep. Try compiling with `--via-ir` (cli) or the equivalent `viaIR: true` (standard JSON) while enabling the optimizer. Otherwise, try removing local variables. When compiling inline assembly: Variable value0 is 1 slot(s) too deep inside the stack. Stack too deep. Try compiling with `--via-ir` (cli) or the equivalent `viaIR: true` (standard JSON) while enabling the optimizer. Otherwise, try removing local variables.\nTraceback (most recent call last):\n  File \"/Users/fboiero/Library/Python/3.9/bin/slither\", line 8, in <module>\n    sys.exit(main())\n  File \"/Users/fboiero/Library/Python/3.9/lib/python/site-packages/slither/__main__.py\", line 776, in main\n    main_impl(all_detector_classes=detectors, all_printer_classes=printers)\n  File \"/Users/fboiero/Library/Python/3.9/lib/python/site-packages/slither/__main__.py\", line 882, in main_impl\n    ) = process_all(filename, args, detector_classes, printer_classes)\n  File \"/Users/fboiero/Library/Python/3.9/lib/python/site-packages/slither/__main__.py\", line 96, in process_all\n    compilations = compile_all(target, **vars(args))\n  File \"/Users/fboiero/Library/Python/3.9/lib/python/site-packages/crytic_compile/crytic_compile.py\", line 722, in compile_all\n    compilations.append(CryticCompile(target, **kwargs))\n  File \"/Users/fboiero/Library/Python/3.9/lib/python/site-packages/crytic_compile/crytic_compile.py\", line 211, in __init__\n    self._compile(**kwargs)\n  File \"/Users/fboiero/Library/Python/3.9/lib/python/site-packages/crytic_compile/crytic_compile.py\", line 633, in _compile\n    self._platform.compile(self, **kwargs)\n  File \"/Users/fboiero/Library/Python/3.9/lib/python/site-packages/crytic_compile/platform/foundry.py\", line 102, in compile\n    hardhat_like_parsing(\n  File \"/Users/fboiero/Library/Python/3.9/lib/python/site-packages/crytic_compile/platform/hardhat.py\", line 52, in hardhat_like_parsing\n    raise InvalidCompilation(txt)\ncrytic_compile.platform.exceptions.InvalidCompilation: Compilation failed. Can you run build command?\n/private/var/folders/38/s7h03tpx0h98shwqgy4_c7lw0000gq/T/miesc_slither_b65l8q94/out/build-info is not a directory.\n"
+      },
+      "error": "Slither analysis failed (exit code 1)"
+    },
+    {
+      "tool": "aderyn",
+      "contract": "src/v2/ConsortiumGovernanceV2.sol",
+      "status": "error",
+      "findings": [],
+      "execution_time": 10.00271487236023,
+      "timestamp": "2026-01-24T18:08:47.411467",
+      "metadata": {
+        "exit_code": 101,
+        "stderr": "\nthread 'main' panicked at /Users/fboiero/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cyfrin-foundry-config-0.2.1/src/lib.rs:535:55:\nfailed to extract foundry config:\nfoundry config error: Unknown evm version: osaka for setting `evm_version`\n\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n"
+      },
+      "error": "Aderyn analysis failed (exit code 101)"
+    },
+    {
+      "tool": "solhint",
+      "contract": "src/v2/ConsortiumGovernanceV2.sol",
+      "status": "success",
+      "findings": [],
+      "execution_time": 0.96,
+      "timestamp": "2026-01-24T18:08:48.673462",
+      "metadata": {},
+      "error": null
+    },
+    {
+      "tool": "mythril",
+      "contract": "src/v2/ConsortiumGovernanceV2.sol",
+      "status": "success",
+      "findings": [],
+      "execution_time": 6.889982223510742,
+      "timestamp": "2026-01-24T18:08:58.466808",
+      "metadata": {
+        "contract_analyzed": "src/v2/ConsortiumGovernanceV2.sol",
+        "raw_findings_count": 0,
+        "normalized_findings_count": 0,
+        "execution_timeout": 300,
+        "max_depth": 22,
+        "solver_timeout": 100000
+      },
+      "error": null
+    }
+  ]
+}

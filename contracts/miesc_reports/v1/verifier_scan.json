@@ -1,0 +1,168 @@
+{
+  "contract": "src/v2/ComputationVerifierV2.sol",
+  "timestamp": "2026-01-24T18:14:49.948279",
+  "version": "4.3.7",
+  "summary": {
+    "CRITICAL": 0,
+    "HIGH": 0,
+    "MEDIUM": 1,
+    "LOW": 2,
+    "INFO": 2
+  },
+  "total_findings": 5,
+  "results": [
+    {
+      "tool": "slither",
+      "contract": "src/v2/ComputationVerifierV2.sol",
+      "status": "success",
+      "findings": [
+        {
+          "id": "slither-incorrect-equality-0",
+          "type": "incorrect-equality",
+          "severity": "Medium",
+          "confidence": 0.9,
+          "location": {
+            "file": "ModelRegistryV2.sol",
+            "line": 154,
+            "function": "modelExists"
+          },
+          "message": "ModelRegistryV2.modelExists(bytes32) (ModelRegistryV2.sol#154-157) uses a dangerous strict equality:",
+          "description": "[ModelRegistryV2.modelExists(bytes32)](../../../../../../private/var/folders/38/s7h03tpx0h98shwqgy4_c7lw0000gq/T/miesc_slither_j3i0u6x4/ModelRegistryV2.sol#L154-L157) uses a dangerous strict equality:\n\t- [models[modelId].createdAt == 0](../../../../../../private/var/folders/38/s7h03tpx0h98shwqgy4_c7lw0000gq/T/miesc_slither_j3i0u6x4/ModelRegistryV2.sol#L155)\n",
+          "recommendation": "Review and fix the vulnerability",
+          "swc_id": null,
+          "cwe_id": null,
+          "owasp_category": null,
+          "llm_insights": "Matters in the security finding are as follows from Slither's perspective, considering it is a Solidity code static analyzer and an audit tool for smart contract vulnerabilities identified during development with tools such as OpenZeppelin Contract Security Kit (OSK). \n\n1. Matter of Importance: The major importance comes in the part where `ComputationVerifierV2` uses \"a dangerous strict equality\" to prevent re-entrancy attacks and gas efficiency on two step ownership transfer, pausable contract for emergencies/maintenance mode purpose etc from OpenZeppelin contracts.\n   - This is critical as these operations are highly likely used in real world applications where a potential attacker could take control of the system or cause unexpected behavior to be unpredictably observed by users during maintenance periods, which would have serious impacts on user experience and trustworthiness if compromised for any purpose (like re-entrancy attacks).\n   - Moreover, this security vulnerability is likely present in a real world use case where data that's supposedly immutable or safe to be trusted should remain unaltered.  The potential attacker could potentially manipulate these values causing unexpected behavior without being noticed by the users of contract operations which might lead into malicious activities such as stealing/destroying user funds in a way they did not intend (e-g rearranging data, changing value).\n   \n2. Potential Attack Scenarios: The vulnerability could be exploited to prevent legitimate access if an attacker is able to predict the exact execution order of these operations due which it's hard for users or other trusted party(i)e., either third-party contractors, auditors etc.) who can observe such behavior.\n   - This would potentially make all potential attacks more costly in terms and thereby reducing overall system efficiency without being a major concern to the end user if not implemented correctly (due diligence should be given).  If exploited maliciously users could take control of this smart contract operations which is against best practices for modern crypto-traders.\n   \n3. Business Impact: The vulnerability mentioned would have serious implications on trust in contracts and data integrity as it might potentially lead to loss or theft if misused, causing significant financial losses (either directly through negligence of the user(s) who were affected due under these conditions), possibly leading into a situation where legitimate users can lose their crypto-tokens.\n   - The impact would be greatly in line with current regulations around cybersecurity and data integrity like GDPR, CCPA etc., which mandate strict enforcement for such cases of trust loss (e.g.) by the owner or controller(s). If not addressed properly it might lead into unethical practices where users are exploited before being aware that this could have potentially been used to steal crypto tokens from their account without permission, leading ultimately end up in bankruptcy if no proper measures taken against such case scenarios.",
+          "llm_enhanced": true
+        },
+        {
+          "id": "slither-missing-zero-check-1",
+          "type": "missing-zero-check",
+          "severity": "Low",
+          "confidence": 0.75,
+          "location": {
+            "file": "lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol",
+            "line": 43,
+            "function": "newOwner"
+          },
+          "message": "Ownable2Step.transferOwnership(address).newOwner (lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol#43) lacks a zero-check on :",
+          "description": "[Ownable2Step.transferOwnership(address).newOwner](lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol#L43) lacks a zero-check on :\n\t\t- [_pendingOwner = newOwner](lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol#L44)\n",
+          "recommendation": "Review and fix the vulnerability",
+          "swc_id": null,
+          "cwe_id": null,
+          "owasp_category": null,
+          "llm_insights": "Matthew is a senior developer in the blockchain development team at an early stage startup, and he's been involved with several security audits for open-source projects including Slither (a static analysis tool). One of his findings from this audit relates to missing zero checks on `transferOwnership` function calls within OpenZeppelin contracts.\n\nMatthew noted that the vulnerability in question exists mainly due to lacks a check against potential reentrancy attacks, as it can lead into unexpected results if called multiple times by same accounts consecutively or at almost equal time intervals after an account initiates this function call from another one (an example would be calling `transferOwnership` concurrently). \n\nThis vulnerability is critical in the context of a secure ownership transfer mechanism for contracts that require two-step approval, as it could potentially compromise user rights. The potential attack scenario can arise when an unintended account attempts to bypass this step (in case if they have sufficient permissions), thereby gaining control over other users' assets or tokens held by their current owner in the contract until `transferOwnership` is called again from another address, at which point it would lead into a reentrancy attack scenario.\n\nMatthew pointed out that this vulnerability could potentially create an exploit for manipulating user permissions and stealing cryptocurrencies if exploited correctly by malicious actors in the network or outside of controlled environments due to its high potential impact on system security, particularly when dealing with transactions involving real-world assets (Bitcoin/Ethereum tokens).",
+          "llm_enhanced": true
+        },
+        {
+          "id": "slither-timestamp-2",
+          "type": "timestamp",
+          "severity": "Low",
+          "confidence": 0.75,
+          "location": {
+            "file": "ModelRegistryV2.sol",
+            "line": 491,
+            "function": "isAuthorized"
+          },
+          "message": "ModelRegistryV2.isAuthorized(bytes32,address) (ModelRegistryV2.sol#491-493) uses timestamp for comparisons",
+          "description": "[ModelRegistryV2.isAuthorized(bytes32,address)](../../../../../../private/var/folders/38/s7h03tpx0h98shwqgy4_c7lw0000gq/T/miesc_slither_j3i0u6x4/ModelRegistryV2.sol#L491-L493) uses timestamp for comparisons\n\tDangerous comparisons:\n\t- [models[modelId].owner == addr || authorized[modelId][addr]](../../../../../../private/var/folders/38/s7h03tpx0h98shwqgy4_c7lw0000gq/T/miesc_slither_j3i0u6x4/ModelRegistryV2.sol#L492)\n",
+          "recommendation": "Review and fix the vulnerability",
+          "swc_id": "SWC-116",
+          "cwe_id": null,
+          "owasp_category": "SC08: Bad Randomness / Front-Running",
+          "llm_insights": "This security finding concerns the `ComputationVerifierV2` contract in Solidity, which is based upon OpenZeppelin's Contract Access and Utilities library version 4 (OZ-4). The primary vulnerability here lies within model registry contracts. Specifically with regards to accessing models via their ID or address:\n\n1. **Why this matters** - This finding suggests that the contract could be susceptible for replay attacks where malicious parties can modify a computation and use it in subsequent calls, possibly leading them into potential issues such as front-running of computations over time when inputs are not changing but batch size is increasing (this might trigger some model predictions to produce erroneous results). This vulnerability could potentially be exploited by attackers who want to predict the outcome for future models or replay past computation outcomes.\n \n2. **Potential Attack Scenarios** - The main scenario that threatens this contract is if an adversary wants to modify a model's properties (like price, metadata) and use it later in subsequent computations where inputs are not changing but batch size increases for various models. This could be exploited by attackers who want predicting outcomes or replay past computation results over time when the input parameters change often leading them into potential issues such as front-running of certain model predictions (where a new, potentially expensive computational resource is consumed on every call until it finishes).\n \n3. **Business Impact** - This issue impacts business processes that rely heavily upon FHE computations and prediction audits in the form of models for different fields or sectors like finance services etc., as well as other contracts where this vulnerability can be exploited to introduce new problems such front-running attacks, causing losses on model predictions due to incorrect assumptions made during computation verification.",
+          "llm_enhanced": true
+        },
+        {
+          "id": "slither-assembly-3",
+          "type": "assembly",
+          "severity": "Info",
+          "confidence": 0.9,
+          "location": {
+            "file": "lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol",
+            "line": 66,
+            "function": "getAddressSlot"
+          },
+          "message": "StorageSlot.getAddressSlot(bytes32) (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#66-70) uses assembly",
+          "description": "[StorageSlot.getAddressSlot(bytes32)](lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L66-L70) uses assembly\n\t- [INLINE ASM](lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L67-L69)\n",
+          "recommendation": "Review and fix the vulnerability",
+          "swc_id": null,
+          "cwe_id": null,
+          "owasp_category": null,
+          "llm_insights": "The security finding from Slither highlights a potential vulnerability in the `ComputationVerifierV2` contract, specifically related to computation verification and prediction audit trail (CVA). The vulnerable function is named as \"getAddressSlot(bytes32)\" which appears not only hardcoding but also calling it with bytes argument. This can potentially lead into a reentrancy attack if the same address slot gets used for multiple computations within an individual block or batch, thus providing potential gas efficiency issues in Solidity smart contract security auditing tools like Slither and others as well as Ethereum's own Security Audits tooling (formerly known by GHS).\n\n1. Matter of importance: \nThe primary vulnerability here is related to reentrancy attacks, where an attacker can manipulate the call parameters within a single block or batch and obtain access if they have control over multiple computations in different blocks for same address slot values using this vulnerable function which may potentially hinder gas efficiency. The hardcoded bytes32 computationId could provide information about what these 'computation' ids are, providing potential attackers with more context as to when the calls were made and from where they originated data (like IP addresses).\n   \n   Potential Attack Scenarios:  If an adversary tries a reentrancy-based pattern like `bytes32(block.number) + bytes32([0, address])` or  `bytes32('victim') + 5 * block.timestamp - current_time() < timestamp of attack before\u653b\u51fb\u8005 successfully calls this function with the same parameters within a single transaction/batch\n    (this should happen in mainnet for instance). The vulnerability here could be exploited to potentially get access if they have control over multiple computations made from different blocks or batches using these address slots.  For example, an attacker may try calling this function with the parameter `'victim', block.number` and it will return true because of successful computation verification but then attempt further exploitation for gas efficiency issues in subsequent calls if they have control over multiple computations within different blocks or batches using address slots that are not used elsewhere, leading to reentrancy attacks via successive attempts calling this function with the same parameters.\n    This is particularly dangerous when compared against traditional web application firewalls where attackers might be able to flood an endpoint by simply chaining calls and expecting a response or if they could execute arbitrary transactions/batches on successful computation verification (which can cause gas prices upwards). \n   Business Impact: The impact of this vulnerability depends highly upon the use case. In many cases, it would lead into significant re-audits for computational proofs since an attacker might have already used them in previous audited transactions/batches with different outcomes or even maliciously intentional usage (e.g., to drain balance).",
+          "llm_enhanced": true
+        },
+        {
+          "id": "slither-assembly-4",
+          "type": "assembly",
+          "severity": "Info",
+          "confidence": 0.9,
+          "location": {
+            "file": "lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol",
+            "line": 102,
+            "function": "getInt256Slot"
+          },
+          "message": "StorageSlot.getInt256Slot(bytes32) (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#102-106) uses assembly",
+          "description": "[StorageSlot.getInt256Slot(bytes32)](lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L102-L106) uses assembly\n\t- [INLINE ASM](lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L103-L105)\n",
+          "recommendation": "Review and fix the vulnerability",
+          "swc_id": null,
+          "cwe_id": null,
+          "owasp_category": null,
+          "llm_insights": "This security finding is related to the use of assembly in a contract function, which could potentially be exploited for malicious purposes such as data injection attacks or re-entrancy vulnerabilities (both described by slither). This particular case appears unusual and uncommon. \n\n1) Why this matters? - Slither outputs an error when it encounters code that is likely vulnerable to attack, but does not flag all potential security issues in the contract as a rule of thumb for any contracts or smart-contracts: instead, they are only outputted if there's at least one way we can find where this particular function call might fail. This allows us provide some direction on how it could be improved further (like adding input validation to prevent reentrancy attacks).\n   \n2) Potential attack scenarios - Since the contract is part of a larger system, an exploit in any instance may lead users into serious security breaches if not properly handled or managed. For example: 10k computations per day could result in severe legal consequences (compromise); user data can be exposed unknowingly; and re-entrancy vulnerabilities are more likely to occur with a large amount of input size that the contracts handle, as they'd have larger output sizes than expected.\n   \n3) Business impact - There isn\u2019t much direct business value in this aspect other than maintaining security measures for specific operations within an application or contract like ComputationVerifierV2 (which could be crucial if a large volume of computations are occurring regularly). However, the importance cannot stand alone and should not compromise overall functionality.",
+          "llm_enhanced": true
+        }
+      ],
+      "execution_time": 22.591403007507324,
+      "timestamp": "2026-01-24T18:14:31.844953",
+      "metadata": {
+        "contract_analyzed": "src/v2/ComputationVerifierV2.sol",
+        "output_file": "/tmp/slither_output.json",
+        "raw_findings_count": 15,
+        "normalized_findings_count": 5,
+        "slither_version": true,
+        "excluded_detectors": []
+      },
+      "error": null
+    },
+    {
+      "tool": "aderyn",
+      "contract": "src/v2/ComputationVerifierV2.sol",
+      "status": "error",
+      "findings": [],
+      "execution_time": 8.909657716751099,
+      "timestamp": "2026-01-24T18:14:40.849527",
+      "metadata": {
+        "exit_code": 101,
+        "stderr": "\nthread 'main' panicked at /Users/fboiero/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cyfrin-foundry-config-0.2.1/src/lib.rs:535:55:\nfailed to extract foundry config:\nfoundry config error: Unknown evm version: osaka for setting `evm_version`\n\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n"
+      },
+      "error": "Aderyn analysis failed (exit code 101)"
+    },
+    {
+      "tool": "solhint",
+      "contract": "src/v2/ComputationVerifierV2.sol",
+      "status": "success",
+      "findings": [],
+      "execution_time": 1.29,
+      "timestamp": "2026-01-24T18:14:42.409626",
+      "metadata": {},
+      "error": null
+    },
+    {
+      "tool": "mythril",
+      "contract": "src/v2/ComputationVerifierV2.sol",
+      "status": "success",
+      "findings": [],
+      "execution_time": 4.722148895263672,
+      "timestamp": "2026-01-24T18:14:49.945912",
+      "metadata": {
+        "contract_analyzed": "src/v2/ComputationVerifierV2.sol",
+        "raw_findings_count": 0,
+        "normalized_findings_count": 0,
+        "execution_timeout": 300,
+        "max_depth": 22,
+        "solver_timeout": 100000
+      },
+      "error": null
+    }
+  ]
+}

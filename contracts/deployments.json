@@ -1,0 +1,21 @@
+{
+  "network": 421614,
+  "networkName": "arbitrum-sepolia",
+  "deployer": "0x1EFeA870E80aCa0E140A9C77d921FEd68F1D653D",
+  "deployedAt": "2026-01-24",
+  "contracts": {
+    "ConsortiumGovernanceV2": {
+      "address": "0xda52326d106A91A1F22A0c41Be2dc1F531C01F11",
+      "version": "2.1.0"
+    },
+    "ModelRegistryV2": {
+      "address": "0x1296cCeF7803Bff51FB690afCFc586E7012417b8",
+      "version": "2.0.0"
+    },
+    "ComputationVerifierV2": {
+      "address": "0xa5f04E0aefe55173C91b949Aa2385f0228dd2921",
+      "version": "2.0.0"
+    }
+  },
+  "explorer": "https://sepolia.arbiscan.io"
+}

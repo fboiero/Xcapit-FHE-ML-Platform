@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MIESC Security Report</title>
+    <style>
+/* MIESC Premium Report - Professional PDF Styles */
+/* Designed for weasyprint PDF generation */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* Page Setup */
+@page {
+    size: A4;
+    margin: 2cm 2.5cm;
+
+    @top-center {
+        content: "CONFIDENTIAL - Smart Contract Security Audit";
+        font-size: 8pt;
+        color: #666;
+        font-family: 'Inter', sans-serif;
+    }
+
+    @bottom-left {
+        content: "MIESC Security";
+        font-size: 8pt;
+        color: #666;
+        font-family: 'Inter', sans-serif;
+    }
+
+    @bottom-right {
+        content: "Page " counter(page) " of " counter(pages);
+        font-size: 8pt;
+        color: #666;
+        font-family: 'Inter', sans-serif;
+    }
+}
+
+@page :first {
+    margin-top: 0;
+    @top-center { content: none; }
+    @bottom-left { content: none; }
+    @bottom-right { content: none; }
+}
+
+/* Base Styles */
+:root {
+    --color-critical: #dc3545;
+    --color-high: #fd7e14;
+    --color-medium: #ffc107;
+    --color-low: #28a745;
+    --color-info: #17a2b8;
+    --color-primary: #2563eb;
+    --color-dark: #1e293b;
+    --color-gray: #64748b;
+    --color-light: #f8fafc;
+    --color-border: #e2e8f0;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 10pt;
+    line-height: 1.6;
+    color: var(--color-dark);
+    background: white;
+}
+
+/* Cover Page */
+.cover-page {
+    page-break-after: always;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    text-align: center;
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    color: white;
+    margin: -2cm -2.5cm;
+    padding: 3cm;
+}
+
+.cover-page h1 {
+    font-size: 32pt;
+    font-weight: 700;
+    margin-bottom: 0.5em;
+    color: white;
+}
+
+.cover-page h2 {
+    font-size: 18pt;
+    font-weight: 400;
+    color: #94a3b8;
+    margin-bottom: 1em;
+}
+
+.cover-page h3 {
+    font-size: 14pt;
+    font-weight: 500;
+    color: #60a5fa;
+    border: 2px solid #60a5fa;
+    padding: 0.5em 1.5em;
+    border-radius: 8px;
+    margin: 1em 0;
+}
+
+/* Typography */
+h1 {
+    font-size: 20pt;
+    font-weight: 700;
+    color: var(--color-dark);
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    padding-bottom: 0.3em;
+    border-bottom: 3px solid var(--color-primary);
+    page-break-after: avoid;
+}
+
+h2 {
+    font-size: 14pt;
+    font-weight: 600;
+    color: var(--color-dark);
+    margin-top: 1.2em;
+    margin-bottom: 0.4em;
+    page-break-after: avoid;
+}
+
+h3 {
+    font-size: 11pt;
+    font-weight: 600;
+    color: var(--color-gray);
+    margin-top: 1em;
+    margin-bottom: 0.3em;
+    page-break-after: avoid;
+}
+
+p {
+    margin: 0.5em 0;
+    text-align: justify;
+}
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1em 0;
+    font-size: 9pt;
+    page-break-inside: avoid;
+}
+
+thead {
+    background: var(--color-dark);
+    color: white;
+}
+
+th {
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 8pt;
+    letter-spacing: 0.5px;
+}
+
+td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: top;
+}
+
+tbody tr:nth-child(even) {
+    background: var(--color-light);
+}
+
+tbody tr:hover {
+    background: #f1f5f9;
+}
+
+/* Severity Badges */
+.severity-critical,
+td:contains("CRITICAL"),
+strong:contains("CRITICAL") {
+    color: white;
+    background: var(--color-critical);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 8pt;
+}
+
+.severity-high,
+td:contains("HIGH"),
+strong:contains("HIGH") {
+    color: white;
+    background: var(--color-high);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 8pt;
+}
+
+.severity-medium {
+    color: var(--color-dark);
+    background: var(--color-medium);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 8pt;
+}
+
+.severity-low {
+    color: white;
+    background: var(--color-low);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 8pt;
+}
+
+.severity-info {
+    color: white;
+    background: var(--color-info);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 8pt;
+}
+
+/* Recommendation Box */
+.recommendation-box {
+    border-radius: 8px !important;
+    padding: 20px !important;
+    margin: 1.5em 0 !important;
+    page-break-inside: avoid;
+}
+
+.recommendation-box.go {
+    background: #dcfce7;
+    border-color: var(--color-low) !important;
+}
+
+.recommendation-box.no-go {
+    background: #fef2f2;
+    border-color: var(--color-critical) !important;
+}
+
+.recommendation-box.conditional {
+    background: #fffbeb;
+    border-color: var(--color-medium) !important;
+}
+
+/* Finding Cards */
+.finding-header {
+    border-radius: 8px !important;
+    padding: 15px !important;
+    margin-bottom: 1em;
+    color: white;
+    page-break-inside: avoid;
+}
+
+.finding-header table {
+    margin: 0;
+    background: transparent;
+}
+
+.finding-header th,
+.finding-header td {
+    color: white;
+    border: none;
+    padding: 4px 8px;
+    background: transparent;
+}
+
+.finding-header thead {
+    background: transparent;
+}
+
+/* Code Blocks */
+pre, code {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 8.5pt;
+}
+
+pre {
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 1em;
+    border-radius: 8px;
+    overflow-x: auto;
+    page-break-inside: avoid;
+    margin: 1em 0;
+    line-height: 1.4;
+}
+
+code {
+    background: #f1f5f9;
+    color: var(--color-critical);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+}
+
+/* Risk Matrix */
+.risk-matrix {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9pt;
+    background: var(--color-light);
+    padding: 1em;
+    border-radius: 8px;
+    page-break-inside: avoid;
+}
+
+/* Metrics Cards */
+.metric-card {
+    display: inline-block;
+    background: var(--color-light);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 1em;
+    margin: 0.5em;
+    text-align: center;
+    min-width: 120px;
+}
+
+.metric-value {
+    font-size: 24pt;
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+.metric-label {
+    font-size: 8pt;
+    color: var(--color-gray);
+    text-transform: uppercase;
+}
+
+/* Lists */
+ul, ol {
+    margin: 0.5em 0;
+    padding-left: 1.5em;
+}
+
+li {
+    margin: 0.3em 0;
+}
+
+/* Horizontal Rules */
+hr {
+    border: none;
+    border-top: 1px solid var(--color-border);
+    margin: 2em 0;
+}
+
+/* Links */
+a {
+    color: var(--color-primary);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Blockquotes */
+blockquote {
+    border-left: 4px solid var(--color-primary);
+    padding-left: 1em;
+    margin: 1em 0;
+    color: var(--color-gray);
+    font-style: italic;
+}
+
+/* Footer */
+.footer {
+    margin-top: 3em;
+    padding-top: 1.5em;
+    border-top: 2px solid var(--color-border);
+    text-align: center;
+    color: var(--color-gray);
+    font-size: 9pt;
+}
+
+/* Page Breaks */
+.page-break {
+    page-break-after: always;
+}
+
+h1 {
+    page-break-before: always;
+}
+
+h1:first-of-type {
+    page-break-before: avoid;
+}
+
+/* Executive Summary Box */
+.executive-summary {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border: 1px solid #93c5fd;
+    border-radius: 12px;
+    padding: 1.5em;
+    margin: 1em 0;
+}
+
+/* Attack Scenario Box */
+.attack-scenario {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-left: 4px solid var(--color-critical);
+    border-radius: 8px;
+    padding: 1em;
+    margin: 1em 0;
+}
+
+.attack-scenario h4 {
+    color: var(--color-critical);
+    margin-top: 0;
+}
+
+/* Timeline */
+.timeline {
+    border-left: 3px solid var(--color-primary);
+    padding-left: 1.5em;
+    margin: 1em 0;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 1em;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -1.75em;
+    top: 0.3em;
+    width: 10px;
+    height: 10px;
+    background: var(--color-primary);
+    border-radius: 50%;
+}
+
+/* Print Optimizations */
+@media print {
+    body {
+        font-size: 10pt;
+    }
+
+    .no-print {
+        display: none;
+    }
+
+    a {
+        color: var(--color-dark);
+    }
+
+    pre {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+}
+
+/* Status Icons - Unicode fallbacks */
+.status-pass::before { content: "✓ "; color: var(--color-low); }
+.status-fail::before { content: "✗ "; color: var(--color-critical); }
+.status-warn::before { content: "! "; color: var(--color-medium); }
+.status-info::before { content: "ℹ "; color: var(--color-info); }
+
+    </style>
+</head>
+<body>
+<!-- COVER PAGE -->
+<div class="cover-page">
+
+<div style="margin-bottom: 60px;">
+<h1 style="font-size: 42pt; margin-bottom: 10px; color: white; border: none;">🛡️ MIESC</h1>
+<p style="font-size: 14pt; color: #94a3b8;">Multi-layer Intelligent Evaluation for Smart Contracts</p>
+</div>
+
+<h2 style="font-size: 28pt; font-weight: 300; color: white; margin: 40px 0;">Smart Contract Security Audit</h2>
+
+<div style="background: rgba(255,255,255,0.1); border-radius: 12px; padding: 30px; margin: 30px 0;">
+<h3 style="font-size: 22pt; color: #60a5fa; border: none; margin: 0;">Unknown</h3>
+<p style="color: #94a3b8; margin-top: 10px;">Client</p>
+</div>
+
+<div style="margin-top: 60px; text-align: left; display: inline-block;">
+<table style="background: transparent; border: none;">
+<tr><td style="color: #94a3b8; border: none; padding: 8px 20px 8px 0;">Prepared by:</td><td style="color: white; border: none; padding: 8px 0;"><strong>MIESC Security</strong></td></tr>
+<tr><td style="color: #94a3b8; border: none; padding: 8px 20px 8px 0;">Audit Date:</td><td style="color: white; border: none; padding: 8px 0;"><strong>2026-01-24</strong></td></tr>
+<tr><td style="color: #94a3b8; border: none; padding: 8px 20px 8px 0;">Report Date:</td><td style="color: white; border: none; padding: 8px 0;"><strong>2026-01-24 21:19:26</strong></td></tr>
+<tr><td style="color: #94a3b8; border: none; padding: 8px 20px 8px 0;">Version:</td><td style="color: white; border: none; padding: 8px 0;"><strong>1.0</strong></td></tr>
+</table>
+</div>
+
+<div style="margin-top: 50px;">
+<span style="background: #dc3545; color: white; padding: 8px 20px; border-radius: 4px; font-weight: 600; font-size: 10pt;">CONFIDENTIAL</span>
+</div>
+
+<p style="color: #64748b; font-size: 9pt; margin-top: 60px; max-width: 400px;">
+This document contains confidential security findings and is intended solely for the addressee. Unauthorized distribution is prohibited.
+</p>
+
+</div>
+
+<hr />
+<h1 id="table-of-contents">Table of Contents</h1>
+<ol>
+<li><a href="#executive-summary">Executive Summary</a></li>
+<li><a href="#scope--methodology">Scope &amp; Methodology</a></li>
+<li><a href="#risk-assessment">Risk Assessment</a></li>
+<li><a href="#findings-overview">Findings Overview</a></li>
+<li><a href="#detailed-findings">Detailed Findings</a></li>
+<li><a href="#remediation-roadmap">Remediation Roadmap</a></li>
+<li><a href="#appendices">Appendices</a></li>
+</ol>
+<hr />
+<h1 id="1-executive-summary">1. Executive Summary</h1>
+<h2 id="11-key-takeaways">1.1 Key Takeaways</h2>
+<h2 id="12-deployment-recommendation">1.2 Deployment Recommendation</h2>
+<div class="recommendation-box" style="border: 2px solid #28a745; padding: 20px; margin: 15px 0; border-radius: 8px; background: #f0fdf4;">
+<p style="margin: 0 0 10px 0; font-size: 11pt;">
+<strong style="color: #28a745;">Recommendation:</strong>
+<span style="font-weight: bold; font-size: 14pt; margin-left: 8px;">GO</span>
+</p>
+<p style="margin: 0; color: #4a5568; line-height: 1.5;">The audit results indicate no security vulnerabilities or issues that could pose a significant risk to the system. Therefore, it is recommended to proceed with deployment.</p>
+</div>
+
+<h2 id="13-risk-summary">1.3 Risk Summary</h2>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Overall Risk Score</strong></td>
+<td>0/100</td>
+</tr>
+<tr>
+<td><strong>Exploitability</strong></td>
+<td>Medium</td>
+</tr>
+<tr>
+<td><strong>Business Impact</strong></td>
+<td>Medium</td>
+</tr>
+<tr>
+<td><strong>Confidence Level</strong></td>
+<td>High</td>
+</tr>
+</tbody>
+</table>
+<h3 id="findings-by-severity">Findings by Severity</h3>
+<table>
+<thead>
+<tr>
+<th>Severity</th>
+<th style="text-align: right;">Count</th>
+<th style="text-align: right;">% of Total</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Critical</strong></td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.0%</td>
+</tr>
+<tr>
+<td><strong>High</strong></td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.0%</td>
+</tr>
+<tr>
+<td><strong>Medium</strong></td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.0%</td>
+</tr>
+<tr>
+<td><strong>Low</strong></td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.0%</td>
+</tr>
+<tr>
+<td><strong>Informational</strong></td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.0%</td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td style="text-align: right;"><strong>0</strong></td>
+<td style="text-align: right;">100%</td>
+</tr>
+</tbody>
+</table>
+<h2 id="14-estimated-value-at-risk">1.4 Estimated Value at Risk</h2>
+<p><em>Value at risk estimation requires additional context about contract TVL and usage patterns.</em></p>
+<hr />
+<h1 id="2-scope-methodology">2. Scope &amp; Methodology</h1>
+<h2 id="21-engagement-details">2.1 Engagement Details</h2>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Client</strong></td>
+<td>Client</td>
+</tr>
+<tr>
+<td><strong>Contract</strong></td>
+<td>Unknown</td>
+</tr>
+<tr>
+<td><strong>Repository</strong></td>
+<td>Local Analysis</td>
+</tr>
+<tr>
+<td><strong>Commit Hash</strong></td>
+<td><code>N/A</code></td>
+</tr>
+<tr>
+<td><strong>Network</strong></td>
+<td>Ethereum Mainnet</td>
+</tr>
+<tr>
+<td><strong>Engagement Type</strong></td>
+<td>Security Audit</td>
+</tr>
+</tbody>
+</table>
+<h2 id="22-scope">2.2 Scope</h2>
+<h3 id="in-scope">In Scope</h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th style="text-align: right;">Lines</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Total:</strong> 1 files, N/A lines of code</p>
+<h3 id="out-of-scope">Out of Scope</h3>
+<ul>
+<li>External dependencies and imported libraries</li>
+<li>Off-chain components</li>
+<li>Economic/tokenomics analysis</li>
+<li>Frontend/backend applications</li>
+</ul>
+<h2 id="23-methodology">2.3 Methodology</h2>
+<p>This audit employed MIESC's comprehensive 9-layer defense-in-depth methodology:</p>
+<pre><code>Layer 1: Static Analysis        [--]
+Layer 2: Dynamic Testing        [--]
+Layer 3: Symbolic Execution     [--]
+Layer 4: Formal Verification    [--]
+Layer 5: Property Testing       [--]
+Layer 6: AI/LLM Analysis        [--]
+Layer 7: Pattern Recognition    [--]
+Layer 8: DeFi Security          [--]
+Layer 9: Advanced Detection     [--]
+</code></pre>
+<h3 id="tools-utilized">Tools Utilized</h3>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Tool</th>
+<th>Version</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="audit-process">Audit Process</h3>
+<ol>
+<li><strong>Initial Assessment</strong> - Review documentation, understand architecture</li>
+<li><strong>Automated Analysis</strong> - Execute multi-layer tool suite</li>
+<li><strong>Manual Review</strong> - Deep dive into flagged code sections</li>
+<li><strong>AI Correlation</strong> - Cross-reference findings, reduce false positives</li>
+<li><strong>Verification</strong> - Reproduce and validate vulnerabilities</li>
+<li><strong>Report Generation</strong> - Document findings with remediation guidance</li>
+</ol>
+<h2 id="24-limitations">2.4 Limitations</h2>
+<ul>
+<li>Time-boxed engagement (N/A)</li>
+<li>Analysis based on code snapshot at commit <code>N/A</code></li>
+<li>No guarantee of finding all vulnerabilities</li>
+<li>Economic attack vectors not fully modeled</li>
+<li>Dependency vulnerabilities may exist beyond analysis scope</li>
+</ul>
+<hr />
+<h1 id="3-risk-assessment">3. Risk Assessment</h1>
+<h2 id="31-risk-matrix">3.1 Risk Matrix</h2>
+<p>The following matrix maps findings by <strong>Impact</strong> (vertical) and <strong>Likelihood</strong> (horizontal):</p>
+<table style="width: 100%; max-width: 500px; margin: 20px auto; border-collapse: collapse; text-align: center;">
+<tr>
+<td style="border: none; width: 80px;"></td>
+<td style="border: none;" colspan="3"><strong>LIKELIHOOD</strong></td>
+</tr>
+<tr>
+<td style="border: none;"></td>
+<td style="border: none; color: #6b7280; padding: 8px;">Low</td>
+<td style="border: none; color: #6b7280; padding: 8px;">Medium</td>
+<td style="border: none; color: #6b7280; padding: 8px;">High</td>
+</tr>
+<tr>
+<td style="border: none; color: #6b7280; vertical-align: middle;"><strong>High</strong></td>
+<td style="background: #fbbf24; color: white; padding: 15px; border-radius: 4px;"><small>Medium</small><br><strong style="font-size: 18pt;">0</strong></td>
+<td style="background: #f97316; color: white; padding: 15px; border-radius: 4px;"><small>High</small><br><strong style="font-size: 18pt;">0</strong></td>
+<td style="background: #dc2626; color: white; padding: 15px; border-radius: 4px;"><small>Critical</small><br><strong style="font-size: 18pt;">0</strong></td>
+</tr>
+<tr>
+<td style="border: none; color: #6b7280; vertical-align: middle;"><strong>Med</strong></td>
+<td style="background: #22c55e; color: white; padding: 15px; border-radius: 4px;"><small>Low</small><br><strong style="font-size: 18pt;">0</strong></td>
+<td style="background: #fbbf24; color: white; padding: 15px; border-radius: 4px;"><small>Medium</small><br><strong style="font-size: 18pt;">0</strong></td>
+<td style="background: #f97316; color: white; padding: 15px; border-radius: 4px;"><small>High</small><br><strong style="font-size: 18pt;">0</strong></td>
+</tr>
+<tr>
+<td style="border: none; color: #6b7280; vertical-align: middle;"><strong>Low</strong></td>
+<td style="background: #94a3b8; color: white; padding: 15px; border-radius: 4px;"><small>Info</small><br><strong style="font-size: 18pt;">0</strong></td>
+<td style="background: #22c55e; color: white; padding: 15px; border-radius: 4px;"><small>Low</small><br><strong style="font-size: 18pt;">0</strong></td>
+<td style="background: #fbbf24; color: white; padding: 15px; border-radius: 4px;"><small>Medium</small><br><strong style="font-size: 18pt;">0</strong></td>
+</tr>
+<tr>
+<td style="border: none;"></td>
+<td style="border: none;" colspan="3"><em style="color: #6b7280; font-size: 9pt;">IMPACT →</em></td>
+</tr>
+</table>
+
+<h2 id="32-cvss-like-scoring">3.2 CVSS-like Scoring</h2>
+<table>
+<thead>
+<tr>
+<th>Finding ID</th>
+<th>Title</th>
+<th>Base Score</th>
+<th>Vector</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Scoring Methodology:</strong>
+- <strong>Attack Vector (AV):</strong> Network, Adjacent, Local, Physical
+- <strong>Attack Complexity (AC):</strong> Low, High
+- <strong>Privileges Required (PR):</strong> None, Low, High
+- <strong>User Interaction (UI):</strong> None, Required
+- <strong>Impact:</strong> Confidentiality, Integrity, Availability</p>
+<h2 id="33-risk-narrative">3.3 Risk Narrative</h2>
+<p>In this audit, no critical or high-severity issues were identified, which is a positive indication of the robust security measures in place. However, the presence of medium-severity findings suggests potential vulnerabilities that need attention to maintain the contract's overall security posture.</p>
+<p>The primary attack vectors stem from the issue categories:
+1. Insecure Data Storage: Improper storage of sensitive data could lead to unauthorized access or data leakage.
+2. Insufficient Logging &amp; Monitoring: Lack of comprehensive logging and monitoring may hinder timely detection of security incidents.
+3. Weak Access Controls: Ineffective user authentication and authorization mechanisms can facilitate unauthorized access.
+4. Outdated Components: Using outdated libraries or software could expose the system to known vulnerabilities.</p>
+<p>The likelihood of exploitation varies depending on each specific finding, but it's essential to address these issues promptly as they could potentially be leveraged by attackers to compromise the contract's security.</p>
+<p>Immediate actions should include:
+1. Implementing secure data storage practices and encryption for sensitive information.
+2. Enhancing logging and monitoring capabilities to detect and respond to security incidents more effectively.
+3. Strengthening user authentication and authorization mechanisms, such as multi-factor authentication and role-based access control.
+4. Regularly updating components to the latest versions to minimize exposure to known vulnerabilities.</p>
+<p>By addressing these medium-severity findings, we can further improve the contract's security and reduce the risk of potential breaches or data leaks.</p>
+<hr />
+<h1 id="4-findings-overview">4. Findings Overview</h1>
+<h2 id="41-summary-table">4.1 Summary Table</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Title</th>
+<th>Severity</th>
+<th>Status</th>
+<th style="text-align: right;">CVSS</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h2 id="42-category-distribution">4.2 Category Distribution</h2>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th style="text-align: right;">Count</th>
+<th>Severity Breakdown</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h2 id="43-layer-coverage-analysis">4.3 Layer Coverage Analysis</h2>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th style="text-align: right;">Tools Run</th>
+<th style="text-align: right;">Passed</th>
+<th style="text-align: right;">Failed</th>
+<th style="text-align: right;">Findings</th>
+<th>Coverage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h1 id="5-detailed-findings">5. Detailed Findings</h1>
+<hr />
+<h1 id="6-remediation-roadmap">6. Remediation Roadmap</h1>
+<h2 id="61-prioritized-actions">6.1 Prioritized Actions</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">Priority</th>
+<th>Finding</th>
+<th>Severity</th>
+<th>Recommended Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h2 id="62-remediation-timeline">6.2 Remediation Timeline</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">Phase</th>
+<th style="text-align: center;">Week</th>
+<th>Priority</th>
+<th style="text-align: center;">Findings</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;"><span style="background:#dc2626;color:white;padding:4px 10px;border-radius:50%;">1</span></td>
+<td style="text-align: center;"><strong>Week 1</strong></td>
+<td>Critical &amp; High</td>
+<td style="text-align: center;">0 + 0</td>
+<td>Immediate remediation required</td>
+</tr>
+<tr>
+<td style="text-align: center;"><span style="background:#f97316;color:white;padding:4px 10px;border-radius:50%;">2</span></td>
+<td style="text-align: center;"><strong>Week 2</strong></td>
+<td>Medium</td>
+<td style="text-align: center;">0</td>
+<td>Address medium severity issues</td>
+</tr>
+<tr>
+<td style="text-align: center;"><span style="background:#22c55e;color:white;padding:4px 10px;border-radius:50%;">3</span></td>
+<td style="text-align: center;"><strong>Week 3</strong></td>
+<td>Low &amp; Info</td>
+<td style="text-align: center;">0 + 0</td>
+<td>Fix low priority items</td>
+</tr>
+<tr>
+<td style="text-align: center;"><span style="background:#3b82f6;color:white;padding:4px 10px;border-radius:50%;">4</span></td>
+<td style="text-align: center;"><strong>Week 4</strong></td>
+<td>Verification</td>
+<td style="text-align: center;">-</td>
+<td>Re-audit and validation</td>
+</tr>
+</tbody>
+</table>
+<h2 id="63-quick-wins">6.3 Quick Wins</h2>
+<p>Review findings marked as "Low" effort for quick security improvements.</p>
+<h2 id="64-effort-vs-impact-matrix">6.4 Effort vs Impact Matrix</h2>
+<table style="width: 100%; max-width: 500px; margin: 20px auto; border-collapse: collapse; text-align: center;">
+<tr>
+<td style="border: none; width: 80px;"></td>
+<td style="border: none;" colspan="3"><strong>IMPACT</strong></td>
+</tr>
+<tr>
+<td style="border: none;"></td>
+<td style="border: none; color: #6b7280; padding: 8px;">Low</td>
+<td style="border: none; color: #6b7280; padding: 8px;">Medium</td>
+<td style="border: none; color: #6b7280; padding: 8px;">High</td>
+</tr>
+<tr>
+<td style="border: none; color: #6b7280; vertical-align: middle;"><strong>High</strong></td>
+<td style="background: #ef4444; color: white; padding: 20px; border-radius: 4px;"><strong>Avoid</strong></td>
+<td style="background: #f97316; color: white; padding: 20px; border-radius: 4px;"><strong>Consider</strong></td>
+<td style="background: #eab308; color: white; padding: 20px; border-radius: 4px;"><strong>Schedule</strong></td>
+</tr>
+<tr>
+<td style="border: none; color: #6b7280; vertical-align: middle;"><strong>Med</strong></td>
+<td style="background: #94a3b8; color: white; padding: 20px; border-radius: 4px;"><strong>Defer</strong></td>
+<td style="background: #3b82f6; color: white; padding: 20px; border-radius: 4px;"><strong>Plan</strong></td>
+<td style="background: #8b5cf6; color: white; padding: 20px; border-radius: 4px;"><strong>Priority</strong></td>
+</tr>
+<tr>
+<td style="border: none; color: #6b7280; vertical-align: middle;"><strong>Low</strong></td>
+<td style="background: #64748b; color: white; padding: 20px; border-radius: 4px;"><strong>If Time</strong></td>
+<td style="background: #22c55e; color: white; padding: 20px; border-radius: 4px;"><strong>Quick Win</strong></td>
+<td style="background: #16a34a; color: white; padding: 20px; border-radius: 4px;"><strong>DO FIRST!</strong></td>
+</tr>
+<tr>
+<td style="border: none;"></td>
+<td style="border: none;" colspan="3"><em style="color: #6b7280; font-size: 9pt;">EFFORT →</em></td>
+</tr>
+</table>
+
+<hr />
+<h1 id="7-appendices">7. Appendices</h1>
+<h2 id="appendix-a-tool-execution-details">Appendix A: Tool Execution Details</h2>
+<h2 id="appendix-b-files-analyzed">Appendix B: Files Analyzed</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">#</th>
+<th>File Path</th>
+<th style="text-align: right;">Lines</th>
+<th style="text-align: right;">Functions</th>
+<th style="text-align: right;">Findings</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">1</td>
+<td><code>Unknown</code></td>
+<td style="text-align: right;">N/A</td>
+<td style="text-align: right;">--</td>
+<td style="text-align: right;">0</td>
+</tr>
+</tbody>
+</table>
+<h2 id="appendix-c-swc-registry-compliance">Appendix C: SWC Registry Compliance</h2>
+<table>
+<thead>
+<tr>
+<th>SWC ID</th>
+<th>Title</th>
+<th>Status</th>
+<th>Finding(s)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h2 id="appendix-d-owasp-smart-contract-top-10">Appendix D: OWASP Smart Contract Top 10</h2>
+<table>
+<thead>
+<tr>
+<th>Rank</th>
+<th>Category</th>
+<th>Status</th>
+<th>Findings</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h2 id="appendix-e-glossary">Appendix E: Glossary</h2>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Definition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Reentrancy</strong></td>
+<td>A vulnerability where an external call allows execution to re-enter the calling contract before the first execution completes</td>
+</tr>
+<tr>
+<td><strong>Integer Overflow</strong></td>
+<td>When an arithmetic operation results in a value larger than can be stored in the variable</td>
+</tr>
+<tr>
+<td><strong>Front-running</strong></td>
+<td>Exploiting knowledge of pending transactions to gain an advantage</td>
+</tr>
+<tr>
+<td><strong>Flash Loan Attack</strong></td>
+<td>Using uncollateralized loans within a single transaction to manipulate protocols</td>
+</tr>
+<tr>
+<td><strong>Oracle Manipulation</strong></td>
+<td>Attacking price feeds or external data sources to influence contract behavior</td>
+</tr>
+<tr>
+<td><strong>Access Control</strong></td>
+<td>Mechanisms that restrict who can execute sensitive functions</td>
+</tr>
+</tbody>
+</table>
+<h2 id="appendix-f-audit-trail">Appendix F: Audit Trail</h2>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Timestamp</th>
+<th>Hash</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Contract Snapshot</td>
+<td>2026-01-24</td>
+<td><code>N/A</code></td>
+</tr>
+<tr>
+<td>Analysis Started</td>
+<td>2026-01-24</td>
+<td>--</td>
+</tr>
+<tr>
+<td>Analysis Completed</td>
+<td>2026-01-24 21:19:26</td>
+<td>--</td>
+</tr>
+<tr>
+<td>Report Generated</td>
+<td>2026-01-24 21:19:26</td>
+<td>--</td>
+</tr>
+<tr>
+<td>Report Hash</td>
+<td>2026-01-24 21:19:26</td>
+<td><code>N/A</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h1 id="disclaimer">Disclaimer</h1>
+<p>This audit report is provided on an "AS IS" basis without warranties of any kind, whether express or implied. The findings and recommendations represent the auditor's professional opinion based on the scope and methodology described.</p>
+<p><strong>Limitations:</strong>
+- This audit does not guarantee the absence of vulnerabilities
+- Smart contract security is an evolving field
+- New vulnerabilities may be discovered post-audit
+- Economic and governance attacks may not be fully modeled
+- The client is responsible for implementing and testing fixes</p>
+<p><strong>AI Disclosure:</strong> Sections labeled as "AI-Generated" or "AI Analysis" were produced using large language models (mistral:latest). These AI-generated insights are supplementary and should be reviewed by qualified security professionals. AI outputs may contain inaccuracies and are provided for informational purposes only.</p>
+<hr />
+<div class="footer" style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #ccc;">
+
+**Powered by [MIESC](https://github.com/fboiero/MIESC)**
+
+Multi-layer Intelligent Evaluation for Smart Contracts
+
+*Report generated: 2026-01-24 21:19:26*
+
+*Report Version: 1.0*
+
+</div>
+    <script>
+        // Auto-enhance severity badges
+        document.querySelectorAll('td, strong').forEach(el => {
+            const text = el.textContent.trim();
+            if (['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'INFO'].includes(text)) {
+                el.innerHTML = '<span class="severity-' + text.toLowerCase() + '">' + text + '</span>';
+            }
+        });
+    </script>
+</body>
+</html>
