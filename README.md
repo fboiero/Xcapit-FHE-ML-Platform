@@ -189,6 +189,25 @@ python scripts/deploy_contracts.py --network arbitrum-one
 - **ModelRegistry**: Register models, save checkpoints, track training history
 - **ComputationVerifier**: Audit trail for predictions, GDPR/HIPAA compliance
 
+## Live Demo & Dashboard
+
+Try the platform live at **[https://xcapit-privacy.vercel.app](https://xcapit-privacy.vercel.app)**
+
+The dashboard includes:
+- **Interactive Demos**: Watch FHE encryption and multi-party ML collaboration in action
+- **Governance Dashboard**: Blockchain-backed audit trail, voting system, contribution tracking
+- **Compliance Dashboard**: Automated GDPR/HIPAA/SOC2/PCI-DSS verification
+- **Data Quality Score**: Quality metrics without accessing underlying data
+- **Multi-language Support**: Spanish and English
+
+### Running the Dashboard Locally
+
+```bash
+cd dashboard
+npm install
+npm run dev
+```
+
 ## Examples
 
 See the [examples/](examples/) directory:

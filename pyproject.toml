@@ -34,6 +34,16 @@ api = [
     "uvicorn>=0.24.0",
     "pydantic>=2.5.0",
 ]
+postgres = [
+    "psycopg2-binary>=2.9.9",
+]
+production = [
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "pydantic>=2.5.0",
+    "psycopg2-binary>=2.9.9",
+    "gunicorn>=21.0.0",
+]
 
 [project.scripts]
 xcapit-fhe = "sdk.cli:main"
@@ -42,3 +52,8 @@ xcapit-fhe-api = "sdk.api.server:main"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["sdk*"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-v"

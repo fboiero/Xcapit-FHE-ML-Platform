@@ -166,7 +166,8 @@ class FHEContextManager:
             public_ctx.make_context_public()
             return public_ctx.serialize()
 
-        return self._context.serialize()
+        # TenSEAL requires explicit flag to save secret key
+        return self._context.serialize(save_secret_key=True)
 
     def load(self, serialized: bytes) -> ts.Context:
         """Load context from serialized bytes.

@@ -3,19 +3,8 @@
 import sys
 from pathlib import Path
 
-# Add paths for importing blockchain modules without triggering sdk/__init__.py
+# Add project root to sys.path
 project_root = Path(__file__).parent.parent
-sdk_blockchain_path = project_root / "sdk" / "blockchain"
-
-# Temporarily modify sys.modules to prevent sdk package import
-if "sdk" not in sys.modules:
-    # Create a dummy sdk module to prevent full import
-    import types
-    sdk_module = types.ModuleType("sdk")
-    sdk_module.blockchain = types.ModuleType("sdk.blockchain")
-    sys.modules["sdk"] = sdk_module
-    sys.modules["sdk.blockchain"] = sdk_module.blockchain
-
 sys.path.insert(0, str(project_root))
 
 import pytest
@@ -23,34 +12,19 @@ import numpy as np
 from unittest.mock import Mock, MagicMock, patch
 from datetime import datetime
 
-# Import using importlib to bypass sdk/__init__.py
-import importlib.util
-
-def load_module_from_path(module_name, file_path):
-    spec = importlib.util.spec_from_file_location(module_name, file_path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[module_name] = module
-    spec.loader.exec_module(module)
-    return module
-
-# Load connector first (registry depends on it)
-connector_module = load_module_from_path(
-    "sdk.blockchain.connector",
-    sdk_blockchain_path / "connector.py"
+# Import blockchain modules directly from sdk
+from sdk.blockchain import connector as connector_module
+from sdk.blockchain.connector import (
+    BlockchainConnector,
+    Network,
+    NetworkConfig,
+    NETWORK_CONFIGS,
 )
-BlockchainConnector = connector_module.BlockchainConnector
-Network = connector_module.Network
-NetworkConfig = connector_module.NetworkConfig
-NETWORK_CONFIGS = connector_module.NETWORK_CONFIGS
-
-# Load registry
-registry_module = load_module_from_path(
-    "sdk.blockchain.registry",
-    sdk_blockchain_path / "registry.py"
+from sdk.blockchain.registry import (
+    ModelRegistryClient,
+    ModelInfo,
+    CheckpointInfo,
 )
-ModelRegistryClient = registry_module.ModelRegistryClient
-ModelInfo = registry_module.ModelInfo
-CheckpointInfo = registry_module.CheckpointInfo
 
 
 class TestNetworkConfig:

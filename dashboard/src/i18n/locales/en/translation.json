@@ -1,0 +1,631 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "view": "View",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "search": "Search",
+    "filter": "Filter",
+    "all": "All",
+    "none": "None",
+    "yes": "Yes",
+    "no": "No",
+    "active": "Active",
+    "inactive": "Inactive",
+    "pending": "Pending",
+    "completed": "Completed",
+    "failed": "Failed",
+    "status": "Status",
+    "actions": "Actions",
+    "details": "Details",
+    "settings": "Settings",
+    "logout": "Logout",
+    "login": "Login",
+    "register": "Register",
+    "dashboard": "Dashboard",
+    "home": "Home",
+    "new": "New"
+  },
+  "landing": {
+    "nav": {
+      "demos": "Demos",
+      "login": "Login",
+      "register": "Register"
+    },
+    "hero": {
+      "title": "Machine Learning on",
+      "titleHighlight": "Encrypted Data",
+      "subtitle": "The first platform that allows companies to collaborate and train ML models without exposing their data. Uses Fully Homomorphic Encryption (FHE) to process information that always remains encrypted.",
+      "watchDemo": "Watch Interactive Demo",
+      "startFree": "Start Free",
+      "badge": "Production-Ready FHE-ML Platform",
+      "trustedBy": "Enterprise-grade technology:",
+      "fheEncryption": "FHE Encryption",
+      "gdprCompliant": "GDPR Compliant",
+      "auditTrail": "Blockchain Audit",
+      "liveDemo": "Live Demo",
+      "videoCta": "Consortium in action",
+      "dataPrivacy": "Data Privacy",
+      "companies": "Companies can collaborate"
+    },
+    "features": {
+      "title": "How Xcapit Privacy Works",
+      "subtitle": "Our technology enables data processing without anyone - not even the server - being able to see the original information.",
+      "encrypted": {
+        "title": "Always Encrypted Data",
+        "description": "Your data remains encrypted at all times, even during processing. No one can see your original information."
+      },
+      "privateML": {
+        "title": "Private Machine Learning",
+        "description": "Run ML models on encrypted data. Get predictions without exposing sensitive information."
+      },
+      "secureCollab": {
+        "title": "Secure Collaboration",
+        "description": "Multiple companies can collaborate and train joint models without revealing their data to each other."
+      }
+    },
+    "useCases": {
+      "title": "Use Cases",
+      "subtitle": "Industries where data collaboration is valuable but privacy is critical.",
+      "viewDemo": "View demo",
+      "fraud": {
+        "title": "Bank Fraud Detection",
+        "description": "Banks collaborate to detect fraud without sharing customer data. ML on encrypted transactions."
+      },
+      "health": {
+        "title": "Health Research",
+        "description": "Hospitals share anonymized data for medical research without violating patient privacy."
+      }
+    },
+    "phases": {
+      "title": "What We've Built",
+      "subtitle": "A complete SDK and a production-ready platform.",
+      "ready": "Ready",
+      "sdk": {
+        "title": "FHE Encryption SDK",
+        "description": "Complete implementation of the CKKS scheme for homomorphic encryption."
+      },
+      "ml": {
+        "title": "ML Models on FHE",
+        "description": "Linear and logistic regression running on encrypted data."
+      },
+      "api": {
+        "title": "REST API and Dashboard",
+        "description": "Web interface to manage consortiums and visualize results."
+      },
+      "blockchain": {
+        "title": "Blockchain Integration",
+        "description": "Model registration and auditing on Arbitrum for traceability."
+      },
+      "governance": {
+        "title": "Governance & Trust",
+        "description": "Voting system, contributions and immutable audit trail."
+      }
+    },
+    "demoVideos": {
+      "title": "Demo Videos",
+      "subtitle": "Watch the platform in action",
+      "videoNotSupported": "Your browser does not support HTML5 videos.",
+      "viewAllDemos": "View all demos",
+      "tags": {
+        "consortium": "Consortium",
+        "governance": "Governance",
+        "platform": "Platform"
+      },
+      "consortium": {
+        "title": "Consortium Demo",
+        "description": "Complete flow of consortium creation, data upload and collaborative training."
+      },
+      "governance": {
+        "title": "Governance Demo",
+        "description": "Decentralized governance system: contributions, proposals and audit trail."
+      },
+      "platform": {
+        "title": "Platform Demo",
+        "description": "Tour of the web platform and its main features."
+      }
+    },
+    "contact": {
+      "title": "Collaborate with us",
+      "subtitle": "Tell us about your use case and we'll help you implement private ML in your organization.",
+      "fullName": "Full name",
+      "namePlaceholder": "Your name",
+      "company": "Company",
+      "companyPlaceholder": "Your company name",
+      "corporateEmail": "Corporate email",
+      "emailPlaceholder": "you@company.com",
+      "phone": "Phone",
+      "position": "Position",
+      "positionPlaceholder": "CTO, Data Engineer, etc.",
+      "industry": "Industry",
+      "selectIndustry": "Select your industry",
+      "useCase": "Main use case",
+      "selectUseCase": "Select a use case",
+      "tellUsMore": "Tell us more about your project",
+      "messagePlaceholder": "Describe the problem you want to solve, what data you handle, who you'd like to collaborate with...",
+      "requestInfo": "Request information",
+      "sending": "Sending...",
+      "successMessage": "Thank you! We'll contact you soon.",
+      "errorMessage": "Error sending. Please try again or contact us at consorcios@xcapit.com",
+      "alsoContact": "You can also contact us at",
+      "industries": {
+        "financial": "Financial Services",
+        "health": "Health and Medicine",
+        "insurance": "Insurance",
+        "government": "Government",
+        "technology": "Technology",
+        "retail": "Retail / E-commerce",
+        "logistics": "Logistics",
+        "telecom": "Telecommunications",
+        "other": "Other"
+      },
+      "useCases": {
+        "fraud": "Fraud detection",
+        "credit": "Credit risk models",
+        "medical": "Medical data analysis",
+        "segmentation": "Customer segmentation",
+        "demand": "Demand prediction",
+        "other": "Other"
+      }
+    },
+    "cta": {
+      "title": "Ready to collaborate securely?",
+      "subtitle": "Register your company and start training ML models without exposing sensitive data.",
+      "createAccount": "Create Free Account",
+      "contactUs": "Contact Us"
+    },
+    "footer": {
+      "copyright": "2024 Xcapit Privacy. Privacy technology for the future."
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Login",
+      "subtitle": "Enter your API Key to access the dashboard.",
+      "apiKey": "API Key",
+      "apiKeyPlaceholder": "xcp_...",
+      "apiKeyHelp": "Your API Key was generated when you registered your company.",
+      "verifying": "Verifying...",
+      "invalidKey": "Invalid API Key. Please verify it's correct.",
+      "noAccount": "Don't have an account?",
+      "registerCompany": "Register company",
+      "wantToSee": "Want to see how it works?",
+      "watchDemo": "Watch Interactive Demo",
+      "trySandbox": "Try Sandbox Demo"
+    },
+    "register": {
+      "title": "Register Company",
+      "subtitle": "Create your account to start collaborating securely.",
+      "companyName": "Company Name",
+      "companyPlaceholder": "Your company",
+      "corporateEmail": "Corporate Email",
+      "emailPlaceholder": "contact@company.com",
+      "registering": "Registering...",
+      "registerCompany": "Register Company",
+      "hasAccount": "Already have an account?",
+      "login": "Login",
+      "wantToSeeFirst": "Want to see how it works first?",
+      "watchDemo": "Watch Interactive Demo",
+      "success": {
+        "title": "Registration successful!",
+        "subtitle": "Your API Key has been generated. Save it in a safe place.",
+        "yourApiKey": "Your API Key",
+        "redirecting": "Redirecting to dashboard..."
+      }
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome back",
+    "overview": "Overview",
+    "consortiums": {
+      "title": "My Consortiums",
+      "create": "Create Consortium",
+      "join": "Join Consortium",
+      "empty": "You haven't joined any consortiums yet",
+      "members": "members",
+      "models": "models"
+    },
+    "stats": {
+      "activeConsortiums": "Active Consortiums",
+      "trainedModels": "Trained Models",
+      "dataContributions": "Data Contributions",
+      "pendingVotes": "Pending Votes"
+    },
+    "recentActivity": "Recent Activity"
+  },
+  "consortium": {
+    "create": {
+      "title": "Create New Consortium",
+      "name": "Consortium Name",
+      "description": "Description",
+      "industry": "Industry",
+      "minMembers": "Minimum Members",
+      "submit": "Create Consortium"
+    },
+    "detail": {
+      "members": "Members",
+      "models": "Models",
+      "data": "Data Contributions",
+      "governance": "Governance",
+      "settings": "Settings"
+    },
+    "join": {
+      "title": "Join Consortium",
+      "inviteCode": "Invite Code",
+      "submit": "Join"
+    },
+    "upload": {
+      "title": "Upload Encrypted Data",
+      "dragDrop": "Drag and drop your file here",
+      "or": "or",
+      "browse": "Browse files",
+      "encrypting": "Encrypting locally...",
+      "uploading": "Uploading encrypted data...",
+      "success": "Data uploaded successfully"
+    }
+  },
+  "governance": {
+    "title": "Governance",
+    "description": "Decentralized governance with blockchain-verified decisions",
+    "tabs": {
+      "contributions": "Contributions",
+      "proposals": "Proposals",
+      "auditTrail": "Audit Trail",
+      "rewards": "Rewards"
+    },
+    "contributions": {
+      "title": "Contribution Proofs",
+      "description": "Blockchain-verified record of data contributions",
+      "totalContributions": "Total Contributions",
+      "yourContribution": "Your Contribution",
+      "lastUpdated": "Last Updated"
+    },
+    "proposals": {
+      "title": "Active Proposals",
+      "create": "Create Proposal",
+      "vote": "Vote",
+      "approve": "Approve",
+      "reject": "Reject",
+      "abstain": "Abstain",
+      "votesFor": "Votes For",
+      "votesAgainst": "Votes Against",
+      "quorum": "Quorum",
+      "deadline": "Deadline",
+      "types": {
+        "addMember": "Add Member",
+        "removeMember": "Remove Member",
+        "changeModel": "Change Model",
+        "updateSettings": "Update Settings"
+      }
+    },
+    "auditTrail": {
+      "title": "Audit Trail",
+      "description": "Immutable log of all consortium operations",
+      "timestamp": "Timestamp",
+      "action": "Action",
+      "actor": "Actor",
+      "details": "Details",
+      "txHash": "Transaction Hash"
+    },
+    "rewards": {
+      "title": "Fair Revenue Split",
+      "description": "Automatic value distribution based on contribution",
+      "totalPool": "Total Pool",
+      "yourShare": "Your Share",
+      "claimRewards": "Claim Rewards"
+    }
+  },
+  "compliance": {
+    "title": "Compliance Dashboard",
+    "description": "Automatic GDPR/HIPAA/SOC2/PCI-DSS verification without accessing real data",
+    "overallScore": "Overall Compliance Score",
+    "frameworks": {
+      "gdpr": "GDPR",
+      "hipaa": "HIPAA",
+      "soc2": "SOC2",
+      "pciDss": "PCI-DSS"
+    },
+    "status": {
+      "compliant": "Compliant",
+      "partiallyCompliant": "Partially Compliant",
+      "nonCompliant": "Non-Compliant",
+      "notAssessed": "Not Assessed"
+    },
+    "controls": {
+      "title": "Controls",
+      "dataEncryption": "Data Encryption at Rest",
+      "consentManagement": "Consent Management",
+      "rightToErasure": "Right to Erasure",
+      "dataPortability": "Data Portability",
+      "accessControl": "Access Control",
+      "auditLogging": "Audit Logging"
+    },
+    "runCheck": "Run Compliance Check",
+    "generateReport": "Generate Report",
+    "lastAssessment": "Last Assessment"
+  },
+  "dataQuality": {
+    "title": "Data Quality Score",
+    "description": "Quality metrics calculated on encrypted data without content access",
+    "overallScore": "Overall Quality Score",
+    "dimensions": {
+      "completeness": "Completeness",
+      "consistency": "Consistency",
+      "accuracy": "Accuracy",
+      "timeliness": "Timeliness",
+      "uniqueness": "Uniqueness"
+    },
+    "columns": {
+      "title": "Column Analysis",
+      "name": "Column Name",
+      "nullPercentage": "Null %",
+      "distinctValues": "Distinct Values",
+      "distribution": "Distribution"
+    },
+    "alerts": {
+      "title": "Alerts",
+      "description": "Automatically detected issues"
+    },
+    "recommendations": "Recommendations",
+    "analyze": "Analyze Data",
+    "fheVerified": "FHE Verified"
+  },
+  "marketplace": {
+    "title": "Model Marketplace",
+    "description": "Pre-trained models by industry with one-click deploy",
+    "categories": {
+      "all": "All Categories",
+      "finance": "Finance",
+      "healthcare": "Healthcare",
+      "retail": "Retail",
+      "insurance": "Insurance"
+    },
+    "models": {
+      "fraudDetection": {
+        "title": "Fraud Detection",
+        "description": "Real-time fraud detection model trained on financial transactions"
+      },
+      "creditScoring": {
+        "title": "Credit Scoring",
+        "description": "Credit risk assessment model with privacy-preserving features"
+      },
+      "medicalDiagnosis": {
+        "title": "Medical Diagnosis",
+        "description": "Disease prediction model trained on anonymized patient data"
+      },
+      "customerChurn": {
+        "title": "Customer Churn",
+        "description": "Predict customer churn with high accuracy"
+      }
+    },
+    "metrics": {
+      "accuracy": "Accuracy",
+      "f1Score": "F1 Score",
+      "trainingSamples": "Training Samples",
+      "rating": "Rating"
+    },
+    "deploy": "Deploy to Consortium",
+    "myModels": "My Models",
+    "publish": "Publish Model",
+    "revenue": "Revenue Generated"
+  },
+  "sandbox": {
+    "title": "Sandbox Mode",
+    "description": "Safe testing environment with synthetic data",
+    "createSandbox": "Create Sandbox",
+    "templates": {
+      "title": "Templates",
+      "finance": "Finance",
+      "healthcare": "Healthcare",
+      "retail": "Retail"
+    },
+    "config": {
+      "datasetSize": "Dataset Size",
+      "complexity": "Complexity Level",
+      "features": "Features to Include"
+    },
+    "generate": "Generate",
+    "syntheticData": {
+      "title": "Synthetic Data Preview",
+      "description": "Statistically similar but completely synthetic data",
+      "noPii": "No PII"
+    },
+    "experiments": {
+      "title": "Experiments",
+      "create": "New Experiment",
+      "algorithm": "Algorithm",
+      "parameters": "Parameters",
+      "run": "Run Experiment",
+      "results": "Results",
+      "compare": "Compare Experiments",
+      "promoteToProduction": "Promote to Production"
+    },
+    "zeroRiskTesting": "Zero Risk Testing"
+  },
+  "federated": {
+    "title": "Federated Inference",
+    "description": "Predictions without data movement - the model travels to the data",
+    "architecture": {
+      "title": "Architecture",
+      "description": "Data never leaves your organization"
+    },
+    "endpoints": {
+      "title": "Inference Endpoints",
+      "create": "Create Endpoint",
+      "batchSize": "Batch Size",
+      "latencyReq": "Latency Requirements",
+      "edgeNodes": "Edge Nodes"
+    },
+    "prediction": {
+      "title": "Make Prediction",
+      "input": "Input Data",
+      "predict": "Predict",
+      "result": "Encrypted Result",
+      "onlyOwnerDecrypt": "Only the data owner can decrypt"
+    },
+    "monitoring": {
+      "title": "Monitoring",
+      "latency": "Latency",
+      "throughput": "Throughput",
+      "errors": "Errors",
+      "healthCheck": "Health Check"
+    },
+    "dataNeverLeaves": "Data Never Leaves"
+  },
+  "explainability": {
+    "title": "Model Explainability",
+    "description": "Understand AI decisions without revealing training data",
+    "tabs": {
+      "overview": "Overview",
+      "featureImportance": "Feature Importance",
+      "explanations": "Explanations",
+      "insights": "Model Insights"
+    },
+    "featureImportance": {
+      "title": "Feature Importance",
+      "description": "Calculated without seeing original data"
+    },
+    "explanations": {
+      "title": "Individual Explanations",
+      "types": {
+        "shap": "SHAP Values",
+        "decisionPath": "Decision Path",
+        "counterfactual": "Counterfactual",
+        "summary": "Summary"
+      }
+    },
+    "insights": {
+      "title": "Model Insights",
+      "patterns": "Detected Patterns",
+      "biasAnalysis": "Bias Analysis",
+      "fairnessMetrics": "Fairness Metrics"
+    },
+    "privacyPreserving": "Privacy-Preserving Explanations"
+  },
+  "competitive": {
+    "title": "Competitive Insights",
+    "description": "Anonymous industry benchmarks without revealing your data",
+    "selectIndustry": "Select Industry",
+    "industries": {
+      "finance": "Finance",
+      "healthcare": "Healthcare",
+      "retail": "Retail"
+    },
+    "benchmarks": {
+      "title": "Industry Benchmarks",
+      "metric": "Metric",
+      "p25": "25th Percentile",
+      "p50": "Median",
+      "p75": "75th Percentile",
+      "p90": "90th Percentile"
+    },
+    "comparison": {
+      "title": "Compare My Metrics",
+      "input": "Enter Your Values",
+      "compare": "Compare",
+      "yourPosition": "Your Position",
+      "strengths": "Strengths",
+      "improvements": "Areas for Improvement"
+    },
+    "trends": {
+      "title": "Industry Trends",
+      "evolution": "Temporal Evolution",
+      "predictions": "Future Predictions",
+      "opportunities": "Detected Opportunities"
+    },
+    "anonymous": "100% Anonymous"
+  },
+  "ensemble": {
+    "title": "Multi-Model Ensemble",
+    "description": "Combine models from different consortiums for better predictions",
+    "createEnsemble": "Create Ensemble",
+    "name": "Ensemble Name",
+    "type": {
+      "title": "Ensemble Type",
+      "voting": "Voting",
+      "averaging": "Averaging",
+      "weighted": "Weighted",
+      "stacking": "Stacking",
+      "boosting": "Boosting"
+    },
+    "models": {
+      "title": "Models",
+      "add": "Add Model",
+      "weight": "Weight",
+      "source": "Source Consortium"
+    },
+    "activate": "Activate Ensemble",
+    "predict": {
+      "title": "Predict",
+      "input": "Input Data",
+      "result": "Combined Prediction",
+      "compareIndividual": "Compare with Individual Models"
+    },
+    "performance": {
+      "title": "Performance",
+      "accuracy": "Ensemble Accuracy",
+      "vsIndividual": "vs Individual Models",
+      "contribution": "Model Contribution"
+    },
+    "betterTogether": "Better Together"
+  },
+  "demos": {
+    "title": "Xcapit Privacy Platform",
+    "subtitle": "The platform where companies collaborate with data without sharing it. Explore the demos of our enterprise features.",
+    "featured": {
+      "title": "Platform Overview",
+      "description": "Watch how the complete FHE-ML platform works in action",
+      "consortium": {
+        "title": "Consortium Creation",
+        "description": "Create and manage secure data-sharing consortiums between competing companies"
+      },
+      "governance": {
+        "title": "Governance Dashboard",
+        "description": "Blockchain-backed audit trail, voting system, and contribution tracking"
+      },
+      "web": {
+        "title": "Web Platform Tour",
+        "description": "Complete walkthrough of the privacy-preserving ML platform interface"
+      }
+    },
+    "tier3": {
+      "title": "Enterprise Features",
+      "description": "Enterprise-ready suite with automatic compliance and simplified onboarding"
+    },
+    "tier4": {
+      "title": "Differentiators",
+      "description": "Unique capabilities that don't exist in the current market"
+    },
+    "clientsDemo": {
+      "title": "FHE Multi-Client Demo",
+      "description": "Experience how two competing companies collaborate on ML training without exposing their sensitive data. Watch the complete FHE encryption and federated learning process in action.",
+      "cta": "Run Interactive Demo",
+      "feature1": "Real FHE Encryption",
+      "feature2": "Multi-Party Collaboration",
+      "feature3": "Random Forest ML"
+    },
+    "watchDemo": "Watch Demo",
+    "tryIt": "Try It",
+    "footer": "All demos work with simulated data. Full functionality requires backend integration."
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "useCases": "Use Cases",
+    "governance": "Governance",
+    "technicalDemo": "Technical Demo",
+    "createConsortium": "Create Consortium",
+    "needHelp": "Need help?",
+    "helpDescription": "Read our documentation or contact us.",
+    "contactUs": "Contact Us",
+    "closeSession": "Logout"
+  }
+}

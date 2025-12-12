@@ -27,3 +27,18 @@ htmlcov/
 .ipynb_checkpoints
 *.log
 .DS_Store
+
+# Virtual environment
+.venv/
+
+# Temporary recordings
+governance_*/
+recordings/*.mp4
+*.gif
+
+# Node modules
+node_modules/
+
+# Data files
+data/*.csv
+data/*.npy

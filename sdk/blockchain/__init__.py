@@ -1,8 +1,8 @@
-"""Blockchain integration for model verification.
+"""Blockchain integration for model verification and governance.
 
 This module provides blockchain connectivity and smart contract
-interaction for registering ML models and verifying computations
-on Arbitrum and other EVM-compatible chains.
+interaction for registering ML models, verifying computations,
+and consortium governance on Arbitrum and other EVM-compatible chains.
 """
 
 from .connector import (
@@ -16,6 +16,19 @@ from .registry import (
     ModelInfo,
     CheckpointInfo,
 )
+from .governance import (
+    GovernanceClient,
+    ConsortiumStatus,
+    MemberStatus,
+    ProposalType,
+    ProposalStatus,
+    AuditEventType,
+    ConsortiumInfo,
+    MemberInfo,
+    ContributionInfo,
+    ProposalInfo,
+    AuditEvent,
+)
 
 __all__ = [
     # Connector
@@ -27,4 +40,16 @@ __all__ = [
     "ModelRegistryClient",
     "ModelInfo",
     "CheckpointInfo",
+    # Governance
+    "GovernanceClient",
+    "ConsortiumStatus",
+    "MemberStatus",
+    "ProposalType",
+    "ProposalStatus",
+    "AuditEventType",
+    "ConsortiumInfo",
+    "MemberInfo",
+    "ContributionInfo",
+    "ProposalInfo",
+    "AuditEvent",
 ]

@@ -1,5 +1,9 @@
 """Tests for FHE models."""
 
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -400,9 +404,10 @@ class TestLogisticRegression:
         probs = model.predict_proba(encrypted.X)
         probs_decrypted = loader.encryptor.decrypt_vector(probs)
 
-        # Probabilities should be between 0 and 1
-        assert np.all(probs_decrypted >= 0)
-        assert np.all(probs_decrypted <= 1)
+        # Probabilities should be between 0 and 1 (with FHE tolerance for approximation errors)
+        # FHE sigmoid approximation can produce tiny negative values like -1e-10
+        assert np.all(probs_decrypted >= -1e-6), f"Min prob: {probs_decrypted.min()}"
+        assert np.all(probs_decrypted <= 1 + 1e-6), f"Max prob: {probs_decrypted.max()}"
 
     def test_predict_classes(self, binary_data, loader):
         """Test class prediction."""

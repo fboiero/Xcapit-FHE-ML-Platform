@@ -19,9 +19,22 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
-from fastapi import FastAPI, HTTPException, UploadFile, File, BackgroundTasks
+from fastapi import FastAPI, HTTPException, UploadFile, File, BackgroundTasks, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
+
+from .auth import (
+    require_api_key,
+    require_read,
+    require_write,
+    optional_auth,
+    check_rate_limit,
+    rate_limiter,
+    create_api_key,
+    list_api_keys,
+    revoke_api_key,
+)
 
 # SDK imports
 from ..models import (
@@ -93,40 +106,127 @@ class ErrorResponse(BaseModel):
     detail: Optional[str] = None
 
 
-# ============ In-Memory Storage ============
+# ============ Database Storage ============
+
+from .database import get_database, DatabaseManager
+
+# In-memory cache for loaded model instances (optional, for performance)
+_model_cache: Dict[str, Any] = {}
+
+
+def get_db() -> DatabaseManager:
+    """Get database instance."""
+    return get_database()
+
 
 class ModelStore:
-    """Simple in-memory model storage."""
+    """Database-backed model storage with optional caching."""
 
-    def __init__(self):
-        self.models: Dict[str, Any] = {}
-        self.metadata: Dict[str, Dict] = {}
+    def __init__(self, use_cache: bool = True):
+        self.use_cache = use_cache
+        self._cache: Dict[str, Any] = {}
 
     def save(self, model_id: str, model: Any, metadata: Dict) -> None:
-        self.models[model_id] = model
-        self.metadata[model_id] = metadata
+        """Save model to database."""
+        db = get_db()
+        db.save_model(
+            model_id=model_id,
+            model_type=metadata.get("model_type", "unknown"),
+            config=metadata.get("config", {}),
+            status=metadata.get("status", "created"),
+            params=model.get_params() if hasattr(model, "get_params") else None,
+            n_features=metadata.get("n_features"),
+            feature_names=metadata.get("feature_names"),
+            metadata={
+                "created_at": metadata.get("created_at"),
+                "trained_at": metadata.get("trained_at"),
+            },
+        )
+        if self.use_cache:
+            self._cache[model_id] = model
 
     def get(self, model_id: str) -> tuple:
-        if model_id not in self.models:
+        """Get model and metadata from database."""
+        db = get_db()
+        record = db.get_model(model_id)
+
+        if not record:
             raise KeyError(f"Model {model_id} not found")
-        return self.models[model_id], self.metadata[model_id]
+
+        # Check cache first
+        if self.use_cache and model_id in self._cache:
+            model = self._cache[model_id]
+        else:
+            # Reconstruct model from params
+            model = self._reconstruct_model(record)
+            if self.use_cache:
+                self._cache[model_id] = model
+
+        metadata = {
+            "model_type": record.model_type,
+            "status": record.status,
+            "created_at": record.created_at.isoformat() if record.created_at else None,
+            "config": record.config,
+            "trained_at": record.trained_at.isoformat() if record.trained_at else None,
+        }
+
+        return model, metadata
+
+    def _reconstruct_model(self, record) -> Any:
+        """Reconstruct model instance from database record."""
+        model = create_model(record.model_type, record.config)
+
+        # Load params if available
+        params = get_db().get_model_params(record.id)
+        if params:
+            model.set_params(params)
+
+        return model
 
     def delete(self, model_id: str) -> bool:
-        if model_id in self.models:
-            del self.models[model_id]
-            del self.metadata[model_id]
-            return True
-        return False
+        """Delete model from database."""
+        if self.use_cache and model_id in self._cache:
+            del self._cache[model_id]
+        return get_db().delete_model(model_id)
 
     def list_models(self) -> List[Dict]:
+        """List all models from database."""
+        db = get_db()
+        records = db.list_models()
         return [
-            {"model_id": mid, **meta}
-            for mid, meta in self.metadata.items()
+            {
+                "model_id": r.id,
+                "model_type": r.model_type,
+                "status": r.status,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+                "config": r.config,
+            }
+            for r in records
         ]
 
+    def update_after_training(
+        self,
+        model_id: str,
+        model: Any,
+        epochs: int,
+        final_loss: Optional[float],
+    ) -> None:
+        """Update model after training completion."""
+        db = get_db()
+        db.update_model_status(
+            model_id=model_id,
+            status="trained",
+            trained_at=datetime.utcnow(),
+            training_epochs=epochs,
+            final_loss=final_loss,
+            params=model.get_params() if hasattr(model, "get_params") else None,
+        )
+        if self.use_cache:
+            self._cache[model_id] = model
 
-# Global store
-model_store = ModelStore()
+
+# Global store (now database-backed)
+model_store = ModelStore(use_cache=True)
 
 
 # ============ FastAPI App ============
@@ -150,6 +250,46 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # Include consortium routes
+    from .consortium_routes import router as consortium_router
+    app.include_router(consortium_router, prefix="/api/v1")
+
+    # Include governance routes (TIER 2)
+    from .governance_routes import router as governance_router
+    app.include_router(governance_router, prefix="/api/v1")
+
+    # Include compliance routes (TIER 3)
+    from .compliance_routes import router as compliance_router
+    app.include_router(compliance_router, prefix="/api/v1")
+
+    # Include data quality routes (TIER 3)
+    from .data_quality_routes import router as data_quality_router
+    app.include_router(data_quality_router, prefix="/api/v1")
+
+    # Include marketplace routes (TIER 3)
+    from .marketplace_routes import router as marketplace_router
+    app.include_router(marketplace_router, prefix="/api/v1")
+
+    # Include sandbox routes (TIER 3)
+    from .sandbox_routes import router as sandbox_router
+    app.include_router(sandbox_router, prefix="/api/v1")
+
+    # Include federated inference routes (TIER 4)
+    from .federated_routes import router as federated_router
+    app.include_router(federated_router, prefix="/api/v1")
+
+    # Include explainability routes (TIER 4)
+    from .explainability_routes import router as explainability_router
+    app.include_router(explainability_router, prefix="/api/v1")
+
+    # Include competitive insights routes (TIER 4)
+    from .competitive_routes import router as competitive_router
+    app.include_router(competitive_router, prefix="/api/v1")
+
+    # Include ensemble routes (TIER 4)
+    from .ensemble_routes import router as ensemble_router
+    app.include_router(ensemble_router, prefix="/api/v1")
 
     return app
 
@@ -228,11 +368,37 @@ async def health():
     )
 
 
+@app.get("/health/detailed")
+async def health_detailed():
+    """Detailed health check with system metrics."""
+    from ..monitoring import get_health_status
+    status = get_health_status()
+    return {
+        "status": status.status,
+        "checks": status.checks,
+        "uptime_seconds": round(status.uptime_seconds, 2),
+        "version": "0.1.0",
+        "timestamp": datetime.utcnow().isoformat(),
+    }
+
+
+@app.get("/metrics")
+async def get_metrics_endpoint():
+    """Get system metrics."""
+    from ..monitoring import get_metrics
+    metrics = get_metrics()
+    return metrics.get_all_metrics()
+
+
 # ---- Model Management ----
 
 @app.post("/models", response_model=ModelResponse)
-async def create_model_endpoint(request: ModelCreateRequest):
-    """Create a new model instance."""
+async def create_model_endpoint(
+    request: ModelCreateRequest,
+    auth: dict = Depends(require_write),
+):
+    """Create a new model instance (requires write permission)."""
+    check_rate_limit(auth)
     try:
         model = create_model(request.model_type, request.config)
         model_id = generate_model_id()
@@ -259,14 +425,21 @@ async def create_model_endpoint(request: ModelCreateRequest):
 
 
 @app.get("/models", response_model=List[Dict])
-async def list_models():
-    """List all models."""
+async def list_models(
+    auth: dict = Depends(require_read),
+):
+    """List all models (requires read permission)."""
+    check_rate_limit(auth)
     return model_store.list_models()
 
 
 @app.get("/models/{model_id}", response_model=ModelResponse)
-async def get_model(model_id: str):
-    """Get model details."""
+async def get_model(
+    model_id: str,
+    auth: dict = Depends(require_read),
+):
+    """Get model details (requires read permission)."""
+    check_rate_limit(auth)
     try:
         model, metadata = model_store.get(model_id)
         return ModelResponse(
@@ -281,16 +454,24 @@ async def get_model(model_id: str):
 
 
 @app.delete("/models/{model_id}")
-async def delete_model(model_id: str):
-    """Delete a model."""
+async def delete_model(
+    model_id: str,
+    auth: dict = Depends(require_write),
+):
+    """Delete a model (requires write permission)."""
+    check_rate_limit(auth)
     if model_store.delete(model_id):
         return {"message": f"Model {model_id} deleted"}
     raise HTTPException(status_code=404, detail=f"Model {model_id} not found")
 
 
 @app.get("/models/{model_id}/params", response_model=ModelParams)
-async def get_model_params(model_id: str):
-    """Get model parameters."""
+async def get_model_params(
+    model_id: str,
+    auth: dict = Depends(require_read),
+):
+    """Get model parameters (requires read permission)."""
+    check_rate_limit(auth)
     try:
         model, metadata = model_store.get(model_id)
         params = model.get_params()
@@ -309,8 +490,13 @@ async def get_model_params(model_id: str):
 # ---- Training ----
 
 @app.post("/models/{model_id}/train", response_model=TrainResponse)
-async def train_model(model_id: str, request: TrainRequest):
-    """Train a model on provided data."""
+async def train_model(
+    model_id: str,
+    request: TrainRequest,
+    auth: dict = Depends(require_write),
+):
+    """Train a model on provided data (requires write permission)."""
+    check_rate_limit(auth)
     try:
         model, metadata = model_store.get(model_id)
     except KeyError:
@@ -322,29 +508,36 @@ async def train_model(model_id: str, request: TrainRequest):
 
         # Train based on model type
         if metadata["model_type"] == "kmeans":
-            model._fit_plaintext(X)
+            model.fit(X)
         else:
             if y is None:
                 raise HTTPException(status_code=400, detail="Target y is required for supervised models")
-            model._fit_plaintext(X, y)
-
-        # Update metadata
-        metadata["status"] = "trained"
-        metadata["trained_at"] = datetime.utcnow().isoformat()
+            model.fit(X, y)
 
         # Get metrics
         final_loss = None
-        if hasattr(model, "history") and model.history.losses:
-            final_loss = float(model.history.losses[-1])
+        epochs = 0
+        if hasattr(model, "history"):
+            epochs = model.history.epochs
+            if model.history.losses:
+                final_loss = float(model.history.losses[-1])
 
         metrics = {}
         if hasattr(model, "inertia"):
             metrics["inertia"] = float(model.inertia)
 
+        # Update model in database
+        model_store.update_after_training(
+            model_id=model_id,
+            model=model,
+            epochs=epochs,
+            final_loss=final_loss,
+        )
+
         return TrainResponse(
             model_id=model_id,
             status="trained",
-            epochs=model.history.epochs if hasattr(model, "history") else 0,
+            epochs=epochs,
             final_loss=final_loss,
             metrics=metrics,
         )
@@ -356,8 +549,16 @@ async def train_model(model_id: str, request: TrainRequest):
 # ---- Prediction ----
 
 @app.post("/models/{model_id}/predict", response_model=PredictResponse)
-async def predict(model_id: str, request: PredictRequest):
-    """Make predictions with a trained model."""
+async def predict(
+    model_id: str,
+    request: PredictRequest,
+    auth: dict = Depends(require_read),
+):
+    """Make predictions with a trained model (requires read permission)."""
+    check_rate_limit(auth)
+    import time
+    start_time = time.perf_counter()
+
     try:
         model, metadata = model_store.get(model_id)
     except KeyError:
@@ -368,16 +569,30 @@ async def predict(model_id: str, request: PredictRequest):
 
     try:
         X = np.array(request.X)
-        predictions = model._predict_plaintext(X)
+        predictions = model.predict_plaintext(X)
 
         # Get probabilities if available
         probabilities = None
-        if hasattr(model, "_predict_proba_plaintext"):
+        if hasattr(model, "predict_proba_plaintext"):
             try:
-                proba = model._predict_proba_plaintext(X)
+                proba = model.predict_proba_plaintext(X)
                 probabilities = proba.tolist()
             except Exception:
                 pass
+
+        # Log prediction with auth info
+        latency_ms = (time.perf_counter() - start_time) * 1000
+        try:
+            get_db().log_prediction(
+                log_id=f"pred_{uuid.uuid4().hex[:12]}",
+                model_id=model_id,
+                n_samples=len(X),
+                latency_ms=latency_ms,
+                encrypted=False,
+                api_key_name=auth.get("name") if auth else None,
+            )
+        except Exception:
+            pass  # Don't fail prediction if logging fails
 
         return PredictResponse(
             model_id=model_id,
@@ -387,6 +602,38 @@ async def predict(model_id: str, request: PredictRequest):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ---- Stats ----
+
+class StatsResponse(BaseModel):
+    models: Dict[str, int]
+    predictions: Dict[str, Any]
+    training_runs: Dict[str, int]
+
+
+@app.get("/stats", response_model=StatsResponse)
+async def get_stats(
+    auth: dict = Depends(require_read),
+):
+    """Get API usage statistics (requires read permission)."""
+    check_rate_limit(auth)
+    stats = get_db().get_stats()
+    return StatsResponse(
+        models=stats["models"],
+        predictions=stats["predictions"],
+        training_runs=stats["training_runs"],
+    )
+
+
+@app.get("/stats/predictions")
+async def get_prediction_stats(
+    model_id: Optional[str] = None,
+    auth: dict = Depends(require_read),
+):
+    """Get detailed prediction statistics (requires read permission)."""
+    check_rate_limit(auth)
+    return get_db().get_prediction_stats(model_id=model_id)
 
 
 # ---- Model Types Info ----
@@ -431,6 +678,80 @@ async def get_model_types():
                 },
             },
         ]
+    }
+
+
+# ---- API Key Management ----
+
+class CreateApiKeyRequest(BaseModel):
+    name: str = Field(..., description="Human-readable name for the key")
+    permissions: Optional[List[str]] = Field(default=["read", "write"], description="Permissions")
+    rate_limit: int = Field(default=100, description="Requests per minute")
+
+
+class ApiKeyResponse(BaseModel):
+    api_key: str = Field(..., description="The API key (save this, it won't be shown again)")
+    key_hash: str = Field(..., description="Key hash for reference")
+    name: str
+    permissions: List[str]
+    rate_limit: int
+
+
+@app.post("/admin/api-keys", response_model=ApiKeyResponse)
+async def admin_create_api_key(
+    request: CreateApiKeyRequest,
+    auth: dict = Depends(require_api_key(permissions=["admin"])),
+):
+    """Create a new API key (requires admin permission)."""
+    api_key, key_hash = create_api_key(
+        name=request.name,
+        permissions=request.permissions,
+        rate_limit=request.rate_limit,
+    )
+    return ApiKeyResponse(
+        api_key=api_key,
+        key_hash=key_hash,
+        name=request.name,
+        permissions=request.permissions or ["read", "write"],
+        rate_limit=request.rate_limit,
+    )
+
+
+@app.get("/admin/api-keys")
+async def admin_list_api_keys(
+    auth: dict = Depends(require_api_key(permissions=["admin"])),
+):
+    """List all API keys (requires admin permission)."""
+    return list_api_keys()
+
+
+@app.delete("/admin/api-keys/{key_hash_prefix}")
+async def admin_revoke_api_key(
+    key_hash_prefix: str,
+    auth: dict = Depends(require_api_key(permissions=["admin"])),
+):
+    """Revoke an API key (requires admin permission)."""
+    if revoke_api_key(key_hash_prefix):
+        return {"message": f"API key revoked"}
+    raise HTTPException(status_code=404, detail="API key not found")
+
+
+@app.get("/auth/me")
+async def get_current_auth(
+    auth: Optional[dict] = Depends(optional_auth),
+):
+    """Get current authentication info."""
+    if auth is None:
+        return {
+            "authenticated": False,
+            "message": "No API key provided. Set X-API-Key header or api_key query param.",
+        }
+    return {
+        "authenticated": True,
+        "name": auth.get("name"),
+        "permissions": auth.get("permissions"),
+        "rate_limit": auth.get("rate_limit"),
+        "remaining_requests": rate_limiter.get_remaining(auth),
     }
 
 

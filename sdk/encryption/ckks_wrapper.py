@@ -122,6 +122,39 @@ class EncryptedMatrix:
         """Get original matrix shape."""
         return self._shape
 
+    def serialize(self) -> dict:
+        """Serialize encrypted matrix to a dict of bytes.
+
+        Returns:
+            Dict with serialized rows and metadata.
+        """
+        return {
+            "rows": [row.serialize() for row in self._rows],
+            "row_shapes": [row.shape for row in self._rows],
+            "shape": self._shape,
+        }
+
+    @classmethod
+    def deserialize(
+        cls,
+        data: dict,
+        context: ts.Context,
+    ) -> "EncryptedMatrix":
+        """Deserialize encrypted matrix from dict.
+
+        Args:
+            data: Dict with serialized rows and metadata.
+            context: TenSEAL context for deserialization.
+
+        Returns:
+            EncryptedMatrix instance.
+        """
+        rows = []
+        for row_bytes, row_shape in zip(data["rows"], data["row_shapes"]):
+            row = EncryptedVector.deserialize(row_bytes, context, row_shape)
+            rows.append(row)
+        return cls(rows, data["shape"])
+
     def __getitem__(self, idx: int) -> EncryptedVector:
         """Get row by index."""
         return self._rows[idx]
