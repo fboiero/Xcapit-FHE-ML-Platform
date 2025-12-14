@@ -1,0 +1,78 @@
+{
+  "timestamp": "2025-12-06T16:50:26.728344",
+  "encryption": {
+    "original_data": [
+      3.14159,
+      2.71828,
+      1.41421,
+      0.57721
+    ],
+    "decrypted_data": [
+      3.141590000970946,
+      2.718279999545435,
+      1.414209999447849,
+      0.5772099986923602
+    ],
+    "error": 1.307639774239533e-09,
+    "context_time_ms": 86.23790740966797,
+    "encrypt_time_ms": 3.4089088439941406,
+    "decrypt_time_ms": 0.6110668182373047,
+    "ciphertext_size_kb": 326.744140625,
+    "poly_modulus_degree": 8192,
+    "scale": "2^40",
+    "security_bits": 128
+  },
+  "prediction": {
+    "input_features": [
+      1.5,
+      2.3,
+      0.7,
+      3.1
+    ],
+    "weights": [
+      0.7560290041068333,
+      1.2452429152674092,
+      0.3406425042332698,
+      1.3025765328937873
+    ],
+    "bias": 0.10298883804215886,
+    "prediction_plaintext": 8.377528054251478,
+    "prediction_fhe": 8.37752950225982,
+    "true_value": 9.06,
+    "error": 1.4480083425638668e-06,
+    "train_time_ms": 0.5421638488769531,
+    "encrypt_time_ms": 1.7690658569335938,
+    "predict_time_ms": 1.852273941040039,
+    "decrypt_time_ms": 0.3132820129394531,
+    "total_time_ms": 3.934621810913086
+  },
+  "healthcare": {
+    "patient_features": {
+      "age": 58,
+      "blood_pressure": "145/92 mmHg",
+      "cholesterol": "248 mg/dL",
+      "glucose": "118 mg/dL",
+      "bmi": 28.5,
+      "smoker": true
+    },
+    "normalized_input": [
+      0.58,
+      0.72,
+      0.83,
+      0.59,
+      0.57,
+      1.0
+    ],
+    "probability_plaintext": 0.9904382995947314,
+    "probability_fhe": 0.9904382960359667,
+    "risk_percentage": 99.04382960359666,
+    "risk_level": "ALTO",
+    "error_percentage": 3.5587647273516154e-07,
+    "train_accuracy": 0.985,
+    "train_time_ms": 3.192901611328125,
+    "encrypt_time_ms": 1.7910003662109375,
+    "predict_time_ms": 2.87628173828125,
+    "decrypt_time_ms": 0.3018379211425781,
+    "total_time_ms": 4.969120025634766
+  }
+}

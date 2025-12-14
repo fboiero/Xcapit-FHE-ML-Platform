@@ -1,0 +1,153 @@
+[H[2J[3J
+[1m[95m============================================================[0m
+[1m[95m  XCAPIT PRIVACY - DEMO DE TRANSPARENCIA FHE[0m
+[1m[95m============================================================[0m
+
+Esta demo te muestra EXACTAMENTE como tus datos
+permanecen cifrados durante todo el proceso.
+
+Veras los bytes REALES del ciphertext.
+
+[2m[Auto-avanzando...][0m
+
+[1m[96m[Paso 0][0m [1mInicializacion del Sistema FHE[0m
+--------------------------------------------------
+[2mInicializando contexto CKKS...[0m
+[92m✓ Contexto CKKS inicializado[0m
+  Polynomial degree: 8192
+  Security level: 128 bits
+
+[2m[Auto-avanzando...][0m
+
+[1m[96m[Paso 1][0m [1mDATOS ORIGINALES (Solo visibles en tu maquina)[0m
+--------------------------------------------------
+
+  [1mEmpresa A - Datos de Credito:[0m
+  [92msalario_promedio: 55000.0[0m
+  [92medad_promedio: 38.5[0m
+  [92mtasa_default: 0.03[0m
+
+  [1mEmpresa B - Datos de Credito:[0m
+  [92msalario_promedio: 48000.0[0m
+  [92medad_promedio: 42.1[0m
+  [92mtasa_default: 0.05[0m
+
+[2m[Auto-avanzando...][0m
+
+[1m[96m[Paso 2][0m [1mCIFRADO LOCAL (Con tu clave privada)[0m
+--------------------------------------------------
+
+  [96mCifrando datos de Empresa A...[0m
+
+  [1mCiphertext Empresa A:[0m
+  [2mencrypted_data:[0m
+  [93m0a0103128eb4145ea11004010200000e1a05000000000028b52ffda061000600bc5a0e8efd9fd172...[0m
+  [2m(334366 bytes)[0m
+
+  [96mCifrando datos de Empresa B...[0m
+
+  [1mCiphertext Empresa B:[0m
+  [2mencrypted_data:[0m
+  [93m0a010312b5b5145ea1100401020000b51a05000000000028b52ffda061000600845c0e8efddfdf72...[0m
+  [2m(334533 bytes)[0m
+
+  [92m✓ Claves privadas permanecen en cada empresa[0m
+  [92m✓ Solo el ciphertext viaja al servidor[0m
+
+[2m[Auto-avanzando...][0m
+
+[1m[96m[Paso 3][0m [1mSERVIDOR RECIBE DATOS (Solo ve ciphertext)[0m
+--------------------------------------------------
+
+  [91m==================================================[0m
+  [91m  VISTA DEL SERVIDOR - NO PUEDE DESCIFRAR[0m
+  [91m==================================================[0m
+
+  Datos recibidos de Empresa A:
+  [91mciphertext_empresa_a:[0m
+  [93m0a0103128eb4145ea11004010200000e1a05000000000028b52ffda061000600bc5a0e8efd9fd172...[0m
+
+  Datos recibidos de Empresa B:
+  [91mciphertext_empresa_b:[0m
+  [93m0a010312b5b5145ea1100401020000b51a05000000000028b52ffda061000600845c0e8efddfdf72...[0m
+
+  [91m⚠ El servidor NO SABE que:[0m
+    - Salario promedio A = 55000
+    - Salario promedio B = 48000
+    - Ni ningun otro valor original
+
+[2m[Auto-avanzando...][0m
+
+[1m[96m[Paso 4][0m [1mCOMPUTACION SOBRE DATOS CIFRADOS[0m
+--------------------------------------------------
+
+  [96mEl servidor ejecuta operaciones homomorficas...[0m
+
+  [1mOperacion: Suma homomorfica[0m
+  Enc(A) + Enc(B) = Enc(A + B)
+
+  Resultado de suma (CIFRADO):
+  [91mencrypted_sum:[0m
+  [93m0a010312eeb3145ea1100401020000ee1905000000000028b52ffda061000600045a0e8efddfcb72...[0m
+
+  [1mOperacion: Multiplicacion por escalar[0m
+  Enc(sum) * 0.5 = Enc(promedio)
+
+  Resultado promedio (CIFRADO):
+  [91mencrypted_average:[0m
+  [93m0a010312eeae0e5ea11004010200006e9703000000000028b52ffda0610004001c5d0e6efd9fe372...[0m
+
+  [92m✓ Todas las operaciones fueron sobre ciphertext[0m
+  [92m✓ El servidor calculo el promedio SIN ver los valores[0m
+
+[2m[Auto-avanzando...][0m
+
+[1m[96m[Paso 5][0m [1mSERVIDOR ENVIA RESULTADO (Aun cifrado)[0m
+--------------------------------------------------
+
+  [91mEl servidor NO SABE el resultado:[0m
+  [91mresultado_cifrado:[0m
+  [93m0a010312eeae0e5ea11004010200006e9703000000000028b52ffda0610004001c5d0e6efd9fe372...[0m
+
+  [2mEl servidor solo puede enviar estos bytes.[0m
+  [2mNo tiene la clave para descifrarlos.[0m
+
+[2m[Auto-avanzando...][0m
+
+[1m[96m[Paso 6][0m [1mDESCIFRADO LOCAL (Solo tu puedes)[0m
+--------------------------------------------------
+
+  [96mDescifrando con tu clave privada...[0m
+
+  [92m[1mRESULTADO DESCIFRADO:[0m
+
+  Promedio de ambas empresas:
+    [92msalario_promedio: 51500.01[0m (esperado: 51500.00)
+    [92medad_promedio: 40.30[0m (esperado: 40.30)
+    [92mtasa_default: 0.04[0m (esperado: 0.04)
+
+[2m[Auto-avanzando...][0m
+
+[1m[95m============================================================[0m
+[1m[95m  RESUMEN DE SEGURIDAD[0m
+[1m[95m============================================================[0m
+
+
+  [92m✓ Datos originales[0m: Solo visibles en tu maquina
+  [92m✓ Cifrado[0m: Realizado localmente con tu clave privada
+  [92m✓ Transmision[0m: Solo ciphertext viaja al servidor
+  [92m✓ Procesamiento[0m: Operaciones sobre datos cifrados
+  [92m✓ Resultado[0m: Cifrado hasta que TU lo descifras
+
+  [1mEl servidor NUNCA vio:[0m
+  [91m✗[0m Los salarios originales
+  [91m✗[0m Las edades de los empleados
+  [91m✗[0m Las tasas de default
+  [91m✗[0m El resultado final
+
+  [1m[96mEsto es Encriptacion Homomorfica (FHE) en accion.[0m
+  [1m[96mTus datos siempre permanecen privados.[0m
+
+
+[2mDemo completada. Gracias por usar Xcapit Privacy.[0m
+

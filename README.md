@@ -2,8 +2,15 @@
 
 Privacy-preserving machine learning platform using Fully Homomorphic Encryption (FHE).
 
+[![CI](https://github.com/xcapit/Xcapit-FHE-ML-Platform/actions/workflows/ci.yml/badge.svg)](https://github.com/xcapit/Xcapit-FHE-ML-Platform/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/xcapit/Xcapit-FHE-ML-Platform/actions/workflows/codeql.yml/badge.svg)](https://github.com/xcapit/Xcapit-FHE-ML-Platform/actions/workflows/codeql.yml)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
-[![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178c6.svg)](https://www.typescriptlang.org/)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
+[![Tests](https://img.shields.io/badge/tests-566%20passing-brightgreen.svg)](#testing)
+[![Security Audit](https://img.shields.io/badge/security-audited-blue.svg)](docs/SECURITY_AUDIT_REPORT.md)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![DCO](https://img.shields.io/badge/DCO-required-blue.svg)](DCO)
 
 ## Overview
 
@@ -28,16 +35,32 @@ model.fit(encrypted_data)
 predictions = model.predict(encrypted_test)
 ```
 
-## Features
+## Key Features
 
 - **4 ML Models**: LinearRegression, LogisticRegression, DecisionTree, KMeans
-- **CKKS Encryption**: 128/192/256-bit security levels
-- **Blockchain Audit**: Arbitrum integration for model verification
-- **REST API**: FastAPI server for production deployments
+- **CKKS Encryption**: 128/192/256-bit security levels with optimized FHE engine
+- **Blockchain Audit**: Arbitrum integration for model verification and governance
+- **Multi-Party Learning**: Consortium-based federated learning with contribution tracking
+- **REST API**: FastAPI server with OpenAPI 3.1 documentation
+- **TypeScript SDK**: Full-featured SDK for web applications
 - **CLI Tool**: Command-line interface for all operations
 - **Docker Ready**: Multi-stage builds for dev/prod/fhe
+- **Compliance**: Built-in GDPR, HIPAA, SOC2, PCI-DSS verification
+
+## Live Demo
+
+Try the platform live at **[https://xcapit-privacy.vercel.app](https://xcapit-privacy.vercel.app)**
+
+The dashboard includes:
+- **Interactive Demos**: Watch FHE encryption and multi-party ML collaboration
+- **Governance Dashboard**: Blockchain-backed audit trail, voting system, contribution tracking
+- **Compliance Dashboard**: Automated regulatory verification
+- **Data Quality Score**: Quality metrics without accessing underlying data
+- **Multi-language Support**: Spanish and English
 
 ## Installation
+
+### Python SDK
 
 ```bash
 # Basic installation
@@ -53,9 +76,67 @@ pip install xcapit-fhe-ml tenseal
 pip install xcapit-fhe-ml[dev]
 ```
 
+### TypeScript SDK
+
+```bash
+npm install @xcapit/fhe-ml-sdk
+# or
+yarn add @xcapit/fhe-ml-sdk
+```
+
 ## Quick Start
 
-### 1. CLI Usage
+### Python SDK
+
+```python
+from sdk import (
+    LinearRegression,
+    LogisticRegression,
+    DecisionTreeClassifier,
+    KMeans,
+    ModelConfig,
+)
+
+# Configure and train
+config = ModelConfig(learning_rate=0.1, n_epochs=100)
+model = LinearRegression(config=config)
+model._fit_plaintext(X_train, y_train)
+
+# Evaluate
+predictions = model._predict_plaintext(X_test)
+```
+
+### TypeScript SDK
+
+```typescript
+import { createClient, ModelType } from '@xcapit/fhe-ml-sdk';
+
+const client = createClient({
+  apiUrl: 'https://api.xcapit.io',
+  apiKey: process.env.XCAPIT_API_KEY,
+});
+
+// Create a model
+const model = await client.models.create({
+  name: 'Credit Scoring Model',
+  type: ModelType.LogisticRegression,
+});
+
+// Train the model
+const result = await client.models.train({
+  modelId: model.id,
+  encryptedData: myEncryptedTrainingData,
+  epochs: 100,
+});
+
+// Make predictions
+const prediction = await client.predictions.predict({
+  modelId: model.id,
+  encryptedInput: encryptedFeatures,
+});
+```
+
+### CLI Usage
 
 ```bash
 # Initialize FHE context
@@ -71,29 +152,7 @@ xcapit-fhe train -m logistic-regression -d encrypted.bin -o model.bin
 xcapit-fhe predict -m model.bin -i test_encrypted.bin -o predictions.npy
 ```
 
-### 2. Python SDK
-
-```python
-from sdk import (
-    LinearRegression,
-    LogisticRegression,
-    DecisionTreeClassifier,
-    KMeans,
-    ModelConfig,
-)
-
-# Configure and train
-config = ModelConfig(learning_rate=0.1, n_epochs=100)
-model = LinearRegression(config=config)
-
-# Train on plaintext (for development)
-model._fit_plaintext(X_train, y_train)
-
-# Evaluate
-predictions = model._predict_plaintext(X_test)
-```
-
-### 3. REST API
+### REST API
 
 ```bash
 # Start server
@@ -120,34 +179,67 @@ curl -X POST http://localhost:8000/models/{model_id}/predict \
   -d '{"X": [[1,2,3]]}'
 ```
 
-## Models
-
-| Model | Task | FHE Compatible |
-|-------|------|----------------|
-| LinearRegression | Regression | ✅ |
-| LogisticRegression | Binary Classification | ✅ |
-| DecisionTreeClassifier | Classification | ✅ |
-| DecisionTreeRegressor | Regression | ✅ |
-| KMeans | Clustering | ✅ |
-| MiniBatchKMeans | Large-scale Clustering | ✅ |
-
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     Xcapit FHE-ML Platform                  │
-├─────────────────────────────────────────────────────────────┤
-│  CLI (xcapit-fhe)  │  REST API (FastAPI)  │  Python SDK    │
-├─────────────────────────────────────────────────────────────┤
-│                        ML Models                            │
-│  LinearRegression │ LogisticRegression │ DecisionTree │ KMeans │
-├─────────────────────────────────────────────────────────────┤
-│                     Encryption Layer                        │
-│              CKKS (TenSEAL) │ Key Management               │
-├─────────────────────────────────────────────────────────────┤
-│                   Blockchain Integration                    │
-│         ModelRegistry │ ComputationVerifier (Arbitrum)     │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        Xcapit FHE-ML Platform                           │
+├─────────────────────────────────────────────────────────────────────────┤
+│   CLI (xcapit-fhe)  │  REST API (FastAPI)  │  TypeScript SDK  │ Python │
+├─────────────────────────────────────────────────────────────────────────┤
+│                            ML Models                                     │
+│    LinearRegression │ LogisticRegression │ DecisionTree │ KMeans        │
+├─────────────────────────────────────────────────────────────────────────┤
+│                      Optimized FHE Engine                                │
+│   CKKS (TenSEAL) │ Context Pooling │ Parallel Batch │ Lazy Evaluation   │
+├─────────────────────────────────────────────────────────────────────────┤
+│                      Blockchain Integration                              │
+│  ModelRegistry │ ComputationVerifier │ ConsortiumGovernance (Arbitrum)  │
+├─────────────────────────────────────────────────────────────────────────┤
+│                         Compliance Layer                                 │
+│              GDPR │ HIPAA │ SOC2 │ PCI-DSS │ LGPD                        │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+## Models
+
+| Model | Task | FHE Compatible | Status |
+|-------|------|----------------|--------|
+| LinearRegression | Regression | ✅ | Production |
+| LogisticRegression | Binary Classification | ✅ | Production |
+| DecisionTreeClassifier | Classification | ✅ | Production |
+| DecisionTreeRegressor | Regression | ✅ | Production |
+| KMeans | Clustering | ✅ | Production |
+| MiniBatchKMeans | Large-scale Clustering | ✅ | Production |
+
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [API Reference](docs/openapi.yaml) | OpenAPI 3.1 specification |
+| [Security Audit](docs/SECURITY_AUDIT_REPORT.md) | Smart contract security audit |
+| [Getting Started](docs/getting-started.md) | Quick start guide |
+| [Architecture](docs/guides/01-architecture.md) | System architecture |
+| [ML Models](docs/guides/03-ml-models.md) | Model documentation |
+| [FHE Theory](docs/theory/) | Homomorphic encryption theory |
+
+## Smart Contracts
+
+Production-ready V2 contracts with security fixes:
+
+| Contract | Purpose | Features |
+|----------|---------|----------|
+| [ModelRegistryV2](contracts/v2/ModelRegistryV2.sol) | Model registration | Trusted verifiers, checkpoints |
+| [ComputationVerifierV2](contracts/v2/ComputationVerifierV2.sol) | Audit trail | Merkle proofs, batch verification |
+| [ConsortiumGovernanceV2](contracts/v2/ConsortiumGovernanceV2.sol) | Multi-party governance | Pull-over-push rewards, DoS protection |
+
+```bash
+# Deploy to testnet
+export DEPLOYER_PRIVATE_KEY=0x...
+python scripts/deploy_contracts.py --network arbitrum-sepolia
+
+# Deploy to mainnet (after audit)
+python scripts/deploy_contracts.py --network arbitrum-one
 ```
 
 ## Docker
@@ -169,53 +261,28 @@ docker-compose --profile test up
 docker-compose --profile jupyter up
 ```
 
-## Blockchain Integration
-
-Deploy smart contracts to Arbitrum for model verification:
+## Testing
 
 ```bash
-# Set private key
-export DEPLOYER_PRIVATE_KEY=0x...
+# Run all tests (566 passing)
+pytest tests/ -v
 
-# Deploy to testnet
-python scripts/deploy_contracts.py --network arbitrum-sepolia
+# With coverage
+pytest tests/ --cov=sdk --cov-report=html
 
-# Deploy to mainnet
-python scripts/deploy_contracts.py --network arbitrum-one
+# Specific test categories
+pytest tests/test_models.py -v
+pytest tests/test_api/ -v
+pytest tests/test_blockchain/ -v
 ```
 
-### Smart Contracts
-
-- **ModelRegistry**: Register models, save checkpoints, track training history
-- **ComputationVerifier**: Audit trail for predictions, GDPR/HIPAA compliance
-
-## Live Demo & Dashboard
-
-Try the platform live at **[https://xcapit-privacy.vercel.app](https://xcapit-privacy.vercel.app)**
-
-The dashboard includes:
-- **Interactive Demos**: Watch FHE encryption and multi-party ML collaboration in action
-- **Governance Dashboard**: Blockchain-backed audit trail, voting system, contribution tracking
-- **Compliance Dashboard**: Automated GDPR/HIPAA/SOC2/PCI-DSS verification
-- **Data Quality Score**: Quality metrics without accessing underlying data
-- **Multi-language Support**: Spanish and English
-
-### Running the Dashboard Locally
+## Running the Dashboard
 
 ```bash
 cd dashboard
 npm install
 npm run dev
 ```
-
-## Examples
-
-See the [examples/](examples/) directory:
-
-- `01_quickstart.ipynb` - Getting started guide
-- `02_linear_regression.ipynb` - Regression with sklearn comparison
-- `03_healthcare_demo.ipynb` - Patient risk prediction (HIPAA compliant)
-- `04_decision_tree_kmeans.ipynb` - Classification and clustering
 
 ## Benchmarks
 
@@ -230,64 +297,36 @@ python benchmarks/benchmark_models.py --models linear-regression logistic-regres
 python benchmarks/benchmark_models.py --sizes 100 500 1000 5000
 ```
 
-## API Reference
-
-### Models
-
-```python
-# Linear Regression
-from sdk import LinearRegression, ModelConfig
-model = LinearRegression(config=ModelConfig(learning_rate=0.01, n_epochs=100))
-
-# Logistic Regression
-from sdk import LogisticRegression
-model = LogisticRegression()
-
-# Decision Tree
-from sdk import DecisionTreeClassifier, TreeConfig
-model = DecisionTreeClassifier(config=TreeConfig(max_depth=4))
-
-# K-Means
-from sdk import KMeans, KMeansConfig
-model = KMeans(config=KMeansConfig(n_clusters=3))
-```
-
-### Serialization
-
-```python
-from sdk.utils import save_model, load_model
-
-# Save trained model
-save_model(model, "model.pkl", metadata={"version": "1.0"})
-
-# Load model
-loaded_model = load_model("model.pkl")
-```
-
-### Encryption
-
-```python
-from sdk import FHEContextManager, CKKSEncryptor, SecurityLevel
-
-# Create context
-ctx = FHEContextManager()
-ctx.generate_context(
-    poly_modulus_degree=8192,
-    security_level=SecurityLevel.TC128
-)
-
-# Encrypt/decrypt
-encryptor = CKKSEncryptor(ctx)
-encrypted = encryptor.encrypt_vector([1.0, 2.0, 3.0])
-decrypted = encryptor.decrypt_vector(encrypted)
-```
-
 ## Security
 
 - **Encryption**: CKKS scheme with configurable security levels (128/192/256-bit)
 - **Key Management**: Separate public/private keys, secure storage
 - **Audit Trail**: Blockchain-based computation verification
-- **Compliance**: HIPAA, GDPR, LGPD ready by design
+- **Smart Contracts**: [Security audit completed](docs/SECURITY_AUDIT_REPORT.md) with V2 secure contracts
+- **Compliance**: HIPAA, GDPR, SOC2, PCI-DSS, LGPD ready by design
+
+## Project Structure
+
+```
+xcapit-fhe-ml/
+├── sdk/                    # Python SDK
+│   ├── models/             # ML model implementations
+│   ├── encryption/         # FHE encryption layer
+│   ├── api/                # FastAPI server
+│   └── blockchain/         # Smart contract integration
+├── sdk-typescript/         # TypeScript SDK
+│   └── src/
+│       ├── client.ts       # API client
+│       └── types.ts        # Type definitions
+├── contracts/              # Solidity smart contracts
+│   ├── v2/                 # Secure V2 contracts
+│   └── *.sol               # Original contracts
+├── dashboard/              # React dashboard
+├── docs/                   # Documentation
+├── tests/                  # Test suite (566 tests)
+├── examples/               # Jupyter notebooks
+└── benchmarks/             # Performance benchmarks
+```
 
 ## Contributing
 
@@ -307,4 +346,4 @@ Built by the team behind [QuarkID](https://quarkid.org) (3.6M+ users), bringing 
 
 ---
 
-**Links**: [Documentation](docs/) | [Examples](examples/) | [API Docs](http://localhost:8000/docs)
+**Links**: [Documentation](docs/) | [Examples](examples/) | [API Docs](docs/openapi.yaml) | [Live Demo](https://xcapit-privacy.vercel.app)

@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xcapit FHE-ML - Healthcare Analytics Platform</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0c1929 0%, #0a1220 100%);
+            color: #ffffff;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(0,0,0,0.3);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            padding: 15px 35px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #10B981, #059669);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3em;
+        }
+
+        .logo-text {
+            font-size: 1.2em;
+            font-weight: 700;
+        }
+
+        .logo-text span {
+            color: #10B981;
+        }
+
+        .header-nav {
+            display: flex;
+            gap: 5px;
+        }
+
+        .nav-tab {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 0.85em;
+            color: #64748b;
+            cursor: pointer;
+        }
+
+        .nav-tab.active {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10B981;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .compliance-badges {
+            display: flex;
+            gap: 10px;
+        }
+
+        .compliance-badge {
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            color: #10B981;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 30px 35px;
+            display: grid;
+            grid-template-columns: 320px 1fr 380px;
+            gap: 25px;
+            height: calc(100vh - 80px);
+        }
+
+        /* Panel Styles */
+        .panel {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 18px 22px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-title {
+            font-size: 0.95em;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel-content {
+            padding: 20px;
+        }
+
+        /* Patient Card */
+        .patient-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            margin-bottom: 20px;
+        }
+
+        .patient-avatar {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #3B82F6, #1D4ED8);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6em;
+        }
+
+        .patient-info h3 {
+            font-size: 1.1em;
+            margin-bottom: 4px;
+        }
+
+        .patient-info p {
+            font-size: 0.8em;
+            color: #64748b;
+        }
+
+        .phi-badge {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #EF4444;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.65em;
+            font-weight: 600;
+            margin-top: 8px;
+            display: inline-block;
+        }
+
+        /* Vitals */
+        .vitals-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .vital-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 16px;
+            background: rgba(0,0,0,0.25);
+            border-radius: 12px;
+        }
+
+        .vital-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .vital-icon {
+            font-size: 1.3em;
+        }
+
+        .vital-name {
+            font-size: 0.85em;
+            color: #94a3b8;
+        }
+
+        .vital-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+
+        .vital-value.normal { color: #10B981; }
+        .vital-value.elevated { color: #F59E0B; }
+        .vital-value.high { color: #EF4444; }
+
+        /* Center Panel */
+        .center-panel {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Process Timeline */
+        .process-timeline {
+            display: flex;
+            align-items: flex-start;
+            gap: 0;
+            padding: 25px 20px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .process-timeline::before {
+            content: '';
+            position: absolute;
+            top: 50px;
+            left: 60px;
+            right: 60px;
+            height: 3px;
+            background: linear-gradient(90deg, #3B82F6, #8B5CF6, #10B981, #06B6D4);
+        }
+
+        .timeline-step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .step-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4em;
+            margin: 0 auto 12px;
+            position: relative;
+        }
+
+        .step-icon.hospital {
+            background: linear-gradient(135deg, #3B82F6, #1D4ED8);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.35);
+        }
+
+        .step-icon.encrypt {
+            background: linear-gradient(135deg, #8B5CF6, #6D28D9);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.35);
+        }
+
+        .step-icon.process {
+            background: linear-gradient(135deg, #10B981, #059669);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.35);
+        }
+
+        .step-icon.result {
+            background: linear-gradient(135deg, #06B6D4, #0891B2);
+            box-shadow: 0 8px 25px rgba(6, 182, 212, 0.35);
+        }
+
+        .step-icon .check {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            width: 18px;
+            height: 18px;
+            background: #10B981;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.5em;
+            border: 2px solid #0c1929;
+        }
+
+        .step-label {
+            font-size: 0.75em;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .step-desc {
+            font-size: 0.65em;
+            color: #475569;
+            margin-top: 4px;
+        }
+
+        /* Diagnosis Result */
+        .diagnosis-result {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(185, 28, 28, 0.05) 100%);
+            border: 2px solid rgba(239, 68, 68, 0.25);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .diagnosis-result.low-risk {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(5, 150, 105, 0.05) 100%);
+            border-color: rgba(16, 185, 129, 0.25);
+        }
+
+        .risk-icon {
+            font-size: 4em;
+            margin-bottom: 15px;
+        }
+
+        .risk-score {
+            font-size: 5em;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            color: #EF4444;
+            line-height: 1;
+            text-shadow: 0 0 40px rgba(239, 68, 68, 0.4);
+        }
+
+        .diagnosis-result.low-risk .risk-score {
+            color: #10B981;
+            text-shadow: 0 0 40px rgba(16, 185, 129, 0.4);
+        }
+
+        .risk-label {
+            font-size: 1.3em;
+            font-weight: 700;
+            margin-top: 10px;
+            letter-spacing: 1px;
+        }
+
+        .risk-sublabel {
+            font-size: 0.85em;
+            color: #64748b;
+            margin-top: 8px;
+        }
+
+        /* Recommendations */
+        .recommendations {
+            background: rgba(0,0,0,0.25);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 25px;
+        }
+
+        .recommendations h4 {
+            font-size: 0.9em;
+            margin-bottom: 15px;
+            color: #F59E0B;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .recommendation-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .recommendation-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            font-size: 0.8em;
+            color: #94a3b8;
+        }
+
+        .recommendation-item .icon {
+            font-size: 1.2em;
+        }
+
+        /* Right Panel - Security & Audit */
+        .security-section {
+            margin-bottom: 25px;
+        }
+
+        .security-title {
+            font-size: 0.7em;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #475569;
+            margin-bottom: 12px;
+        }
+
+        .security-card {
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 12px;
+            padding: 18px;
+        }
+
+        .security-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+
+        .security-item:last-child {
+            border: none;
+            padding-bottom: 0;
+        }
+
+        .security-check {
+            width: 22px;
+            height: 22px;
+            background: #10B981;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7em;
+        }
+
+        .security-text {
+            font-size: 0.82em;
+            color: #94a3b8;
+        }
+
+        /* Audit Log */
+        .audit-log {
+            background: rgba(0,0,0,0.25);
+            border-radius: 12px;
+            padding: 15px;
+        }
+
+        .audit-entry {
+            display: flex;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            font-size: 0.75em;
+        }
+
+        .audit-entry:last-child {
+            border: none;
+        }
+
+        .audit-time {
+            color: #475569;
+            font-family: 'JetBrains Mono', monospace;
+            min-width: 55px;
+        }
+
+        .audit-badge {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.85em;
+        }
+
+        .audit-badge.receive { background: rgba(59, 130, 246, 0.2); color: #3B82F6; }
+        .audit-badge.encrypt { background: rgba(139, 92, 246, 0.2); color: #8B5CF6; }
+        .audit-badge.process { background: rgba(16, 185, 129, 0.2); color: #10B981; }
+        .audit-badge.result { background: rgba(6, 182, 212, 0.2); color: #06B6D4; }
+
+        .audit-text {
+            color: #64748b;
+        }
+
+        /* Encryption Details */
+        .encryption-details {
+            margin-top: 25px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            font-size: 0.8em;
+        }
+
+        .detail-label {
+            color: #64748b;
+        }
+
+        .detail-value {
+            color: #10B981;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Footer */
+        .panel-footer {
+            padding: 15px 20px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.7em;
+            color: #475569;
+            margin-top: auto;
+        }
+
+        .footer-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .footer-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #10B981;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-left">
+            <div class="logo">
+                <div class="logo-icon">🏥</div>
+                <div class="logo-text">Xcapit <span>Healthcare</span></div>
+            </div>
+            <div class="header-nav">
+                <div class="nav-tab active">Diagnóstico</div>
+                <div class="nav-tab">Historial</div>
+                <div class="nav-tab">Pacientes</div>
+                <div class="nav-tab">Reportes</div>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="compliance-badges">
+                <span class="compliance-badge">✓ HIPAA</span>
+                <span class="compliance-badge">✓ GDPR</span>
+                <span class="compliance-badge">✓ HL7 FHIR</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Left Panel - Patient -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-title">
+                    <span>👤</span> Datos del Paciente
+                </span>
+            </div>
+            <div class="panel-content">
+                <div class="patient-header">
+                    <div class="patient-avatar">👤</div>
+                    <div class="patient-info">
+                        <h3>Paciente #PAT-4521</h3>
+                        <p>Masculino, 58 años</p>
+                        <span class="phi-badge">🔒 PHI PROTEGIDO</span>
+                    </div>
+                </div>
+
+                <div class="vitals-grid">
+                    <div class="vital-item">
+                        <div class="vital-left">
+                            <span class="vital-icon">❤️</span>
+                            <span class="vital-name">Presión Arterial</span>
+                        </div>
+                        <span class="vital-value elevated">145/92</span>
+                    </div>
+                    <div class="vital-item">
+                        <div class="vital-left">
+                            <span class="vital-icon">🩸</span>
+                            <span class="vital-name">Colesterol Total</span>
+                        </div>
+                        <span class="vital-value high">248 mg/dL</span>
+                    </div>
+                    <div class="vital-item">
+                        <div class="vital-left">
+                            <span class="vital-icon">📊</span>
+                            <span class="vital-name">Glucosa Ayunas</span>
+                        </div>
+                        <span class="vital-value elevated">118 mg/dL</span>
+                    </div>
+                    <div class="vital-item">
+                        <div class="vital-left">
+                            <span class="vital-icon">⚖️</span>
+                            <span class="vital-name">IMC</span>
+                        </div>
+                        <span class="vital-value elevated">28.5</span>
+                    </div>
+                    <div class="vital-item">
+                        <div class="vital-left">
+                            <span class="vital-icon">💓</span>
+                            <span class="vital-name">Freq. Cardíaca</span>
+                        </div>
+                        <span class="vital-value normal">72 bpm</span>
+                    </div>
+                    <div class="vital-item">
+                        <div class="vital-left">
+                            <span class="vital-icon">🚬</span>
+                            <span class="vital-name">Fumador</span>
+                        </div>
+                        <span class="vital-value high">Sí (15a)</span>
+                    </div>
+                </div>
+            </div>
+            <div class="panel-footer">
+                <div class="footer-item">
+                    <span class="footer-dot"></span>
+                    Datos encriptados E2E
+                </div>
+            </div>
+        </div>
+
+        <!-- Center Panel - Diagnosis -->
+        <div class="panel center-panel">
+            <div class="panel-header">
+                <span class="panel-title">
+                    <span>🧠</span> Diagnóstico AI con Privacidad Total
+                </span>
+            </div>
+            <div class="panel-content" style="flex: 1; display: flex; flex-direction: column;">
+                <!-- Process Timeline -->
+                <div class="process-timeline">
+                    <div class="timeline-step">
+                        <div class="step-icon hospital">
+                            🏥
+                            <span class="check">✓</span>
+                        </div>
+                        <div class="step-label">Hospital</div>
+                        <div class="step-desc">Prepara datos PHI</div>
+                    </div>
+                    <div class="timeline-step">
+                        <div class="step-icon encrypt">
+                            🔐
+                            <span class="check">✓</span>
+                        </div>
+                        <div class="step-label">Encriptar</div>
+                        <div class="step-desc">CKKS FHE</div>
+                    </div>
+                    <div class="timeline-step">
+                        <div class="step-icon process">
+                            🖥️
+                            <span class="check">✓</span>
+                        </div>
+                        <div class="step-label">Inferencia</div>
+                        <div class="step-desc">Servidor ML</div>
+                    </div>
+                    <div class="timeline-step">
+                        <div class="step-icon result">
+                            📋
+                            <span class="check">✓</span>
+                        </div>
+                        <div class="step-label">Resultado</div>
+                        <div class="step-desc">Solo hospital ve</div>
+                    </div>
+                </div>
+
+                <!-- Diagnosis Result -->
+                <div class="diagnosis-result">
+                    <div class="risk-icon">⚠️</div>
+                    <div class="risk-score">78.3%</div>
+                    <div class="risk-label">RIESGO CARDIOVASCULAR ALTO</div>
+                    <div class="risk-sublabel">Modelo: LogisticRegression FHE • Confianza: 94.2%</div>
+                </div>
+
+                <!-- Recommendations -->
+                <div class="recommendations">
+                    <h4><span>📋</span> Recomendaciones del Sistema</h4>
+                    <div class="recommendation-list">
+                        <div class="recommendation-item">
+                            <span class="icon">🫀</span>
+                            <span>Consulta cardiología prioritaria</span>
+                        </div>
+                        <div class="recommendation-item">
+                            <span class="icon">🚭</span>
+                            <span>Programa cesación tabáquica</span>
+                        </div>
+                        <div class="recommendation-item">
+                            <span class="icon">💊</span>
+                            <span>Evaluar antihipertensivos</span>
+                        </div>
+                        <div class="recommendation-item">
+                            <span class="icon">🥗</span>
+                            <span>Control dietético colesterol</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel - Security & Audit -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-title">
+                    <span>🛡️</span> Seguridad & Auditoría
+                </span>
+            </div>
+            <div class="panel-content">
+                <div class="security-section">
+                    <div class="security-title">Garantías de Privacidad</div>
+                    <div class="security-card">
+                        <div class="security-item">
+                            <div class="security-check">✓</div>
+                            <span class="security-text">PHI nunca expuesto al servidor ML</span>
+                        </div>
+                        <div class="security-item">
+                            <div class="security-check">✓</div>
+                            <span class="security-text">Encriptación 128-bit post-quantum</span>
+                        </div>
+                        <div class="security-item">
+                            <div class="security-check">✓</div>
+                            <span class="security-text">Zero-knowledge inference</span>
+                        </div>
+                        <div class="security-item">
+                            <div class="security-check">✓</div>
+                            <span class="security-text">Audit trail en blockchain</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="security-section">
+                    <div class="security-title">Log de Auditoría HIPAA</div>
+                    <div class="audit-log">
+                        <div class="audit-entry">
+                            <span class="audit-time">14:32:01</span>
+                            <span class="audit-badge receive">RCV</span>
+                            <span class="audit-text">Datos paciente recibidos</span>
+                        </div>
+                        <div class="audit-entry">
+                            <span class="audit-time">14:32:02</span>
+                            <span class="audit-badge encrypt">ENC</span>
+                            <span class="audit-text">PHI encriptado (CKKS)</span>
+                        </div>
+                        <div class="audit-entry">
+                            <span class="audit-time">14:32:02</span>
+                            <span class="audit-badge process">FHE</span>
+                            <span class="audit-text">Enviado a servidor ML</span>
+                        </div>
+                        <div class="audit-entry">
+                            <span class="audit-time">14:32:03</span>
+                            <span class="audit-badge process">FHE</span>
+                            <span class="audit-text">Inferencia sobre ciphertext</span>
+                        </div>
+                        <div class="audit-entry">
+                            <span class="audit-time">14:32:04</span>
+                            <span class="audit-badge result">DEC</span>
+                            <span class="audit-text">Resultado descifrado local</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="encryption-details">
+                    <div class="security-title">Parámetros Criptográficos</div>
+                    <div class="detail-row">
+                        <span class="detail-label">Esquema</span>
+                        <span class="detail-value">CKKS</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Poly Modulus</span>
+                        <span class="detail-value">N = 8192</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Scale Factor</span>
+                        <span class="detail-value">Δ = 2⁴⁰</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Seguridad</span>
+                        <span class="detail-value">128-bit</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Latencia Total</span>
+                        <span class="detail-value">48.2 ms</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Session ID</span>
+                        <span class="detail-value">0x7f2a...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="panel-footer">
+                <span>Hash: 0x3c7d1e5f2a6b8c4d</span>
+                <div class="footer-item">
+                    <span class="footer-dot"></span>
+                    Blockchain verified
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

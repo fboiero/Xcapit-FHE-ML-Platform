@@ -333,7 +333,7 @@ class TestFederatedInference:
 
         models = manager.list_federated_models(
             consortium_id=consortium.id,
-            status="training"  # Default status
+            status="active"  # Default status
         )
 
         assert len(models) >= 1

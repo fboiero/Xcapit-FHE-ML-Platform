@@ -1,0 +1,37 @@
+# CODEOWNERS - Xcapit FHE-ML Platform
+# These owners will be requested for review when someone opens a PR
+
+# Default owners for everything
+* @xcapit-team
+
+# Python SDK
+/sdk/ @xcapit-team
+/tests/ @xcapit-team
+
+# TypeScript SDK
+/sdk-typescript/ @xcapit-team
+
+# Dashboard
+/dashboard/ @xcapit-team
+
+# Smart Contracts
+/contracts/ @xcapit-team
+
+# Documentation
+/docs/ @xcapit-team
+*.md @xcapit-team
+
+# CI/CD and DevOps
+/.github/ @xcapit-team
+/docker/ @xcapit-team
+Dockerfile @xcapit-team
+docker-compose.yml @xcapit-team
+
+# Security-sensitive files
+SECURITY.md @xcapit-team
+/contracts/*.sol @xcapit-team
+
+# Configuration
+pyproject.toml @xcapit-team
+package.json @xcapit-team
+tsconfig.json @xcapit-team

@@ -1,0 +1,50 @@
+name: "Stale Issues and PRs"
+
+on:
+  schedule:
+    - cron: "0 0 * * *"  # Daily at midnight
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v9
+        with:
+          # Issue settings
+          stale-issue-message: |
+            This issue has been automatically marked as stale because it has not had recent activity.
+            It will be closed in 14 days if no further activity occurs.
+            If this issue is still relevant, please comment or remove the stale label.
+          close-issue-message: |
+            This issue was closed because it has been stale for 14 days with no activity.
+            Feel free to reopen if this is still relevant.
+          stale-issue-label: "stale"
+          days-before-issue-stale: 60
+          days-before-issue-close: 14
+
+          # PR settings
+          stale-pr-message: |
+            This pull request has been automatically marked as stale because it has not had recent activity.
+            It will be closed in 7 days if no further activity occurs.
+            Please update your PR or comment if you're still working on this.
+          close-pr-message: |
+            This pull request was closed because it has been stale for 7 days with no activity.
+            Feel free to reopen when you're ready to continue.
+          stale-pr-label: "stale"
+          days-before-pr-stale: 30
+          days-before-pr-close: 7
+
+          # Labels to exempt
+          exempt-issue-labels: "pinned,security,bug,enhancement"
+          exempt-pr-labels: "pinned,security,work-in-progress"
+
+          # Don't stale issues/PRs with these labels
+          exempt-all-milestones: true
+
+          # Operations per run
+          operations-per-run: 100

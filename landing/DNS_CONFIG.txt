@@ -1,0 +1,54 @@
+===============================================
+CONFIGURACION DNS PARA privacy.xcapit.com
+===============================================
+
+PROVEEDOR ACTUAL: lomahost.com (cPanel)
+
+PASO A PASO EN CPANEL:
+----------------------
+1. Entrar a cPanel de xcapit.com
+2. Buscar "Zone Editor" o "DNS Zone Editor" (seccion Domains)
+3. Clic en "Manage" en xcapit.com
+4. Clic en "+ Add Record" → seleccionar "A Record"
+5. Completar:
+   - Name: privacy.xcapit.com. (o solo "privacy")
+   - Address: 76.76.21.21
+   - TTL: 14400 (o dejar default)
+6. Save
+
+REGISTRO A CREAR:
+-----------------
+Tipo:    A
+Nombre:  privacy
+Valor:   76.76.21.21
+TTL:     14400
+
+VERIFICACION:
+-------------
+Una vez configurado, verificar con:
+  dig privacy.xcapit.com +short
+
+Debe devolver: 76.76.21.21
+
+Propagacion: 1-10 minutos (puede tardar hasta 48hs en algunos casos)
+
+URL FINAL: https://privacy.xcapit.com
+
+===============================================
+WEB3FORMS - FORMULARIO DE CONTACTO
+===============================================
+
+1. Ir a https://web3forms.com
+2. Ingresar email para recibir el Access Key
+3. Editar landing/index.html linea 773
+4. Reemplazar YOUR_ACCESS_KEY_HERE por tu key
+
+===============================================
+VERCEL DASHBOARD
+===============================================
+
+URL proyecto: https://vercel.com/fernando-boieros-projects/xcapit-fhe/settings
+URL temporal: https://xcapit-fhe.vercel.app
+
+Re-deployar despues de cambios:
+  cd landing && vercel --prod

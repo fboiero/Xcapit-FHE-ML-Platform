@@ -1,7 +1,29 @@
 version: '3.8'
 
 services:
-  # ============ API Service ============
+  # ============ PostgreSQL Database ============
+  postgres:
+    image: postgres:15-alpine
+    container_name: xcapit-fhe-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: xcapit
+      POSTGRES_PASSWORD: xcapit_fhe_secret
+      POSTGRES_DB: fheml
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U xcapit -d fheml"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    profiles:
+      - production
+      - postgres
+
+  # ============ API Service (SQLite - Demo) ============
   api:
     build:
       context: .
@@ -22,6 +44,34 @@ services:
     restart: unless-stopped
     volumes:
       - model_data:/app/data
+
+  # ============ API Service (PostgreSQL - Production) ============
+  api-production:
+    build:
+      context: .
+      target: production
+    image: xcapit-fhe-ml:latest
+    container_name: xcapit-fhe-api-prod
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=info
+      - DATABASE_URL=postgresql://xcapit:xcapit_fhe_secret@postgres:5432/fheml
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    volumes:
+      - model_data:/app/data
+    profiles:
+      - production
 
   # ============ API with FHE Support ============
   api-fhe:
@@ -106,6 +156,8 @@ volumes:
   fhe_keys:
     driver: local
   notebooks:
+    driver: local
+  postgres_data:
     driver: local
 
 networks:

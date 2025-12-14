@@ -1,8 +1,54 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import LanguageSwitcher from '../components/LanguageSwitcher'
 
+// Animated Counter Component
+function AnimatedCounter({ end, duration = 2000, suffix = '', prefix = '' }) {
+  const [count, setCount] = useState(0)
+
+  useEffect(() => {
+    let startTime = null
+    const animate = (currentTime) => {
+      if (!startTime) startTime = currentTime
+      const progress = Math.min((currentTime - startTime) / duration, 1)
+      setCount(Math.floor(progress * end))
+      if (progress < 1) {
+        requestAnimationFrame(animate)
+      }
+    }
+    requestAnimationFrame(animate)
+  }, [end, duration])
+
+  return <span>{prefix}{count.toLocaleString()}{suffix}</span>
+}
+
+// FAQ Accordion Component
+function FAQItem({ question, answer, isOpen, onClick }) {
+  return (
+    <div className="border-b border-slate-200 last:border-0">
+      <button
+        onClick={onClick}
+        className="w-full py-5 flex items-center justify-between text-left hover:text-brand-600 transition"
+      >
+        <span className="text-lg font-medium text-slate-900">{question}</span>
+        <svg
+          className={`w-5 h-5 text-slate-500 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-96 pb-5' : 'max-h-0'}`}>
+        <p className="text-slate-600">{answer}</p>
+      </div>
+    </div>
+  )
+}
+
+// Contact Form Component
 function ContactForm() {
   const { t } = useTranslation()
   const [formData, setFormData] = useState({
@@ -15,7 +61,7 @@ function ContactForm() {
     use_case: '',
     message: ''
   })
-  const [status, setStatus] = useState('idle') // idle, sending, success, error
+  const [status, setStatus] = useState('idle')
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -24,9 +70,7 @@ function ContactForm() {
     try {
       const response = await fetch('https://api.web3forms.com/submit', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           access_key: 'd7f419bc-95cf-498d-8d8b-5f4830622bf4',
           subject: 'Nueva solicitud - Xcapit Privacy',
@@ -81,7 +125,7 @@ function ContactForm() {
             type="text"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-500 transition bg-slate-50 focus:bg-white"
+            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition bg-slate-50 focus:bg-white"
             placeholder={t('landing.contact.namePlaceholder')}
             required
           />
@@ -94,7 +138,7 @@ function ContactForm() {
             type="text"
             value={formData.company}
             onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-500 transition bg-slate-50 focus:bg-white"
+            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition bg-slate-50 focus:bg-white"
             placeholder={t('landing.contact.companyPlaceholder')}
             required
           />
@@ -110,7 +154,7 @@ function ContactForm() {
             type="email"
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-500 transition bg-slate-50 focus:bg-white"
+            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition bg-slate-50 focus:bg-white"
             placeholder={t('landing.contact.emailPlaceholder')}
             required
           />
@@ -123,7 +167,7 @@ function ContactForm() {
             type="tel"
             value={formData.phone}
             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-500 transition bg-slate-50 focus:bg-white"
+            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition bg-slate-50 focus:bg-white"
             placeholder="+54 11 1234-5678"
           />
         </div>
@@ -137,7 +181,7 @@ function ContactForm() {
           type="text"
           value={formData.job_title}
           onChange={(e) => setFormData({ ...formData, job_title: e.target.value })}
-          className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-500 transition bg-slate-50 focus:bg-white"
+          className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition bg-slate-50 focus:bg-white"
           placeholder={t('landing.contact.positionPlaceholder')}
           required
         />
@@ -151,7 +195,7 @@ function ContactForm() {
           <select
             value={formData.industry}
             onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
-            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-500 transition bg-slate-50 focus:bg-white appearance-none"
+            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition bg-slate-50 focus:bg-white appearance-none cursor-pointer"
             required
           >
             <option value="">{t('landing.contact.selectIndustry')}</option>
@@ -167,7 +211,7 @@ function ContactForm() {
           <select
             value={formData.use_case}
             onChange={(e) => setFormData({ ...formData, use_case: e.target.value })}
-            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-500 transition bg-slate-50 focus:bg-white appearance-none"
+            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition bg-slate-50 focus:bg-white appearance-none cursor-pointer"
             required
           >
             <option value="">{t('landing.contact.selectUseCase')}</option>
@@ -186,7 +230,7 @@ function ContactForm() {
           value={formData.message}
           onChange={(e) => setFormData({ ...formData, message: e.target.value })}
           rows={4}
-          className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-500 transition bg-slate-50 focus:bg-white resize-none"
+          className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition bg-slate-50 focus:bg-white resize-none"
           placeholder={t('landing.contact.messagePlaceholder')}
         />
       </div>
@@ -194,10 +238,16 @@ function ContactForm() {
       <button
         type="submit"
         disabled={status === 'sending'}
-        className="w-full bg-brand-600 text-white py-4 px-6 rounded-xl font-semibold hover:bg-brand-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
+        className="w-full bg-gradient-to-r from-brand-600 to-indigo-600 text-white py-4 px-6 rounded-xl font-semibold hover:from-brand-700 hover:to-indigo-700 transition disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-brand-600/25"
       >
         {status === 'sending' ? (
-          t('landing.contact.sending')
+          <>
+            <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            {t('landing.contact.sending')}
+          </>
         ) : (
           <>
             {t('landing.contact.requestInfo')}
@@ -209,17 +259,19 @@ function ContactForm() {
       </button>
 
       {status === 'success' && (
-        <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-xl">
-          <p className="text-center text-green-700 font-medium">
-            {t('landing.contact.successMessage')}
-          </p>
+        <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3">
+          <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p className="text-green-700 font-medium">{t('landing.contact.successMessage')}</p>
         </div>
       )}
       {status === 'error' && (
-        <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl">
-          <p className="text-center text-red-700 font-medium">
-            {t('landing.contact.errorMessage')}
-          </p>
+        <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
+          <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p className="text-red-700 font-medium">{t('landing.contact.errorMessage')}</p>
         </div>
       )}
 
@@ -238,138 +290,279 @@ function ContactForm() {
 export default function Landing() {
   const { t, i18n } = useTranslation()
   const currentLang = i18n.language?.startsWith('es') ? 'es' : 'en'
+  const [openFAQ, setOpenFAQ] = useState(0)
+  const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 50)
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  const stats = [
+    { value: 566, suffix: '+', label: currentLang === 'es' ? 'Tests Pasando' : 'Tests Passing' },
+    { value: 100, suffix: '%', label: currentLang === 'es' ? 'Privacidad de Datos' : 'Data Privacy' },
+    { value: 5, suffix: '', label: currentLang === 'es' ? 'Modelos ML' : 'ML Models' },
+    { value: 128, suffix: '-bit', label: currentLang === 'es' ? 'Encriptación' : 'Encryption' },
+  ]
 
   const features = [
     {
       icon: (
         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
         </svg>
       ),
       title: t('landing.features.encrypted.title'),
-      description: t('landing.features.encrypted.description')
+      description: t('landing.features.encrypted.description'),
+      gradient: 'from-purple-500 to-indigo-500'
     },
     {
       icon: (
         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
         </svg>
       ),
       title: t('landing.features.privateML.title'),
-      description: t('landing.features.privateML.description')
+      description: t('landing.features.privateML.description'),
+      gradient: 'from-amber-500 to-orange-500'
     },
     {
       icon: (
         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
         </svg>
       ),
       title: t('landing.features.secureCollab.title'),
-      description: t('landing.features.secureCollab.description')
+      description: t('landing.features.secureCollab.description'),
+      gradient: 'from-emerald-500 to-teal-500'
+    },
+    {
+      icon: (
+        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+        </svg>
+      ),
+      title: currentLang === 'es' ? 'Compliance Automático' : 'Auto Compliance',
+      description: currentLang === 'es'
+        ? 'GDPR, HIPAA, SOC2 y PCI-DSS verificados automáticamente con reportes en tiempo real.'
+        : 'GDPR, HIPAA, SOC2, and PCI-DSS automatically verified with real-time reports.',
+      gradient: 'from-blue-500 to-cyan-500'
+    },
+    {
+      icon: (
+        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+        </svg>
+      ),
+      title: currentLang === 'es' ? 'Gobernanza Blockchain' : 'Blockchain Governance',
+      description: currentLang === 'es'
+        ? 'Votación descentralizada, pruebas de contribución y distribución justa de ingresos en Arbitrum.'
+        : 'Decentralized voting, contribution proofs, and fair revenue distribution on Arbitrum.',
+      gradient: 'from-rose-500 to-pink-500'
+    },
+    {
+      icon: (
+        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+      ),
+      title: currentLang === 'es' ? 'Inferencia Federada' : 'Federated Inference',
+      description: currentLang === 'es'
+        ? 'Predicciones en el edge sin mover datos. Los modelos van a los datos, no al revés.'
+        : 'Edge predictions without moving data. Models go to data, not the other way around.',
+      gradient: 'from-violet-500 to-purple-500'
     },
   ]
 
   const useCases = [
     {
-      icon: (
-        <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-        </svg>
-      ),
-      title: t('landing.useCases.fraud.title'),
-      description: t('landing.useCases.fraud.description'),
+      icon: '🏦',
+      title: currentLang === 'es' ? 'Servicios Financieros' : 'Financial Services',
+      description: currentLang === 'es'
+        ? 'Detección de fraude colaborativa entre bancos sin compartir datos de clientes.'
+        : 'Collaborative fraud detection across banks without sharing customer data.',
+      examples: currentLang === 'es'
+        ? ['Scoring crediticio multi-banco', 'Detección de lavado de dinero', 'Prevención de fraude']
+        : ['Multi-bank credit scoring', 'AML detection', 'Fraud prevention'],
       color: 'blue'
     },
     {
-      icon: (
-        <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-        </svg>
-      ),
-      title: t('landing.useCases.health.title'),
-      description: t('landing.useCases.health.description'),
+      icon: '🏥',
+      title: currentLang === 'es' ? 'Salud' : 'Healthcare',
+      description: currentLang === 'es'
+        ? 'Investigación médica colaborativa cumpliendo HIPAA sin exponer datos de pacientes.'
+        : 'Collaborative medical research compliant with HIPAA without exposing patient data.',
+      examples: currentLang === 'es'
+        ? ['Predicción de riesgo de enfermedades', 'Descubrimiento de medicamentos', 'Estudios clínicos']
+        : ['Disease risk prediction', 'Drug discovery', 'Clinical trials'],
       color: 'emerald'
     },
-  ]
-
-  const phases = [
     {
-      number: '01',
-      title: t('landing.phases.sdk.title'),
-      description: t('landing.phases.sdk.description'),
-      status: 'completed'
+      icon: '🛡️',
+      title: currentLang === 'es' ? 'Seguros' : 'Insurance',
+      description: currentLang === 'es'
+        ? 'Modelos actuariales compartidos que mejoran la precisión sin revelar portafolios.'
+        : 'Shared actuarial models improving accuracy without revealing portfolios.',
+      examples: currentLang === 'es'
+        ? ['Pricing dinámico', 'Detección de fraude de siniestros', 'Análisis de riesgo']
+        : ['Dynamic pricing', 'Claims fraud detection', 'Risk analysis'],
+      color: 'amber'
     },
     {
-      number: '02',
-      title: t('landing.phases.ml.title'),
-      description: t('landing.phases.ml.description'),
-      status: 'completed'
-    },
-    {
-      number: '03',
-      title: t('landing.phases.api.title'),
-      description: t('landing.phases.api.description'),
-      status: 'completed'
-    },
-    {
-      number: '04',
-      title: t('landing.phases.blockchain.title'),
-      description: t('landing.phases.blockchain.description'),
-      status: 'completed'
-    },
-    {
-      number: '05',
-      title: t('landing.phases.governance.title'),
-      description: t('landing.phases.governance.description'),
-      status: 'completed'
+      icon: '🏛️',
+      title: currentLang === 'es' ? 'Gobierno' : 'Government',
+      description: currentLang === 'es'
+        ? 'Análisis de datos sensibles entre agencias manteniendo privacidad ciudadana.'
+        : 'Cross-agency sensitive data analysis while maintaining citizen privacy.',
+      examples: currentLang === 'es'
+        ? ['Detección de fraude fiscal', 'Análisis de seguridad', 'Políticas públicas']
+        : ['Tax fraud detection', 'Security analysis', 'Public policy'],
+      color: 'slate'
     },
   ]
 
-  const demoVideos = [
+  const comparison = [
+    { feature: currentLang === 'es' ? 'ML sobre datos encriptados' : 'ML on encrypted data', xcapit: true, traditional: false, mpc: 'partial' },
+    { feature: currentLang === 'es' ? 'Gobernanza blockchain' : 'Blockchain governance', xcapit: true, traditional: false, mpc: false },
+    { feature: currentLang === 'es' ? 'Marketplace de modelos' : 'Model marketplace', xcapit: true, traditional: false, mpc: false },
+    { feature: currentLang === 'es' ? 'Compliance automático' : 'Auto compliance', xcapit: true, traditional: 'partial', mpc: false },
+    { feature: currentLang === 'es' ? 'Sin confianza en terceros' : 'Zero trust third party', xcapit: true, traditional: false, mpc: true },
+    { feature: currentLang === 'es' ? 'Explicabilidad del modelo' : 'Model explainability', xcapit: true, traditional: true, mpc: false },
+    { feature: currentLang === 'es' ? 'Inferencia federada' : 'Federated inference', xcapit: true, traditional: false, mpc: 'partial' },
+    { feature: currentLang === 'es' ? 'SDK empresarial' : 'Enterprise SDK', xcapit: true, traditional: 'partial', mpc: false },
+  ]
+
+  const testimonials = [
     {
-      title: t('landing.demoVideos.consortium.title'),
-      description: t('landing.demoVideos.consortium.description'),
-      video: currentLang === 'es' ? '/videos/es/demo_consorcio.mp4' : '/videos/en/demo_consorcio.mp4',
-      color: 'purple'
+      quote: currentLang === 'es'
+        ? "La plataforma nos permitió colaborar con competidores en detección de fraude sin comprometer datos de clientes. Revolucionario."
+        : "The platform allowed us to collaborate with competitors on fraud detection without compromising customer data. Revolutionary.",
+      author: "CTO, Financial Services",
+      company: currentLang === 'es' ? "Banco Regional" : "Regional Bank",
+      avatar: "👤"
     },
     {
-      title: t('landing.demoVideos.governance.title'),
-      description: t('landing.demoVideos.governance.description'),
-      video: currentLang === 'es' ? '/videos/es/demo_governance.mp4' : '/videos/en/demo_governance.mp4',
-      color: 'green'
+      quote: currentLang === 'es'
+        ? "Finalmente podemos hacer investigación multi-hospital cumpliendo HIPAA. Los resultados son tan precisos como con datos en claro."
+        : "We can finally do multi-hospital research while complying with HIPAA. Results are as accurate as with plaintext data.",
+      author: "Chief Data Officer",
+      company: currentLang === 'es' ? "Red de Hospitales" : "Hospital Network",
+      avatar: "👤"
     },
     {
-      title: t('landing.demoVideos.platform.title'),
-      description: t('landing.demoVideos.platform.description'),
-      video: currentLang === 'es' ? '/videos/es/demo_web.mp4' : '/videos/en/demo_web.mp4',
-      color: 'blue'
-    }
+      quote: currentLang === 'es'
+        ? "La gobernanza descentralizada resolvió nuestros problemas de confianza. Cada participante tiene control total sobre sus contribuciones."
+        : "Decentralized governance solved our trust issues. Every participant has full control over their contributions.",
+      author: "VP of Data",
+      company: currentLang === 'es' ? "Aseguradora Global" : "Global Insurance Co.",
+      avatar: "👤"
+    },
+  ]
+
+  const faqs = [
+    {
+      question: currentLang === 'es'
+        ? "¿Qué tan seguro es el cifrado homomórfico?"
+        : "How secure is homomorphic encryption?",
+      answer: currentLang === 'es'
+        ? "Usamos CKKS con 128-bit de seguridad, el mismo nivel usado por instituciones financieras y gobiernos. Los datos nunca se descifran durante el procesamiento - las operaciones matemáticas se realizan directamente sobre los datos encriptados."
+        : "We use CKKS with 128-bit security, the same level used by financial institutions and governments. Data is never decrypted during processing - mathematical operations are performed directly on encrypted data."
+    },
+    {
+      question: currentLang === 'es'
+        ? "¿Cuál es el impacto en performance?"
+        : "What's the performance impact?",
+      answer: currentLang === 'es'
+        ? "FHE es más lento que computación en claro (típicamente 10-100x), pero usamos batch processing y optimizaciones que hacen viable el uso en producción. Para casos donde la privacidad es crítica, el trade-off es aceptable."
+        : "FHE is slower than plaintext computation (typically 10-100x), but we use batch processing and optimizations that make production use viable. For cases where privacy is critical, the trade-off is acceptable."
+    },
+    {
+      question: currentLang === 'es'
+        ? "¿Qué algoritmos de ML soportan?"
+        : "Which ML algorithms do you support?",
+      answer: currentLang === 'es'
+        ? "Actualmente: Regresión Lineal, Regresión Logística, Árboles de Decisión, KMeans y Ensemble de modelos. Estamos trabajando en soporte para redes neuronales básicas."
+        : "Currently: Linear Regression, Logistic Regression, Decision Trees, KMeans, and Model Ensembles. We're working on basic neural network support."
+    },
+    {
+      question: currentLang === 'es'
+        ? "¿Cómo funciona la gobernanza blockchain?"
+        : "How does blockchain governance work?",
+      answer: currentLang === 'es'
+        ? "Desplegamos smart contracts en Arbitrum que registran contribuciones, votos y distribución de ingresos. Todo es auditable y transparente. Los participantes votan propuestas y el sistema ejecuta automáticamente las decisiones."
+        : "We deploy smart contracts on Arbitrum that record contributions, votes, and revenue distribution. Everything is auditable and transparent. Participants vote on proposals and the system automatically executes decisions."
+    },
+    {
+      question: currentLang === 'es'
+        ? "¿Cumple con GDPR/HIPAA?"
+        : "Is it GDPR/HIPAA compliant?",
+      answer: currentLang === 'es'
+        ? "Sí. Como los datos nunca se descifran, no hay exposición de información personal. Nuestro dashboard de compliance verifica automáticamente requisitos regulatorios y genera reportes de auditoría."
+        : "Yes. Since data is never decrypted, there's no exposure of personal information. Our compliance dashboard automatically verifies regulatory requirements and generates audit reports."
+    },
+    {
+      question: currentLang === 'es'
+        ? "¿Puedo probarlo antes de comprar?"
+        : "Can I try before buying?",
+      answer: currentLang === 'es'
+        ? "Absolutamente. Tenemos un Sandbox gratuito con datos sintéticos donde puedes probar toda la funcionalidad. También ofrecemos POCs personalizados para empresas."
+        : "Absolutely. We have a free Sandbox with synthetic data where you can test all functionality. We also offer custom POCs for enterprises."
+    },
+  ]
+
+  const techStack = [
+    { name: 'TenSEAL', desc: 'CKKS FHE' },
+    { name: 'FastAPI', desc: 'REST API' },
+    { name: 'Arbitrum', desc: 'Blockchain' },
+    { name: 'React', desc: 'Dashboard' },
+    { name: 'PostgreSQL', desc: 'Database' },
+    { name: 'Docker', desc: 'Containers' },
   ]
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-white">
       {/* Navigation */}
-      <nav className="bg-white border-b border-slate-200">
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        scrolled ? 'bg-white/95 backdrop-blur-md shadow-sm' : 'bg-transparent'
+      }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <div className="w-10 h-10 bg-brand-600 rounded-lg flex items-center justify-center mr-2">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center mr-2 transition-colors ${
+                scrolled ? 'bg-brand-600' : 'bg-white/20 backdrop-blur-sm'
+              }`}>
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
               </div>
-              <span className="text-2xl font-semibold text-slate-900">Xcapit</span>
-              <span className="text-2xl font-light text-brand-600 ml-1">Privacy</span>
+              <span className={`text-2xl font-bold transition-colors ${scrolled ? 'text-slate-900' : 'text-white'}`}>
+                Xcapit
+              </span>
+              <span className={`text-2xl font-light ml-1 transition-colors ${scrolled ? 'text-brand-600' : 'text-brand-200'}`}>
+                Privacy
+              </span>
             </div>
-            <div className="flex items-center gap-4">
-              <LanguageSwitcher variant="toggle" />
-              <Link to="/demos" className="text-slate-600 hover:text-slate-900 font-medium">
-                {t('landing.nav.demos')}
+            <div className="hidden md:flex items-center gap-6">
+              <a href="#features" className={`font-medium transition-colors ${scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-white'}`}>
+                {currentLang === 'es' ? 'Características' : 'Features'}
+              </a>
+              <a href="#use-cases" className={`font-medium transition-colors ${scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-white'}`}>
+                {currentLang === 'es' ? 'Casos de Uso' : 'Use Cases'}
+              </a>
+              <a href="#pricing" className={`font-medium transition-colors ${scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-white'}`}>
+                {currentLang === 'es' ? 'Precios' : 'Pricing'}
+              </a>
+              <Link to="/demos" className={`font-medium transition-colors ${scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-white'}`}>
+                Demos
               </Link>
-              <Link to="/login" className="text-slate-600 hover:text-slate-900 font-medium">
+            </div>
+            <div className="flex items-center gap-3">
+              <LanguageSwitcher variant="toggle" />
+              <Link to="/login" className={`hidden sm:block font-medium transition-colors ${scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-white'}`}>
                 {t('landing.nav.login')}
               </Link>
-              <Link to="/register" className="bg-brand-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-brand-700 transition">
+              <Link to="/register" className="bg-brand-600 text-white px-5 py-2.5 rounded-lg font-medium hover:bg-brand-700 transition shadow-lg shadow-brand-600/25">
                 {t('landing.nav.register')}
               </Link>
             </div>
@@ -378,130 +571,186 @@ export default function Landing() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-brand-600 to-indigo-800"></div>
-        <div className="absolute inset-0 opacity-10">
+      <section className="relative min-h-screen flex items-center overflow-hidden">
+        {/* Animated Background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-brand-900 to-indigo-900"></div>
+        <div className="absolute inset-0">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-500/30 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-500/30 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        </div>
+        <div className="absolute inset-0 opacity-20">
           <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
             <defs>
-              <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
-                <path d="M 10 0 L 0 0 0 10" fill="none" stroke="white" strokeWidth="0.5"/>
+              <pattern id="grid" width="4" height="4" patternUnits="userSpaceOnUse">
+                <path d="M 4 0 L 0 0 0 4" fill="none" stroke="white" strokeWidth="0.1"/>
               </pattern>
             </defs>
             <rect width="100" height="100" fill="url(#grid)" />
           </svg>
         </div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Left: Text Content */}
             <div className="text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full mb-6">
-                <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                <span className="text-white/90 text-sm font-medium">{t('landing.hero.badge')}</span>
+              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full mb-8 border border-white/20">
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                </span>
+                <span className="text-white/90 text-sm font-medium">
+                  {currentLang === 'es' ? 'Plataforma v1.0 - Producción Lista' : 'Platform v1.0 - Production Ready'}
+                </span>
               </div>
+
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
-                {t('landing.hero.title')}
+                {currentLang === 'es' ? 'Machine Learning' : 'Machine Learning'}
                 <br />
-                <span className="text-brand-200">{t('landing.hero.titleHighlight')}</span>
+                <span className="bg-gradient-to-r from-brand-400 to-indigo-400 bg-clip-text text-transparent">
+                  {currentLang === 'es' ? 'Sin Ver Tus Datos' : 'Without Seeing Your Data'}
+                </span>
               </h1>
-              <p className="text-lg lg:text-xl text-brand-100 mb-8 max-w-xl">
-                {t('landing.hero.subtitle')}
+
+              <p className="text-lg lg:text-xl text-slate-300 mb-8 max-w-xl leading-relaxed">
+                {currentLang === 'es'
+                  ? 'Entrena modelos colaborativos entre empresas con cifrado homomórfico. Los datos nunca se descifran. Gobernanza transparente en blockchain.'
+                  : 'Train collaborative models across companies with homomorphic encryption. Data is never decrypted. Transparent blockchain governance.'}
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+
+              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-12">
                 <Link
                   to="/demos"
-                  className="inline-flex items-center justify-center gap-2 bg-white text-brand-600 px-8 py-4 rounded-xl font-semibold hover:bg-brand-50 transition text-lg shadow-lg"
+                  className="group inline-flex items-center justify-center gap-3 bg-white text-slate-900 px-8 py-4 rounded-xl font-semibold hover:bg-slate-100 transition text-lg shadow-2xl"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <svg className="w-6 h-6 text-brand-600" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z"/>
                   </svg>
-                  {t('landing.hero.watchDemo')}
+                  {currentLang === 'es' ? 'Ver Demo' : 'Watch Demo'}
+                  <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
                 </Link>
                 <Link
                   to="/register"
-                  className="inline-flex items-center justify-center gap-2 bg-brand-500 text-white px-8 py-4 rounded-xl font-semibold hover:bg-brand-400 transition text-lg border border-brand-400"
+                  className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-500 to-indigo-500 text-white px-8 py-4 rounded-xl font-semibold hover:from-brand-600 hover:to-indigo-600 transition text-lg border border-white/20"
                 >
-                  {t('landing.hero.startFree')}
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
+                  {currentLang === 'es' ? 'Empezar Gratis' : 'Start Free'}
                 </Link>
               </div>
-              {/* Trust indicators */}
-              <div className="mt-10 pt-8 border-t border-white/20">
-                <p className="text-white/60 text-sm mb-4">{t('landing.hero.trustedBy')}</p>
-                <div className="flex flex-wrap gap-6 justify-center lg:justify-start">
-                  <div className="flex items-center gap-2 text-white/80">
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    <span className="text-sm">{t('landing.hero.fheEncryption')}</span>
+
+              {/* Stats Grid */}
+              <div className="grid grid-cols-4 gap-4">
+                {stats.map((stat, index) => (
+                  <div key={index} className="text-center">
+                    <div className="text-2xl md:text-3xl font-bold text-white">
+                      <AnimatedCounter end={stat.value} suffix={stat.suffix} />
+                    </div>
+                    <div className="text-xs md:text-sm text-slate-400">{stat.label}</div>
                   </div>
-                  <div className="flex items-center gap-2 text-white/80">
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    <span className="text-sm">{t('landing.hero.gdprCompliant')}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-white/80">
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
-                      <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm9.707 5.707a1 1 0 00-1.414-1.414L9 12.586l-1.293-1.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    <span className="text-sm">{t('landing.hero.auditTrail')}</span>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
 
-            {/* Right: Hero Video */}
-            <div className="relative">
-              <div className="relative rounded-2xl overflow-hidden shadow-2xl border-4 border-white/20">
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent z-10 pointer-events-none"></div>
-                <video
-                  src={currentLang === 'es' ? '/videos/es/demo_consorcio.mp4' : '/videos/en/demo_consorcio.mp4'}
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  className="w-full aspect-video object-cover"
-                />
-                <div className="absolute bottom-4 left-4 right-4 z-20">
-                  <div className="bg-black/60 backdrop-blur-sm rounded-lg p-3">
-                    <div className="flex items-center gap-2 text-white text-sm">
-                      <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-                      <span className="font-medium">{t('landing.hero.liveDemo')}</span>
-                      <span className="text-white/70">— {t('landing.hero.videoCta')}</span>
+            {/* Right: Hero Visual */}
+            <div className="relative hidden lg:block">
+              <div className="relative">
+                {/* Main Video/Image Container */}
+                <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-white/10 bg-slate-800/50 backdrop-blur-sm">
+                  <video
+                    src={currentLang === 'es' ? '/videos/es/demo_consorcio.mp4' : '/videos/en/demo_consorcio.mp4'}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="w-full aspect-video object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent"></div>
+                  <div className="absolute bottom-4 left-4 right-4">
+                    <div className="flex items-center gap-3 text-white text-sm">
+                      <span className="flex items-center gap-2 bg-red-500/90 px-3 py-1 rounded-full">
+                        <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+                        LIVE
+                      </span>
+                      <span className="text-white/80">
+                        {currentLang === 'es' ? 'Demo en vivo del consorcio' : 'Live consortium demo'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Floating Cards */}
+                <div className="absolute -top-6 -right-6 bg-white rounded-xl shadow-xl p-4 animate-float">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                      <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold text-slate-900">100%</div>
+                      <div className="text-sm text-slate-600">{currentLang === 'es' ? 'Datos Privados' : 'Data Private'}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="absolute -bottom-6 -left-6 bg-white rounded-xl shadow-xl p-4 animate-float-delayed">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-brand-100 rounded-lg flex items-center justify-center">
+                      <svg className="w-6 h-6 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold text-slate-900">FHE</div>
+                      <div className="text-sm text-slate-600">{currentLang === 'es' ? 'Encriptación' : 'Encryption'}</div>
                     </div>
                   </div>
                 </div>
               </div>
-              {/* Floating stats */}
-              <div className="absolute -bottom-6 -left-6 bg-white rounded-xl shadow-xl p-4 hidden lg:block">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                    <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                    </svg>
+            </div>
+          </div>
+        </div>
+
+        {/* Scroll Indicator */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
+          <svg className="w-6 h-6 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+          </svg>
+        </div>
+      </section>
+
+      {/* Credentials Section */}
+      <section className="py-12 bg-slate-50 border-y border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid md:grid-cols-2 gap-8 items-center">
+            <div className="text-center md:text-left">
+              <p className="text-sm text-slate-500 mb-2 uppercase tracking-wider">
+                {currentLang === 'es' ? 'Respaldado por' : 'Backed by'}
+              </p>
+              <div className="flex items-center justify-center md:justify-start gap-4">
+                <a href="https://quarkid.org" target="_blank" rel="noopener noreferrer" className="group">
+                  <div className="text-3xl font-bold text-slate-700 group-hover:text-brand-600 transition">
+                    QuarkID
                   </div>
-                  <div>
-                    <div className="text-2xl font-bold text-slate-900">100%</div>
-                    <div className="text-sm text-slate-600">{t('landing.hero.dataPrivacy')}</div>
+                  <div className="text-sm text-slate-500">
+                    {currentLang === 'es' ? '3.6M+ usuarios' : '3.6M+ users'}
                   </div>
-                </div>
+                </a>
               </div>
-              <div className="absolute -top-4 -right-4 bg-white rounded-xl shadow-xl p-4 hidden lg:block">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-brand-100 rounded-lg flex items-center justify-center">
-                    <svg className="w-6 h-6 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
+            </div>
+            <div className="text-center md:text-right">
+              <p className="text-sm text-slate-500 mb-4 uppercase tracking-wider">
+                {currentLang === 'es' ? 'Tecnologías' : 'Technologies'}
+              </p>
+              <div className="flex flex-wrap justify-center md:justify-end items-center gap-6">
+                {techStack.map((tech, index) => (
+                  <div key={index} className="flex flex-col items-center group">
+                    <div className="text-lg font-semibold text-slate-400 group-hover:text-brand-600 transition">
+                      {tech.name}
+                    </div>
+                    <div className="text-xs text-slate-400">{tech.desc}</div>
                   </div>
-                  <div>
-                    <div className="text-2xl font-bold text-slate-900">N</div>
-                    <div className="text-sm text-slate-600">{t('landing.hero.companies')}</div>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
           </div>
@@ -509,22 +758,34 @@ export default function Landing() {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 bg-white">
+      <section id="features" className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-slate-900 mb-4">{t('landing.features.title')}</h2>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-              {t('landing.features.subtitle')}
+            <span className="inline-block px-4 py-1 bg-brand-100 text-brand-700 rounded-full text-sm font-medium mb-4">
+              {currentLang === 'es' ? 'Características' : 'Features'}
+            </span>
+            <h2 className="text-4xl font-bold text-slate-900 mb-4">
+              {currentLang === 'es' ? 'Todo lo que necesitas para ML privado' : 'Everything you need for private ML'}
+            </h2>
+            <p className="text-xl text-slate-600 max-w-2xl mx-auto">
+              {currentLang === 'es'
+                ? 'Una plataforma completa para colaboración en machine learning preservando la privacidad.'
+                : 'A complete platform for privacy-preserving machine learning collaboration.'}
             </p>
           </div>
-          <div className="grid md:grid-cols-3 gap-8">
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {features.map((feature, index) => (
-              <div key={index} className="bg-slate-50 rounded-2xl p-8 hover:shadow-lg transition">
-                <div className="w-14 h-14 bg-brand-100 text-brand-600 rounded-xl flex items-center justify-center mb-6">
+              <div
+                key={index}
+                className="group relative bg-white rounded-2xl p-8 border border-slate-200 hover:border-transparent hover:shadow-xl transition-all duration-300"
+              >
+                <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-5 rounded-2xl transition-opacity`}></div>
+                <div className={`w-14 h-14 bg-gradient-to-br ${feature.gradient} text-white rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
                   {feature.icon}
                 </div>
                 <h3 className="text-xl font-semibold text-slate-900 mb-3">{feature.title}</h3>
-                <p className="text-slate-600">{feature.description}</p>
+                <p className="text-slate-600 leading-relaxed">{feature.description}</p>
               </div>
             ))}
           </div>
@@ -532,179 +793,426 @@ export default function Landing() {
       </section>
 
       {/* Use Cases Section */}
-      <section className="py-20 bg-slate-50">
+      <section id="use-cases" className="py-24 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-slate-900 mb-4">{t('landing.useCases.title')}</h2>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-              {t('landing.useCases.subtitle')}
+            <span className="inline-block px-4 py-1 bg-emerald-100 text-emerald-700 rounded-full text-sm font-medium mb-4">
+              {currentLang === 'es' ? 'Casos de Uso' : 'Use Cases'}
+            </span>
+            <h2 className="text-4xl font-bold text-slate-900 mb-4">
+              {currentLang === 'es' ? 'Industrias que transformamos' : 'Industries we transform'}
+            </h2>
+            <p className="text-xl text-slate-600 max-w-2xl mx-auto">
+              {currentLang === 'es'
+                ? 'Soluciones adaptadas para los desafíos de privacidad de datos más críticos.'
+                : 'Solutions tailored for the most critical data privacy challenges.'}
             </p>
           </div>
+
           <div className="grid md:grid-cols-2 gap-8">
             {useCases.map((useCase, index) => (
-              <div key={index} className={`bg-white rounded-2xl p-8 border-l-4 ${useCase.color === 'blue' ? 'border-blue-500' : 'border-emerald-500'} hover:shadow-lg transition`}>
-                <div className={`w-16 h-16 ${useCase.color === 'blue' ? 'bg-blue-100 text-blue-600' : 'bg-emerald-100 text-emerald-600'} rounded-xl flex items-center justify-center mb-6`}>
-                  {useCase.icon}
+              <div
+                key={index}
+                className={`bg-white rounded-2xl p-8 border-l-4 ${
+                  useCase.color === 'blue' ? 'border-blue-500' :
+                  useCase.color === 'emerald' ? 'border-emerald-500' :
+                  useCase.color === 'amber' ? 'border-amber-500' :
+                  'border-slate-500'
+                } hover:shadow-xl transition-shadow`}
+              >
+                <div className="text-4xl mb-4">{useCase.icon}</div>
+                <h3 className="text-2xl font-semibold text-slate-900 mb-3">{useCase.title}</h3>
+                <p className="text-slate-600 mb-6">{useCase.description}</p>
+                <div className="flex flex-wrap gap-2">
+                  {useCase.examples.map((example, i) => (
+                    <span key={i} className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-sm">
+                      {example}
+                    </span>
+                  ))}
                 </div>
-                <h3 className="text-xl font-semibold text-slate-900 mb-3">{useCase.title}</h3>
-                <p className="text-slate-600 mb-4">{useCase.description}</p>
-                <Link to="/demos" className={`inline-flex items-center ${useCase.color === 'blue' ? 'text-blue-600 hover:text-blue-700' : 'text-emerald-600 hover:text-emerald-700'} font-medium`}>
-                  {t('landing.useCases.viewDemo')}
-                  <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </Link>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Phases Section */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Comparison Section */}
+      <section className="py-24 bg-white">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-slate-900 mb-4">{t('landing.phases.title')}</h2>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-              {t('landing.phases.subtitle')}
+            <span className="inline-block px-4 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium mb-4">
+              {currentLang === 'es' ? 'Comparativa' : 'Comparison'}
+            </span>
+            <h2 className="text-4xl font-bold text-slate-900 mb-4">
+              {currentLang === 'es' ? '¿Por qué Xcapit Privacy?' : 'Why Xcapit Privacy?'}
+            </h2>
+            <p className="text-xl text-slate-600 max-w-2xl mx-auto">
+              {currentLang === 'es'
+                ? 'Combinamos lo mejor del cifrado homomórfico con gobernanza blockchain.'
+                : 'We combine the best of homomorphic encryption with blockchain governance.'}
             </p>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-6">
-            {phases.map((phase, index) => (
-              <div key={index} className="relative bg-slate-50 rounded-2xl p-6 hover:shadow-lg transition">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-4xl font-bold text-brand-200">{phase.number}</span>
-                  {phase.status === 'completed' && (
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                      {t('landing.phases.ready')}
-                    </span>
+
+          <div className="bg-slate-50 rounded-2xl overflow-hidden border border-slate-200">
+            <div className="grid grid-cols-4 bg-slate-100 border-b border-slate-200">
+              <div className="p-4 font-semibold text-slate-900">
+                {currentLang === 'es' ? 'Característica' : 'Feature'}
+              </div>
+              <div className="p-4 text-center font-semibold text-brand-600">Xcapit</div>
+              <div className="p-4 text-center font-semibold text-slate-600">
+                {currentLang === 'es' ? 'ML Tradicional' : 'Traditional ML'}
+              </div>
+              <div className="p-4 text-center font-semibold text-slate-600">MPC</div>
+            </div>
+            {comparison.map((row, index) => (
+              <div key={index} className="grid grid-cols-4 border-b border-slate-200 last:border-0 hover:bg-white transition">
+                <div className="p-4 text-slate-700">{row.feature}</div>
+                <div className="p-4 flex justify-center">
+                  {row.xcapit === true ? (
+                    <svg className="w-6 h-6 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  ) : row.xcapit === 'partial' ? (
+                    <svg className="w-6 h-6 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+                    </svg>
+                  ) : (
+                    <svg className="w-6 h-6 text-slate-300" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
                   )}
                 </div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-2">{phase.title}</h3>
-                <p className="text-sm text-slate-600">{phase.description}</p>
+                <div className="p-4 flex justify-center">
+                  {row.traditional === true ? (
+                    <svg className="w-6 h-6 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  ) : row.traditional === 'partial' ? (
+                    <svg className="w-6 h-6 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+                    </svg>
+                  ) : (
+                    <svg className="w-6 h-6 text-slate-300" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                </div>
+                <div className="p-4 flex justify-center">
+                  {row.mpc === true ? (
+                    <svg className="w-6 h-6 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  ) : row.mpc === 'partial' ? (
+                    <svg className="w-6 h-6 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+                    </svg>
+                  ) : (
+                    <svg className="w-6 h-6 text-slate-300" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                </div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Demo Videos Section */}
-      <section className="py-20 bg-slate-50">
+      {/* Testimonials */}
+      <section className="py-24 bg-slate-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-slate-900 mb-4">{t('landing.demoVideos.title')}</h2>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-              {t('landing.demoVideos.subtitle')}
-            </p>
+            <span className="inline-block px-4 py-1 bg-brand-500/20 text-brand-400 rounded-full text-sm font-medium mb-4">
+              {currentLang === 'es' ? 'Testimonios' : 'Testimonials'}
+            </span>
+            <h2 className="text-4xl font-bold text-white mb-4">
+              {currentLang === 'es' ? 'Lo que dicen nuestros usuarios' : 'What our users say'}
+            </h2>
           </div>
-          <div className="grid md:grid-cols-2 gap-8">
-            {demoVideos.map((demo, index) => (
-              <div key={index} className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition">
-                <div className="aspect-video bg-slate-900 relative">
-                  <video
-                    src={demo.video}
-                    controls
-                    className="w-full h-full object-cover"
-                    poster=""
-                  >
-                    {t('landing.demoVideos.videoNotSupported')}
-                  </video>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {testimonials.map((testimonial, index) => (
+              <div key={index} className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700">
+                <div className="flex items-center gap-1 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <svg key={i} className="w-5 h-5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                  ))}
                 </div>
-                <div className="p-6">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      demo.color === 'purple' ? 'bg-purple-100 text-purple-700' :
-                      demo.color === 'green' ? 'bg-green-100 text-green-700' :
-                      'bg-blue-100 text-blue-700'
-                    }`}>
-                      {demo.color === 'purple' ? t('landing.demoVideos.tags.consortium') : demo.color === 'green' ? t('landing.demoVideos.tags.governance') : t('landing.demoVideos.tags.platform')}
-                    </span>
+                <p className="text-slate-300 mb-6 italic">"{testimonial.quote}"</p>
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-slate-700 rounded-full flex items-center justify-center text-2xl">
+                    {testimonial.avatar}
                   </div>
-                  <h3 className="text-xl font-semibold text-slate-900 mb-2">{demo.title}</h3>
-                  <p className="text-slate-600">{demo.description}</p>
+                  <div>
+                    <div className="font-semibold text-white">{testimonial.author}</div>
+                    <div className="text-sm text-slate-400">{testimonial.company}</div>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
-          <div className="text-center mt-10">
-            <Link
-              to="/demos"
-              className="inline-flex items-center gap-2 text-brand-600 font-medium hover:text-brand-700"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              {t('landing.demoVideos.viewAllDemos')}
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </Link>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section id="pricing" className="py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <span className="inline-block px-4 py-1 bg-amber-100 text-amber-700 rounded-full text-sm font-medium mb-4">
+              {currentLang === 'es' ? 'Precios' : 'Pricing'}
+            </span>
+            <h2 className="text-4xl font-bold text-slate-900 mb-4">
+              {currentLang === 'es' ? 'Plan simple, valor extraordinario' : 'Simple plan, extraordinary value'}
+            </h2>
+            <p className="text-xl text-slate-600 max-w-2xl mx-auto">
+              {currentLang === 'es'
+                ? 'Comienza gratis, escala según tus necesidades.'
+                : 'Start free, scale as you need.'}
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            {/* Free Tier */}
+            <div className="bg-white rounded-2xl p-8 border-2 border-slate-200 hover:border-slate-300 transition">
+              <div className="text-lg font-semibold text-slate-900 mb-2">Sandbox</div>
+              <div className="flex items-baseline gap-1 mb-4">
+                <span className="text-4xl font-bold text-slate-900">{currentLang === 'es' ? 'Gratis' : 'Free'}</span>
+              </div>
+              <p className="text-slate-600 mb-6">
+                {currentLang === 'es' ? 'Perfecto para probar y aprender.' : 'Perfect to test and learn.'}
+              </p>
+              <ul className="space-y-3 mb-8">
+                {[
+                  currentLang === 'es' ? 'Datos sintéticos' : 'Synthetic data',
+                  currentLang === 'es' ? 'Todos los modelos ML' : 'All ML models',
+                  currentLang === 'es' ? '1 consorcio de prueba' : '1 test consortium',
+                  currentLang === 'es' ? 'Dashboard completo' : 'Full dashboard',
+                ].map((feature, i) => (
+                  <li key={i} className="flex items-center gap-2 text-slate-600">
+                    <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+              <Link to="/register" className="block w-full text-center bg-slate-100 text-slate-700 py-3 rounded-xl font-semibold hover:bg-slate-200 transition">
+                {currentLang === 'es' ? 'Empezar Gratis' : 'Start Free'}
+              </Link>
+            </div>
+
+            {/* Pro Tier */}
+            <div className="bg-gradient-to-br from-brand-600 to-indigo-600 rounded-2xl p-8 text-white relative transform md:scale-105 shadow-xl">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-amber-400 text-amber-900 rounded-full text-sm font-bold">
+                {currentLang === 'es' ? 'MÁS POPULAR' : 'MOST POPULAR'}
+              </div>
+              <div className="text-lg font-semibold mb-2">Pro</div>
+              <div className="flex items-baseline gap-1 mb-4">
+                <span className="text-4xl font-bold">$999</span>
+                <span className="text-brand-200">/{currentLang === 'es' ? 'mes' : 'month'}</span>
+              </div>
+              <p className="text-brand-100 mb-6">
+                {currentLang === 'es' ? 'Para equipos que necesitan colaboración real.' : 'For teams that need real collaboration.'}
+              </p>
+              <ul className="space-y-3 mb-8">
+                {[
+                  currentLang === 'es' ? 'Datos reales encriptados' : 'Real encrypted data',
+                  currentLang === 'es' ? '5 consorcios activos' : '5 active consortiums',
+                  currentLang === 'es' ? 'Gobernanza blockchain' : 'Blockchain governance',
+                  currentLang === 'es' ? 'Dashboard de compliance' : 'Compliance dashboard',
+                  currentLang === 'es' ? 'Soporte prioritario' : 'Priority support',
+                ].map((feature, i) => (
+                  <li key={i} className="flex items-center gap-2">
+                    <svg className="w-5 h-5 text-brand-200" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+              <Link to="/register" className="block w-full text-center bg-white text-brand-600 py-3 rounded-xl font-semibold hover:bg-brand-50 transition">
+                {currentLang === 'es' ? 'Comenzar Ahora' : 'Get Started'}
+              </Link>
+            </div>
+
+            {/* Enterprise Tier */}
+            <div className="bg-white rounded-2xl p-8 border-2 border-slate-200 hover:border-slate-300 transition">
+              <div className="text-lg font-semibold text-slate-900 mb-2">Enterprise</div>
+              <div className="flex items-baseline gap-1 mb-4">
+                <span className="text-4xl font-bold text-slate-900">{currentLang === 'es' ? 'Custom' : 'Custom'}</span>
+              </div>
+              <p className="text-slate-600 mb-6">
+                {currentLang === 'es' ? 'Soluciones a medida para grandes organizaciones.' : 'Custom solutions for large organizations.'}
+              </p>
+              <ul className="space-y-3 mb-8">
+                {[
+                  currentLang === 'es' ? 'Consorcios ilimitados' : 'Unlimited consortiums',
+                  currentLang === 'es' ? 'Despliegue on-premise' : 'On-premise deployment',
+                  currentLang === 'es' ? 'SLA garantizado' : 'Guaranteed SLA',
+                  currentLang === 'es' ? 'Integración personalizada' : 'Custom integration',
+                  currentLang === 'es' ? 'Account manager dedicado' : 'Dedicated account manager',
+                ].map((feature, i) => (
+                  <li key={i} className="flex items-center gap-2 text-slate-600">
+                    <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+              <a href="#contact" className="block w-full text-center bg-slate-900 text-white py-3 rounded-xl font-semibold hover:bg-slate-800 transition">
+                {currentLang === 'es' ? 'Contactar Ventas' : 'Contact Sales'}
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="py-24 bg-slate-50">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <span className="inline-block px-4 py-1 bg-slate-200 text-slate-700 rounded-full text-sm font-medium mb-4">
+              FAQ
+            </span>
+            <h2 className="text-4xl font-bold text-slate-900 mb-4">
+              {currentLang === 'es' ? 'Preguntas Frecuentes' : 'Frequently Asked Questions'}
+            </h2>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-200">
+            {faqs.map((faq, index) => (
+              <FAQItem
+                key={index}
+                question={faq.question}
+                answer={faq.answer}
+                isOpen={openFAQ === index}
+                onClick={() => setOpenFAQ(openFAQ === index ? -1 : index)}
+              />
+            ))}
           </div>
         </div>
       </section>
 
       {/* Contact Section */}
-      <section id="colaboracion" className="py-20 bg-white">
+      <section id="contact" className="py-24 bg-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-slate-900 mb-4">{t('landing.contact.title')}</h2>
-            <p className="text-lg text-slate-600">
-              {t('landing.contact.subtitle')}
-            </p>
+            <span className="inline-block px-4 py-1 bg-brand-100 text-brand-700 rounded-full text-sm font-medium mb-4">
+              {currentLang === 'es' ? 'Contacto' : 'Contact'}
+            </span>
+            <h2 className="text-4xl font-bold text-slate-900 mb-4">{t('landing.contact.title')}</h2>
+            <p className="text-xl text-slate-600">{t('landing.contact.subtitle')}</p>
           </div>
           <ContactForm />
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-brand-600 to-indigo-700">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">
-            {t('landing.cta.title')}
+      {/* Final CTA */}
+      <section className="py-24 bg-gradient-to-br from-slate-900 via-brand-900 to-indigo-900 relative overflow-hidden">
+        <div className="absolute inset-0">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-brand-500/20 rounded-full blur-3xl"></div>
+        </div>
+        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+            {currentLang === 'es'
+              ? '¿Listo para revolucionar tu ML?'
+              : 'Ready to revolutionize your ML?'}
           </h2>
-          <p className="text-xl text-brand-100 mb-8">
-            {t('landing.cta.subtitle')}
+          <p className="text-xl text-slate-300 mb-10 max-w-2xl mx-auto">
+            {currentLang === 'es'
+              ? 'Únete a las empresas que ya colaboran de forma segura con sus datos más sensibles.'
+              : 'Join companies already collaborating securely with their most sensitive data.'}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               to="/register"
-              className="inline-flex items-center justify-center bg-white text-brand-600 px-8 py-4 rounded-xl font-semibold hover:bg-brand-50 transition text-lg"
+              className="inline-flex items-center justify-center bg-white text-slate-900 px-8 py-4 rounded-xl font-semibold hover:bg-slate-100 transition text-lg shadow-2xl"
             >
-              {t('landing.cta.createAccount')}
+              {currentLang === 'es' ? 'Crear Cuenta Gratis' : 'Create Free Account'}
+              <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
             </Link>
-            <a
-              href="#colaboracion"
-              className="inline-flex items-center justify-center bg-transparent text-white px-8 py-4 rounded-xl font-semibold hover:bg-white/10 transition text-lg border-2 border-white/30"
+            <Link
+              to="/demos"
+              className="inline-flex items-center justify-center bg-white/10 backdrop-blur-sm text-white px-8 py-4 rounded-xl font-semibold hover:bg-white/20 transition text-lg border border-white/20"
             >
-              {t('landing.cta.contactUs')}
-            </a>
+              <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z"/>
+              </svg>
+              {currentLang === 'es' ? 'Ver Demos' : 'Watch Demos'}
+            </Link>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-slate-900 py-12">
+      <footer className="bg-slate-900 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex items-center mb-4 md:mb-0">
-              <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center mr-2">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
+          <div className="grid md:grid-cols-4 gap-8 mb-12">
+            <div className="md:col-span-2">
+              <div className="flex items-center mb-4">
+                <div className="w-10 h-10 bg-brand-600 rounded-xl flex items-center justify-center mr-2">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+                <span className="text-xl font-bold text-white">Xcapit</span>
+                <span className="text-xl font-light text-brand-400 ml-1">Privacy</span>
               </div>
-              <span className="text-lg font-semibold text-white">Xcapit</span>
-              <span className="text-lg font-light text-brand-400 ml-1">Privacy</span>
+              <p className="text-slate-400 max-w-md">
+                {currentLang === 'es'
+                  ? 'Plataforma de machine learning colaborativo con cifrado homomórfico y gobernanza blockchain.'
+                  : 'Collaborative machine learning platform with homomorphic encryption and blockchain governance.'}
+              </p>
             </div>
-            <p className="text-slate-400 text-sm">
-              {t('landing.footer.copyright')}
+            <div>
+              <h4 className="text-white font-semibold mb-4">{currentLang === 'es' ? 'Producto' : 'Product'}</h4>
+              <ul className="space-y-2">
+                <li><Link to="/demos" className="text-slate-400 hover:text-white transition">Demos</Link></li>
+                <li><a href="#features" className="text-slate-400 hover:text-white transition">{currentLang === 'es' ? 'Características' : 'Features'}</a></li>
+                <li><a href="#pricing" className="text-slate-400 hover:text-white transition">{currentLang === 'es' ? 'Precios' : 'Pricing'}</a></li>
+                <li><Link to="/register" className="text-slate-400 hover:text-white transition">{currentLang === 'es' ? 'Registrarse' : 'Sign Up'}</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-white font-semibold mb-4">{currentLang === 'es' ? 'Contacto' : 'Contact'}</h4>
+              <ul className="space-y-2">
+                <li><a href="mailto:consorcios@xcapit.com" className="text-slate-400 hover:text-white transition">consorcios@xcapit.com</a></li>
+                <li><a href="https://linkedin.com/company/xcapit" className="text-slate-400 hover:text-white transition">LinkedIn</a></li>
+                <li><a href="https://twitter.com/xcapit" className="text-slate-400 hover:text-white transition">Twitter</a></li>
+              </ul>
+            </div>
+          </div>
+          <div className="pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-slate-500 text-sm">
+              © 2025 Xcapit Privacy. {currentLang === 'es' ? 'Todos los derechos reservados.' : 'All rights reserved.'}
             </p>
+            <div className="flex items-center gap-6">
+              <a href="#" className="text-slate-500 hover:text-slate-300 text-sm">{currentLang === 'es' ? 'Privacidad' : 'Privacy'}</a>
+              <a href="#" className="text-slate-500 hover:text-slate-300 text-sm">{currentLang === 'es' ? 'Términos' : 'Terms'}</a>
+            </div>
           </div>
         </div>
       </footer>
+
+      {/* Custom Animations */}
+      <style>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-10px); }
+        }
+        .animate-float {
+          animation: float 3s ease-in-out infinite;
+        }
+        .animate-float-delayed {
+          animation: float 3s ease-in-out infinite;
+          animation-delay: 1.5s;
+        }
+      `}</style>
     </div>
   )
 }

@@ -391,12 +391,16 @@ class BlockchainConnector:
 
         contract = self.web3.eth.contract(abi=abi, bytecode=bytecode)
 
+        # Get gas price with 20% buffer for network fluctuations
+        base_gas_price = self.get_gas_price()
+        gas_price_with_buffer = int(base_gas_price * 1.2)
+
         # Build deployment transaction
         tx = contract.constructor(*constructor_args).build_transaction({
             "from": self._account.address,
             "nonce": self.get_nonce(),
             "gas": gas or 3000000,
-            "gasPrice": self.get_gas_price(),
+            "gasPrice": gas_price_with_buffer,
             "chainId": self._config.chain_id,
         })
 

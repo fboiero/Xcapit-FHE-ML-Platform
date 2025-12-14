@@ -14,12 +14,30 @@ from .ckks_wrapper import (
     EncryptedMatrix,
     EncryptedVector,
 )
+from .optimized_engine import (
+    OptimizedFHEEngine,
+    OptimizationProfile,
+    ProfileConfig,
+    ContextPool,
+    LazyEncryptedVector,
+    EncryptionStats,
+    PROFILE_CONFIGS,
+)
 
 __all__ = [
+    # Core
     "CKKSParameters",
     "FHEContextManager",
     "SecurityLevel",
     "CKKSEncryptor",
     "EncryptedMatrix",
     "EncryptedVector",
+    # Optimized Engine
+    "OptimizedFHEEngine",
+    "OptimizationProfile",
+    "ProfileConfig",
+    "ContextPool",
+    "LazyEncryptedVector",
+    "EncryptionStats",
+    "PROFILE_CONFIGS",
 ]

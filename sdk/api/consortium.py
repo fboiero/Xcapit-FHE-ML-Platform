@@ -369,11 +369,12 @@ class ConsortiumManager:
     def create_consortium(
         self,
         name: str,
-        description: str,
-        owner_id: str,
-        model_type: str,
+        description: Optional[str] = None,
+        owner_id: Optional[str] = None,
+        model_type: str = "linear_regression",
         model_config: Optional[Dict] = None,
-        metadata: Optional[Dict] = None
+        metadata: Optional[Dict] = None,
+        created_by: Optional[str] = None  # Alias for owner_id
     ) -> Consortium:
         """Create a new consortium.
 
@@ -384,10 +385,16 @@ class ConsortiumManager:
             model_type: Type of ML model (linear_regression, etc.).
             model_config: Model configuration.
             metadata: Optional metadata.
+            created_by: Alias for owner_id (for backwards compatibility).
 
         Returns:
             Created consortium.
         """
+        # Support both owner_id and created_by
+        owner_id = owner_id or created_by
+        if not owner_id:
+            raise ValueError("Either owner_id or created_by must be provided")
+
         consortium_id = f"cons_{secrets.token_hex(8)}"
         now = datetime.utcnow()
 
@@ -2566,11 +2573,11 @@ class ConsortiumManager:
                 company_id,
                 contribution_id,
                 round(overall_score, 2),
-                round(completeness_score, 2),
-                round(consistency_score, 2),
-                round(uniqueness_score, 2),
-                round(validity_score, 2),
-                round(freshness_score, 2),
+                round(scores["completeness"], 2),
+                round(scores["consistency"], 2),
+                round(scores["uniqueness"], 2),
+                round(scores["validity"], 2),
+                round(scores["freshness"], 2),
                 record_count,
                 feature_count,
                 round(null_ratio, 4),
@@ -2614,7 +2621,16 @@ class ConsortiumManager:
             "duplicate_ratio": round(duplicate_ratio * 100, 2),
             "outlier_ratio": round(outlier_ratio * 100, 2),
             "assessed_at": datetime.utcnow(),
-            "metadata": metadata
+            "metadata": metadata,
+            # Additional nested structure for tests
+            "scores": scores,
+            "metrics": {
+                "record_count": record_count,
+                "feature_count": feature_count,
+                "null_ratio": round(null_ratio * 100, 2),
+                "duplicate_ratio": round(duplicate_ratio * 100, 2),
+                "outlier_ratio": round(outlier_ratio * 100, 2)
+            }
         }
 
     def _check_quality_alerts(
@@ -4589,7 +4605,7 @@ class ConsortiumManager:
         """Create a new federated inference endpoint."""
         self._init_federated_schema()
 
-        endpoint_id = f"endpoint_{uuid.uuid4().hex[:16]}"
+        endpoint_id = f"ep_{uuid.uuid4().hex[:16]}"
 
         with self._get_connection() as conn:
             cursor = conn.cursor()
@@ -4679,7 +4695,9 @@ class ConsortiumManager:
         endpoint_id: str,
         requester_id: str,
         input_data: Dict,
-        request_type: str = "single"
+        request_type: str = "single",
+        priority: str = "normal",
+        encryption_key_id: Optional[str] = None
     ) -> Dict:
         """Submit a federated inference request."""
         self._init_federated_schema()
@@ -4709,6 +4727,11 @@ class ConsortiumManager:
 
         # Process the request (simulated federated inference)
         result = self._process_federated_inference(request_id, endpoint, input_data)
+
+        # Add priority and encryption_key_id to result
+        result["priority"] = priority
+        if encryption_key_id:
+            result["encryption_key_id"] = encryption_key_id
 
         return result
 
@@ -4791,6 +4814,7 @@ class ConsortiumManager:
             conn.commit()
 
         return {
+            "id": request_id,
             "request_id": request_id,
             "result_id": result_id,
             "status": "completed",
@@ -4886,25 +4910,28 @@ class ConsortiumManager:
         input_features: Optional[List[str]] = None,
         output_type: str = "classification",
         accuracy: Optional[float] = None,
-        config: Optional[Dict] = None
+        config: Optional[Dict] = None,
+        created_by: Optional[str] = None,
+        version: Optional[str] = None
     ) -> Dict:
         """Register a federated model for inference."""
         self._init_federated_schema()
 
-        model_id = f"fmodel_{uuid.uuid4().hex[:16]}"
+        model_id = f"fm_{uuid.uuid4().hex[:16]}"
 
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
                 INSERT INTO federated_models
                 (id, consortium_id, name, description, model_type, input_features,
-                 output_type, accuracy, config)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 output_type, accuracy, config, version)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 model_id, consortium_id, name, description, model_type,
                 json.dumps(input_features or []),
                 output_type, accuracy,
-                json.dumps(config or {})
+                json.dumps(config or {}),
+                version or "1.0.0"
             ))
             conn.commit()
 
@@ -5089,7 +5116,7 @@ class ConsortiumManager:
             cursor = conn.cursor()
             cursor.execute("""
                 UPDATE edge_nodes
-                SET models_deployed = ?, updated_at = CURRENT_TIMESTAMP
+                SET models_deployed = ?
                 WHERE id = ?
             """, (json.dumps(models_deployed), node_id))
             conn.commit()
@@ -5331,7 +5358,14 @@ class ConsortiumManager:
 
         Returns:
             The explanation request with results
+
+        Raises:
+            ValueError: If explanation_type is not valid
         """
+        valid_types = {"feature_importance", "shap", "decision_path", "counterfactual", "summary"}
+        if explanation_type not in valid_types:
+            raise ValueError(f"Invalid explanation type: {explanation_type}. Must be one of {valid_types}")
+
         self._init_explainability_schema()
 
         request_id = f"exp_{uuid.uuid4().hex[:16]}"
@@ -5370,6 +5404,7 @@ class ConsortiumManager:
 
         return {
             "id": request_id,
+            "request_id": request_id,
             "consortium_id": consortium_id,
             "explanation_type": explanation_type,
             "status": "completed",
@@ -5385,6 +5420,8 @@ class ConsortiumManager:
         model_id: Optional[str]
     ) -> Dict:
         """Generate an explanation based on type (simulated for demo)."""
+        import random
+        random.seed(42)  # Consistent results
         result_id = f"res_{uuid.uuid4().hex[:16]}"
 
         # Get consortium info for context
@@ -5405,8 +5442,6 @@ class ConsortiumManager:
 
         if explanation_type == "feature_importance":
             # Global feature importance
-            import random
-            random.seed(42)  # Consistent results
             importances = []
             total = 0
             for i, name in enumerate(feature_names):
@@ -5414,6 +5449,8 @@ class ConsortiumManager:
                 total += score
                 importances.append({
                     "feature": name,
+                    "name": name,  # Alias for compatibility
+                    "feature_name": name,  # Alias for compatibility
                     "importance": round(score, 4),
                     "rank": i + 1
                 })
@@ -5593,6 +5630,7 @@ class ConsortiumManager:
             return None
 
         result = dict(row)
+        result["request_id"] = result.get("id")  # Add request_id alias
         result["input_data"] = json.loads(result.get("input_data", "{}"))
         if result.get("explanation_data"):
             result["explanation"] = json.loads(result["explanation_data"])
