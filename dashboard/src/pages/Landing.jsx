@@ -430,7 +430,7 @@ export default function Landing() {
     { feature: currentLang === 'es' ? 'Sin confianza en terceros' : 'Zero trust third party', xcapit: true, traditional: false, mpc: true },
     { feature: currentLang === 'es' ? 'Explicabilidad del modelo' : 'Model explainability', xcapit: true, traditional: true, mpc: false },
     { feature: currentLang === 'es' ? 'Inferencia federada' : 'Federated inference', xcapit: true, traditional: false, mpc: 'partial' },
-    { feature: currentLang === 'es' ? 'SDK empresarial' : 'Enterprise SDK', xcapit: true, traditional: 'partial', mpc: false },
+    { feature: 'Open Source', xcapit: true, traditional: 'partial', mpc: 'partial' },
   ]
 
   const testimonials = [
@@ -1182,7 +1182,7 @@ export default function Landing() {
               <h4 className="text-white font-semibold mb-4">{currentLang === 'es' ? 'Contacto' : 'Contact'}</h4>
               <ul className="space-y-2">
                 <li><a href="mailto:consorcios@xcapit.com" className="text-slate-400 hover:text-white transition">consorcios@xcapit.com</a></li>
-                <li><a href="https://linkedin.com/company/xcapit" className="text-slate-400 hover:text-white transition">LinkedIn</a></li>
+                <li><a href="https://github.com/xcapit" className="text-slate-400 hover:text-white transition">GitHub</a></li>
                 <li><a href="https://twitter.com/xcapit" className="text-slate-400 hover:text-white transition">Twitter</a></li>
               </ul>
             </div>
