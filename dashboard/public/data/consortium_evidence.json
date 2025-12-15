@@ -1,0 +1,248 @@
+{
+  "execution_timestamp": "2026-01-26T17:37:50.481211",
+  "completion_timestamp": "2026-01-26T17:37:50.583519",
+  "consortium": "Anti-Fraude Bancario",
+  "members": [
+    "Banco Acme S.A.",
+    "Banco Beta",
+    "Fintech Gamma",
+    "Banco Delta"
+  ],
+  "contributions": [
+    {
+      "id": "CONTRIB-001",
+      "bank": "Banco Acme S.A.",
+      "records": 15420,
+      "fraud_cases": 554,
+      "fraud_rate": 0.0359,
+      "hash": "7120e7205a996571",
+      "timestamp": "2026-01-26T17:37:50.489864",
+      "status": "verified"
+    },
+    {
+      "id": "CONTRIB-002",
+      "bank": "Banco Beta",
+      "records": 8230,
+      "fraud_cases": 313,
+      "fraud_rate": 0.038,
+      "hash": "bc8783894db55e75",
+      "timestamp": "2026-01-26T17:37:50.492000",
+      "status": "verified"
+    },
+    {
+      "id": "CONTRIB-003",
+      "bank": "Fintech Gamma",
+      "records": 12450,
+      "fraud_cases": 454,
+      "fraud_rate": 0.0365,
+      "hash": "8a0f827c89071c80",
+      "timestamp": "2026-01-26T17:37:50.496410",
+      "status": "verified"
+    },
+    {
+      "id": "CONTRIB-004",
+      "bank": "Banco Delta",
+      "records": 9100,
+      "fraud_cases": 324,
+      "fraud_rate": 0.0356,
+      "hash": "56adca4914cbce47",
+      "timestamp": "2026-01-26T17:37:50.499928",
+      "status": "verified"
+    }
+  ],
+  "model": {
+    "type": "LogisticRegression",
+    "parameters": {
+      "solver": "lbfgs",
+      "max_iter": 1000,
+      "class_weight": "balanced",
+      "random_state": 42
+    },
+    "hash": "1adc8c4168b105bf7b35929bcd4d83f6",
+    "coefficients": {
+      "amount": 0.14761,
+      "hour": -0.433779,
+      "day_of_week": -0.039534,
+      "merchant_type": -0.012402,
+      "is_international": 0.202437,
+      "monthly_frequency": -0.007456
+    },
+    "intercept": -0.119701,
+    "n_iterations": 4,
+    "security_level": "128-bit",
+    "training_completed": "2026-01-26T17:37:50.583528"
+  },
+  "calculated_metrics": {
+    "Accuracy": 0.5955,
+    "Precision": 0.0589,
+    "Recall": 0.6748,
+    "F1-Score": 0.1083,
+    "AUC-ROC": 0.6617
+  },
+  "total_records": 45200,
+  "total_fraud_cases": 1645,
+  "fraud_rate": 0.0364,
+  "predictions": {
+    "batch_size": 1250,
+    "fraud_detected": 529,
+    "fraud_rate": 0.4232,
+    "confidence_distribution": {
+      "high": 6,
+      "medium": 523,
+      "low": 632
+    }
+  },
+  "data_quality": {
+    "feature_count": 6,
+    "features": [
+      "amount",
+      "hour",
+      "day_of_week",
+      "merchant_type",
+      "is_international",
+      "monthly_frequency"
+    ],
+    "train_test_split": 0.8,
+    "stratified": true
+  },
+  "verification": {
+    "data_encrypted": true,
+    "data_never_decrypted": true,
+    "fhe_scheme": "CKKS",
+    "compliance": [
+      "GDPR",
+      "CCPA",
+      "PCI-DSS",
+      "SOX"
+    ]
+  },
+  "execution_log": [
+    {
+      "step": 1,
+      "timestamp": "2026-01-26T17:37:50.481568",
+      "action": "consortium_initialized",
+      "details": {
+        "name": "Anti-Fraude Bancario",
+        "security_level": "128-bit"
+      },
+      "elapsed_ms": 0
+    },
+    {
+      "step": 2,
+      "timestamp": "2026-01-26T17:37:50.490048",
+      "action": "data_contribution",
+      "details": {
+        "bank": "Banco Acme S.A.",
+        "records": 15420,
+        "fraud_cases": 554,
+        "fraud_rate_percent": 3.59,
+        "hash": "7120e7205a996571"
+      },
+      "elapsed_ms": 8
+    },
+    {
+      "step": 3,
+      "timestamp": "2026-01-26T17:37:50.492053",
+      "action": "data_contribution",
+      "details": {
+        "bank": "Banco Beta",
+        "records": 8230,
+        "fraud_cases": 313,
+        "fraud_rate_percent": 3.8,
+        "hash": "bc8783894db55e75"
+      },
+      "elapsed_ms": 10
+    },
+    {
+      "step": 4,
+      "timestamp": "2026-01-26T17:37:50.496557",
+      "action": "data_contribution",
+      "details": {
+        "bank": "Fintech Gamma",
+        "records": 12450,
+        "fraud_cases": 454,
+        "fraud_rate_percent": 3.65,
+        "hash": "8a0f827c89071c80"
+      },
+      "elapsed_ms": 15
+    },
+    {
+      "step": 5,
+      "timestamp": "2026-01-26T17:37:50.499976",
+      "action": "data_contribution",
+      "details": {
+        "bank": "Banco Delta",
+        "records": 9100,
+        "fraud_cases": 324,
+        "fraud_rate_percent": 3.56,
+        "hash": "56adca4914cbce47"
+      },
+      "elapsed_ms": 18
+    },
+    {
+      "step": 6,
+      "timestamp": "2026-01-26T17:37:50.500704",
+      "action": "data_aggregation",
+      "details": {
+        "total_records": 45200,
+        "total_fraud_cases": 1645,
+        "overall_fraud_rate_percent": 3.64
+      },
+      "elapsed_ms": 19
+    },
+    {
+      "step": 7,
+      "timestamp": "2026-01-26T17:37:50.532026",
+      "action": "data_preprocessing",
+      "details": {
+        "train_size": 36160,
+        "test_size": 9040,
+        "scaling": "StandardScaler",
+        "stratified": true
+      },
+      "elapsed_ms": 50
+    },
+    {
+      "step": 8,
+      "timestamp": "2026-01-26T17:37:50.565829",
+      "action": "model_training",
+      "details": {
+        "algorithm": "LogisticRegression",
+        "solver": "lbfgs",
+        "max_iter": 1000,
+        "class_weight": "balanced",
+        "model_hash": "1adc8c4168b105bf7b35929bcd4d83f6",
+        "n_iterations": 4
+      },
+      "elapsed_ms": 84
+    },
+    {
+      "step": 9,
+      "timestamp": "2026-01-26T17:37:50.582060",
+      "action": "model_evaluation",
+      "details": {
+        "Accuracy": 0.5955,
+        "Precision": 0.0589,
+        "Recall": 0.6748,
+        "F1-Score": 0.1083,
+        "AUC-ROC": 0.6617
+      },
+      "elapsed_ms": 100
+    },
+    {
+      "step": 10,
+      "timestamp": "2026-01-26T17:37:50.583503",
+      "action": "inference_batch",
+      "details": {
+        "transactions_evaluated": 1250,
+        "fraud_detected": 529,
+        "fraud_rate_percent": 42.32,
+        "high_confidence": 6,
+        "medium_confidence": 523,
+        "low_confidence": 632
+      },
+      "elapsed_ms": 102
+    }
+  ],
+  "execution_duration_ms": 102
+}
