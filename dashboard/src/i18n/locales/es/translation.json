@@ -1,0 +1,806 @@
+{
+  "common": {
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Exito",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "create": "Crear",
+    "view": "Ver",
+    "back": "Volver",
+    "next": "Siguiente",
+    "submit": "Enviar",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "all": "Todos",
+    "none": "Ninguno",
+    "yes": "Si",
+    "no": "No",
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "pending": "Pendiente",
+    "completed": "Completado",
+    "failed": "Fallido",
+    "status": "Estado",
+    "actions": "Acciones",
+    "details": "Detalles",
+    "settings": "Configuracion",
+    "logout": "Cerrar sesion",
+    "login": "Iniciar sesion",
+    "register": "Registrarse",
+    "dashboard": "Panel",
+    "home": "Inicio",
+    "new": "Nuevo"
+  },
+  "landing": {
+    "nav": {
+      "demos": "Demos",
+      "login": "Iniciar Sesion",
+      "register": "Registrarse"
+    },
+    "hero": {
+      "title": "Colabora con Datos",
+      "titleHighlight": "Sin Compartirlos",
+      "subtitle": "La plataforma donde empresas forman consorcios de datos para entrenar modelos de ML juntas — sin exponer sus datos. Impulsada por Fully Homomorphic Encryption (FHE).",
+      "watchDemo": "Ver Demo Interactiva",
+      "startFree": "Comenzar Gratis",
+      "badge": "Plataforma de Consorcios de Datos",
+      "trustedBy": "Tecnologia de nivel empresarial:",
+      "fheEncryption": "Cifrado FHE",
+      "gdprCompliant": "Compatible GDPR",
+      "auditTrail": "Auditoria Blockchain",
+      "liveDemo": "Demo en Vivo",
+      "videoCta": "Consorcio en accion",
+      "dataPrivacy": "Privacidad de Datos",
+      "companies": "Empresas pueden colaborar"
+    },
+    "features": {
+      "title": "Como funcionan los Consorcios de Datos",
+      "subtitle": "Las organizaciones contribuyen datos cifrados a un consorcio compartido. Los modelos de ML se entrenan con todos los datos sin que nadie vea la informacion original.",
+      "encrypted": {
+        "title": "Privacidad Criptografica",
+        "description": "Tus datos permanecen cifrados en todo momento usando Fully Homomorphic Encryption. Nadie puede ver tu informacion original — ni siquiera la plataforma."
+      },
+      "privateML": {
+        "title": "Modelos ML Colaborativos",
+        "description": "Multiples organizaciones entrenan modelos de ML conjuntos sobre sus datos cifrados combinados. Mejores predicciones, cero exposicion de datos."
+      },
+      "secureCollab": {
+        "title": "Gobernanza Blockchain",
+        "description": "Cada decision del consorcio se gobierna con votaciones respaldadas por blockchain, seguimiento de contribuciones y audit trails inmutables."
+      }
+    },
+    "useCases": {
+      "title": "Casos de Uso",
+      "subtitle": "Industrias donde la colaboracion de datos es valiosa pero la privacidad es critica.",
+      "viewDemo": "Ver demo",
+      "fraud": {
+        "title": "Deteccion de Fraude Bancario",
+        "description": "Bancos colaboran para detectar fraude sin compartir datos de clientes. ML sobre transacciones cifradas."
+      },
+      "health": {
+        "title": "Investigacion en Salud",
+        "description": "Hospitales comparten datos anonimizados para investigacion medica sin violar privacidad de pacientes."
+      }
+    },
+    "phases": {
+      "title": "Capacidades de la Plataforma",
+      "subtitle": "Una plataforma lista para produccion para consorcios de datos.",
+      "ready": "Listo",
+      "sdk": {
+        "title": "Motor de Privacidad Criptografica",
+        "description": "Implementacion completa de cifrado homomorfico CKKS que permite computacion sobre datos cifrados."
+      },
+      "ml": {
+        "title": "Modelos ML Colaborativos",
+        "description": "Regresion lineal, regresion logistica, arboles de decision y KMeans ejecutandose sobre datos cifrados del consorcio."
+      },
+      "api": {
+        "title": "API REST y Dashboard",
+        "description": "Interface web para gestionar consorcios y visualizar resultados."
+      },
+      "blockchain": {
+        "title": "Integracion Blockchain",
+        "description": "Registro de modelos y auditoria en Arbitrum para trazabilidad."
+      },
+      "governance": {
+        "title": "Governance & Trust",
+        "description": "Sistema de votaciones, contribuciones y audit trail inmutable."
+      }
+    },
+    "demoVideos": {
+      "title": "Videos Demo",
+      "subtitle": "Mira la plataforma en accion",
+      "videoNotSupported": "Tu navegador no soporta videos HTML5.",
+      "viewAllDemos": "Ver todos los demos",
+      "tags": {
+        "consortium": "Consorcio",
+        "governance": "Governance",
+        "platform": "Plataforma"
+      },
+      "consortium": {
+        "title": "Demo Consorcio",
+        "description": "Flujo completo de creacion de consorcio, subida de datos y entrenamiento colaborativo."
+      },
+      "governance": {
+        "title": "Demo Governance",
+        "description": "Sistema de gobernanza descentralizado: contribuciones, propuestas y audit trail."
+      },
+      "platform": {
+        "title": "Demo Plataforma",
+        "description": "Tour por la plataforma web y sus funcionalidades principales."
+      }
+    },
+    "contact": {
+      "title": "Colabora con nosotros",
+      "subtitle": "Contanos sobre tu caso de uso y te ayudamos a implementar ML privado en tu organizacion.",
+      "fullName": "Nombre completo",
+      "namePlaceholder": "Tu nombre",
+      "company": "Empresa",
+      "companyPlaceholder": "Nombre de tu empresa",
+      "corporateEmail": "Email corporativo",
+      "emailPlaceholder": "tu@empresa.com",
+      "phone": "Telefono",
+      "position": "Cargo",
+      "positionPlaceholder": "CTO, Data Engineer, etc.",
+      "industry": "Industria",
+      "selectIndustry": "Selecciona tu industria",
+      "useCase": "Caso de uso principal",
+      "selectUseCase": "Selecciona un caso de uso",
+      "tellUsMore": "Contanos mas sobre tu proyecto",
+      "messagePlaceholder": "Describinos que problema queres resolver, que datos manejas, con quien te gustaria colaborar...",
+      "requestInfo": "Solicitar informacion",
+      "sending": "Enviando...",
+      "successMessage": "Gracias! Te contactaremos pronto.",
+      "errorMessage": "Error al enviar. Por favor intenta de nuevo o contactanos a consorcios@xcapit.com",
+      "alsoContact": "Tambien puedes contactarnos en",
+      "industries": {
+        "financial": "Servicios Financieros",
+        "health": "Salud y Medicina",
+        "insurance": "Seguros",
+        "government": "Gobierno",
+        "technology": "Tecnologia",
+        "retail": "Retail / E-commerce",
+        "logistics": "Logistica",
+        "telecom": "Telecomunicaciones",
+        "other": "Otro"
+      },
+      "useCases": {
+        "fraud": "Deteccion de fraude",
+        "credit": "Modelos de riesgo crediticio",
+        "medical": "Analisis de datos medicos",
+        "segmentation": "Segmentacion de clientes",
+        "demand": "Prediccion de demanda",
+        "other": "Otro"
+      }
+    },
+    "cta": {
+      "title": "Listo para colaborar de forma segura?",
+      "subtitle": "Registra tu empresa y comienza a entrenar modelos de ML sin exponer datos sensibles.",
+      "createAccount": "Crear Cuenta Gratis",
+      "contactUs": "Contactanos"
+    },
+    "footer": {
+      "copyright": "2026 Xcapit Privacy. Tecnologia de consorcios de datos para el futuro."
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Iniciar sesion",
+      "subtitle": "Ingresa tu API Key para acceder al dashboard.",
+      "apiKey": "API Key",
+      "apiKeyPlaceholder": "xcp_...",
+      "apiKeyHelp": "Tu API Key fue generada al registrar tu empresa.",
+      "verifying": "Verificando...",
+      "invalidKey": "API Key invalida. Verifica que sea correcta.",
+      "noAccount": "No tienes cuenta?",
+      "registerCompany": "Registrar empresa",
+      "wantToSee": "Quieres ver como funciona?",
+      "watchDemo": "Ver Demo Interactiva",
+      "trySandbox": "Probar Sandbox Demo"
+    },
+    "register": {
+      "title": "Registrar empresa",
+      "subtitle": "Crea tu cuenta para comenzar a colaborar de forma segura.",
+      "companyName": "Nombre de la empresa",
+      "companyPlaceholder": "Tu empresa",
+      "corporateEmail": "Email corporativo",
+      "emailPlaceholder": "contacto@empresa.com",
+      "registering": "Registrando...",
+      "registerCompany": "Registrar empresa",
+      "hasAccount": "Ya tienes cuenta?",
+      "login": "Iniciar sesion",
+      "wantToSeeFirst": "Quieres ver como funciona primero?",
+      "watchDemo": "Ver Demo Interactiva",
+      "success": {
+        "title": "Registro exitoso!",
+        "subtitle": "Tu API Key ha sido generada. Guardala en un lugar seguro.",
+        "yourApiKey": "Tu API Key",
+        "redirecting": "Redirigiendo al dashboard..."
+      }
+    }
+  },
+  "dashboard": {
+    "title": "Panel",
+    "welcome": "Bienvenido de nuevo",
+    "overview": "Resumen",
+    "consortiums": {
+      "title": "Mis Consorcios",
+      "create": "Crear Consorcio",
+      "join": "Unirse a Consorcio",
+      "empty": "Aun no te has unido a ningun consorcio",
+      "members": "miembros",
+      "models": "modelos"
+    },
+    "stats": {
+      "activeConsortiums": "Consorcios Activos",
+      "trainedModels": "Modelos Entrenados",
+      "dataContributions": "Contribuciones de Datos",
+      "pendingVotes": "Votos Pendientes"
+    },
+    "recentActivity": "Actividad Reciente"
+  },
+  "consortium": {
+    "create": {
+      "title": "Crear Nuevo Consorcio",
+      "name": "Nombre del Consorcio",
+      "description": "Descripcion",
+      "industry": "Industria",
+      "minMembers": "Miembros Minimos",
+      "submit": "Crear Consorcio"
+    },
+    "detail": {
+      "members": "Miembros",
+      "models": "Modelos",
+      "data": "Contribuciones de Datos",
+      "governance": "Gobernanza",
+      "settings": "Configuracion"
+    },
+    "join": {
+      "title": "Unirse a Consorcio",
+      "inviteCode": "Codigo de Invitacion",
+      "submit": "Unirse"
+    },
+    "upload": {
+      "title": "Subir Datos Cifrados",
+      "dragDrop": "Arrastra y suelta tu archivo aqui",
+      "or": "o",
+      "browse": "Explorar archivos",
+      "encrypting": "Cifrando localmente...",
+      "uploading": "Subiendo datos cifrados...",
+      "success": "Datos subidos exitosamente"
+    }
+  },
+  "governance": {
+    "title": "Gobernanza",
+    "description": "Gobernanza descentralizada con decisiones verificadas en blockchain",
+    "tabs": {
+      "contributions": "Contribuciones",
+      "proposals": "Propuestas",
+      "auditTrail": "Registro de Auditoria",
+      "rewards": "Recompensas"
+    },
+    "contributions": {
+      "title": "Pruebas de Contribucion",
+      "description": "Registro verificado en blockchain de contribuciones de datos",
+      "totalContributions": "Contribuciones Totales",
+      "yourContribution": "Tu Contribucion",
+      "lastUpdated": "Ultima Actualizacion"
+    },
+    "proposals": {
+      "title": "Propuestas Activas",
+      "create": "Crear Propuesta",
+      "vote": "Votar",
+      "approve": "Aprobar",
+      "reject": "Rechazar",
+      "abstain": "Abstenerse",
+      "votesFor": "Votos a Favor",
+      "votesAgainst": "Votos en Contra",
+      "quorum": "Quorum",
+      "deadline": "Fecha Limite",
+      "types": {
+        "addMember": "Agregar Miembro",
+        "removeMember": "Eliminar Miembro",
+        "changeModel": "Cambiar Modelo",
+        "updateSettings": "Actualizar Configuracion"
+      }
+    },
+    "auditTrail": {
+      "title": "Registro de Auditoria",
+      "description": "Log inmutable de todas las operaciones del consorcio",
+      "timestamp": "Fecha/Hora",
+      "action": "Accion",
+      "actor": "Actor",
+      "details": "Detalles",
+      "txHash": "Hash de Transaccion"
+    },
+    "rewards": {
+      "title": "Reparto Justo de Ingresos",
+      "description": "Distribucion automatica de valor basada en contribucion",
+      "totalPool": "Pool Total",
+      "yourShare": "Tu Parte",
+      "claimRewards": "Reclamar Recompensas"
+    }
+  },
+  "compliance": {
+    "title": "Dashboard de Compliance",
+    "description": "Verificacion automatica GDPR/HIPAA/SOC2/PCI-DSS sin acceder a datos reales",
+    "overallScore": "Puntuacion General de Compliance",
+    "frameworks": {
+      "gdpr": "GDPR",
+      "hipaa": "HIPAA",
+      "soc2": "SOC2",
+      "pciDss": "PCI-DSS"
+    },
+    "status": {
+      "compliant": "Cumple",
+      "partiallyCompliant": "Cumple Parcialmente",
+      "nonCompliant": "No Cumple",
+      "notAssessed": "No Evaluado"
+    },
+    "controls": {
+      "title": "Controles",
+      "dataEncryption": "Cifrado de Datos en Reposo",
+      "consentManagement": "Gestion de Consentimiento",
+      "rightToErasure": "Derecho al Olvido",
+      "dataPortability": "Portabilidad de Datos",
+      "accessControl": "Control de Acceso",
+      "auditLogging": "Registro de Auditoria"
+    },
+    "runCheck": "Ejecutar Verificacion",
+    "generateReport": "Generar Reporte",
+    "lastAssessment": "Ultima Evaluacion"
+  },
+  "dataQuality": {
+    "title": "Puntuacion de Calidad de Datos",
+    "description": "Metricas de calidad calculadas sobre datos cifrados sin acceso al contenido",
+    "overallScore": "Puntuacion General de Calidad",
+    "dimensions": {
+      "completeness": "Completitud",
+      "consistency": "Consistencia",
+      "accuracy": "Precision",
+      "timeliness": "Actualidad",
+      "uniqueness": "Unicidad"
+    },
+    "columns": {
+      "title": "Analisis de Columnas",
+      "name": "Nombre de Columna",
+      "nullPercentage": "% Nulos",
+      "distinctValues": "Valores Distintos",
+      "distribution": "Distribucion"
+    },
+    "alerts": {
+      "title": "Alertas",
+      "description": "Problemas detectados automaticamente"
+    },
+    "recommendations": "Recomendaciones",
+    "analyze": "Analizar Datos",
+    "fheVerified": "Verificado con FHE"
+  },
+  "marketplace": {
+    "title": "Marketplace de Modelos",
+    "description": "Modelos pre-entrenados por industria con despliegue en un clic",
+    "categories": {
+      "all": "Todas las Categorias",
+      "finance": "Finanzas",
+      "healthcare": "Salud",
+      "retail": "Retail",
+      "insurance": "Seguros"
+    },
+    "models": {
+      "fraudDetection": {
+        "title": "Deteccion de Fraude",
+        "description": "Modelo de deteccion de fraude en tiempo real entrenado con transacciones financieras"
+      },
+      "creditScoring": {
+        "title": "Scoring Crediticio",
+        "description": "Modelo de evaluacion de riesgo crediticio con caracteristicas de preservacion de privacidad"
+      },
+      "medicalDiagnosis": {
+        "title": "Diagnostico Medico",
+        "description": "Modelo de prediccion de enfermedades entrenado con datos de pacientes anonimizados"
+      },
+      "customerChurn": {
+        "title": "Churn de Clientes",
+        "description": "Predice la fuga de clientes con alta precision"
+      }
+    },
+    "metrics": {
+      "accuracy": "Precision",
+      "f1Score": "F1 Score",
+      "trainingSamples": "Muestras de Entrenamiento",
+      "rating": "Calificacion"
+    },
+    "deploy": "Desplegar en Consorcio",
+    "myModels": "Mis Modelos",
+    "publish": "Publicar Modelo",
+    "revenue": "Ingresos Generados"
+  },
+  "sandbox": {
+    "title": "Modo Sandbox",
+    "description": "Entorno de pruebas seguro con datos sinteticos",
+    "createSandbox": "Crear Sandbox",
+    "templates": {
+      "title": "Plantillas",
+      "finance": "Finanzas",
+      "healthcare": "Salud",
+      "retail": "Retail"
+    },
+    "config": {
+      "datasetSize": "Tamano del Dataset",
+      "complexity": "Nivel de Complejidad",
+      "features": "Caracteristicas a Incluir"
+    },
+    "generate": "Generar",
+    "syntheticData": {
+      "title": "Vista Previa de Datos Sinteticos",
+      "description": "Datos estadisticamente similares pero completamente sinteticos",
+      "noPii": "Sin PII"
+    },
+    "experiments": {
+      "title": "Experimentos",
+      "create": "Nuevo Experimento",
+      "algorithm": "Algoritmo",
+      "parameters": "Parametros",
+      "run": "Ejecutar Experimento",
+      "results": "Resultados",
+      "compare": "Comparar Experimentos",
+      "promoteToProduction": "Promover a Produccion"
+    },
+    "zeroRiskTesting": "Pruebas Sin Riesgo"
+  },
+  "federated": {
+    "title": "Inferencia Federada",
+    "description": "Predicciones sin movimiento de datos - el modelo viaja a los datos",
+    "architecture": {
+      "title": "Arquitectura",
+      "description": "Los datos nunca salen de tu organizacion"
+    },
+    "endpoints": {
+      "title": "Endpoints de Inferencia",
+      "create": "Crear Endpoint",
+      "batchSize": "Tamano de Lote",
+      "latencyReq": "Requisitos de Latencia",
+      "edgeNodes": "Nodos Edge"
+    },
+    "prediction": {
+      "title": "Hacer Prediccion",
+      "input": "Datos de Entrada",
+      "predict": "Predecir",
+      "result": "Resultado Cifrado",
+      "onlyOwnerDecrypt": "Solo el dueno de los datos puede descifrar"
+    },
+    "monitoring": {
+      "title": "Monitoreo",
+      "latency": "Latencia",
+      "throughput": "Throughput",
+      "errors": "Errores",
+      "healthCheck": "Health Check"
+    },
+    "dataNeverLeaves": "Los Datos Nunca Salen"
+  },
+  "explainability": {
+    "title": "Explicabilidad del Modelo",
+    "description": "Entiende las decisiones de IA sin revelar datos de entrenamiento",
+    "tabs": {
+      "overview": "Resumen",
+      "featureImportance": "Importancia de Features",
+      "explanations": "Explicaciones",
+      "insights": "Insights del Modelo"
+    },
+    "featureImportance": {
+      "title": "Importancia de Features",
+      "description": "Calculada sin ver datos originales"
+    },
+    "explanations": {
+      "title": "Explicaciones Individuales",
+      "types": {
+        "shap": "Valores SHAP",
+        "decisionPath": "Camino de Decision",
+        "counterfactual": "Contrafactual",
+        "summary": "Resumen"
+      }
+    },
+    "insights": {
+      "title": "Insights del Modelo",
+      "patterns": "Patrones Detectados",
+      "biasAnalysis": "Analisis de Sesgo",
+      "fairnessMetrics": "Metricas de Equidad"
+    },
+    "privacyPreserving": "Explicaciones que Preservan Privacidad"
+  },
+  "competitive": {
+    "title": "Insights Competitivos",
+    "description": "Benchmarks anonimos de la industria sin revelar tus datos",
+    "selectIndustry": "Seleccionar Industria",
+    "industries": {
+      "finance": "Finanzas",
+      "healthcare": "Salud",
+      "retail": "Retail"
+    },
+    "benchmarks": {
+      "title": "Benchmarks de la Industria",
+      "metric": "Metrica",
+      "p25": "Percentil 25",
+      "p50": "Mediana",
+      "p75": "Percentil 75",
+      "p90": "Percentil 90"
+    },
+    "comparison": {
+      "title": "Comparar Mis Metricas",
+      "input": "Ingresa Tus Valores",
+      "compare": "Comparar",
+      "yourPosition": "Tu Posicion",
+      "strengths": "Fortalezas",
+      "improvements": "Areas de Mejora"
+    },
+    "trends": {
+      "title": "Tendencias de la Industria",
+      "evolution": "Evolucion Temporal",
+      "predictions": "Predicciones Futuras",
+      "opportunities": "Oportunidades Detectadas"
+    },
+    "anonymous": "100% Anonimo"
+  },
+  "ensemble": {
+    "title": "Ensemble Multi-Modelo",
+    "description": "Combina modelos de diferentes consorcios para mejores predicciones",
+    "createEnsemble": "Crear Ensemble",
+    "name": "Nombre del Ensemble",
+    "type": {
+      "title": "Tipo de Ensemble",
+      "voting": "Votacion",
+      "averaging": "Promedio",
+      "weighted": "Ponderado",
+      "stacking": "Stacking",
+      "boosting": "Boosting"
+    },
+    "models": {
+      "title": "Modelos",
+      "add": "Agregar Modelo",
+      "weight": "Peso",
+      "source": "Consorcio de Origen"
+    },
+    "activate": "Activar Ensemble",
+    "predict": {
+      "title": "Predecir",
+      "input": "Datos de Entrada",
+      "result": "Prediccion Combinada",
+      "compareIndividual": "Comparar con Modelos Individuales"
+    },
+    "performance": {
+      "title": "Rendimiento",
+      "accuracy": "Precision del Ensemble",
+      "vsIndividual": "vs Modelos Individuales",
+      "contribution": "Contribucion del Modelo"
+    },
+    "betterTogether": "Mejor Juntos"
+  },
+  "demos": {
+    "title": "Xcapit Privacy Platform",
+    "subtitle": "La plataforma donde las empresas colaboran con datos sin compartirlos. Explora los demos de nuestras funcionalidades enterprise.",
+    "featured": {
+      "title": "Vision General de la Plataforma",
+      "description": "Mira como funciona la plataforma completa de FHE-ML en accion",
+      "consortium": {
+        "title": "Creacion de Consorcio",
+        "description": "Crea y administra consorcios seguros para compartir datos entre empresas competidoras"
+      },
+      "governance": {
+        "title": "Dashboard de Gobernanza",
+        "description": "Auditoria blockchain, sistema de votacion y seguimiento de contribuciones"
+      },
+      "web": {
+        "title": "Tour de la Plataforma Web",
+        "description": "Recorrido completo de la interfaz de la plataforma de ML con privacidad"
+      }
+    },
+    "tier3": {
+      "title": "Funcionalidades Enterprise",
+      "description": "Suite enterprise-ready con compliance automatico y onboarding simplificado"
+    },
+    "tier4": {
+      "title": "Diferenciadores",
+      "description": "Capacidades unicas que no existen en el mercado actual"
+    },
+    "clientsDemo": {
+      "title": "Demo de Consorcio Multi-Organizacion",
+      "description": "Experimenta como dos empresas competidoras colaboran en entrenamiento ML a traves de un consorcio de datos sin exponer sus datos sensibles.",
+      "cta": "Ejecutar Demo Interactiva",
+      "feature1": "Privacidad Criptografica",
+      "feature2": "Colaboracion Multi-Parte",
+      "feature3": "ML Random Forest"
+    },
+    "watchDemo": "Ver Demo",
+    "tryIt": "Probar",
+    "footer": "Todos los demos funcionan con datos simulados. La funcionalidad completa requiere integracion con backend."
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "useCases": "Casos de Uso",
+    "governance": "Governance",
+    "metrics": "Metricas",
+    "modelBuilder": "Constructor de Modelos",
+    "dataUpload": "Carga de Datos",
+    "training": "Entrenamiento",
+    "results": "Resultados",
+    "comparison": "Comparacion",
+    "dataExplorer": "Explorador de Datos",
+    "monitoring": "Monitoreo en Tiempo Real",
+    "deployment": "Despliegue",
+    "auditLog": "Registro de Auditoria",
+    "apiPlayground": "Playground de API",
+    "notifications": "Notificaciones",
+    "team": "Equipo",
+    "billing": "Facturacion",
+    "reports": "Reportes",
+    "workflows": "Flujos de Trabajo",
+    "admin": "Panel Admin",
+    "settings": "Configuracion",
+    "technicalDemo": "Demo Tecnica",
+    "createConsortium": "Crear Consorcio",
+    "needHelp": "Necesitas ayuda?",
+    "helpDescription": "Lee nuestra documentacion o contactanos.",
+    "contactUs": "Contactanos",
+    "closeSession": "Cerrar sesion",
+    "industrySolutions": "Soluciones por industria"
+  },
+  "modelBuilder": {
+    "title": "Constructor de Modelos de Consorcio",
+    "subtitle": "Configura y entrena modelos de machine learning sobre datos cifrados del consorcio",
+    "selectModel": "Seleccionar Modelo",
+    "allModels": "Todos los Modelos",
+    "classification": "Clasificacion",
+    "regression": "Regresion",
+    "clustering": "Clustering",
+    "dimensionality": "Reduccion Dimensional",
+    "ensemble": "Ensemble",
+    "modelConfig": "Configuracion del Modelo",
+    "parameters": "Parametros",
+    "generatedCode": "Codigo Generado",
+    "copyCode": "Copiar",
+    "modelComparison": "Comparacion de Modelos",
+    "accuracy": "Precision",
+    "fheCompatibility": "Compatibilidad FHE",
+    "trainingSpeed": "Velocidad",
+    "interpretability": "Interpretabilidad",
+    "models": {
+      "logisticRegression": "Regresion Logistica",
+      "linearRegression": "Regresion Lineal",
+      "decisionTree": "Arbol de Decision",
+      "randomForest": "Random Forest",
+      "neuralNetwork": "Red Neuronal",
+      "gradientBoosting": "Gradient Boosting",
+      "svm": "Maquina de Vectores de Soporte",
+      "naiveBayes": "Naive Bayes",
+      "kmeans": "K-Means",
+      "pca": "PCA"
+    }
+  },
+  "dataUpload": {
+    "title": "Contribucion de Datos y Cifrado",
+    "subtitle": "Sube tu dataset y contribuyelo a un consorcio con cifrado FHE",
+    "uploadFile": "Subir Archivo",
+    "dropzone": "Haz clic para subir o arrastra y suelta",
+    "dataStats": "Estadisticas de Datos",
+    "selectColumns": "Seleccionar Columnas",
+    "preview": "Vista Previa de Datos",
+    "encryptionCode": "Codigo de Cifrado",
+    "fheInfo": "Acerca del Cifrado FHE"
+  },
+  "dataExplorer": {
+    "title": "Explorador de Datos",
+    "subtitle": "Visualizacion interactiva y analisis de datasets cifrados",
+    "noData": "No hay datos para mostrar",
+    "loadData": "Carga un dataset cifrado para comenzar la exploracion",
+    "statistics": "Estadisticas",
+    "distribution": "Distribucion",
+    "correlations": "Correlaciones",
+    "filters": "Filtros",
+    "columns": "Columnas",
+    "rows": "Filas",
+    "nullValues": "Valores Nulos",
+    "mean": "Media",
+    "median": "Mediana",
+    "std": "Desv. Est.",
+    "min": "Min",
+    "max": "Max"
+  },
+  "monitoring": {
+    "title": "Monitoreo en Tiempo Real",
+    "subtitle": "Metricas en vivo y monitoreo de salud del sistema",
+    "requestsPerSec": "Peticiones/seg",
+    "avgLatency": "Latencia Promedio",
+    "cpuUsage": "Uso de CPU",
+    "memoryUsage": "Uso de Memoria",
+    "gpuUsage": "Uso de GPU",
+    "activeConnections": "Conexiones Activas",
+    "logs": "Logs del Sistema",
+    "alerts": "Alertas",
+    "metrics": "Metricas",
+    "health": "Salud del Sistema",
+    "lastUpdated": "Ultima Actualizacion"
+  },
+  "toast": {
+    "consortiumCreated": "Consorcio creado exitosamente",
+    "consortiumDeleted": "Consorcio eliminado",
+    "dataSaved": "Datos guardados exitosamente",
+    "dataUploaded": "Datos subidos exitosamente",
+    "error": "Ocurrio un error. Intenta de nuevo.",
+    "copySuccess": "Copiado al portapapeles",
+    "settingsSaved": "Configuracion guardada"
+  },
+  "onboarding": {
+    "title": "Bienvenido a Xcapit Privacy",
+    "subtitle": "Comienza creando o uniendote a un consorcio de datos.",
+    "createConsortium": "Crear consorcio",
+    "exploreSandbox": "Explorar sandbox",
+    "uploadData": "Subir datos",
+    "documentation": "Documentacion"
+  },
+  "breadcrumbs": {
+    "home": "Panel",
+    "detail": "Detalle"
+  },
+  "emptyState": {
+    "noConsortiums": "No hay consorcios",
+    "noConsortiumsDescription": "Crea tu primer consorcio para comenzar a colaborar.",
+    "noData": "No hay datos disponibles",
+    "noResults": "No se encontraron resultados"
+  },
+  "settings": {
+    "title": "Configuracion",
+    "subtitle": "Administra tu cuenta y preferencias",
+    "tabs": {
+      "profile": "Perfil",
+      "preferences": "Preferencias",
+      "notifications": "Notificaciones",
+      "security": "Seguridad",
+      "apiKeys": "Claves API"
+    },
+    "profile": {
+      "title": "Configuracion de Perfil",
+      "name": "Nombre Completo",
+      "email": "Correo Electronico",
+      "company": "Empresa",
+      "role": "Rol",
+      "timezone": "Zona Horaria",
+      "save": "Guardar Cambios"
+    },
+    "preferences": {
+      "title": "Preferencias",
+      "language": "Idioma",
+      "theme": "Tema",
+      "themeLight": "Claro",
+      "themeDark": "Oscuro",
+      "themeAuto": "Automatico",
+      "dateFormat": "Formato de Fecha",
+      "numberFormat": "Formato de Numeros"
+    },
+    "notifications": {
+      "title": "Configuracion de Notificaciones",
+      "email": "Notificaciones por Email",
+      "push": "Notificaciones Push",
+      "training": "Entrenamiento Completado",
+      "governance": "Actualizaciones de Gobernanza",
+      "security": "Alertas de Seguridad"
+    },
+    "security": {
+      "title": "Configuracion de Seguridad",
+      "changePassword": "Cambiar Contrasena",
+      "twoFactor": "Autenticacion de Dos Factores",
+      "sessions": "Sesiones Activas",
+      "auditLog": "Registro de Auditoria"
+    },
+    "apiKeys": {
+      "title": "Claves API",
+      "create": "Crear Nueva Clave",
+      "name": "Nombre de Clave",
+      "created": "Creada",
+      "lastUsed": "Ultimo Uso",
+      "revoke": "Revocar"
+    }
+  }
+}
