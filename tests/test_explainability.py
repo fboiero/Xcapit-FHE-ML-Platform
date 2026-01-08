@@ -8,13 +8,37 @@ This module tests the explainability features including:
 """
 
 import os
+import sys
 import tempfile
 import pytest
 from pathlib import Path
 from datetime import datetime
+import importlib.util
 
 # Set test mode before imports
 os.environ["FHEML_AUTH_DISABLED"] = "true"
+
+# Import consortium module using direct file loading to avoid TenSEAL dependency
+project_root = Path(__file__).parent.parent
+sdk_api_path = project_root / "sdk" / "api"
+
+
+def load_module_from_path(module_name, file_path):
+    """Load a module from file path."""
+    spec = importlib.util.spec_from_file_location(module_name, file_path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+# Load consortium module package
+consortium_package_path = sdk_api_path / "consortium"
+consortium_module = load_module_from_path(
+    "sdk.api.consortium",
+    consortium_package_path / "__init__.py"
+)
+ConsortiumManager = consortium_module.ConsortiumManager
 
 
 class TestExplainabilitySchema:
@@ -23,7 +47,6 @@ class TestExplainabilitySchema:
     @pytest.fixture
     def manager(self):
         """Create a ConsortiumManager with temp database."""
-        from sdk.api.consortium import ConsortiumManager
         self.temp_dir = tempfile.mkdtemp()
         manager = ConsortiumManager(db_path=Path(self.temp_dir) / "test.db")
         yield manager
@@ -103,7 +126,6 @@ class TestExplanationRequests:
     @pytest.fixture
     def manager(self):
         """Create a ConsortiumManager with temp database."""
-        from sdk.api.consortium import ConsortiumManager
         self.temp_dir = tempfile.mkdtemp()
         manager = ConsortiumManager(db_path=Path(self.temp_dir) / "test.db")
         yield manager
@@ -216,7 +238,6 @@ class TestGetExplanation:
     @pytest.fixture
     def manager(self):
         """Create a ConsortiumManager with temp database."""
-        from sdk.api.consortium import ConsortiumManager
         self.temp_dir = tempfile.mkdtemp()
         manager = ConsortiumManager(db_path=Path(self.temp_dir) / "test.db")
         yield manager
@@ -274,7 +295,6 @@ class TestListExplanations:
     @pytest.fixture
     def manager(self):
         """Create a ConsortiumManager with temp database."""
-        from sdk.api.consortium import ConsortiumManager
         self.temp_dir = tempfile.mkdtemp()
         manager = ConsortiumManager(db_path=Path(self.temp_dir) / "test.db")
         yield manager
@@ -376,7 +396,6 @@ class TestFeatureImportance:
     @pytest.fixture
     def manager(self):
         """Create a ConsortiumManager with temp database."""
-        from sdk.api.consortium import ConsortiumManager
         self.temp_dir = tempfile.mkdtemp()
         manager = ConsortiumManager(db_path=Path(self.temp_dir) / "test.db")
         yield manager
@@ -417,7 +436,6 @@ class TestModelInsights:
     @pytest.fixture
     def manager(self):
         """Create a ConsortiumManager with temp database."""
-        from sdk.api.consortium import ConsortiumManager
         self.temp_dir = tempfile.mkdtemp()
         manager = ConsortiumManager(db_path=Path(self.temp_dir) / "test.db")
         yield manager
@@ -466,7 +484,6 @@ class TestExplainabilityStats:
     @pytest.fixture
     def manager(self):
         """Create a ConsortiumManager with temp database."""
-        from sdk.api.consortium import ConsortiumManager
         self.temp_dir = tempfile.mkdtemp()
         manager = ConsortiumManager(db_path=Path(self.temp_dir) / "test.db")
         yield manager
@@ -541,7 +558,6 @@ class TestExplanationPrivacy:
     @pytest.fixture
     def manager(self):
         """Create a ConsortiumManager with temp database."""
-        from sdk.api.consortium import ConsortiumManager
         self.temp_dir = tempfile.mkdtemp()
         manager = ConsortiumManager(db_path=Path(self.temp_dir) / "test.db")
         yield manager
@@ -642,7 +658,6 @@ class TestExplanationTypes:
     @pytest.fixture
     def manager(self):
         """Create a ConsortiumManager with temp database."""
-        from sdk.api.consortium import ConsortiumManager
         self.temp_dir = tempfile.mkdtemp()
         manager = ConsortiumManager(db_path=Path(self.temp_dir) / "test.db")
         yield manager

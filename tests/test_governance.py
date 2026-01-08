@@ -30,10 +30,11 @@ def load_module_from_path(module_name, file_path):
     return module
 
 
-# Load consortium module
+# Load consortium module package
+consortium_package_path = sdk_api_path / "consortium"
 consortium_module = load_module_from_path(
     "sdk.api.consortium",
-    sdk_api_path / "consortium.py"
+    consortium_package_path / "__init__.py"
 )
 ConsortiumManager = consortium_module.ConsortiumManager
 ConsortiumStatus = consortium_module.ConsortiumStatus

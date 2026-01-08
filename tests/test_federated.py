@@ -9,12 +9,34 @@ This module tests:
 """
 
 import os
+import sys
 import tempfile
 import pytest
 from datetime import datetime, timedelta
 from pathlib import Path
+import importlib.util
 
-from sdk.api.consortium import ConsortiumManager
+# Import consortium module using direct file loading to avoid TenSEAL dependency
+project_root = Path(__file__).parent.parent
+sdk_api_path = project_root / "sdk" / "api"
+
+
+def load_module_from_path(module_name, file_path):
+    """Load a module from file path."""
+    spec = importlib.util.spec_from_file_location(module_name, file_path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+# Load consortium module package
+consortium_package_path = sdk_api_path / "consortium"
+consortium_module = load_module_from_path(
+    "sdk.api.consortium",
+    consortium_package_path / "__init__.py"
+)
+ConsortiumManager = consortium_module.ConsortiumManager
 
 
 class TestFederatedInference:
