@@ -212,6 +212,48 @@ curl -X POST http://localhost:8000/models/{model_id}/predict \
 | KMeans | Clustering | ✅ | Production |
 | MiniBatchKMeans | Large-scale Clustering | ✅ | Production |
 
+## Consortium Module
+
+The platform includes a comprehensive consortium management system for multi-party machine learning:
+
+| Module | Features |
+|--------|----------|
+| **Core** | Company management, consortium creation, membership, invitations |
+| **Governance** | Proposals, voting system, audit trail (hash chain), reward distribution |
+| **Compliance** | GDPR, HIPAA, SOC2, PCI-DSS frameworks with automated checks |
+| **Data Quality** | Quality assessments, rules, alerts, dashboard |
+| **Marketplace** | Model catalog, deployments, reviews, featured models |
+| **Sandbox** | Testing environments, synthetic datasets, experiments |
+| **Federated** | Inference endpoints, edge nodes, model deployment |
+| **Explainability** | SHAP values, feature importance, decision paths, counterfactuals |
+| **Competitive Insights** | Industry benchmarks, trend analysis, positioning |
+| **Ensemble** | Multi-model ensembles (voting, averaging, weighted, stacking) |
+
+```python
+from sdk.api.consortium import ConsortiumManager
+
+manager = ConsortiumManager()
+
+# Create consortium
+consortium = manager.create_consortium(
+    name="Healthcare AI Consortium",
+    description="Privacy-preserving medical ML",
+    created_by="hospital_a",
+    model_type="logistic_regression"
+)
+
+# Add governance proposal
+proposal = manager.create_proposal(
+    consortium_id=consortium.id,
+    title="Add new member",
+    proposal_type="add_member",
+    created_by="hospital_a"
+)
+
+# Get compliance dashboard
+dashboard = manager.get_compliance_dashboard(consortium.id)
+```
+
 ## Documentation
 
 | Document | Description |
@@ -313,7 +355,20 @@ xcapit-fhe-ml/
 │   ├── models/             # ML model implementations
 │   ├── encryption/         # FHE encryption layer
 │   ├── api/                # FastAPI server
-│   └── blockchain/         # Smart contract integration
+│   │   ├── consortium/     # Modular consortium management
+│   │   │   ├── core.py           # Company, Consortium, Membership
+│   │   │   ├── governance.py     # Proposals, voting, audit, rewards
+│   │   │   ├── compliance.py     # GDPR, HIPAA, SOC2, PCI-DSS
+│   │   │   ├── data_quality.py   # Quality assessments & alerts
+│   │   │   ├── marketplace.py    # Model marketplace
+│   │   │   ├── sandbox.py        # Testing environments
+│   │   │   ├── federated.py      # Federated inference & edge nodes
+│   │   │   ├── explainability.py # SHAP, feature importance
+│   │   │   ├── competitive_insights.py  # Industry benchmarks
+│   │   │   └── ensemble.py       # Multi-model ensembles
+│   │   └── *_routes.py     # API endpoints
+│   ├── blockchain/         # Smart contract integration
+│   └── quality/            # Data quality calculator
 ├── sdk-typescript/         # TypeScript SDK
 │   └── src/
 │       ├── client.ts       # API client
@@ -324,6 +379,8 @@ xcapit-fhe-ml/
 ├── dashboard/              # React dashboard
 ├── docs/                   # Documentation
 ├── tests/                  # Test suite (566 tests)
+├── pilots/                 # Pilot implementations
+│   └── gobierno/           # Government pilot (Córdoba)
 ├── examples/               # Jupyter notebooks
 └── benchmarks/             # Performance benchmarks
 ```
