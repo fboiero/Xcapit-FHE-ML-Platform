@@ -11,16 +11,17 @@ and encrypted inference.
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Optional, Union
+
 import numpy as np
 
-from .base import BaseFHEModel, ModelConfig, ModelState
 from ..encryption.ckks_wrapper import (
     CKKSEncryptor,
     EncryptedMatrix,
     EncryptedVector,
 )
 from ..utils.data_loader import EncryptedDataset
+from .base import BaseFHEModel, ModelConfig, ModelState
 
 
 class TreeType(Enum):
@@ -112,8 +113,8 @@ class DecisionTree(BaseFHEModel):
         super().__init__(config=config, encryptor=encryptor)
 
         self._tree_config = config
-        self._n_internal_nodes = 2 ** config.max_depth - 1
-        self._n_leaves = 2 ** config.max_depth
+        self._n_internal_nodes = 2**config.max_depth - 1
+        self._n_leaves = 2**config.max_depth
 
         # Tree parameters (initialized during fit)
         self._feature_indices: Optional[np.ndarray] = None
@@ -161,9 +162,7 @@ class DecisionTree(BaseFHEModel):
         self._n_features = n_features
 
         # Random feature selection for each internal node
-        self._feature_indices = np.random.randint(
-            0, n_features, size=self._n_internal_nodes
-        )
+        self._feature_indices = np.random.randint(0, n_features, size=self._n_internal_nodes)
 
         # Initialize thresholds near 0 (will be learned)
         self._thresholds = np.random.randn(self._n_internal_nodes) * 0.1
@@ -189,7 +188,7 @@ class DecisionTree(BaseFHEModel):
         """
         z = np.clip(x * beta, -5, 5)  # Prevent overflow
         # Polynomial approximation
-        return 0.5 + 0.197 * z - 0.004 * (z ** 3)
+        return 0.5 + 0.197 * z - 0.004 * (z**3)
 
     def _compute_path_probabilities(
         self,
@@ -213,7 +212,7 @@ class DecisionTree(BaseFHEModel):
 
         # Process each level of the tree
         for level in range(depth):
-            start_idx = 2 ** level - 1
+            start_idx = 2**level - 1
             end_idx = 2 ** (level + 1) - 1
 
             for node_idx in range(start_idx, end_idx):
@@ -243,13 +242,13 @@ class DecisionTree(BaseFHEModel):
                     leaf_right = right_child - self._n_internal_nodes
 
                     # Map to leaf indices
-                    node_probs[:, self._n_internal_nodes + leaf_left] = \
-                        parent_prob * (1 - split_prob)
-                    node_probs[:, self._n_internal_nodes + leaf_right] = \
-                        parent_prob * split_prob
+                    node_probs[:, self._n_internal_nodes + leaf_left] = parent_prob * (
+                        1 - split_prob
+                    )
+                    node_probs[:, self._n_internal_nodes + leaf_right] = parent_prob * split_prob
 
         # Extract leaf probabilities
-        leaf_probs = node_probs[:, self._n_internal_nodes:]
+        leaf_probs = node_probs[:, self._n_internal_nodes :]
         return leaf_probs
 
     def _compute_predictions(
@@ -274,7 +273,7 @@ class DecisionTree(BaseFHEModel):
         y: np.ndarray,
         path_probs: np.ndarray,
         predictions: np.ndarray,
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Compute gradients for tree parameters.
 
         Args:
@@ -368,7 +367,7 @@ class DecisionTree(BaseFHEModel):
             print(f"Tree depth: {self.max_depth}, Leaves: {self.n_leaves}")
 
         # Training loop
-        best_loss = float('inf')
+        best_loss = float("inf")
         patience_counter = 0
 
         for epoch in range(self._config.n_epochs):
@@ -378,7 +377,7 @@ class DecisionTree(BaseFHEModel):
 
             # Compute loss
             mse_loss = np.mean((predictions - y_train) ** 2)
-            reg_loss = 0.5 * self._tree_config.regularization * np.sum(self._leaf_values ** 2)
+            reg_loss = 0.5 * self._tree_config.regularization * np.sum(self._leaf_values**2)
             total_loss = mse_loss + reg_loss
 
             self._history.add_epoch(total_loss, mse=mse_loss)
@@ -416,7 +415,7 @@ class DecisionTree(BaseFHEModel):
 
     def predict(
         self,
-        X: Union[EncryptedMatrix, np.ndarray, List],
+        X: Union[EncryptedMatrix, np.ndarray, list],
     ) -> Union[EncryptedVector, np.ndarray]:
         """Make predictions on data.
 
@@ -447,7 +446,7 @@ class DecisionTree(BaseFHEModel):
 
     def _predict_encrypted(
         self,
-        X: Union[EncryptedMatrix, List[EncryptedVector]],
+        X: Union[EncryptedMatrix, list[EncryptedVector]],
     ) -> EncryptedVector:
         """Make predictions on encrypted data.
 
@@ -486,20 +485,28 @@ class DecisionTree(BaseFHEModel):
         # Encrypt final result
         return encryptor.encrypt_vector(np.array(results))
 
-    def get_params(self) -> Dict[str, Any]:
+    def get_params(self) -> dict[str, Any]:
         """Get model parameters as dictionary."""
         params = super().get_params()
-        params.update({
-            "max_depth": self._tree_config.max_depth,
-            "tree_type": self._tree_config.tree_type.value,
-            "feature_indices": self._feature_indices.tolist() if self._feature_indices is not None else None,
-            "thresholds": self._thresholds.tolist() if self._thresholds is not None else None,
-            "temperatures": self._temperatures.tolist() if self._temperatures is not None else None,
-            "leaf_values": self._leaf_values.tolist() if self._leaf_values is not None else None,
-        })
+        params.update(
+            {
+                "max_depth": self._tree_config.max_depth,
+                "tree_type": self._tree_config.tree_type.value,
+                "feature_indices": self._feature_indices.tolist()
+                if self._feature_indices is not None
+                else None,
+                "thresholds": self._thresholds.tolist() if self._thresholds is not None else None,
+                "temperatures": self._temperatures.tolist()
+                if self._temperatures is not None
+                else None,
+                "leaf_values": self._leaf_values.tolist()
+                if self._leaf_values is not None
+                else None,
+            }
+        )
         return params
 
-    def set_params(self, params: Dict[str, Any]) -> None:
+    def set_params(self, params: dict[str, Any]) -> None:
         """Set model parameters from dictionary."""
         super().set_params(params)
         if params.get("feature_indices") is not None:
@@ -588,7 +595,7 @@ class DecisionTreeClassifier(DecisionTree):
 
     def predict(
         self,
-        X: Union[EncryptedMatrix, np.ndarray, List],
+        X: Union[EncryptedMatrix, np.ndarray, list],
     ) -> np.ndarray:
         """Predict class labels.
 

@@ -12,7 +12,7 @@ This module handles all compliance-related functionality including:
 import json
 import secrets
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional
+from typing import Optional
 
 from .database import DatabaseManager
 
@@ -36,7 +36,7 @@ class ComplianceManager:
         """Initialize compliance schema."""
         self._db.init_compliance_schema()
 
-    def get_compliance_frameworks(self) -> List[Dict]:
+    def get_compliance_frameworks(self) -> list[dict]:
         """Get all available compliance frameworks."""
         self._init_compliance_schema()
         with self._get_connection() as conn:
@@ -46,7 +46,7 @@ class ComplianceManager:
 
         return [dict(row) for row in rows]
 
-    def get_compliance_framework(self, framework_id: str) -> Optional[Dict]:
+    def get_compliance_framework(self, framework_id: str) -> Optional[dict]:
         """Get a specific compliance framework."""
         self._init_compliance_schema()
         with self._get_connection() as conn:
@@ -56,11 +56,7 @@ class ComplianceManager:
 
         return dict(row) if row else None
 
-    def enable_compliance_framework(
-        self,
-        consortium_id: str,
-        framework_id: str
-    ) -> Dict:
+    def enable_compliance_framework(self, consortium_id: str, framework_id: str) -> dict:
         """Enable a compliance framework for a consortium.
 
         Args:
@@ -75,42 +71,54 @@ class ComplianceManager:
             cursor = conn.cursor()
 
             # Get or create settings
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT enabled_frameworks FROM consortium_compliance_settings
                 WHERE consortium_id = ?
-            """, (consortium_id,))
+            """,
+                (consortium_id,),
+            )
             row = cursor.fetchone()
 
             if row:
                 enabled = json.loads(row["enabled_frameworks"])
                 if framework_id not in enabled:
                     enabled.append(framework_id)
-                cursor.execute("""
+                cursor.execute(
+                    """
                     UPDATE consortium_compliance_settings
                     SET enabled_frameworks = ?, updated_at = CURRENT_TIMESTAMP
                     WHERE consortium_id = ?
-                """, (json.dumps(enabled), consortium_id))
+                """,
+                    (json.dumps(enabled), consortium_id),
+                )
             else:
                 settings_id = f"compl_settings_{secrets.token_hex(8)}"
                 enabled = [framework_id]
-                cursor.execute("""
+                cursor.execute(
+                    """
                     INSERT INTO consortium_compliance_settings
                     (id, consortium_id, enabled_frameworks)
                     VALUES (?, ?, ?)
-                """, (settings_id, consortium_id, json.dumps(enabled)))
+                """,
+                    (settings_id, consortium_id, json.dumps(enabled)),
+                )
 
             conn.commit()
 
         return {"consortium_id": consortium_id, "enabled_frameworks": enabled}
 
-    def get_consortium_compliance_settings(self, consortium_id: str) -> Dict:
+    def get_consortium_compliance_settings(self, consortium_id: str) -> dict:
         """Get compliance settings for a consortium."""
         self._init_compliance_schema()
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT * FROM consortium_compliance_settings WHERE consortium_id = ?
-            """, (consortium_id,))
+            """,
+                (consortium_id,),
+            )
             row = cursor.fetchone()
 
         if not row:
@@ -119,7 +127,7 @@ class ComplianceManager:
                 "enabled_frameworks": [],
                 "auto_check_interval": 86400,
                 "notification_emails": [],
-                "settings": {}
+                "settings": {},
             }
 
         result = dict(row)
@@ -135,9 +143,9 @@ class ComplianceManager:
         control_id: str,
         status: str,
         result: str,
-        evidence: Optional[Dict] = None,
+        evidence: Optional[dict] = None,
         checked_by: Optional[str] = None,
-        notes: Optional[str] = None
+        notes: Optional[str] = None,
     ) -> str:
         """Record a compliance check result.
 
@@ -159,30 +167,30 @@ class ComplianceManager:
 
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO compliance_checks
                 (id, consortium_id, framework_id, control_id, status, result, evidence, checked_by, notes)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                check_id,
-                consortium_id,
-                framework_id,
-                control_id,
-                status,
-                result,
-                json.dumps(evidence) if evidence else None,
-                checked_by,
-                notes
-            ))
+            """,
+                (
+                    check_id,
+                    consortium_id,
+                    framework_id,
+                    control_id,
+                    status,
+                    result,
+                    json.dumps(evidence) if evidence else None,
+                    checked_by,
+                    notes,
+                ),
+            )
 
         return check_id
 
     def get_compliance_checks(
-        self,
-        consortium_id: str,
-        framework_id: Optional[str] = None,
-        status: Optional[str] = None
-    ) -> List[Dict]:
+        self, consortium_id: str, framework_id: Optional[str] = None, status: Optional[str] = None
+    ) -> list[dict]:
         """Get compliance checks for a consortium.
 
         Args:
@@ -221,11 +229,7 @@ class ComplianceManager:
 
         return result
 
-    def generate_compliance_report(
-        self,
-        consortium_id: str,
-        framework_id: str
-    ) -> Dict:
+    def generate_compliance_report(self, consortium_id: str, framework_id: str) -> dict:
         """Generate a compliance report for a consortium.
 
         Args:
@@ -268,30 +272,33 @@ class ComplianceManager:
                 "failed": failed,
                 "pending": pending,
                 "total": total,
-                "score": round(score, 2)
-            }
+                "score": round(score, 2),
+            },
         }
 
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO compliance_reports
                 (id, consortium_id, framework_id, overall_score, passed_controls,
                  failed_controls, pending_controls, total_controls, status, valid_until, report_data)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                report_id,
-                consortium_id,
-                framework_id,
-                score,
-                passed,
-                failed,
-                pending,
-                total,
-                status,
-                valid_until,
-                json.dumps(report_data)
-            ))
+            """,
+                (
+                    report_id,
+                    consortium_id,
+                    framework_id,
+                    score,
+                    passed,
+                    failed,
+                    pending,
+                    total,
+                    status,
+                    valid_until,
+                    json.dumps(report_data),
+                ),
+            )
 
         return {
             "id": report_id,
@@ -305,14 +312,12 @@ class ComplianceManager:
             "status": status,
             "generated_at": now.isoformat(),
             "valid_until": valid_until.isoformat(),
-            "report_data": report_data
+            "report_data": report_data,
         }
 
     def get_compliance_reports(
-        self,
-        consortium_id: str,
-        framework_id: Optional[str] = None
-    ) -> List[Dict]:
+        self, consortium_id: str, framework_id: Optional[str] = None
+    ) -> list[dict]:
         """Get compliance reports for a consortium."""
         self._init_compliance_schema()
         with self._get_connection() as conn:
@@ -352,8 +357,8 @@ class ComplianceManager:
         control_id: Optional[str] = None,
         attester_role: Optional[str] = None,
         attestation_type: str = "manual",
-        evidence_urls: Optional[List[str]] = None,
-        valid_days: int = 365
+        evidence_urls: Optional[list[str]] = None,
+        valid_days: int = 365,
     ) -> str:
         """Create a compliance attestation.
 
@@ -379,32 +384,32 @@ class ComplianceManager:
 
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO compliance_attestations
                 (id, consortium_id, framework_id, control_id, attested_by, attester_role,
                  attestation_type, statement, evidence_urls, valid_until)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                attestation_id,
-                consortium_id,
-                framework_id,
-                control_id,
-                attested_by,
-                attester_role,
-                attestation_type,
-                statement,
-                json.dumps(evidence_urls) if evidence_urls else None,
-                valid_until
-            ))
+            """,
+                (
+                    attestation_id,
+                    consortium_id,
+                    framework_id,
+                    control_id,
+                    attested_by,
+                    attester_role,
+                    attestation_type,
+                    statement,
+                    json.dumps(evidence_urls) if evidence_urls else None,
+                    valid_until,
+                ),
+            )
 
         return attestation_id
 
     def get_attestations(
-        self,
-        consortium_id: str,
-        framework_id: Optional[str] = None,
-        include_revoked: bool = False
-    ) -> List[Dict]:
+        self, consortium_id: str, framework_id: Optional[str] = None, include_revoked: bool = False
+    ) -> list[dict]:
         """Get attestations for a consortium."""
         self._init_compliance_schema()
         with self._get_connection() as conn:
@@ -443,14 +448,14 @@ class ComplianceManager:
         consortium_id: str,
         company_id: str,
         processing_purpose: str,
-        data_categories: List[str],
+        data_categories: list[str],
         legal_basis: str,
         data_subjects: Optional[str] = None,
-        recipients: Optional[List[str]] = None,
+        recipients: Optional[list[str]] = None,
         retention_period: Optional[str] = None,
-        security_measures: Optional[List[str]] = None,
+        security_measures: Optional[list[str]] = None,
         cross_border_transfer: bool = False,
-        transfer_safeguards: Optional[str] = None
+        transfer_safeguards: Optional[str] = None,
     ) -> str:
         """Record a data processing activity (GDPR Article 30).
 
@@ -475,34 +480,35 @@ class ComplianceManager:
 
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO data_processing_records
                 (id, consortium_id, company_id, processing_purpose, data_categories,
                  data_subjects, recipients, retention_period, security_measures,
                  legal_basis, cross_border_transfer, transfer_safeguards)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                record_id,
-                consortium_id,
-                company_id,
-                processing_purpose,
-                json.dumps(data_categories),
-                data_subjects,
-                json.dumps(recipients) if recipients else None,
-                retention_period,
-                json.dumps(security_measures) if security_measures else None,
-                legal_basis,
-                1 if cross_border_transfer else 0,
-                transfer_safeguards
-            ))
+            """,
+                (
+                    record_id,
+                    consortium_id,
+                    company_id,
+                    processing_purpose,
+                    json.dumps(data_categories),
+                    data_subjects,
+                    json.dumps(recipients) if recipients else None,
+                    retention_period,
+                    json.dumps(security_measures) if security_measures else None,
+                    legal_basis,
+                    1 if cross_border_transfer else 0,
+                    transfer_safeguards,
+                ),
+            )
 
         return record_id
 
     def get_data_processing_records(
-        self,
-        consortium_id: str,
-        company_id: Optional[str] = None
-    ) -> List[Dict]:
+        self, consortium_id: str, company_id: Optional[str] = None
+    ) -> list[dict]:
         """Get data processing records for a consortium."""
         self._init_compliance_schema()
         with self._get_connection() as conn:
@@ -537,7 +543,7 @@ class ComplianceManager:
 
         return result
 
-    def get_compliance_dashboard(self, consortium_id: str) -> Dict:
+    def get_compliance_dashboard(self, consortium_id: str) -> dict:
         """Get compliance dashboard summary for a consortium.
 
         Args:
@@ -566,16 +572,18 @@ class ComplianceManager:
             score = (passed / total * 100) if total > 0 else 0
             status = "compliant" if failed == 0 and pending == 0 and total > 0 else "non_compliant"
 
-            frameworks_status.append({
-                "framework_id": fw_id,
-                "framework_name": framework["name"],
-                "score": round(score, 2),
-                "status": status,
-                "passed": passed,
-                "failed": failed,
-                "pending": pending,
-                "total": total
-            })
+            frameworks_status.append(
+                {
+                    "framework_id": fw_id,
+                    "framework_name": framework["name"],
+                    "score": round(score, 2),
+                    "status": status,
+                    "passed": passed,
+                    "failed": failed,
+                    "pending": pending,
+                    "total": total,
+                }
+            )
 
         # Calculate overall score
         if frameworks_status:
@@ -592,7 +600,7 @@ class ComplianceManager:
             "enabled_frameworks_count": len(enabled_frameworks),
             "frameworks": frameworks_status,
             "last_check_at": settings.get("last_check_at"),
-            "next_check_at": settings.get("next_check_at")
+            "next_check_at": settings.get("next_check_at"),
         }
 
 

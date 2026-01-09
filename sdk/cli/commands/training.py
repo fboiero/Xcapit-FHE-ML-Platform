@@ -8,17 +8,16 @@ from ..utils import get_version
 
 def cmd_train(args) -> int:
     """Train a model on encrypted data."""
-    from ...encryption import FHEContextManager, CKKSEncryptor
+    from ...encryption import CKKSEncryptor, FHEContextManager
     from ...encryption.ckks_wrapper import EncryptedMatrix, EncryptedVector
     from ...models import (
-        LinearRegression,
-        LogisticRegression,
         DecisionTreeClassifier,
         DecisionTreeRegressor,
         KMeans,
-        ModelConfig,
-        TreeConfig,
         KMeansConfig,
+        LinearRegression,
+        LogisticRegression,
+        TreeConfig,
     )
 
     print(f"Training {args.model} model...")
@@ -33,7 +32,9 @@ def cmd_train(args) -> int:
         bundle = pickle.load(f)
 
     # Load context with secret key for training
-    keys_dir = Path(args.keys) if args.keys else Path(bundle.get("keys_path", "./fhe_workspace/keys"))
+    keys_dir = (
+        Path(args.keys) if args.keys else Path(bundle.get("keys_path", "./fhe_workspace/keys"))
+    )
 
     if not (keys_dir / "context.bin").exists():
         print(f"Error: Keys not found at {keys_dir}")
@@ -50,9 +51,7 @@ def cmd_train(args) -> int:
     encrypted_y = None
     if bundle.get("serialized_y") is not None:
         encrypted_y = EncryptedVector.deserialize(
-            bundle["serialized_y"],
-            manager.context,
-            bundle["y_shape"]
+            bundle["serialized_y"], manager.context, bundle["y_shape"]
         )
 
     # For models that require plaintext training (DecisionTree, KMeans),
@@ -65,7 +64,7 @@ def cmd_train(args) -> int:
         y_train = None
         if encrypted_y is not None:
             y_train = encryptor.decrypt_vector(encrypted_y)
-            y_train = y_train[:len(X_train)]
+            y_train = y_train[: len(X_train)]
 
     # Create model based on type
     model = None
@@ -124,6 +123,7 @@ def cmd_train(args) -> int:
         # LinearRegression and LogisticRegression can work with encrypted data
         # They decrypt internally in a trusted environment (hybrid approach)
         from ...utils.data_loader import EncryptedDataset
+
         encrypted_dataset = EncryptedDataset(
             X=encrypted_X,
             y=encrypted_y,

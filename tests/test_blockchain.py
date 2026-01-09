@@ -7,23 +7,24 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-import pytest
-import numpy as np
-from unittest.mock import Mock, MagicMock, patch
 from datetime import datetime
+from unittest.mock import MagicMock, patch
+
+import numpy as np
+import pytest
 
 # Import blockchain modules directly from sdk
 from sdk.blockchain import connector as connector_module
 from sdk.blockchain.connector import (
+    NETWORK_CONFIGS,
     BlockchainConnector,
     Network,
     NetworkConfig,
-    NETWORK_CONFIGS,
 )
 from sdk.blockchain.registry import (
-    ModelRegistryClient,
-    ModelInfo,
     CheckpointInfo,
+    ModelInfo,
+    ModelRegistryClient,
 )
 
 
@@ -88,10 +89,7 @@ class TestBlockchainConnector:
     def test_init_custom_rpc_url(self):
         """Test connector with custom RPC URL."""
         custom_url = "https://custom-rpc.example.com"
-        connector = BlockchainConnector(
-            Network.ARBITRUM_SEPOLIA,
-            rpc_url=custom_url
-        )
+        connector = BlockchainConnector(Network.ARBITRUM_SEPOLIA, rpc_url=custom_url)
         assert connector._rpc_url == custom_url
 
     def test_properties_before_connect(self):
@@ -108,7 +106,7 @@ class TestBlockchainConnector:
 
     def test_connect_success(self):
         """Test successful connection."""
-        with patch.object(connector_module, 'Web3') as mock_web3_class:
+        with patch.object(connector_module, "Web3") as mock_web3_class:
             mock_web3 = MagicMock()
             mock_web3.is_connected.return_value = True
             mock_web3.eth.chain_id = 421614
@@ -123,7 +121,7 @@ class TestBlockchainConnector:
 
     def test_connect_chain_id_mismatch(self):
         """Test connection fails with wrong chain ID."""
-        with patch.object(connector_module, 'Web3') as mock_web3_class:
+        with patch.object(connector_module, "Web3") as mock_web3_class:
             mock_web3 = MagicMock()
             mock_web3.is_connected.return_value = True
             mock_web3.eth.chain_id = 1  # Wrong chain ID
@@ -137,7 +135,7 @@ class TestBlockchainConnector:
 
     def test_set_account(self):
         """Test setting account from private key."""
-        with patch.object(connector_module, 'Account') as mock_account_class:
+        with patch.object(connector_module, "Account") as mock_account_class:
             mock_account = MagicMock()
             mock_account.address = "0x1234567890abcdef1234567890abcdef12345678"
             mock_account_class.from_key.return_value = mock_account
@@ -150,7 +148,7 @@ class TestBlockchainConnector:
 
     def test_set_account_without_0x_prefix(self):
         """Test setting account without 0x prefix."""
-        with patch.object(connector_module, 'Account') as mock_account_class:
+        with patch.object(connector_module, "Account") as mock_account_class:
             mock_account = MagicMock()
             mock_account.address = "0x1234567890abcdef1234567890abcdef12345678"
             mock_account_class.from_key.return_value = mock_account
@@ -370,9 +368,10 @@ class TestIntegrationScenarios:
 
     def test_connector_workflow(self):
         """Test typical connector workflow."""
-        with patch.object(connector_module, 'Web3') as mock_web3_class, \
-             patch.object(connector_module, 'Account') as mock_account_class:
-
+        with (
+            patch.object(connector_module, "Web3") as mock_web3_class,
+            patch.object(connector_module, "Account") as mock_account_class,
+        ):
             mock_web3 = MagicMock()
             mock_web3.is_connected.return_value = True
             mock_web3.eth.chain_id = 421614
@@ -421,10 +420,7 @@ class TestIntegrationScenarios:
         mock_connector.get_contract.return_value = mock_contract
 
         # Create client and register model
-        client = ModelRegistryClient(
-            mock_connector,
-            "0xabcdef1234567890abcdef1234567890abcdef12"
-        )
+        client = ModelRegistryClient(mock_connector, "0xabcdef1234567890abcdef1234567890abcdef12")
 
         # Model registration would return tx hash
         assert client.contract_address == "0xabcdef1234567890abcdef1234567890abcdef12"

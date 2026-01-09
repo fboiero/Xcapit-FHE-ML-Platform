@@ -14,18 +14,19 @@ All calculations work on aggregated statistics, not raw data,
 preserving privacy while providing quality insights.
 """
 
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, Optional
-import uuid
+from typing import Any, Optional
 
 
 @dataclass
 class DataProfile:
     """Profile of data characteristics without exposing values."""
+
     record_count: int
     feature_count: int
-    null_counts: Dict[str, int] = field(default_factory=dict)
+    null_counts: dict[str, int] = field(default_factory=dict)
     duplicate_count: int = 0
     outlier_count: int = 0
     schema_violations: int = 0
@@ -38,13 +39,14 @@ class DataProfile:
 @dataclass
 class QualityScore:
     """Quality assessment scores."""
+
     overall: float
     completeness: float
     consistency: float
     uniqueness: float
     validity: float
     freshness: float
-    details: Dict[str, Any] = field(default_factory=dict)
+    details: dict[str, Any] = field(default_factory=dict)
 
 
 class DataQualityCalculator:
@@ -63,7 +65,7 @@ class DataQualityCalculator:
         record_count: int,
         feature_count: int,
         null_count: int = 0,
-        null_counts_per_feature: Optional[Dict[str, int]] = None
+        null_counts_per_feature: Optional[dict[str, int]] = None,
     ) -> float:
         """Calculate completeness score (0-100).
 
@@ -99,7 +101,7 @@ class DataQualityCalculator:
         record_count: int,
         schema_violations: int = 0,
         format_violations: int = 0,
-        range_violations: int = 0
+        range_violations: int = 0,
     ) -> float:
         """Calculate consistency score (0-100).
 
@@ -128,11 +130,7 @@ class DataQualityCalculator:
         consistency = ((max_violations - total_violations) / max_violations) * 100
         return round(min(100.0, max(0.0, consistency)), 2)
 
-    def calculate_uniqueness(
-        self,
-        record_count: int,
-        duplicate_count: int = 0
-    ) -> float:
+    def calculate_uniqueness(self, record_count: int, duplicate_count: int = 0) -> float:
         """Calculate uniqueness score (0-100).
 
         Measures the proportion of unique (non-duplicate) records.
@@ -160,7 +158,7 @@ class DataQualityCalculator:
         record_count: int,
         invalid_count: int = 0,
         validation_rules_passed: int = 0,
-        total_validation_rules: int = 0
+        total_validation_rules: int = 0,
     ) -> float:
         """Calculate validity score (0-100).
 
@@ -192,9 +190,7 @@ class DataQualityCalculator:
         return round(min(100.0, max(0.0, validity)), 2)
 
     def calculate_freshness(
-        self,
-        last_updated: Optional[datetime] = None,
-        reference_time: Optional[datetime] = None
+        self, last_updated: Optional[datetime] = None, reference_time: Optional[datetime] = None
     ) -> float:
         """Calculate freshness score (0-100).
 
@@ -214,7 +210,7 @@ class DataQualityCalculator:
 
         if isinstance(last_updated, str):
             try:
-                last_updated = datetime.fromisoformat(last_updated.replace('Z', '+00:00'))
+                last_updated = datetime.fromisoformat(last_updated.replace("Z", "+00:00"))
             except ValueError:
                 return 0.0
 
@@ -233,7 +229,9 @@ class DataQualityCalculator:
             return 0.0
 
         # Linear decay
-        freshness = ((self.freshness_threshold_days - age_days) / self.freshness_threshold_days) * 100
+        freshness = (
+            (self.freshness_threshold_days - age_days) / self.freshness_threshold_days
+        ) * 100
         return round(min(100.0, max(0.0, freshness)), 2)
 
     def calculate_overall(
@@ -243,7 +241,7 @@ class DataQualityCalculator:
         uniqueness: float,
         validity: float,
         freshness: float,
-        weights: Optional[Dict[str, float]] = None
+        weights: Optional[dict[str, float]] = None,
     ) -> float:
         """Calculate overall quality score (0-100).
 
@@ -262,11 +260,11 @@ class DataQualityCalculator:
         """
         if weights is None:
             weights = {
-                'completeness': 0.25,
-                'consistency': 0.20,
-                'uniqueness': 0.20,
-                'validity': 0.20,
-                'freshness': 0.15,
+                "completeness": 0.25,
+                "consistency": 0.20,
+                "uniqueness": 0.20,
+                "validity": 0.20,
+                "freshness": 0.15,
             }
 
         # Normalize weights
@@ -275,11 +273,11 @@ class DataQualityCalculator:
             return 0.0
 
         overall = (
-            completeness * weights.get('completeness', 0.2) +
-            consistency * weights.get('consistency', 0.2) +
-            uniqueness * weights.get('uniqueness', 0.2) +
-            validity * weights.get('validity', 0.2) +
-            freshness * weights.get('freshness', 0.2)
+            completeness * weights.get("completeness", 0.2)
+            + consistency * weights.get("consistency", 0.2)
+            + uniqueness * weights.get("uniqueness", 0.2)
+            + validity * weights.get("validity", 0.2)
+            + freshness * weights.get("freshness", 0.2)
         ) / total_weight
 
         return round(min(100.0, max(0.0, overall)), 2)
@@ -297,35 +295,25 @@ class DataQualityCalculator:
         total_nulls = sum(profile.null_counts.values()) if profile.null_counts else 0
 
         completeness = self.calculate_completeness(
-            profile.record_count,
-            profile.feature_count,
-            total_nulls
+            profile.record_count, profile.feature_count, total_nulls
         )
 
         consistency = self.calculate_consistency(
             profile.record_count,
             profile.schema_violations,
             profile.format_violations,
-            profile.range_violations
+            profile.range_violations,
         )
 
-        uniqueness = self.calculate_uniqueness(
-            profile.record_count,
-            profile.duplicate_count
-        )
+        uniqueness = self.calculate_uniqueness(profile.record_count, profile.duplicate_count)
 
         # For validity, we estimate from outliers and violations
         invalid_count = profile.outlier_count + profile.schema_violations
-        validity = self.calculate_validity(
-            profile.record_count,
-            invalid_count
-        )
+        validity = self.calculate_validity(profile.record_count, invalid_count)
 
         freshness = self.calculate_freshness(profile.last_updated)
 
-        overall = self.calculate_overall(
-            completeness, consistency, uniqueness, validity, freshness
-        )
+        overall = self.calculate_overall(completeness, consistency, uniqueness, validity, freshness)
 
         return QualityScore(
             overall=overall,
@@ -335,12 +323,20 @@ class DataQualityCalculator:
             validity=validity,
             freshness=freshness,
             details={
-                'record_count': profile.record_count,
-                'feature_count': profile.feature_count,
-                'null_ratio': round(total_nulls / (profile.record_count * profile.feature_count) * 100, 2) if profile.record_count > 0 and profile.feature_count > 0 else 0,
-                'duplicate_ratio': round(profile.duplicate_count / profile.record_count * 100, 2) if profile.record_count > 0 else 0,
-                'outlier_ratio': round(profile.outlier_count / profile.record_count * 100, 2) if profile.record_count > 0 else 0,
-            }
+                "record_count": profile.record_count,
+                "feature_count": profile.feature_count,
+                "null_ratio": round(
+                    total_nulls / (profile.record_count * profile.feature_count) * 100, 2
+                )
+                if profile.record_count > 0 and profile.feature_count > 0
+                else 0,
+                "duplicate_ratio": round(profile.duplicate_count / profile.record_count * 100, 2)
+                if profile.record_count > 0
+                else 0,
+                "outlier_ratio": round(profile.outlier_count / profile.record_count * 100, 2)
+                if profile.record_count > 0
+                else 0,
+            },
         )
 
     def assess_from_metadata(
@@ -351,8 +347,8 @@ class DataQualityCalculator:
         duplicate_count: int = 0,
         outlier_count: int = 0,
         last_updated: Optional[datetime] = None,
-        metadata: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+        metadata: Optional[dict[str, Any]] = None,
+    ) -> dict[str, Any]:
         """Assess quality directly from metadata values.
 
         Convenience method that creates a profile and assesses it.
@@ -381,35 +377,33 @@ class DataQualityCalculator:
         if null_count > 0 and feature_count > 0:
             nulls_per_feature = null_count // feature_count
             for i in range(feature_count):
-                profile.null_counts[f'feature_{i}'] = nulls_per_feature
+                profile.null_counts[f"feature_{i}"] = nulls_per_feature
 
         score = self.assess_quality(profile)
 
         assessment_id = f"qa_{uuid.uuid4().hex[:12]}"
 
         return {
-            'id': assessment_id,
-            'overall_score': score.overall,
-            'completeness_score': score.completeness,
-            'consistency_score': score.consistency,
-            'uniqueness_score': score.uniqueness,
-            'validity_score': score.validity,
-            'freshness_score': score.freshness,
-            'record_count': record_count,
-            'feature_count': feature_count,
-            'null_ratio': score.details.get('null_ratio', 0),
-            'duplicate_ratio': score.details.get('duplicate_ratio', 0),
-            'outlier_ratio': score.details.get('outlier_ratio', 0),
-            'assessed_at': datetime.utcnow(),
-            'metadata': metadata,
+            "id": assessment_id,
+            "overall_score": score.overall,
+            "completeness_score": score.completeness,
+            "consistency_score": score.consistency,
+            "uniqueness_score": score.uniqueness,
+            "validity_score": score.validity,
+            "freshness_score": score.freshness,
+            "record_count": record_count,
+            "feature_count": feature_count,
+            "null_ratio": score.details.get("null_ratio", 0),
+            "duplicate_ratio": score.details.get("duplicate_ratio", 0),
+            "outlier_ratio": score.details.get("outlier_ratio", 0),
+            "assessed_at": datetime.utcnow(),
+            "metadata": metadata,
         }
 
 
 def calculate_quality_from_encrypted_metadata(
-    encrypted_record_count: int,
-    encrypted_feature_count: int,
-    stats_summary: Dict[str, Any]
-) -> Dict[str, Any]:
+    encrypted_record_count: int, encrypted_feature_count: int, stats_summary: dict[str, Any]
+) -> dict[str, Any]:
     """Calculate quality metrics from FHE-encrypted data statistics.
 
     This function works with aggregated statistics that can be computed
@@ -432,9 +426,9 @@ def calculate_quality_from_encrypted_metadata(
     return calculator.assess_from_metadata(
         record_count=encrypted_record_count,
         feature_count=encrypted_feature_count,
-        null_count=stats_summary.get('null_bitmap_count', 0),
-        duplicate_count=stats_summary.get('duplicate_hash_collisions', 0),
-        outlier_count=stats_summary.get('range_check_failures', 0),
-        last_updated=stats_summary.get('timestamp'),
-        metadata={'source': 'fhe_encrypted', 'stats_summary': stats_summary}
+        null_count=stats_summary.get("null_bitmap_count", 0),
+        duplicate_count=stats_summary.get("duplicate_hash_collisions", 0),
+        outlier_count=stats_summary.get("range_check_failures", 0),
+        last_updated=stats_summary.get("timestamp"),
+        metadata={"source": "fhe_encrypted", "stats_summary": stats_summary},
     )

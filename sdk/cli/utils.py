@@ -7,6 +7,7 @@ def get_version() -> str:
     """Get SDK version."""
     try:
         from .. import __version__
+
         return __version__
     except ImportError:
         return "0.1.0"

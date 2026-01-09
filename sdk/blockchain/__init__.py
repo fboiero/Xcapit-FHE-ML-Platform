@@ -6,28 +6,28 @@ and consortium governance on Arbitrum and other EVM-compatible chains.
 """
 
 from .connector import (
+    NETWORK_CONFIGS,
     BlockchainConnector,
     Network,
     NetworkConfig,
-    NETWORK_CONFIGS,
-)
-from .registry import (
-    ModelRegistryClient,
-    ModelInfo,
-    CheckpointInfo,
 )
 from .governance import (
-    GovernanceClient,
-    ConsortiumStatus,
-    MemberStatus,
-    ProposalType,
-    ProposalStatus,
+    AuditEvent,
     AuditEventType,
     ConsortiumInfo,
-    MemberInfo,
+    ConsortiumStatus,
     ContributionInfo,
+    GovernanceClient,
+    MemberInfo,
+    MemberStatus,
     ProposalInfo,
-    AuditEvent,
+    ProposalStatus,
+    ProposalType,
+)
+from .registry import (
+    CheckpointInfo,
+    ModelInfo,
+    ModelRegistryClient,
 )
 
 __all__ = [

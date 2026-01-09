@@ -7,19 +7,20 @@ Example:
     export DATABASE_URL=postgresql://user:password@host:5432/dbname
 """
 
+import hashlib
 import json
 import os
 import pickle
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional
-import hashlib
+from typing import Any, Optional
 
 try:
-    import psycopg2
-    from psycopg2.extras import RealDictCursor
+    import psycopg2  # noqa: F401 - needed for submodule imports
     from psycopg2 import pool
+    from psycopg2.extras import RealDictCursor
+
     POSTGRES_AVAILABLE = True
 except ImportError:
     POSTGRES_AVAILABLE = False
@@ -28,24 +29,26 @@ except ImportError:
 @dataclass
 class ModelRecord:
     """Database record for a stored model."""
+
     id: str
     model_type: str
     status: str
-    config: Dict[str, Any]
+    config: dict[str, Any]
     params_blob: Optional[bytes]
     n_features: Optional[int]
-    feature_names: Optional[List[str]]
+    feature_names: Optional[list[str]]
     created_at: datetime
     updated_at: datetime
     trained_at: Optional[datetime]
     training_epochs: Optional[int]
     final_loss: Optional[float]
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
 
 @dataclass
 class TrainingRun:
     """Record of a training run."""
+
     id: str
     model_id: str
     started_at: datetime
@@ -53,14 +56,19 @@ class TrainingRun:
     status: str
     epochs_completed: int
     final_loss: Optional[float]
-    metrics: Dict[str, Any]
+    metrics: dict[str, Any]
     error_message: Optional[str]
 
 
 class PostgresDatabaseManager:
     """PostgreSQL database manager for FHE-ML API persistence."""
 
-    def __init__(self, database_url: Optional[str] = None, min_connections: int = 1, max_connections: int = 10):
+    def __init__(
+        self,
+        database_url: Optional[str] = None,
+        min_connections: int = 1,
+        max_connections: int = 10,
+    ):
         """Initialize PostgreSQL database manager.
 
         Args:
@@ -69,16 +77,16 @@ class PostgresDatabaseManager:
             max_connections: Maximum pool connections.
         """
         if not POSTGRES_AVAILABLE:
-            raise ImportError("psycopg2 is required for PostgreSQL support. Install with: pip install psycopg2-binary")
+            raise ImportError(
+                "psycopg2 is required for PostgreSQL support. Install with: pip install psycopg2-binary"
+            )
 
         self.database_url = database_url or os.environ.get("DATABASE_URL")
         if not self.database_url:
             raise ValueError("DATABASE_URL environment variable is required")
 
         self._pool = pool.ThreadedConnectionPool(
-            min_connections,
-            max_connections,
-            self.database_url
+            min_connections, max_connections, self.database_url
         )
         self._init_schema()
 
@@ -329,14 +337,30 @@ class PostgresDatabaseManager:
             # Indexes for performance
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_models_status ON models(status)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_models_type ON models(model_type)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_training_runs_model ON training_runs(model_id)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_prediction_logs_model ON prediction_logs(model_id)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_prediction_logs_timestamp ON prediction_logs(timestamp)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_consortium_members_consortium ON consortium_members(consortium_id)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_audit_events_consortium ON audit_events(consortium_id)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_audit_events_timestamp ON audit_events(created_at)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_proposals_consortium ON proposals(consortium_id)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_quality_assessments_consortium ON quality_assessments(consortium_id)")
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_training_runs_model ON training_runs(model_id)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_prediction_logs_model ON prediction_logs(model_id)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_prediction_logs_timestamp ON prediction_logs(timestamp)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_consortium_members_consortium ON consortium_members(consortium_id)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_audit_events_consortium ON audit_events(consortium_id)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_audit_events_timestamp ON audit_events(created_at)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_proposals_consortium ON proposals(consortium_id)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_quality_assessments_consortium ON quality_assessments(consortium_id)"
+            )
 
     # ========== Model Operations ==========
 
@@ -344,12 +368,12 @@ class PostgresDatabaseManager:
         self,
         model_id: str,
         model_type: str,
-        config: Dict[str, Any],
+        config: dict[str, Any],
         status: str = "created",
-        params: Optional[Dict] = None,
+        params: Optional[dict] = None,
         n_features: Optional[int] = None,
-        feature_names: Optional[List[str]] = None,
-        metadata: Optional[Dict] = None,
+        feature_names: Optional[list[str]] = None,
+        metadata: Optional[dict] = None,
     ) -> ModelRecord:
         """Save or update a model in the database."""
         params_blob = pickle.dumps(params) if params else None
@@ -358,7 +382,8 @@ class PostgresDatabaseManager:
         with self._get_connection() as conn:
             cursor = conn.cursor()
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO models (id, model_type, status, config, params_blob, n_features, feature_names, created_at, updated_at, metadata)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (id) DO UPDATE SET
@@ -370,12 +395,20 @@ class PostgresDatabaseManager:
                     feature_names = EXCLUDED.feature_names,
                     updated_at = EXCLUDED.updated_at,
                     metadata = EXCLUDED.metadata
-            """, (
-                model_id, model_type, status,
-                json.dumps(config), params_blob, n_features,
-                json.dumps(feature_names) if feature_names else None,
-                now, now, json.dumps(metadata or {})
-            ))
+            """,
+                (
+                    model_id,
+                    model_type,
+                    status,
+                    json.dumps(config),
+                    params_blob,
+                    n_features,
+                    json.dumps(feature_names) if feature_names else None,
+                    now,
+                    now,
+                    json.dumps(metadata or {}),
+                ),
+            )
 
         return self.get_model(model_id)
 
@@ -393,19 +426,25 @@ class PostgresDatabaseManager:
                 id=row["id"],
                 model_type=row["model_type"],
                 status=row["status"],
-                config=row["config"] if isinstance(row["config"], dict) else json.loads(row["config"]),
+                config=row["config"]
+                if isinstance(row["config"], dict)
+                else json.loads(row["config"]),
                 params_blob=row["params_blob"],
                 n_features=row["n_features"],
-                feature_names=row["feature_names"] if isinstance(row["feature_names"], list) else (json.loads(row["feature_names"]) if row["feature_names"] else None),
+                feature_names=row["feature_names"]
+                if isinstance(row["feature_names"], list)
+                else (json.loads(row["feature_names"]) if row["feature_names"] else None),
                 created_at=row["created_at"],
                 updated_at=row["updated_at"],
                 trained_at=row["trained_at"],
                 training_epochs=row["training_epochs"],
                 final_loss=row["final_loss"],
-                metadata=row["metadata"] if isinstance(row["metadata"], dict) else json.loads(row["metadata"] or "{}"),
+                metadata=row["metadata"]
+                if isinstance(row["metadata"], dict)
+                else json.loads(row["metadata"] or "{}"),
             )
 
-    def get_model_params(self, model_id: str) -> Optional[Dict]:
+    def get_model_params(self, model_id: str) -> Optional[dict]:
         """Get model parameters (unpickled)."""
         model = self.get_model(model_id)
         if model and model.params_blob:
@@ -418,7 +457,7 @@ class PostgresDatabaseManager:
         model_type: Optional[str] = None,
         limit: int = 100,
         offset: int = 0,
-    ) -> List[ModelRecord]:
+    ) -> list[ModelRecord]:
         """List models with optional filtering."""
         with self._get_connection() as conn:
             cursor = conn.cursor(cursor_factory=RealDictCursor)
@@ -444,7 +483,9 @@ class PostgresDatabaseManager:
                     id=row["id"],
                     model_type=row["model_type"],
                     status=row["status"],
-                    config=row["config"] if isinstance(row["config"], dict) else json.loads(row["config"]),
+                    config=row["config"]
+                    if isinstance(row["config"], dict)
+                    else json.loads(row["config"]),
                     params_blob=row["params_blob"],
                     n_features=row["n_features"],
                     feature_names=row["feature_names"],
@@ -453,7 +494,9 @@ class PostgresDatabaseManager:
                     trained_at=row["trained_at"],
                     training_epochs=row["training_epochs"],
                     final_loss=row["final_loss"],
-                    metadata=row["metadata"] if isinstance(row["metadata"], dict) else json.loads(row["metadata"] or "{}"),
+                    metadata=row["metadata"]
+                    if isinstance(row["metadata"], dict)
+                    else json.loads(row["metadata"] or "{}"),
                 )
                 for row in rows
             ]
@@ -465,7 +508,7 @@ class PostgresDatabaseManager:
         trained_at: Optional[datetime] = None,
         training_epochs: Optional[int] = None,
         final_loss: Optional[float] = None,
-        params: Optional[Dict] = None,
+        params: Optional[dict] = None,
     ) -> bool:
         """Update model status and training info."""
         with self._get_connection() as conn:
@@ -489,10 +532,7 @@ class PostgresDatabaseManager:
 
             values.append(model_id)
 
-            cursor.execute(
-                f"UPDATE models SET {', '.join(updates)} WHERE id = %s",
-                values
-            )
+            cursor.execute(f"UPDATE models SET {', '.join(updates)} WHERE id = %s", values)
 
             return cursor.rowcount > 0
 
@@ -517,16 +557,19 @@ class PostgresDatabaseManager:
         """Log a prediction request."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO prediction_logs (id, model_id, n_samples, latency_ms, encrypted, api_key_name)
                 VALUES (%s, %s, %s, %s, %s, %s)
-            """, (log_id, model_id, n_samples, latency_ms, encrypted, api_key_name))
+            """,
+                (log_id, model_id, n_samples, latency_ms, encrypted, api_key_name),
+            )
 
     def get_prediction_stats(
         self,
         model_id: Optional[str] = None,
         since: Optional[datetime] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Get prediction statistics."""
         with self._get_connection() as conn:
             cursor = conn.cursor(cursor_factory=RealDictCursor)
@@ -568,7 +611,7 @@ class PostgresDatabaseManager:
         self,
         key: str,
         name: str,
-        permissions: Optional[List[str]] = None,
+        permissions: Optional[list[str]] = None,
         rate_limit: int = 100,
     ) -> str:
         """Create a new API key."""
@@ -577,40 +620,51 @@ class PostgresDatabaseManager:
 
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO api_keys (key_hash, name, permissions, rate_limit)
                 VALUES (%s, %s, %s, %s)
-            """, (key_hash, name, json.dumps(permissions), rate_limit))
+            """,
+                (key_hash, name, json.dumps(permissions), rate_limit),
+            )
 
         return key_hash
 
-    def validate_api_key(self, key: str) -> Optional[Dict]:
+    def validate_api_key(self, key: str) -> Optional[dict]:
         """Validate an API key and return its info."""
         key_hash = hashlib.sha256(key.encode()).hexdigest()
 
         with self._get_connection() as conn:
             cursor = conn.cursor(cursor_factory=RealDictCursor)
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT * FROM api_keys WHERE key_hash = %s AND is_active = TRUE
-            """, (key_hash,))
+            """,
+                (key_hash,),
+            )
             row = cursor.fetchone()
 
             if not row:
                 return None
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 UPDATE api_keys SET last_used_at = %s WHERE key_hash = %s
-            """, (datetime.utcnow(), key_hash))
+            """,
+                (datetime.utcnow(), key_hash),
+            )
 
             return {
                 "name": row["name"],
-                "permissions": row["permissions"] if isinstance(row["permissions"], list) else json.loads(row["permissions"]),
+                "permissions": row["permissions"]
+                if isinstance(row["permissions"], list)
+                else json.loads(row["permissions"]),
                 "rate_limit": row["rate_limit"],
                 "created_at": row["created_at"],
                 "last_used_at": row["last_used_at"],
             }
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get overall database statistics."""
         with self._get_connection() as conn:
             cursor = conn.cursor(cursor_factory=RealDictCursor)
@@ -662,6 +716,7 @@ class PostgresDatabaseManager:
 def get_db_path():
     """Get database path for SQLite compatibility."""
     from pathlib import Path
+
     return Path("./data/fheml.db")
 
 
@@ -677,4 +732,5 @@ def get_database_auto():
     else:
         # Fall back to SQLite
         from .database import get_database
+
         return get_database()

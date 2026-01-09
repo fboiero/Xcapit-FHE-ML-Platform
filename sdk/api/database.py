@@ -4,6 +4,7 @@ This module provides SQLite-based persistence for models, training runs,
 and API usage metrics.
 """
 
+import hashlib
 import json
 import pickle
 import sqlite3
@@ -11,9 +12,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
-import hashlib
-
+from typing import Any, Optional
 
 # Default database path
 DEFAULT_DB_PATH = Path("./data/fheml.db")
@@ -22,24 +21,26 @@ DEFAULT_DB_PATH = Path("./data/fheml.db")
 @dataclass
 class ModelRecord:
     """Database record for a stored model."""
+
     id: str
     model_type: str
     status: str
-    config: Dict[str, Any]
+    config: dict[str, Any]
     params_blob: Optional[bytes]
     n_features: Optional[int]
-    feature_names: Optional[List[str]]
+    feature_names: Optional[list[str]]
     created_at: datetime
     updated_at: datetime
     trained_at: Optional[datetime]
     training_epochs: Optional[int]
     final_loss: Optional[float]
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
 
 @dataclass
 class TrainingRun:
     """Record of a training run."""
+
     id: str
     model_id: str
     started_at: datetime
@@ -47,13 +48,14 @@ class TrainingRun:
     status: str  # running, completed, failed
     epochs_completed: int
     final_loss: Optional[float]
-    metrics: Dict[str, Any]
+    metrics: dict[str, Any]
     error_message: Optional[str]
 
 
 @dataclass
 class PredictionLog:
     """Log entry for a prediction request."""
+
     id: str
     model_id: str
     timestamp: datetime
@@ -79,8 +81,7 @@ class DatabaseManager:
     def _get_connection(self):
         """Get database connection context manager."""
         conn = sqlite3.connect(
-            str(self.db_path),
-            detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
+            str(self.db_path), detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
         )
         conn.row_factory = sqlite3.Row
         try:
@@ -183,12 +184,12 @@ class DatabaseManager:
         self,
         model_id: str,
         model_type: str,
-        config: Dict[str, Any],
+        config: dict[str, Any],
         status: str = "created",
-        params: Optional[Dict] = None,
+        params: Optional[dict] = None,
         n_features: Optional[int] = None,
-        feature_names: Optional[List[str]] = None,
-        metadata: Optional[Dict] = None,
+        feature_names: Optional[list[str]] = None,
+        metadata: Optional[dict] = None,
     ) -> ModelRecord:
         """Save or update a model in the database.
 
@@ -219,7 +220,8 @@ class DatabaseManager:
             exists = cursor.fetchone() is not None
 
             if exists:
-                cursor.execute("""
+                cursor.execute(
+                    """
                     UPDATE models SET
                         model_type = ?,
                         status = ?,
@@ -230,20 +232,40 @@ class DatabaseManager:
                         updated_at = ?,
                         metadata = ?
                     WHERE id = ?
-                """, (
-                    model_type, status, config_json, params_blob,
-                    n_features, feature_names_json, now, metadata_json, model_id
-                ))
+                """,
+                    (
+                        model_type,
+                        status,
+                        config_json,
+                        params_blob,
+                        n_features,
+                        feature_names_json,
+                        now,
+                        metadata_json,
+                        model_id,
+                    ),
+                )
             else:
-                cursor.execute("""
+                cursor.execute(
+                    """
                     INSERT INTO models (
                         id, model_type, status, config, params_blob,
                         n_features, feature_names, created_at, updated_at, metadata
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, (
-                    model_id, model_type, status, config_json, params_blob,
-                    n_features, feature_names_json, now, now, metadata_json
-                ))
+                """,
+                    (
+                        model_id,
+                        model_type,
+                        status,
+                        config_json,
+                        params_blob,
+                        n_features,
+                        feature_names_json,
+                        now,
+                        now,
+                        metadata_json,
+                    ),
+                )
 
         return self.get_model(model_id)
 
@@ -280,7 +302,7 @@ class DatabaseManager:
                 metadata=json.loads(row["metadata"]) if row["metadata"] else {},
             )
 
-    def get_model_params(self, model_id: str) -> Optional[Dict]:
+    def get_model_params(self, model_id: str) -> Optional[dict]:
         """Get model parameters (unpickled).
 
         Args:
@@ -300,7 +322,7 @@ class DatabaseManager:
         model_type: Optional[str] = None,
         limit: int = 100,
         offset: int = 0,
-    ) -> List[ModelRecord]:
+    ) -> list[ModelRecord]:
         """List models with optional filtering.
 
         Args:
@@ -339,7 +361,9 @@ class DatabaseManager:
                     config=json.loads(row["config"]),
                     params_blob=row["params_blob"],
                     n_features=row["n_features"],
-                    feature_names=json.loads(row["feature_names"]) if row["feature_names"] else None,
+                    feature_names=json.loads(row["feature_names"])
+                    if row["feature_names"]
+                    else None,
                     created_at=row["created_at"],
                     updated_at=row["updated_at"],
                     trained_at=row["trained_at"],
@@ -357,7 +381,7 @@ class DatabaseManager:
         trained_at: Optional[datetime] = None,
         training_epochs: Optional[int] = None,
         final_loss: Optional[float] = None,
-        params: Optional[Dict] = None,
+        params: Optional[dict] = None,
     ) -> bool:
         """Update model status and training info.
 
@@ -393,10 +417,7 @@ class DatabaseManager:
 
             values.append(model_id)
 
-            cursor.execute(
-                f"UPDATE models SET {', '.join(updates)} WHERE id = ?",
-                values
-            )
+            cursor.execute(f"UPDATE models SET {', '.join(updates)} WHERE id = ?", values)
 
             return cursor.rowcount > 0
 
@@ -432,10 +453,13 @@ class DatabaseManager:
         """
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO training_runs (id, model_id, status)
                 VALUES (?, ?, 'running')
-            """, (run_id, model_id))
+            """,
+                (run_id, model_id),
+            )
 
         return self.get_training_run(run_id)
 
@@ -474,7 +498,7 @@ class DatabaseManager:
         status: str,
         epochs_completed: int,
         final_loss: Optional[float] = None,
-        metrics: Optional[Dict] = None,
+        metrics: Optional[dict] = None,
         error_message: Optional[str] = None,
     ) -> bool:
         """Complete a training run.
@@ -492,7 +516,8 @@ class DatabaseManager:
         """
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 UPDATE training_runs SET
                     completed_at = ?,
                     status = ?,
@@ -501,10 +526,17 @@ class DatabaseManager:
                     metrics = ?,
                     error_message = ?
                 WHERE id = ?
-            """, (
-                datetime.utcnow(), status, epochs_completed,
-                final_loss, json.dumps(metrics or {}), error_message, run_id
-            ))
+            """,
+                (
+                    datetime.utcnow(),
+                    status,
+                    epochs_completed,
+                    final_loss,
+                    json.dumps(metrics or {}),
+                    error_message,
+                    run_id,
+                ),
+            )
             return cursor.rowcount > 0
 
     # ========== Prediction Log Operations ==========
@@ -530,16 +562,19 @@ class DatabaseManager:
         """
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO prediction_logs (id, model_id, n_samples, latency_ms, encrypted, api_key_name)
                 VALUES (?, ?, ?, ?, ?, ?)
-            """, (log_id, model_id, n_samples, latency_ms, encrypted, api_key_name))
+            """,
+                (log_id, model_id, n_samples, latency_ms, encrypted, api_key_name),
+            )
 
     def get_prediction_stats(
         self,
         model_id: Optional[str] = None,
         since: Optional[datetime] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Get prediction statistics.
 
         Args:
@@ -589,7 +624,7 @@ class DatabaseManager:
         self,
         key: str,
         name: str,
-        permissions: Optional[List[str]] = None,
+        permissions: Optional[list[str]] = None,
         rate_limit: int = 100,
     ) -> str:
         """Create a new API key.
@@ -608,14 +643,17 @@ class DatabaseManager:
 
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO api_keys (key_hash, name, permissions, rate_limit)
                 VALUES (?, ?, ?, ?)
-            """, (key_hash, name, json.dumps(permissions), rate_limit))
+            """,
+                (key_hash, name, json.dumps(permissions), rate_limit),
+            )
 
         return key_hash
 
-    def validate_api_key(self, key: str) -> Optional[Dict]:
+    def validate_api_key(self, key: str) -> Optional[dict]:
         """Validate an API key and return its info.
 
         Args:
@@ -628,18 +666,24 @@ class DatabaseManager:
 
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT * FROM api_keys WHERE key_hash = ? AND is_active = 1
-            """, (key_hash,))
+            """,
+                (key_hash,),
+            )
             row = cursor.fetchone()
 
             if not row:
                 return None
 
             # Update last used
-            cursor.execute("""
+            cursor.execute(
+                """
                 UPDATE api_keys SET last_used_at = ? WHERE key_hash = ?
-            """, (datetime.utcnow(), key_hash))
+            """,
+                (datetime.utcnow(), key_hash),
+            )
 
             return {
                 "name": row["name"],
@@ -660,14 +704,17 @@ class DatabaseManager:
         """
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 UPDATE api_keys SET is_active = 0 WHERE key_hash = ?
-            """, (key_hash,))
+            """,
+                (key_hash,),
+            )
             return cursor.rowcount > 0
 
     # ========== Utility Methods ==========
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get overall database statistics.
 
         Returns:

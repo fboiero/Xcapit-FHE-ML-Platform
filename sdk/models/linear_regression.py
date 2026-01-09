@@ -4,7 +4,8 @@ This module implements linear regression that can be trained
 on encrypted data using the CKKS homomorphic encryption scheme.
 """
 
-from typing import List, Optional, Union
+from typing import Optional, Union
+
 import numpy as np
 
 from ..encryption.ckks_wrapper import (
@@ -84,7 +85,7 @@ class LinearRegression(BaseFHEModel):
         self,
         X: EncryptedMatrix,
         encryptor: CKKSEncryptor,
-    ) -> List[EncryptedVector]:
+    ) -> list[EncryptedVector]:
         """Compute predictions on encrypted data.
 
         For each sample x_i: pred_i = sum(x_i * w) + b
@@ -183,14 +184,13 @@ class LinearRegression(BaseFHEModel):
             encrypted_y = X.y
             encrypted_X = X.X
             n_features = X.n_features
-            n_samples = X.n_samples
         else:
             if y is None:
                 raise ValueError("Target y is required when X is EncryptedMatrix")
             encrypted_y = y
             encrypted_X = X
             n_features = X.shape[1]
-            n_samples = X.shape[0]
+            X.shape[0]
 
         # Get encryptor
         encryptor = self._ensure_encryptor(encrypted_X)

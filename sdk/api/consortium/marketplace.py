@@ -12,7 +12,7 @@ This module handles all marketplace-related functionality including:
 import json
 import secrets
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Optional
 
 from .database import DatabaseManager
 
@@ -36,7 +36,7 @@ class MarketplaceManager:
         """Initialize marketplace schema."""
         self._db.init_marketplace_schema()
 
-    def get_marketplace_categories(self) -> List[Dict]:
+    def get_marketplace_categories(self) -> list[dict]:
         """Get all marketplace categories."""
         self._init_marketplace_schema()
         with self._get_connection() as conn:
@@ -59,8 +59,8 @@ class MarketplaceManager:
         featured_only: bool = False,
         search: Optional[str] = None,
         sort_by: str = "downloads",
-        limit: int = 50
-    ) -> List[Dict]:
+        limit: int = 50,
+    ) -> list[dict]:
         """Get marketplace models with optional filters.
 
         Args:
@@ -101,7 +101,7 @@ class MarketplaceManager:
                 "downloads": "downloads DESC",
                 "rating": "rating DESC",
                 "newest": "created_at DESC",
-                "accuracy": "accuracy DESC"
+                "accuracy": "accuracy DESC",
             }
             query += f" ORDER BY {sort_options.get(sort_by, 'downloads DESC')}"
             query += f" LIMIT {limit}"
@@ -119,7 +119,7 @@ class MarketplaceManager:
 
         return models
 
-    def get_marketplace_model(self, model_id: str) -> Optional[Dict]:
+    def get_marketplace_model(self, model_id: str) -> Optional[dict]:
         """Get a specific marketplace model by ID.
 
         Args:
@@ -144,12 +144,8 @@ class MarketplaceManager:
         return model
 
     def deploy_marketplace_model(
-        self,
-        model_id: str,
-        consortium_id: str,
-        deployed_by: str,
-        config: Optional[Dict] = None
-    ) -> Dict:
+        self, model_id: str, consortium_id: str, deployed_by: str, config: Optional[dict] = None
+    ) -> dict:
         """Deploy a marketplace model to a consortium.
 
         Args:
@@ -174,10 +170,13 @@ class MarketplaceManager:
             cursor = conn.cursor()
 
             # Check for existing deployment
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT id FROM model_deployments
                 WHERE model_id = ? AND consortium_id = ? AND status = 'active'
-            """, (model_id, consortium_id))
+            """,
+                (model_id, consortium_id),
+            )
 
             existing = cursor.fetchone()
             if existing:
@@ -186,23 +185,28 @@ class MarketplaceManager:
                     "model_id": model_id,
                     "consortium_id": consortium_id,
                     "status": "already_deployed",
-                    "message": "Model already deployed to this consortium"
+                    "message": "Model already deployed to this consortium",
                 }
 
             # Create deployment
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO model_deployments
                 (id, model_id, consortium_id, deployed_by, config)
                 VALUES (?, ?, ?, ?, ?)
-            """, (deployment_id, model_id, consortium_id, deployed_by,
-                  json.dumps(config or {})))
+            """,
+                (deployment_id, model_id, consortium_id, deployed_by, json.dumps(config or {})),
+            )
 
             # Increment downloads
-            cursor.execute("""
+            cursor.execute(
+                """
                 UPDATE marketplace_models
                 SET downloads = downloads + 1
                 WHERE id = ?
-            """, (model_id,))
+            """,
+                (model_id,),
+            )
 
             conn.commit()
 
@@ -213,10 +217,10 @@ class MarketplaceManager:
             "consortium_id": consortium_id,
             "deployed_by": deployed_by,
             "status": "deployed",
-            "deployed_at": datetime.utcnow().isoformat()
+            "deployed_at": datetime.utcnow().isoformat(),
         }
 
-    def get_consortium_deployments(self, consortium_id: str) -> List[Dict]:
+    def get_consortium_deployments(self, consortium_id: str) -> list[dict]:
         """Get all model deployments for a consortium.
 
         Args:
@@ -228,7 +232,8 @@ class MarketplaceManager:
         self._init_marketplace_schema()
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT d.*, m.name as model_name, m.model_type, m.accuracy,
                        m.industry, c.name as category_name
                 FROM model_deployments d
@@ -236,7 +241,9 @@ class MarketplaceManager:
                 LEFT JOIN model_categories c ON m.industry = c.id
                 WHERE d.consortium_id = ?
                 ORDER BY d.deployed_at DESC
-            """, (consortium_id,))
+            """,
+                (consortium_id,),
+            )
             rows = cursor.fetchall()
 
         deployments = []
@@ -260,11 +267,14 @@ class MarketplaceManager:
         self._init_marketplace_schema()
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 UPDATE model_deployments
                 SET status = 'undeployed'
                 WHERE id = ?
-            """, (deployment_id,))
+            """,
+                (deployment_id,),
+            )
             conn.commit()
             return cursor.rowcount > 0
 
@@ -275,7 +285,7 @@ class MarketplaceManager:
         rating: int,
         title: Optional[str] = None,
         comment: Optional[str] = None,
-        consortium_id: Optional[str] = None
+        consortium_id: Optional[str] = None,
     ) -> str:
         """Add a review for a marketplace model.
 
@@ -301,35 +311,40 @@ class MarketplaceManager:
             cursor = conn.cursor()
 
             # Add review
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO model_reviews
                 (id, model_id, reviewer_id, consortium_id, rating, title, comment)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (review_id, model_id, reviewer_id, consortium_id, rating, title, comment))
+            """,
+                (review_id, model_id, reviewer_id, consortium_id, rating, title, comment),
+            )
 
             # Update model rating
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT AVG(rating) as avg_rating, COUNT(*) as count
                 FROM model_reviews
                 WHERE model_id = ?
-            """, (model_id,))
+            """,
+                (model_id,),
+            )
             stats = cursor.fetchone()
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 UPDATE marketplace_models
                 SET rating = ?, rating_count = ?
                 WHERE id = ?
-            """, (round(stats["avg_rating"], 1), stats["count"], model_id))
+            """,
+                (round(stats["avg_rating"], 1), stats["count"], model_id),
+            )
 
             conn.commit()
 
         return review_id
 
-    def get_model_reviews(
-        self,
-        model_id: str,
-        limit: int = 50
-    ) -> List[Dict]:
+    def get_model_reviews(self, model_id: str, limit: int = 50) -> list[dict]:
         """Get reviews for a marketplace model.
 
         Args:
@@ -342,19 +357,22 @@ class MarketplaceManager:
         self._init_marketplace_schema()
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT r.*, c.name as reviewer_name
                 FROM model_reviews r
                 LEFT JOIN companies c ON r.reviewer_id = c.id
                 WHERE r.model_id = ?
                 ORDER BY r.created_at DESC
                 LIMIT ?
-            """, (model_id, limit))
+            """,
+                (model_id, limit),
+            )
             rows = cursor.fetchall()
 
         return [dict(row) for row in rows]
 
-    def get_featured_models(self, limit: int = 6) -> List[Dict]:
+    def get_featured_models(self, limit: int = 6) -> list[dict]:
         """Get featured marketplace models.
 
         Args:
@@ -365,7 +383,7 @@ class MarketplaceManager:
         """
         return self.get_marketplace_models(featured_only=True, limit=limit)
 
-    def get_marketplace_stats(self) -> Dict:
+    def get_marketplace_stats(self) -> dict:
         """Get marketplace statistics.
 
         Returns:
@@ -381,7 +399,9 @@ class MarketplaceManager:
             cursor.execute("SELECT SUM(downloads) FROM marketplace_models")
             total_downloads = cursor.fetchone()[0] or 0
 
-            cursor.execute("SELECT COUNT(DISTINCT consortium_id) FROM model_deployments WHERE status = 'active'")
+            cursor.execute(
+                "SELECT COUNT(DISTINCT consortium_id) FROM model_deployments WHERE status = 'active'"
+            )
             active_consortiums = cursor.fetchone()[0]
 
             cursor.execute("SELECT COUNT(*) FROM model_reviews")
@@ -395,7 +415,7 @@ class MarketplaceManager:
             "total_downloads": total_downloads,
             "active_consortiums": active_consortiums,
             "total_reviews": total_reviews,
-            "average_rating": round(avg_rating, 1)
+            "average_rating": round(avg_rating, 1),
         }
 
 

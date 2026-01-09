@@ -8,12 +8,12 @@ Tests cover:
 - Quality dashboard
 """
 
-import sys
-from pathlib import Path
-import pytest
-import tempfile
-from datetime import datetime, timedelta
 import importlib.util
+import sys
+import tempfile
+from pathlib import Path
+
+import pytest
 
 project_root = Path(__file__).parent.parent
 sdk_api_path = project_root / "sdk" / "api"
@@ -31,8 +31,7 @@ def load_module_from_path(module_name, file_path):
 # Load consortium module package
 consortium_package_path = sdk_api_path / "consortium"
 consortium_module = load_module_from_path(
-    "sdk.api.consortium",
-    consortium_package_path / "__init__.py"
+    "sdk.api.consortium", consortium_package_path / "__init__.py"
 )
 ConsortiumManager = consortium_module.ConsortiumManager
 ConsortiumStatus = consortium_module.ConsortiumStatus
@@ -61,22 +60,18 @@ class TestDataQualityAssessment:
             name="Test Consortium",
             description="Testing data quality",
             owner_id=owner.id,
-            model_type="linear_regression"
+            model_type="linear_regression",
         )
 
         invitation = manager.create_invitation(
             consortium_id=consortium.id,
             invited_by=owner.id,
             invite_email="member@test.com",
-            role=MemberRole.CONTRIBUTOR
+            role=MemberRole.CONTRIBUTOR,
         )
         manager.accept_invitation(invitation.invite_code, member.id)
 
-        return {
-            "consortium": consortium,
-            "owner": owner,
-            "member": member
-        }
+        return {"consortium": consortium, "owner": owner, "member": member}
 
     def test_assess_data_quality_basic(self, manager, setup_consortium):
         """Test basic data quality assessment."""
@@ -90,7 +85,7 @@ class TestDataQualityAssessment:
             feature_count=10,
             null_count=50,
             duplicate_count=20,
-            outlier_count=30
+            outlier_count=30,
         )
 
         assert assessment is not None
@@ -113,7 +108,7 @@ class TestDataQualityAssessment:
             feature_count=10,
             null_count=1000,  # 1% nulls
             duplicate_count=500,  # 5% duplicates
-            outlier_count=300  # 0.3% outliers
+            outlier_count=300,  # 0.3% outliers
         )
 
         # Completeness = 1 - (1000 / 100000) = 0.99 = 99%
@@ -138,7 +133,7 @@ class TestDataQualityAssessment:
             feature_count=10,
             null_count=0,
             duplicate_count=0,
-            outlier_count=0
+            outlier_count=0,
         )
 
         assert assessment["scores"]["completeness"] == 100.0
@@ -158,7 +153,7 @@ class TestDataQualityAssessment:
             feature_count=5,
             null_count=50,
             duplicate_count=10,
-            outlier_count=5
+            outlier_count=5,
         )
 
         assert "metrics" in assessment
@@ -187,13 +182,11 @@ class TestGetQualityAssessments:
             name="Test Consortium",
             description="Testing",
             owner_id=owner.id,
-            model_type="linear_regression"
+            model_type="linear_regression",
         )
 
         invitation = manager.create_invitation(
-            consortium_id=consortium.id,
-            invited_by=owner.id,
-            invite_email="member@test.com"
+            consortium_id=consortium.id, invited_by=owner.id, invite_email="member@test.com"
         )
         manager.accept_invitation(invitation.invite_code, member.id)
 
@@ -203,7 +196,7 @@ class TestGetQualityAssessments:
                 consortium_id=consortium.id,
                 company_id=owner.id,
                 record_count=1000 * (i + 1),
-                feature_count=10
+                feature_count=10,
             )
 
         for i in range(2):
@@ -211,14 +204,10 @@ class TestGetQualityAssessments:
                 consortium_id=consortium.id,
                 company_id=member.id,
                 record_count=500 * (i + 1),
-                feature_count=8
+                feature_count=8,
             )
 
-        return {
-            "consortium": consortium,
-            "owner": owner,
-            "member": member
-        }
+        return {"consortium": consortium, "owner": owner, "member": member}
 
     def test_get_all_assessments(self, manager, setup_with_assessments):
         """Test getting all assessments for a consortium."""
@@ -233,10 +222,7 @@ class TestGetQualityAssessments:
         consortium = setup_with_assessments["consortium"]
         owner = setup_with_assessments["owner"]
 
-        assessments = manager.get_quality_assessments(
-            consortium.id,
-            company_id=owner.id
-        )
+        assessments = manager.get_quality_assessments(consortium.id, company_id=owner.id)
 
         assert len(assessments) == 3
         for a in assessments:
@@ -270,7 +256,7 @@ class TestQualityRules:
             name="Test Consortium",
             description="Testing rules",
             owner_id=owner.id,
-            model_type="linear_regression"
+            model_type="linear_regression",
         )
         return {"consortium": consortium, "owner": owner}
 
@@ -283,7 +269,7 @@ class TestQualityRules:
             rule_name="completeness_min",
             rule_type="completeness",
             threshold_min=90.0,
-            weight=1.0
+            weight=1.0,
         )
 
         assert rule_id is not None
@@ -301,7 +287,7 @@ class TestQualityRules:
                 rule_name=f"{metric}_threshold",
                 rule_type=metric,
                 threshold_min=85.0,
-                weight=1.0
+                weight=1.0,
             )
 
         rules = manager.get_quality_rules(consortium.id)
@@ -328,7 +314,7 @@ class TestQualityAlerts:
             name="Test Consortium",
             description="Testing alerts",
             owner_id=owner.id,
-            model_type="linear_regression"
+            model_type="linear_regression",
         )
         return {"consortium": consortium, "owner": owner}
 
@@ -354,7 +340,7 @@ class TestQualityAlerts:
             feature_count=10,
             null_count=5000,  # 50% nulls - very low completeness
             duplicate_count=400,  # 40% duplicates
-            outlier_count=2000
+            outlier_count=2000,
         )
 
         # Alerts may or may not be generated depending on rules
@@ -381,7 +367,7 @@ class TestQualityHistory:
             name="Test Consortium",
             description="Testing history",
             owner_id=owner.id,
-            model_type="linear_regression"
+            model_type="linear_regression",
         )
 
         # Create several assessments to generate history
@@ -393,7 +379,7 @@ class TestQualityHistory:
                 feature_count=10,
                 null_count=100 * (5 - i),  # Improving quality
                 duplicate_count=50 * (5 - i),
-                outlier_count=30 * (5 - i)
+                outlier_count=30 * (5 - i),
             )
 
         return {"consortium": consortium, "owner": owner}
@@ -411,10 +397,7 @@ class TestQualityHistory:
         consortium = setup_with_history["consortium"]
         owner = setup_with_history["owner"]
 
-        history = manager.get_quality_history(
-            consortium.id,
-            company_id=owner.id
-        )
+        history = manager.get_quality_history(consortium.id, company_id=owner.id)
 
         for entry in history:
             assert entry["company_id"] == owner.id
@@ -442,7 +425,7 @@ class TestQualityDashboard:
             name="Test Consortium",
             description="Testing dashboard",
             owner_id=owner.id,
-            model_type="linear_regression"
+            model_type="linear_regression",
         )
 
         # Add members
@@ -450,7 +433,7 @@ class TestQualityDashboard:
             invitation = manager.create_invitation(
                 consortium_id=consortium.id,
                 invited_by=owner.id,
-                invite_email=f"{member.name.lower().replace(' ', '')}@test.com"
+                invite_email=f"{member.name.lower().replace(' ', '')}@test.com",
             )
             manager.accept_invitation(invitation.invite_code, member.id)
 
@@ -462,7 +445,7 @@ class TestQualityDashboard:
             feature_count=10,
             null_count=500,  # 99.5% completeness
             duplicate_count=100,  # 99% uniqueness
-            outlier_count=200  # 99.8% validity
+            outlier_count=200,  # 99.8% validity
         )
 
         manager.assess_data_quality(
@@ -472,7 +455,7 @@ class TestQualityDashboard:
             feature_count=10,
             null_count=4000,  # 95% completeness
             duplicate_count=800,  # 90% uniqueness
-            outlier_count=400  # 99.5% validity
+            outlier_count=400,  # 99.5% validity
         )
 
         manager.assess_data_quality(
@@ -482,15 +465,10 @@ class TestQualityDashboard:
             feature_count=10,
             null_count=2500,  # 95% completeness
             duplicate_count=250,  # 95% uniqueness
-            outlier_count=150  # 99.7% validity
+            outlier_count=150,  # 99.7% validity
         )
 
-        return {
-            "consortium": consortium,
-            "owner": owner,
-            "member1": member1,
-            "member2": member2
-        }
+        return {"consortium": consortium, "owner": owner, "member1": member1, "member2": member2}
 
     def test_get_quality_dashboard(self, manager, setup_consortium_with_quality):
         """Test getting quality dashboard."""
@@ -545,7 +523,7 @@ class TestQualityDashboard:
                 name="Empty Consortium",
                 description="No data",
                 owner_id=owner.id,
-                model_type="linear_regression"
+                model_type="linear_regression",
             )
 
             dashboard = mgr.get_consortium_quality_dashboard(consortium.id)
@@ -573,7 +551,7 @@ class TestDataQualityIntegration:
             name="Quality Consortium",
             description="Testing data quality",
             owner_id=owner.id,
-            model_type="linear_regression"
+            model_type="linear_regression",
         )
 
         # 2. Set quality rules
@@ -585,7 +563,7 @@ class TestDataQualityIntegration:
                 rule_name=f"{metric}_threshold",
                 rule_type=metric,
                 threshold_min=80.0,
-                weight=1.0
+                weight=1.0,
             )
 
         rules = manager.get_quality_rules(consortium.id)
@@ -599,7 +577,7 @@ class TestDataQualityIntegration:
             feature_count=10,
             null_count=100,  # 99.9% completeness
             duplicate_count=50,  # 99.5% uniqueness
-            outlier_count=100  # 99.9% validity
+            outlier_count=100,  # 99.9% validity
         )
 
         assert assessment1["overall_score"] > 95
@@ -612,7 +590,7 @@ class TestDataQualityIntegration:
             feature_count=10,
             null_count=8000,  # 92% completeness
             duplicate_count=1500,  # 85% uniqueness
-            outlier_count=1000  # 99% validity
+            outlier_count=1000,  # 99% validity
         )
 
         # Second assessment should have lower score
@@ -639,7 +617,7 @@ class TestDataQualityIntegration:
             name="Banking Consortium",
             description="Multi-bank quality",
             owner_id=owner.id,
-            model_type="linear_regression"
+            model_type="linear_regression",
         )
 
         # Add more members
@@ -648,7 +626,7 @@ class TestDataQualityIntegration:
             invitation = manager.create_invitation(
                 consortium_id=consortium.id,
                 invited_by=owner.id,
-                invite_email=f"{name.lower().replace(' ', '')}@bank.com"
+                invite_email=f"{name.lower().replace(' ', '')}@bank.com",
             )
             manager.accept_invitation(invitation.invite_code, company.id)
             companies.append((name, company))
@@ -661,13 +639,13 @@ class TestDataQualityIntegration:
         ]
 
         assessments = []
-        for (name, company), quality in zip(companies, quality_levels):
+        for (_name, company), quality in zip(companies, quality_levels):
             assessment = manager.assess_data_quality(
                 consortium_id=consortium.id,
                 company_id=company.id,
                 record_count=10000,
                 feature_count=10,
-                **quality
+                **quality,
             )
             assessments.append(assessment)
 

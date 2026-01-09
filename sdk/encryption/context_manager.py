@@ -7,6 +7,7 @@ including parameter configuration, serialization, and context lifecycle.
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
+
 import tenseal as ts
 
 
@@ -189,7 +190,7 @@ class FHEContextManager:
             include_secret_key: Whether to include secret key.
         """
         serialized = self.serialize(include_secret_key=include_secret_key)
-        with open(path, 'wb') as f:
+        with open(path, "wb") as f:
             f.write(serialized)
 
     def load_from_file(self, path: str) -> ts.Context:
@@ -201,7 +202,7 @@ class FHEContextManager:
         Returns:
             Loaded TenSEAL context.
         """
-        with open(path, 'rb') as f:
+        with open(path, "rb") as f:
             serialized = f.read()
         return self.load(serialized)
 

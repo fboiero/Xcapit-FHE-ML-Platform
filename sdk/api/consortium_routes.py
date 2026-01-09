@@ -5,22 +5,21 @@ data collaboration consortiums.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
-from fastapi import APIRouter, HTTPException, Depends, Header
+from typing import Any, Optional
+
+from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel, Field
-import hashlib
-import re
 
 from .consortium import (
     ConsortiumManager,
     ConsortiumStatus,
+    InviteStatus,
     MemberRole,
     MemberStatus,
-    InviteStatus,
 )
 
-
 # ============ Pydantic Models ============
+
 
 class CompanyCreateRequest(BaseModel):
     name: str = Field(..., min_length=2, max_length=100, description="Company name")
@@ -42,8 +41,10 @@ class CompanyCreateResponse(BaseModel):
 class ConsortiumCreateRequest(BaseModel):
     name: str = Field(..., min_length=2, max_length=100, description="Consortium name")
     description: str = Field(..., min_length=10, description="Description of the collaboration")
-    model_type: str = Field(..., description="ML model type: linear_regression, logistic_regression, kmeans")
-    ml_config: Optional[Dict[str, Any]] = Field(default=None, description="Model configuration")
+    model_type: str = Field(
+        ..., description="ML model type: linear_regression, logistic_regression, kmeans"
+    )
+    ml_config: Optional[dict[str, Any]] = Field(default=None, description="Model configuration")
 
 
 class ConsortiumResponse(BaseModel):
@@ -53,7 +54,7 @@ class ConsortiumResponse(BaseModel):
     owner_id: str
     status: str
     model_type: str
-    ml_config: Dict[str, Any]
+    ml_config: dict[str, Any]
     created_at: str
     updated_at: str
     training_started_at: Optional[str] = None
@@ -62,8 +63,8 @@ class ConsortiumResponse(BaseModel):
 
 
 class ConsortiumDetailResponse(ConsortiumResponse):
-    members: List[Dict[str, Any]]
-    data_summary: Dict[str, Any]
+    members: list[dict[str, Any]]
+    data_summary: dict[str, Any]
 
 
 class InviteRequest(BaseModel):
@@ -134,33 +135,21 @@ def get_manager() -> ConsortiumManager:
     return _manager
 
 
-def get_company_from_api_key(
-    x_api_key: str = Header(..., alias="X-API-Key")
-) -> Dict:
+def get_company_from_api_key(x_api_key: str = Header(..., alias="X-API-Key")) -> dict:
     """Extract company from API key."""
     manager = get_manager()
     company = manager.get_company_by_api_key(x_api_key)
 
     if not company:
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid API key"
-        )
+        raise HTTPException(status_code=401, detail="Invalid API key")
 
-    return {
-        "id": company.id,
-        "name": company.name,
-        "email": company.email
-    }
+    return {"id": company.id, "name": company.name, "email": company.email}
 
 
 # ============ Company Endpoints ============
 
-@router.post(
-    "/companies",
-    response_model=CompanyCreateResponse,
-    summary="Register a new company"
-)
+
+@router.post("/companies", response_model=CompanyCreateResponse, summary="Register a new company")
 async def create_company(request: CompanyCreateRequest):
     """
     Register a new company to participate in consortiums.
@@ -170,16 +159,10 @@ async def create_company(request: CompanyCreateRequest):
     manager = get_manager()
 
     try:
-        company, api_key = manager.create_company(
-            name=request.name,
-            email=request.email
-        )
+        company, api_key = manager.create_company(name=request.name, email=request.email)
     except Exception as e:
         if "UNIQUE constraint" in str(e):
-            raise HTTPException(
-                status_code=400,
-                detail="Email already registered"
-            )
+            raise HTTPException(status_code=400, detail="Email already registered")
         raise HTTPException(status_code=500, detail=str(e))
 
     return CompanyCreateResponse(
@@ -187,42 +170,29 @@ async def create_company(request: CompanyCreateRequest):
             id=company.id,
             name=company.name,
             email=company.email,
-            created_at=company.created_at.isoformat()
+            created_at=company.created_at.isoformat(),
         ),
-        api_key=api_key
+        api_key=api_key,
     )
 
 
-@router.get(
-    "/companies/me",
-    response_model=CompanyResponse,
-    summary="Get current company info"
-)
-async def get_current_company(
-    company: Dict = Depends(get_company_from_api_key)
-):
+@router.get("/companies/me", response_model=CompanyResponse, summary="Get current company info")
+async def get_current_company(company: dict = Depends(get_company_from_api_key)):
     """Get information about the authenticated company."""
     manager = get_manager()
     comp = manager.get_company(company["id"])
 
     return CompanyResponse(
-        id=comp.id,
-        name=comp.name,
-        email=comp.email,
-        created_at=comp.created_at.isoformat()
+        id=comp.id, name=comp.name, email=comp.email, created_at=comp.created_at.isoformat()
     )
 
 
 # ============ Consortium Endpoints ============
 
-@router.post(
-    "",
-    response_model=ConsortiumResponse,
-    summary="Create a new consortium"
-)
+
+@router.post("", response_model=ConsortiumResponse, summary="Create a new consortium")
 async def create_consortium(
-    request: ConsortiumCreateRequest,
-    company: Dict = Depends(get_company_from_api_key)
+    request: ConsortiumCreateRequest, company: dict = Depends(get_company_from_api_key)
 ):
     """
     Create a new data collaboration consortium.
@@ -235,8 +205,7 @@ async def create_consortium(
     valid_types = ["linear_regression", "logistic_regression", "decision_tree", "kmeans"]
     if request.model_type not in valid_types:
         raise HTTPException(
-            status_code=400,
-            detail=f"Invalid model_type. Must be one of: {valid_types}"
+            status_code=400, detail=f"Invalid model_type. Must be one of: {valid_types}"
         )
 
     consortium = manager.create_consortium(
@@ -244,7 +213,7 @@ async def create_consortium(
         description=request.description,
         owner_id=company["id"],
         model_type=request.model_type,
-        model_config=request.ml_config
+        model_config=request.ml_config,
     )
 
     return ConsortiumResponse(
@@ -256,18 +225,13 @@ async def create_consortium(
         model_type=consortium.model_type,
         ml_config=consortium.model_config,
         created_at=consortium.created_at.isoformat(),
-        updated_at=consortium.updated_at.isoformat()
+        updated_at=consortium.updated_at.isoformat(),
     )
 
 
-@router.get(
-    "",
-    response_model=List[ConsortiumResponse],
-    summary="List consortiums"
-)
+@router.get("", response_model=list[ConsortiumResponse], summary="List consortiums")
 async def list_consortiums(
-    company: Dict = Depends(get_company_from_api_key),
-    status: Optional[str] = None
+    company: dict = Depends(get_company_from_api_key), status: Optional[str] = None
 ):
     """
     List all consortiums the company is a member of.
@@ -277,10 +241,7 @@ async def list_consortiums(
     manager = get_manager()
 
     status_filter = ConsortiumStatus(status) if status else None
-    consortiums = manager.list_consortiums(
-        company_id=company["id"],
-        status=status_filter
-    )
+    consortiums = manager.list_consortiums(company_id=company["id"], status=status_filter)
 
     return [
         ConsortiumResponse(
@@ -293,23 +254,22 @@ async def list_consortiums(
             ml_config=c.model_config,
             created_at=c.created_at.isoformat(),
             updated_at=c.updated_at.isoformat(),
-            training_started_at=c.training_started_at.isoformat() if c.training_started_at else None,
-            training_completed_at=c.training_completed_at.isoformat() if c.training_completed_at else None,
-            model_id=c.model_id
+            training_started_at=c.training_started_at.isoformat()
+            if c.training_started_at
+            else None,
+            training_completed_at=c.training_completed_at.isoformat()
+            if c.training_completed_at
+            else None,
+            model_id=c.model_id,
         )
         for c in consortiums
     ]
 
 
 @router.get(
-    "/{consortium_id}",
-    response_model=ConsortiumDetailResponse,
-    summary="Get consortium details"
+    "/{consortium_id}", response_model=ConsortiumDetailResponse, summary="Get consortium details"
 )
-async def get_consortium(
-    consortium_id: str,
-    company: Dict = Depends(get_company_from_api_key)
-):
+async def get_consortium(consortium_id: str, company: dict = Depends(get_company_from_api_key)):
     """
     Get detailed information about a consortium including members and data summary.
     """
@@ -318,10 +278,7 @@ async def get_consortium(
     # Check membership
     membership = manager.get_membership(consortium_id, company["id"])
     if not membership or membership.status != MemberStatus.ACTIVE:
-        raise HTTPException(
-            status_code=403,
-            detail="You are not a member of this consortium"
-        )
+        raise HTTPException(status_code=403, detail="You are not a member of this consortium")
 
     consortium = manager.get_consortium(consortium_id)
     if not consortium:
@@ -340,22 +297,25 @@ async def get_consortium(
         ml_config=consortium.model_config,
         created_at=consortium.created_at.isoformat(),
         updated_at=consortium.updated_at.isoformat(),
-        training_started_at=consortium.training_started_at.isoformat() if consortium.training_started_at else None,
-        training_completed_at=consortium.training_completed_at.isoformat() if consortium.training_completed_at else None,
+        training_started_at=consortium.training_started_at.isoformat()
+        if consortium.training_started_at
+        else None,
+        training_completed_at=consortium.training_completed_at.isoformat()
+        if consortium.training_completed_at
+        else None,
         model_id=consortium.model_id,
         members=members,
-        data_summary=data_summary
+        data_summary=data_summary,
     )
 
 
 @router.get(
     "/{consortium_id}/stats",
     response_model=ConsortiumStatsResponse,
-    summary="Get consortium statistics"
+    summary="Get consortium statistics",
 )
 async def get_consortium_stats(
-    consortium_id: str,
-    company: Dict = Depends(get_company_from_api_key)
+    consortium_id: str, company: dict = Depends(get_company_from_api_key)
 ):
     """
     Get statistics about a consortium's data contributions.
@@ -365,10 +325,7 @@ async def get_consortium_stats(
     # Check membership
     membership = manager.get_membership(consortium_id, company["id"])
     if not membership or membership.status != MemberStatus.ACTIVE:
-        raise HTTPException(
-            status_code=403,
-            detail="You are not a member of this consortium"
-        )
+        raise HTTPException(status_code=403, detail="You are not a member of this consortium")
 
     consortium = manager.get_consortium(consortium_id)
     if not consortium:
@@ -388,21 +345,18 @@ async def get_consortium_stats(
         companies_contributed=data_summary["companies_contributed"],
         total_records=data_summary["total_records"],
         feature_count=data_summary["feature_count"],
-        ready_for_training=ready
+        ready_for_training=ready,
     )
 
 
 # ============ Invitation Endpoints ============
 
+
 @router.post(
-    "/{consortium_id}/invite",
-    response_model=InviteResponse,
-    summary="Invite a company to join"
+    "/{consortium_id}/invite", response_model=InviteResponse, summary="Invite a company to join"
 )
 async def invite_to_consortium(
-    consortium_id: str,
-    request: InviteRequest,
-    company: Dict = Depends(get_company_from_api_key)
+    consortium_id: str, request: InviteRequest, company: dict = Depends(get_company_from_api_key)
 ):
     """
     Invite a company to join the consortium.
@@ -414,31 +368,21 @@ async def invite_to_consortium(
     # Check membership and role
     membership = manager.get_membership(consortium_id, company["id"])
     if not membership or membership.status != MemberStatus.ACTIVE:
-        raise HTTPException(
-            status_code=403,
-            detail="You are not a member of this consortium"
-        )
+        raise HTTPException(status_code=403, detail="You are not a member of this consortium")
 
     if membership.role not in [MemberRole.OWNER, MemberRole.ADMIN]:
-        raise HTTPException(
-            status_code=403,
-            detail="Only owners and admins can invite members"
-        )
+        raise HTTPException(status_code=403, detail="Only owners and admins can invite members")
 
     # Validate role
     try:
         role = MemberRole(request.role)
     except ValueError:
         raise HTTPException(
-            status_code=400,
-            detail=f"Invalid role. Must be one of: admin, contributor, viewer"
+            status_code=400, detail="Invalid role. Must be one of: admin, contributor, viewer"
         )
 
     invitation = manager.create_invitation(
-        consortium_id=consortium_id,
-        invited_by=company["id"],
-        invite_email=request.email,
-        role=role
+        consortium_id=consortium_id, invited_by=company["id"], invite_email=request.email, role=role
     )
 
     # Generate invite URL (adjust base URL as needed)
@@ -452,19 +396,19 @@ async def invite_to_consortium(
         role=invitation.role.value,
         status=invitation.status.value,
         expires_at=invitation.expires_at.isoformat(),
-        invite_url=invite_url
+        invite_url=invite_url,
     )
 
 
 @router.get(
     "/{consortium_id}/invitations",
-    response_model=List[InviteResponse],
-    summary="List pending invitations"
+    response_model=list[InviteResponse],
+    summary="List pending invitations",
 )
 async def list_invitations(
     consortium_id: str,
-    company: Dict = Depends(get_company_from_api_key),
-    status: Optional[str] = None
+    company: dict = Depends(get_company_from_api_key),
+    status: Optional[str] = None,
 ):
     """
     List invitations for a consortium.
@@ -476,16 +420,10 @@ async def list_invitations(
     # Check membership and role
     membership = manager.get_membership(consortium_id, company["id"])
     if not membership or membership.status != MemberStatus.ACTIVE:
-        raise HTTPException(
-            status_code=403,
-            detail="You are not a member of this consortium"
-        )
+        raise HTTPException(status_code=403, detail="You are not a member of this consortium")
 
     if membership.role not in [MemberRole.OWNER, MemberRole.ADMIN]:
-        raise HTTPException(
-            status_code=403,
-            detail="Only owners and admins can view invitations"
-        )
+        raise HTTPException(status_code=403, detail="Only owners and admins can view invitations")
 
     status_filter = InviteStatus(status) if status else None
     invitations = manager.list_invitations(consortium_id, status_filter)
@@ -499,20 +437,17 @@ async def list_invitations(
             role=inv.role.value,
             status=inv.status.value,
             expires_at=inv.expires_at.isoformat(),
-            invite_url=f"https://privacy.xcapit.com/join?code={inv.invite_code}"
+            invite_url=f"https://privacy.xcapit.com/join?code={inv.invite_code}",
         )
         for inv in invitations
     ]
 
 
 @router.post(
-    "/join",
-    response_model=MemberResponse,
-    summary="Accept invitation and join consortium"
+    "/join", response_model=MemberResponse, summary="Accept invitation and join consortium"
 )
 async def accept_invitation(
-    request: AcceptInviteRequest,
-    company: Dict = Depends(get_company_from_api_key)
+    request: AcceptInviteRequest, company: dict = Depends(get_company_from_api_key)
 ):
     """
     Accept an invitation to join a consortium.
@@ -520,15 +455,11 @@ async def accept_invitation(
     manager = get_manager()
 
     membership = manager.accept_invitation(
-        invite_code=request.invite_code,
-        company_id=company["id"]
+        invite_code=request.invite_code, company_id=company["id"]
     )
 
     if not membership:
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid or expired invitation"
-        )
+        raise HTTPException(status_code=400, detail="Invalid or expired invitation")
 
     # Get company info
     comp = manager.get_company(company["id"])
@@ -542,21 +473,19 @@ async def accept_invitation(
         status=membership.status.value,
         joined_at=membership.joined_at.isoformat(),
         data_uploaded=membership.data_uploaded,
-        data_record_count=membership.data_record_count
+        data_record_count=membership.data_record_count,
     )
 
 
 # ============ Member Endpoints ============
 
+
 @router.get(
     "/{consortium_id}/members",
-    response_model=List[MemberResponse],
-    summary="List consortium members"
+    response_model=list[MemberResponse],
+    summary="List consortium members",
 )
-async def list_members(
-    consortium_id: str,
-    company: Dict = Depends(get_company_from_api_key)
-):
+async def list_members(consortium_id: str, company: dict = Depends(get_company_from_api_key)):
     """
     List all members of a consortium.
     """
@@ -565,10 +494,7 @@ async def list_members(
     # Check membership
     membership = manager.get_membership(consortium_id, company["id"])
     if not membership or membership.status != MemberStatus.ACTIVE:
-        raise HTTPException(
-            status_code=403,
-            detail="You are not a member of this consortium"
-        )
+        raise HTTPException(status_code=403, detail="You are not a member of this consortium")
 
     members = manager.get_members(consortium_id)
 
@@ -582,7 +508,7 @@ async def list_members(
             status=m["status"],
             joined_at=m["joined_at"].isoformat() if m["joined_at"] else "",
             data_uploaded=m["data_uploaded"],
-            data_record_count=m["data_record_count"]
+            data_record_count=m["data_record_count"],
         )
         for m in members
     ]
@@ -590,14 +516,12 @@ async def list_members(
 
 # ============ Status Endpoints ============
 
+
 @router.post(
-    "/{consortium_id}/activate",
-    response_model=ConsortiumResponse,
-    summary="Activate consortium"
+    "/{consortium_id}/activate", response_model=ConsortiumResponse, summary="Activate consortium"
 )
 async def activate_consortium(
-    consortium_id: str,
-    company: Dict = Depends(get_company_from_api_key)
+    consortium_id: str, company: dict = Depends(get_company_from_api_key)
 ):
     """
     Activate a consortium to start accepting data.
@@ -609,15 +533,9 @@ async def activate_consortium(
     # Check ownership
     membership = manager.get_membership(consortium_id, company["id"])
     if not membership or membership.role != MemberRole.OWNER:
-        raise HTTPException(
-            status_code=403,
-            detail="Only the owner can activate the consortium"
-        )
+        raise HTTPException(status_code=403, detail="Only the owner can activate the consortium")
 
-    consortium = manager.update_consortium_status(
-        consortium_id,
-        ConsortiumStatus.ACTIVE
-    )
+    consortium = manager.update_consortium_status(consortium_id, ConsortiumStatus.ACTIVE)
 
     if not consortium:
         raise HTTPException(status_code=404, detail="Consortium not found")
@@ -631,13 +549,14 @@ async def activate_consortium(
         model_type=consortium.model_type,
         ml_config=consortium.model_config,
         created_at=consortium.created_at.isoformat(),
-        updated_at=consortium.updated_at.isoformat()
+        updated_at=consortium.updated_at.isoformat(),
     )
 
 
 # ============ Data Upload Endpoints ============
 
-class DataUploadResponse(BaseModel):
+
+class DataContributionResponse(BaseModel):
     id: str
     consortium_id: str
     company_id: str
@@ -647,7 +566,7 @@ class DataUploadResponse(BaseModel):
     message: str
 
 
-class ConsortiumStatsResponse(BaseModel):
+class ConsortiumSummaryResponse(BaseModel):
     consortium_id: str
     total_members: int
     total_contributions: int
@@ -668,20 +587,16 @@ class TrainingStatusResponse(BaseModel):
 
 @router.post(
     "/{consortium_id}/data",
-    response_model=DataUploadResponse,
-    summary="Upload encrypted data"
+    response_model=DataContributionResponse,
+    summary="Upload encrypted data",
 )
-async def upload_data(
-    consortium_id: str,
-    company: Dict = Depends(get_company_from_api_key)
-):
+async def upload_data(consortium_id: str, company: dict = Depends(get_company_from_api_key)):
     """
     Upload encrypted data to the consortium.
 
     Data is encrypted using CKKS homomorphic encryption.
     Only contributors, admins, and owners can upload data.
     """
-    import json
     import os
     import uuid
 
@@ -690,16 +605,10 @@ async def upload_data(
     # Check membership and role
     membership = manager.get_membership(consortium_id, company["id"])
     if not membership or membership.status != MemberStatus.ACTIVE:
-        raise HTTPException(
-            status_code=403,
-            detail="You are not a member of this consortium"
-        )
+        raise HTTPException(status_code=403, detail="You are not a member of this consortium")
 
     if membership.role == MemberRole.VIEWER:
-        raise HTTPException(
-            status_code=403,
-            detail="Viewers cannot upload data"
-        )
+        raise HTTPException(status_code=403, detail="Viewers cannot upload data")
 
     # Check consortium status
     consortium = manager.get_consortium(consortium_id)
@@ -707,10 +616,7 @@ async def upload_data(
         raise HTTPException(status_code=404, detail="Consortium not found")
 
     if consortium.status != ConsortiumStatus.ACTIVE:
-        raise HTTPException(
-            status_code=400,
-            detail="Consortium must be active to upload data"
-        )
+        raise HTTPException(status_code=400, detail="Consortium must be active to upload data")
 
     # Generate contribution ID
     contribution_id = str(uuid.uuid4())
@@ -728,7 +634,7 @@ async def upload_data(
         company_id=company["id"],
         contribution_id=contribution_id,
         record_count=record_count,
-        file_path=f"{data_dir}/{contribution_id}.enc"
+        file_path=f"{data_dir}/{contribution_id}.enc",
     )
 
     # Update membership
@@ -736,41 +642,37 @@ async def upload_data(
         consortium_id=consortium_id,
         company_id=company["id"],
         data_uploaded=True,
-        record_count=record_count
+        record_count=record_count,
     )
 
-    return DataUploadResponse(
+    return DataContributionResponse(
         id=contribution_id,
         consortium_id=consortium_id,
         company_id=company["id"],
         record_count=record_count,
         encrypted=True,
         uploaded_at=datetime.now().isoformat(),
-        message="Data uploaded and encrypted successfully"
+        message="Data uploaded and encrypted successfully",
     )
 
 
 @router.get(
-    "/{consortium_id}/stats",
-    response_model=ConsortiumStatsResponse,
-    summary="Get consortium statistics"
+    "/{consortium_id}/summary",
+    response_model=ConsortiumSummaryResponse,
+    summary="Get consortium summary",
 )
-async def get_consortium_stats(
-    consortium_id: str,
-    company: Dict = Depends(get_company_from_api_key)
+async def get_consortium_summary(
+    consortium_id: str, company: dict = Depends(get_company_from_api_key)
 ):
     """
-    Get statistics for a consortium.
+    Get summary statistics for a consortium.
     """
     manager = get_manager()
 
     # Check membership
     membership = manager.get_membership(consortium_id, company["id"])
     if not membership or membership.status != MemberStatus.ACTIVE:
-        raise HTTPException(
-            status_code=403,
-            detail="You are not a member of this consortium"
-        )
+        raise HTTPException(status_code=403, detail="You are not a member of this consortium")
 
     consortium = manager.get_consortium(consortium_id)
     if not consortium:
@@ -778,31 +680,26 @@ async def get_consortium_stats(
 
     stats = manager.get_consortium_stats(consortium_id)
 
-    return ConsortiumStatsResponse(
+    return ConsortiumSummaryResponse(
         consortium_id=consortium_id,
         total_members=stats.get("total_members", 1),
         total_contributions=stats.get("total_contributions", 0),
         total_records=stats.get("total_records", 0),
         contributors_count=stats.get("contributors_count", 0),
-        status=consortium.status.value
+        status=consortium.status.value,
     )
 
 
 # ============ Training Endpoints ============
 
 # In-memory training status (in production, use database/Redis)
-_training_status: Dict[str, Dict] = {}
+_training_status: dict[str, dict] = {}
 
 
 @router.post(
-    "/{consortium_id}/train",
-    response_model=TrainingStatusResponse,
-    summary="Start model training"
+    "/{consortium_id}/train", response_model=TrainingStatusResponse, summary="Start model training"
 )
-async def start_training(
-    consortium_id: str,
-    company: Dict = Depends(get_company_from_api_key)
-):
+async def start_training(consortium_id: str, company: dict = Depends(get_company_from_api_key)):
     """
     Start training the ML model on encrypted data.
 
@@ -816,16 +713,10 @@ async def start_training(
     # Check membership and role
     membership = manager.get_membership(consortium_id, company["id"])
     if not membership:
-        raise HTTPException(
-            status_code=403,
-            detail="You are not a member of this consortium"
-        )
+        raise HTTPException(status_code=403, detail="You are not a member of this consortium")
 
     if membership.role not in [MemberRole.OWNER, MemberRole.ADMIN]:
-        raise HTTPException(
-            status_code=403,
-            detail="Only owners and admins can start training"
-        )
+        raise HTTPException(status_code=403, detail="Only owners and admins can start training")
 
     # Check consortium status
     consortium = manager.get_consortium(consortium_id)
@@ -833,24 +724,15 @@ async def start_training(
         raise HTTPException(status_code=404, detail="Consortium not found")
 
     if consortium.status == ConsortiumStatus.TRAINING:
-        raise HTTPException(
-            status_code=400,
-            detail="Training is already in progress"
-        )
+        raise HTTPException(status_code=400, detail="Training is already in progress")
 
     if consortium.status != ConsortiumStatus.ACTIVE:
-        raise HTTPException(
-            status_code=400,
-            detail="Consortium must be active to start training"
-        )
+        raise HTTPException(status_code=400, detail="Consortium must be active to start training")
 
     # Check for data contributions
     stats = manager.get_consortium_stats(consortium_id)
     if stats.get("total_contributions", 0) == 0:
-        raise HTTPException(
-            status_code=400,
-            detail="No data has been uploaded yet"
-        )
+        raise HTTPException(status_code=400, detail="No data has been uploaded yet")
 
     # Update status to training
     manager.update_consortium_status(consortium_id, ConsortiumStatus.TRAINING)
@@ -862,19 +744,20 @@ async def start_training(
         "current_step": "Initializing",
         "started_at": datetime.now().isoformat(),
         "completed_at": None,
-        "error": None
+        "error": None,
     }
 
     # Simulate async training (in production, use Celery/background tasks)
     def run_training():
         import time
+
         steps = [
             (10, "Loading encrypted data"),
             (30, "Aggregating encrypted features"),
             (50, "Training on encrypted data"),
             (70, "Computing encrypted gradients"),
             (90, "Finalizing model"),
-            (100, "Training complete")
+            (100, "Training complete"),
         ]
 
         for progress, step in steps:
@@ -896,18 +779,17 @@ async def start_training(
         status="running",
         progress=0,
         current_step="Initializing",
-        started_at=_training_status[consortium_id]["started_at"]
+        started_at=_training_status[consortium_id]["started_at"],
     )
 
 
 @router.get(
     "/{consortium_id}/training-status",
     response_model=TrainingStatusResponse,
-    summary="Get training status"
+    summary="Get training status",
 )
 async def get_training_status(
-    consortium_id: str,
-    company: Dict = Depends(get_company_from_api_key)
+    consortium_id: str, company: dict = Depends(get_company_from_api_key)
 ):
     """
     Get the current training status.
@@ -917,36 +799,28 @@ async def get_training_status(
     # Check membership
     membership = manager.get_membership(consortium_id, company["id"])
     if not membership or membership.status != MemberStatus.ACTIVE:
-        raise HTTPException(
-            status_code=403,
-            detail="You are not a member of this consortium"
-        )
+        raise HTTPException(status_code=403, detail="You are not a member of this consortium")
 
-    status = _training_status.get(consortium_id, {
-        "status": "not_started",
-        "progress": 0,
-        "current_step": None,
-        "started_at": None,
-        "completed_at": None,
-        "error": None
-    })
-
-    return TrainingStatusResponse(
-        consortium_id=consortium_id,
-        **status
+    status = _training_status.get(
+        consortium_id,
+        {
+            "status": "not_started",
+            "progress": 0,
+            "current_step": None,
+            "started_at": None,
+            "completed_at": None,
+            "error": None,
+        },
     )
+
+    return TrainingStatusResponse(consortium_id=consortium_id, **status)
 
 
 # ============ Results Endpoints ============
 
-@router.get(
-    "/{consortium_id}/results",
-    summary="Download training results"
-)
-async def download_results(
-    consortium_id: str,
-    company: Dict = Depends(get_company_from_api_key)
-):
+
+@router.get("/{consortium_id}/results", summary="Download training results")
+async def download_results(consortium_id: str, company: dict = Depends(get_company_from_api_key)):
     """
     Download the trained model results.
 
@@ -959,10 +833,7 @@ async def download_results(
     # Check membership
     membership = manager.get_membership(consortium_id, company["id"])
     if not membership or membership.status != MemberStatus.ACTIVE:
-        raise HTTPException(
-            status_code=403,
-            detail="You are not a member of this consortium"
-        )
+        raise HTTPException(status_code=403, detail="You are not a member of this consortium")
 
     consortium = manager.get_consortium(consortium_id)
     if not consortium:
@@ -970,8 +841,7 @@ async def download_results(
 
     if consortium.status != ConsortiumStatus.COMPLETED:
         raise HTTPException(
-            status_code=400,
-            detail="Training must be completed to download results"
+            status_code=400, detail="Training must be completed to download results"
         )
 
     # Return model results (simulated)
@@ -983,18 +853,14 @@ async def download_results(
             "weights": [0.5, 0.3, 0.2],
             "bias": 0.1,
             "iterations": 100,
-            "convergence": True
+            "convergence": True,
         },
-        "metrics": {
-            "accuracy": 0.92,
-            "loss": 0.08,
-            "r_squared": 0.89
-        },
+        "metrics": {"accuracy": 0.92, "loss": 0.08, "r_squared": 0.89},
         "privacy_guarantees": {
             "encryption_scheme": "CKKS",
             "security_level": 128,
-            "data_never_decrypted": True
-        }
+            "data_never_decrypted": True,
+        },
     }
 
     return JSONResponse(content=results)

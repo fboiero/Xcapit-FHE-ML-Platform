@@ -12,25 +12,22 @@ import pytest
 # Check if TenSEAL is available
 try:
     import tenseal as ts
+
     TENSEAL_AVAILABLE = True
 except ImportError:
     TENSEAL_AVAILABLE = False
 
-pytestmark = pytest.mark.skipif(
-    not TENSEAL_AVAILABLE,
-    reason="TenSEAL not installed"
-)
+pytestmark = pytest.mark.skipif(not TENSEAL_AVAILABLE, reason="TenSEAL not installed")
 
 
 # ========== Fixtures ==========
+
 
 @pytest.fixture(scope="module")
 def ckks_context():
     """Create a CKKS context for testing."""
     context = ts.context(
-        ts.SCHEME_TYPE.CKKS,
-        poly_modulus_degree=8192,
-        coeff_mod_bit_sizes=[60, 40, 40, 60]
+        ts.SCHEME_TYPE.CKKS, poly_modulus_degree=8192, coeff_mod_bit_sizes=[60, 40, 40, 60]
     )
     context.generate_galois_keys()
     context.global_scale = 2**40
@@ -56,6 +53,7 @@ def classification_data():
 
 
 # ========== Basic Encryption Tests ==========
+
 
 class TestBasicEncryption:
     """Test basic CKKS encryption operations."""
@@ -130,6 +128,7 @@ class TestBasicEncryption:
 
 # ========== SDK Encryption Layer Tests ==========
 
+
 class TestSDKEncryption:
     """Test SDK encryption wrapper with real TenSEAL."""
 
@@ -145,7 +144,7 @@ class TestSDKEncryption:
 
     def test_ckks_encryptor_basic(self):
         """Test CKKSEncryptor basic operations."""
-        from sdk.encryption import FHEContextManager, CKKSEncryptor
+        from sdk.encryption import CKKSEncryptor, FHEContextManager
 
         ctx_mgr = FHEContextManager()
         ctx_mgr.create_context()
@@ -162,7 +161,7 @@ class TestSDKEncryption:
 
     def test_encrypt_matrix(self):
         """Test matrix encryption with row-wise encoding."""
-        from sdk.encryption import FHEContextManager, CKKSEncryptor
+        from sdk.encryption import CKKSEncryptor, FHEContextManager
 
         ctx_mgr = FHEContextManager()
         ctx_mgr.create_context()
@@ -183,18 +182,20 @@ class TestSDKEncryption:
 
 # ========== Linear Regression FHE Tests ==========
 
+
 class TestLinearRegressionFHE:
     """Test LinearRegression with real FHE operations."""
 
     def test_fit_and_predict_encrypted(self, sample_data):
         """Test training and prediction with encryption."""
         import pandas as pd
+
         from sdk.models import LinearRegression
         from sdk.utils.data_loader import SecureDataLoader
 
         X, y = sample_data
         X_train, X_test = X[:40], X[40:]
-        y_train, y_test = y[:40], y[40:]
+        y_train, _y_test = y[:40], y[40:]
 
         # Create DataFrame with target column for encryption
         df_train = pd.DataFrame(X_train, columns=[f"feature_{i}" for i in range(X_train.shape[1])])
@@ -227,7 +228,7 @@ class TestLinearRegressionFHE:
         """Test gradient computation on encrypted data."""
         X, y = sample_data
         X_small = X[:5]  # Use small batch for speed
-        y_small = y[:5]
+        y[:5]
 
         # Initialize random weights
         n_features = X_small.shape[1]
@@ -251,6 +252,7 @@ class TestLinearRegressionFHE:
 
 
 # ========== Logistic Regression FHE Tests ==========
+
 
 class TestLogisticRegressionFHE:
     """Test LogisticRegression with real FHE operations."""
@@ -277,12 +279,13 @@ class TestLogisticRegressionFHE:
     def test_logistic_prediction_pipeline(self, classification_data):
         """Test full logistic regression prediction on encrypted data."""
         import pandas as pd
+
         from sdk.models import LogisticRegression
         from sdk.utils.data_loader import SecureDataLoader
 
         X, y = classification_data
         X_train, X_test = X[:80], X[80:]
-        y_train, y_test = y[:80], y[80:]
+        y_train, _y_test = y[:80], y[80:]
 
         # Create DataFrame with target column for encryption
         df_train = pd.DataFrame(X_train, columns=[f"feature_{i}" for i in range(X_train.shape[1])])
@@ -342,6 +345,7 @@ class TestLogisticRegressionFHE:
 
 # ========== K-Means FHE Tests ==========
 
+
 class TestKMeansFHE:
     """Test K-Means with real FHE operations."""
 
@@ -394,20 +398,21 @@ class TestKMeansFHE:
 
 # ========== Security Level Tests ==========
 
+
 class TestSecurityLevels:
     """Test different security levels."""
 
     @pytest.mark.parametrize("poly_degree", [8192, 16384])
     def test_security_level_configuration(self, poly_degree):
         """Test context creation with different poly modulus degrees."""
-        from sdk.encryption import FHEContextManager, CKKSParameters, SecurityLevel
+        from sdk.encryption import CKKSParameters, FHEContextManager, SecurityLevel
 
         # Create params with specific poly degree (4096 not supported with these coeff mods)
         params = CKKSParameters(
             poly_modulus_degree=poly_degree,
             coeff_mod_bit_sizes=(60, 40, 40, 60),
             scale=2**40,
-            security_level=SecurityLevel.TC128
+            security_level=SecurityLevel.TC128,
         )
 
         ctx_mgr = FHEContextManager(params=params)
@@ -418,6 +423,7 @@ class TestSecurityLevels:
 
 
 # ========== Serialization Tests ==========
+
 
 class TestEncryptedSerialization:
     """Test serialization of encrypted data."""
@@ -461,6 +467,7 @@ class TestEncryptedSerialization:
 
 
 # ========== Performance Benchmark Tests ==========
+
 
 class TestPerformanceBenchmarks:
     """Performance benchmarks for FHE operations."""

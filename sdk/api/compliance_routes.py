@@ -10,18 +10,19 @@ This module provides REST endpoints for:
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from .auth import get_current_company
 
-
 # ============ Enums ============
+
 
 class ComplianceFramework(str, Enum):
     """Available compliance frameworks."""
+
     GDPR = "framework_gdpr"
     HIPAA = "framework_hipaa"
     SOC2 = "framework_soc2"
@@ -30,6 +31,7 @@ class ComplianceFramework(str, Enum):
 
 class CheckStatus(str, Enum):
     """Status of a compliance check."""
+
     PASSED = "passed"
     FAILED = "failed"
     PENDING = "pending"
@@ -38,6 +40,7 @@ class CheckStatus(str, Enum):
 
 class ControlSeverity(str, Enum):
     """Severity of compliance controls."""
+
     CRITICAL = "critical"
     HIGH = "high"
     MEDIUM = "medium"
@@ -46,6 +49,7 @@ class ControlSeverity(str, Enum):
 
 class ComplianceStatus(str, Enum):
     """Overall compliance status."""
+
     COMPLIANT = "compliant"
     NON_COMPLIANT = "non_compliant"
     PARTIAL = "partial"
@@ -54,65 +58,74 @@ class ComplianceStatus(str, Enum):
 
 # ============ Request Models ============
 
+
 class EnableFrameworkRequest(BaseModel):
     """Request to enable a compliance framework."""
+
     consortium_id: str
     framework_id: ComplianceFramework
 
 
 class RecordCheckRequest(BaseModel):
     """Request to record a compliance check result."""
+
     consortium_id: str
     framework_id: ComplianceFramework
     control_id: str
     status: CheckStatus
     result: str = Field(..., max_length=1000)
-    evidence: Optional[Dict[str, Any]] = None
+    evidence: Optional[dict[str, Any]] = None
     notes: Optional[str] = Field(default=None, max_length=2000)
 
 
 class GenerateReportRequest(BaseModel):
     """Request to generate a compliance report."""
+
     consortium_id: str
     framework_id: ComplianceFramework
 
 
 class CreateAttestationRequest(BaseModel):
     """Request to create an attestation."""
+
     consortium_id: str
     framework_id: ComplianceFramework
     statement: str = Field(..., min_length=10, max_length=2000)
     control_id: Optional[str] = None
     attester_role: Optional[str] = Field(default=None, max_length=100)
     attestation_type: str = Field(default="manual", max_length=50)
-    evidence_urls: Optional[List[str]] = None
+    evidence_urls: Optional[list[str]] = None
     valid_days: int = Field(default=365, gt=0, le=730)
 
 
 class RecordDataProcessingRequest(BaseModel):
     """Request to record a data processing activity (GDPR Article 30)."""
+
     consortium_id: str
     processing_purpose: str = Field(..., min_length=5, max_length=500)
-    data_categories: List[str] = Field(..., min_items=1)
+    data_categories: list[str] = Field(..., min_items=1)
     legal_basis: str = Field(..., max_length=200)
     data_subjects: Optional[str] = Field(default=None, max_length=500)
-    recipients: Optional[List[str]] = None
+    recipients: Optional[list[str]] = None
     retention_period: Optional[str] = Field(default=None, max_length=100)
-    security_measures: Optional[List[str]] = None
+    security_measures: Optional[list[str]] = None
     cross_border_transfer: bool = False
     transfer_safeguards: Optional[str] = Field(default=None, max_length=500)
 
 
 class RunComplianceCheckRequest(BaseModel):
     """Request to run automated compliance checks."""
+
     consortium_id: str
     framework_id: ComplianceFramework
 
 
 # ============ Response Models ============
 
+
 class FrameworkResponse(BaseModel):
     """Compliance framework response."""
+
     id: str
     name: str
     version: str
@@ -124,23 +137,25 @@ class FrameworkResponse(BaseModel):
 
 class ComplianceSettingsResponse(BaseModel):
     """Consortium compliance settings response."""
+
     consortium_id: str
-    enabled_frameworks: List[str]
+    enabled_frameworks: list[str]
     auto_check_interval: int
-    notification_emails: List[str]
+    notification_emails: list[str]
     last_check_at: Optional[datetime]
     next_check_at: Optional[datetime]
 
 
 class ComplianceCheckResponse(BaseModel):
     """Compliance check response."""
+
     id: str
     consortium_id: str
     framework_id: str
     control_id: str
     status: CheckStatus
     result: str
-    evidence: Optional[Dict[str, Any]]
+    evidence: Optional[dict[str, Any]]
     checked_at: datetime
     checked_by: Optional[str]
     notes: Optional[str]
@@ -148,6 +163,7 @@ class ComplianceCheckResponse(BaseModel):
 
 class ComplianceReportResponse(BaseModel):
     """Compliance report response."""
+
     id: str
     consortium_id: str
     framework_id: str
@@ -164,6 +180,7 @@ class ComplianceReportResponse(BaseModel):
 
 class AttestationResponse(BaseModel):
     """Attestation response."""
+
     id: str
     consortium_id: str
     framework_id: str
@@ -173,7 +190,7 @@ class AttestationResponse(BaseModel):
     attester_role: Optional[str]
     attestation_type: str
     statement: str
-    evidence_urls: Optional[List[str]]
+    evidence_urls: Optional[list[str]]
     valid_from: datetime
     valid_until: Optional[datetime]
     revoked: bool
@@ -181,16 +198,17 @@ class AttestationResponse(BaseModel):
 
 class DataProcessingRecordResponse(BaseModel):
     """Data processing record response."""
+
     id: str
     consortium_id: str
     company_id: str
     company_name: Optional[str]
     processing_purpose: str
-    data_categories: List[str]
+    data_categories: list[str]
     data_subjects: Optional[str]
-    recipients: Optional[List[str]]
+    recipients: Optional[list[str]]
     retention_period: Optional[str]
-    security_measures: Optional[List[str]]
+    security_measures: Optional[list[str]]
     legal_basis: str
     cross_border_transfer: bool
     transfer_safeguards: Optional[str]
@@ -199,6 +217,7 @@ class DataProcessingRecordResponse(BaseModel):
 
 class FrameworkStatusResponse(BaseModel):
     """Framework status in dashboard."""
+
     framework_id: str
     framework_name: str
     score: float
@@ -211,11 +230,12 @@ class FrameworkStatusResponse(BaseModel):
 
 class ComplianceDashboardResponse(BaseModel):
     """Compliance dashboard response."""
+
     consortium_id: str
     overall_score: float
     overall_status: ComplianceStatus
     enabled_frameworks_count: int
-    frameworks: List[FrameworkStatusResponse]
+    frameworks: list[FrameworkStatusResponse]
     last_check_at: Optional[datetime]
     next_check_at: Optional[datetime]
 
@@ -227,7 +247,8 @@ router = APIRouter(prefix="/compliance", tags=["compliance"])
 
 # ============ Frameworks ============
 
-@router.get("/frameworks", response_model=List[FrameworkResponse])
+
+@router.get("/frameworks", response_model=list[FrameworkResponse])
 async def list_frameworks(
     company: dict = Depends(get_current_company),
 ):
@@ -281,14 +302,11 @@ async def enable_framework(
     if consortium.owner_id != company["id"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only consortium owner can enable compliance frameworks"
+            detail="Only consortium owner can enable compliance frameworks",
         )
 
     # Enable framework
-    result = manager.enable_compliance_framework(
-        request.consortium_id,
-        request.framework_id.value
-    )
+    result = manager.enable_compliance_framework(request.consortium_id, request.framework_id.value)
 
     # Record audit event
     manager.record_audit_event(
@@ -297,13 +315,14 @@ async def enable_framework(
         actor_id=company["id"],
         target_id=request.framework_id.value,
         target_type="framework",
-        data={"framework": request.framework_id.value}
+        data={"framework": request.framework_id.value},
     )
 
     return result
 
 
 # ============ Settings ============
+
 
 @router.get("/settings/{consortium_id}", response_model=ComplianceSettingsResponse)
 async def get_compliance_settings(
@@ -320,8 +339,7 @@ async def get_compliance_settings(
     membership = manager.get_membership(consortium_id, company["id"])
     if not membership:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not a member of this consortium"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this consortium"
         )
 
     settings = manager.get_consortium_compliance_settings(consortium_id)
@@ -329,6 +347,7 @@ async def get_compliance_settings(
 
 
 # ============ Checks ============
+
 
 @router.post("/checks", response_model=ComplianceCheckResponse)
 async def record_check(
@@ -345,8 +364,7 @@ async def record_check(
     membership = manager.get_membership(request.consortium_id, company["id"])
     if not membership or membership.status.value != "active":
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not an active member of this consortium"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not an active member of this consortium"
         )
 
     # Record check
@@ -358,7 +376,7 @@ async def record_check(
         result=request.result,
         evidence=request.evidence,
         checked_by=company["id"],
-        notes=request.notes
+        notes=request.notes,
     )
 
     return ComplianceCheckResponse(
@@ -371,11 +389,11 @@ async def record_check(
         evidence=request.evidence,
         checked_at=datetime.utcnow(),
         checked_by=company["id"],
-        notes=request.notes
+        notes=request.notes,
     )
 
 
-@router.get("/checks/{consortium_id}", response_model=List[ComplianceCheckResponse])
+@router.get("/checks/{consortium_id}", response_model=list[ComplianceCheckResponse])
 async def get_checks(
     consortium_id: str,
     framework_id: Optional[ComplianceFramework] = None,
@@ -392,14 +410,13 @@ async def get_checks(
     membership = manager.get_membership(consortium_id, company["id"])
     if not membership:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not a member of this consortium"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this consortium"
         )
 
     checks = manager.get_compliance_checks(
         consortium_id,
         framework_id=framework_id.value if framework_id else None,
-        status=check_status.value if check_status else None
+        status=check_status.value if check_status else None,
     )
     return checks
 
@@ -427,7 +444,7 @@ async def run_automated_checks(
     if not membership or membership.role.value not in ["owner", "admin"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only owners or admins can run compliance checks"
+            detail="Only owners or admins can run compliance checks",
         )
 
     # Run automated checks based on framework
@@ -437,9 +454,21 @@ async def run_automated_checks(
 
     # Simulate basic checks for demo
     basic_checks = [
-        {"control_id": f"{request.framework_id.value}_encryption", "name": "Data Encryption", "auto_pass": True},
-        {"control_id": f"{request.framework_id.value}_access_control", "name": "Access Control", "auto_pass": True},
-        {"control_id": f"{request.framework_id.value}_audit_logging", "name": "Audit Logging", "auto_pass": True},
+        {
+            "control_id": f"{request.framework_id.value}_encryption",
+            "name": "Data Encryption",
+            "auto_pass": True,
+        },
+        {
+            "control_id": f"{request.framework_id.value}_access_control",
+            "name": "Access Control",
+            "auto_pass": True,
+        },
+        {
+            "control_id": f"{request.framework_id.value}_audit_logging",
+            "name": "Audit Logging",
+            "auto_pass": True,
+        },
     ]
 
     for check in basic_checks:
@@ -452,7 +481,7 @@ async def run_automated_checks(
             result=f"Automated check: {check['name']}",
             evidence={"automated": True, "timestamp": datetime.utcnow().isoformat()},
             checked_by=company["id"],
-            notes="Automated compliance verification"
+            notes="Automated compliance verification",
         )
         checks_run += 1
         if check["auto_pass"]:
@@ -467,8 +496,8 @@ async def run_automated_checks(
         data={
             "framework": request.framework_id.value,
             "checks_run": checks_run,
-            "checks_passed": checks_passed
-        }
+            "checks_passed": checks_passed,
+        },
     )
 
     return {
@@ -476,11 +505,12 @@ async def run_automated_checks(
         "framework_id": request.framework_id.value,
         "checks_run": checks_run,
         "checks_passed": checks_passed,
-        "run_at": datetime.utcnow().isoformat()
+        "run_at": datetime.utcnow().isoformat(),
     }
 
 
 # ============ Reports ============
+
 
 @router.post("/reports", response_model=ComplianceReportResponse)
 async def generate_report(
@@ -497,15 +527,11 @@ async def generate_report(
     membership = manager.get_membership(request.consortium_id, company["id"])
     if not membership:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not a member of this consortium"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this consortium"
         )
 
     # Generate report
-    report = manager.generate_compliance_report(
-        request.consortium_id,
-        request.framework_id.value
-    )
+    report = manager.generate_compliance_report(request.consortium_id, request.framework_id.value)
 
     # Record audit event
     manager.record_audit_event(
@@ -517,14 +543,14 @@ async def generate_report(
         data={
             "framework": request.framework_id.value,
             "score": report["overall_score"],
-            "status": report["status"]
-        }
+            "status": report["status"],
+        },
     )
 
     return report
 
 
-@router.get("/reports/{consortium_id}", response_model=List[ComplianceReportResponse])
+@router.get("/reports/{consortium_id}", response_model=list[ComplianceReportResponse])
 async def get_reports(
     consortium_id: str,
     framework_id: Optional[ComplianceFramework] = None,
@@ -540,18 +566,17 @@ async def get_reports(
     membership = manager.get_membership(consortium_id, company["id"])
     if not membership:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not a member of this consortium"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this consortium"
         )
 
     reports = manager.get_compliance_reports(
-        consortium_id,
-        framework_id=framework_id.value if framework_id else None
+        consortium_id, framework_id=framework_id.value if framework_id else None
     )
     return reports
 
 
 # ============ Attestations ============
+
 
 @router.post("/attestations", response_model=AttestationResponse)
 async def create_attestation(
@@ -568,8 +593,7 @@ async def create_attestation(
     membership = manager.get_membership(request.consortium_id, company["id"])
     if not membership or membership.status.value != "active":
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not an active member of this consortium"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not an active member of this consortium"
         )
 
     # Create attestation
@@ -582,7 +606,7 @@ async def create_attestation(
         attester_role=request.attester_role,
         attestation_type=request.attestation_type,
         evidence_urls=request.evidence_urls,
-        valid_days=request.valid_days
+        valid_days=request.valid_days,
     )
 
     # Record audit event
@@ -594,11 +618,12 @@ async def create_attestation(
         target_type="attestation",
         data={
             "framework": request.framework_id.value,
-            "attestation_type": request.attestation_type
-        }
+            "attestation_type": request.attestation_type,
+        },
     )
 
     from datetime import timedelta
+
     now = datetime.utcnow()
 
     return AttestationResponse(
@@ -614,11 +639,11 @@ async def create_attestation(
         evidence_urls=request.evidence_urls,
         valid_from=now,
         valid_until=now + timedelta(days=request.valid_days),
-        revoked=False
+        revoked=False,
     )
 
 
-@router.get("/attestations/{consortium_id}", response_model=List[AttestationResponse])
+@router.get("/attestations/{consortium_id}", response_model=list[AttestationResponse])
 async def get_attestations(
     consortium_id: str,
     framework_id: Optional[ComplianceFramework] = None,
@@ -635,19 +660,19 @@ async def get_attestations(
     membership = manager.get_membership(consortium_id, company["id"])
     if not membership:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not a member of this consortium"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this consortium"
         )
 
     attestations = manager.get_attestations(
         consortium_id,
         framework_id=framework_id.value if framework_id else None,
-        include_revoked=include_revoked
+        include_revoked=include_revoked,
     )
     return attestations
 
 
 # ============ Data Processing Records (GDPR) ============
+
 
 @router.post("/data-processing", response_model=DataProcessingRecordResponse)
 async def record_data_processing(
@@ -664,8 +689,7 @@ async def record_data_processing(
     membership = manager.get_membership(request.consortium_id, company["id"])
     if not membership or membership.status.value != "active":
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not an active member of this consortium"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not an active member of this consortium"
         )
 
     # Record data processing
@@ -680,7 +704,7 @@ async def record_data_processing(
         retention_period=request.retention_period,
         security_measures=request.security_measures,
         cross_border_transfer=request.cross_border_transfer,
-        transfer_safeguards=request.transfer_safeguards
+        transfer_safeguards=request.transfer_safeguards,
     )
 
     # Record audit event
@@ -690,10 +714,7 @@ async def record_data_processing(
         actor_id=company["id"],
         target_id=record_id,
         target_type="data_processing",
-        data={
-            "purpose": request.processing_purpose,
-            "legal_basis": request.legal_basis
-        }
+        data={"purpose": request.processing_purpose, "legal_basis": request.legal_basis},
     )
 
     return DataProcessingRecordResponse(
@@ -710,11 +731,11 @@ async def record_data_processing(
         legal_basis=request.legal_basis,
         cross_border_transfer=request.cross_border_transfer,
         transfer_safeguards=request.transfer_safeguards,
-        created_at=datetime.utcnow()
+        created_at=datetime.utcnow(),
     )
 
 
-@router.get("/data-processing/{consortium_id}", response_model=List[DataProcessingRecordResponse])
+@router.get("/data-processing/{consortium_id}", response_model=list[DataProcessingRecordResponse])
 async def get_data_processing_records(
     consortium_id: str,
     company_id: Optional[str] = None,
@@ -730,18 +751,15 @@ async def get_data_processing_records(
     membership = manager.get_membership(consortium_id, company["id"])
     if not membership:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not a member of this consortium"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this consortium"
         )
 
-    records = manager.get_data_processing_records(
-        consortium_id,
-        company_id=company_id
-    )
+    records = manager.get_data_processing_records(consortium_id, company_id=company_id)
     return records
 
 
 # ============ Dashboard ============
+
 
 @router.get("/dashboard/{consortium_id}", response_model=ComplianceDashboardResponse)
 async def get_compliance_dashboard(
@@ -761,8 +779,7 @@ async def get_compliance_dashboard(
     membership = manager.get_membership(consortium_id, company["id"])
     if not membership:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not a member of this consortium"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this consortium"
         )
 
     dashboard = manager.get_compliance_dashboard(consortium_id)

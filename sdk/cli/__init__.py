@@ -18,24 +18,24 @@ Usage:
 import argparse
 import os
 
-from .utils import get_version
 from .commands import (
-    cmd_init,
-    cmd_encrypt,
-    cmd_decrypt,
-    cmd_train,
-    cmd_predict,
-    cmd_blockchain_connect,
-    cmd_blockchain_register,
-    cmd_blockchain_checkpoint,
-    cmd_blockchain_verify,
     cmd_api_key_create,
     cmd_api_key_list,
     cmd_api_key_revoke,
     cmd_benchmark,
-    cmd_version,
+    cmd_blockchain_checkpoint,
+    cmd_blockchain_connect,
+    cmd_blockchain_register,
+    cmd_blockchain_verify,
+    cmd_decrypt,
+    cmd_encrypt,
     cmd_info,
+    cmd_init,
+    cmd_predict,
+    cmd_train,
+    cmd_version,
 )
+from .utils import get_version
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -52,10 +52,11 @@ Examples:
   xcapit-fhe predict -m model.bin -i encrypted.bin -o predictions.csv
   xcapit-fhe info model.bin
   xcapit-fhe benchmark --poly-degree 8192
-        """
+        """,
     )
     parser.add_argument(
-        "-v", "--version",
+        "-v",
+        "--version",
         action="store_true",
         help="Show version",
     )
@@ -68,7 +69,8 @@ Examples:
         help="Initialize FHE context and keys",
     )
     init_parser.add_argument(
-        "-o", "--output",
+        "-o",
+        "--output",
         default="./fhe_workspace",
         help="Output directory (default: ./fhe_workspace)",
     )
@@ -93,22 +95,26 @@ Examples:
         help="Encrypt data from CSV",
     )
     encrypt_parser.add_argument(
-        "-i", "--input",
+        "-i",
+        "--input",
         required=True,
         help="Input CSV file",
     )
     encrypt_parser.add_argument(
-        "-o", "--output",
+        "-o",
+        "--output",
         required=True,
         help="Output encrypted file",
     )
     encrypt_parser.add_argument(
-        "-k", "--keys",
+        "-k",
+        "--keys",
         default="./fhe_workspace/keys",
         help="Keys directory",
     )
     encrypt_parser.add_argument(
-        "-t", "--target",
+        "-t",
+        "--target",
         help="Target column name (for supervised learning)",
     )
     encrypt_parser.add_argument(
@@ -124,16 +130,19 @@ Examples:
         help="Decrypt encrypted data back to CSV",
     )
     decrypt_parser.add_argument(
-        "-i", "--input",
+        "-i",
+        "--input",
         required=True,
         help="Input encrypted file",
     )
     decrypt_parser.add_argument(
-        "-o", "--output",
+        "-o",
+        "--output",
         help="Output CSV file (prints to stdout if not specified)",
     )
     decrypt_parser.add_argument(
-        "-k", "--keys",
+        "-k",
+        "--keys",
         help="Keys directory (uses stored path if not specified)",
     )
     decrypt_parser.add_argument(
@@ -149,23 +158,27 @@ Examples:
         help="Train model on encrypted data",
     )
     train_parser.add_argument(
-        "-m", "--model",
+        "-m",
+        "--model",
         required=True,
         choices=["linear-regression", "logistic-regression", "decision-tree", "kmeans"],
         help="Model type",
     )
     train_parser.add_argument(
-        "-d", "--data",
+        "-d",
+        "--data",
         required=True,
         help="Encrypted data file",
     )
     train_parser.add_argument(
-        "-o", "--output",
+        "-o",
+        "--output",
         required=True,
         help="Output model file",
     )
     train_parser.add_argument(
-        "-k", "--keys",
+        "-k",
+        "--keys",
         help="Keys directory (uses stored path if not specified)",
     )
     train_parser.add_argument(
@@ -211,21 +224,25 @@ Examples:
         help="Make predictions",
     )
     predict_parser.add_argument(
-        "-m", "--model",
+        "-m",
+        "--model",
         required=True,
         help="Trained model file",
     )
     predict_parser.add_argument(
-        "-i", "--input",
+        "-i",
+        "--input",
         required=True,
         help="Encrypted input data",
     )
     predict_parser.add_argument(
-        "-o", "--output",
+        "-o",
+        "--output",
         help="Output predictions file (prints to stdout if not specified)",
     )
     predict_parser.add_argument(
-        "-k", "--keys",
+        "-k",
+        "--keys",
         help="Keys directory (uses stored path if not specified)",
     )
     predict_parser.add_argument(
@@ -300,7 +317,9 @@ Examples:
         "blockchain",
         help="Blockchain operations for model verification",
     )
-    blockchain_subparsers = blockchain_parser.add_subparsers(dest="blockchain_command", help="Blockchain commands")
+    blockchain_subparsers = blockchain_parser.add_subparsers(
+        dest="blockchain_command", help="Blockchain commands"
+    )
 
     # blockchain connect
     bc_connect_parser = blockchain_subparsers.add_parser(
@@ -308,7 +327,8 @@ Examples:
         help="Test blockchain connection",
     )
     bc_connect_parser.add_argument(
-        "-n", "--network",
+        "-n",
+        "--network",
         default="arbitrum-sepolia",
         choices=["arbitrum", "arbitrum-sepolia", "ethereum", "ethereum-sepolia", "local"],
         help="Network to connect to",
@@ -318,7 +338,8 @@ Examples:
         help="Custom RPC URL",
     )
     bc_connect_parser.add_argument(
-        "-k", "--private-key",
+        "-k",
+        "--private-key",
         help="Private key (for balance check)",
     )
     bc_connect_parser.set_defaults(func=cmd_blockchain_connect)
@@ -329,22 +350,26 @@ Examples:
         help="Register a model on blockchain",
     )
     bc_register_parser.add_argument(
-        "-m", "--model",
+        "-m",
+        "--model",
         required=True,
         help="Model file to register",
     )
     bc_register_parser.add_argument(
-        "-c", "--contract",
+        "-c",
+        "--contract",
         required=True,
         help="ModelRegistry contract address",
     )
     bc_register_parser.add_argument(
-        "-k", "--private-key",
+        "-k",
+        "--private-key",
         required=True,
         help="Private key for signing transactions",
     )
     bc_register_parser.add_argument(
-        "-n", "--network",
+        "-n",
+        "--network",
         default="arbitrum-sepolia",
         choices=["arbitrum", "arbitrum-sepolia", "local"],
         help="Network to use",
@@ -354,7 +379,8 @@ Examples:
         help="Custom RPC URL",
     )
     bc_register_parser.add_argument(
-        "-v", "--version",
+        "-v",
+        "--version",
         help="Model version (default: from model file)",
     )
     bc_register_parser.set_defaults(func=cmd_blockchain_register)
@@ -365,7 +391,8 @@ Examples:
         help="Save a training checkpoint to blockchain",
     )
     bc_checkpoint_parser.add_argument(
-        "-m", "--model",
+        "-m",
+        "--model",
         required=True,
         help="Model file with weights",
     )
@@ -375,23 +402,27 @@ Examples:
         help="On-chain model ID (from register)",
     )
     bc_checkpoint_parser.add_argument(
-        "-e", "--epoch",
+        "-e",
+        "--epoch",
         type=int,
         required=True,
         help="Training epoch number",
     )
     bc_checkpoint_parser.add_argument(
-        "-c", "--contract",
+        "-c",
+        "--contract",
         required=True,
         help="ModelRegistry contract address",
     )
     bc_checkpoint_parser.add_argument(
-        "-k", "--private-key",
+        "-k",
+        "--private-key",
         required=True,
         help="Private key for signing",
     )
     bc_checkpoint_parser.add_argument(
-        "-n", "--network",
+        "-n",
+        "--network",
         default="arbitrum-sepolia",
         choices=["arbitrum", "arbitrum-sepolia", "local"],
         help="Network to use",
@@ -413,12 +444,14 @@ Examples:
         help="On-chain model ID",
     )
     bc_verify_parser.add_argument(
-        "-c", "--contract",
+        "-c",
+        "--contract",
         required=True,
         help="ModelRegistry contract address",
     )
     bc_verify_parser.add_argument(
-        "-n", "--network",
+        "-n",
+        "--network",
         default="arbitrum-sepolia",
         choices=["arbitrum", "arbitrum-sepolia", "local"],
         help="Network to use",
@@ -428,11 +461,13 @@ Examples:
         help="Custom RPC URL",
     )
     bc_verify_parser.add_argument(
-        "-m", "--model",
+        "-m",
+        "--model",
         help="Local model file to verify against chain",
     )
     bc_verify_parser.add_argument(
-        "-e", "--epoch",
+        "-e",
+        "--epoch",
         type=int,
         help="Epoch to verify",
     )
@@ -443,7 +478,9 @@ Examples:
         "api-key",
         help="Manage API keys",
     )
-    api_key_subparsers = api_key_parser.add_subparsers(dest="api_key_command", help="API key commands")
+    api_key_subparsers = api_key_parser.add_subparsers(
+        dest="api_key_command", help="API key commands"
+    )
 
     # api-key create
     api_key_create_parser = api_key_subparsers.add_parser(
@@ -451,17 +488,20 @@ Examples:
         help="Create a new API key",
     )
     api_key_create_parser.add_argument(
-        "-n", "--name",
+        "-n",
+        "--name",
         required=True,
         help="Human-readable name for the key",
     )
     api_key_create_parser.add_argument(
-        "-p", "--permissions",
+        "-p",
+        "--permissions",
         default="read,write",
         help="Comma-separated permissions (read,write,admin)",
     )
     api_key_create_parser.add_argument(
-        "-r", "--rate-limit",
+        "-r",
+        "--rate-limit",
         type=int,
         default=100,
         help="Rate limit (requests per minute)",
@@ -529,6 +569,7 @@ def main() -> int:
         print(f"Error: {e}")
         if os.environ.get("DEBUG"):
             import traceback
+
             traceback.print_exc()
         return 1
 

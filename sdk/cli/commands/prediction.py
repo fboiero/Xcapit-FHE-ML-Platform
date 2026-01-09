@@ -10,14 +10,15 @@ import numpy as np
 def cmd_predict(args) -> int:
     """Make predictions with a trained model."""
     import pandas as pd
-    from ...encryption import FHEContextManager, CKKSEncryptor
-    from ...encryption.ckks_wrapper import EncryptedMatrix, EncryptedVector
+
+    from ...encryption import CKKSEncryptor, FHEContextManager
+    from ...encryption.ckks_wrapper import EncryptedMatrix
     from ...models import (
-        LinearRegression,
-        LogisticRegression,
         DecisionTreeClassifier,
         DecisionTreeRegressor,
         KMeans,
+        LinearRegression,
+        LogisticRegression,
     )
 
     print("Making predictions...")
@@ -41,7 +42,11 @@ def cmd_predict(args) -> int:
         data_bundle = pickle.load(f)
 
     # Load context
-    keys_dir = Path(args.keys) if args.keys else Path(model_bundle.get("keys_path", "./fhe_workspace/keys"))
+    keys_dir = (
+        Path(args.keys)
+        if args.keys
+        else Path(model_bundle.get("keys_path", "./fhe_workspace/keys"))
+    )
 
     if not (keys_dir / "context.bin").exists():
         print(f"Error: Keys not found at {keys_dir}")
@@ -87,7 +92,7 @@ def cmd_predict(args) -> int:
 
         for i in range(n_samples):
             if args.verbose and i % 10 == 0:
-                print(f"    Processing sample {i+1}/{n_samples}...")
+                print(f"    Processing sample {i + 1}/{n_samples}...")
 
             # Get encrypted row
             enc_row = encrypted_X.rows[i]
@@ -115,7 +120,11 @@ def cmd_predict(args) -> int:
 
     # Denormalize predictions if regression
     norm_params = data_bundle.get("normalization_params")
-    if norm_params and "y_min" in norm_params and model_type in ["linear-regression", "decision-tree"]:
+    if (
+        norm_params
+        and "y_min" in norm_params
+        and model_type in ["linear-regression", "decision-tree"]
+    ):
         if model_config.get("task") != "classification":
             predictions = (predictions + 1) / 2 * norm_params["y_range"] + norm_params["y_min"]
 

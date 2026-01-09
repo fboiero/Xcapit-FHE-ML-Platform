@@ -2,7 +2,7 @@
 
 import json
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 
 from web3 import Web3
 
@@ -59,10 +59,7 @@ class GovernanceClient:
         """
         self.connector.set_account(private_key)
         self.connector.connect()
-        self._contract = self.connector.get_contract(
-            self.contract_address,
-            GOVERNANCE_ABI
-        )
+        self._contract = self.connector.get_contract(self.contract_address, GOVERNANCE_ABI)
         return self.connector.address
 
     @property
@@ -79,7 +76,7 @@ class GovernanceClient:
         name: str,
         min_voting_quorum: int = 51,
         voting_duration: int = 86400,  # 24 hours
-        model_config: Optional[Dict] = None,
+        model_config: Optional[dict] = None,
     ) -> bytes:
         """Create a new consortium on-chain.
 
@@ -92,20 +89,19 @@ class GovernanceClient:
         Returns:
             Consortium ID (bytes32).
         """
-        config_hash = self._hash_config(model_config) if model_config else b'\x00' * 32
+        config_hash = self._hash_config(model_config) if model_config else b"\x00" * 32
 
         tx = self.contract.functions.createConsortium(
-            name,
-            min_voting_quorum,
-            voting_duration,
-            config_hash
-        ).build_transaction({
-            "from": self.connector.address,
-            "nonce": self.connector.get_nonce(),
-            "gas": 500000,
-            "gasPrice": self.connector.get_gas_price(),
-            "chainId": self.connector.config.chain_id,
-        })
+            name, min_voting_quorum, voting_duration, config_hash
+        ).build_transaction(
+            {
+                "from": self.connector.address,
+                "nonce": self.connector.get_nonce(),
+                "gas": 500000,
+                "gasPrice": self.connector.get_gas_price(),
+                "chainId": self.connector.config.chain_id,
+            }
+        )
 
         signed = self.connector.account.sign_transaction(tx)
         tx_hash = self.connector.web3.eth.send_raw_transaction(signed.raw_transaction)
@@ -114,7 +110,7 @@ class GovernanceClient:
         # Extract consortium ID from event logs
         logs = self.contract.events.ConsortiumCreated().process_receipt(receipt)
         if logs:
-            return logs[0]['args']['consortiumId']
+            return logs[0]["args"]["consortiumId"]
 
         raise RuntimeError("Failed to get consortium ID from transaction")
 
@@ -129,15 +125,16 @@ class GovernanceClient:
             Transaction hash.
         """
         tx = self.contract.functions.addMember(
-            consortium_id,
-            Web3.to_checksum_address(member_address)
-        ).build_transaction({
-            "from": self.connector.address,
-            "nonce": self.connector.get_nonce(),
-            "gas": 200000,
-            "gasPrice": self.connector.get_gas_price(),
-            "chainId": self.connector.config.chain_id,
-        })
+            consortium_id, Web3.to_checksum_address(member_address)
+        ).build_transaction(
+            {
+                "from": self.connector.address,
+                "nonce": self.connector.get_nonce(),
+                "gas": 200000,
+                "gasPrice": self.connector.get_gas_price(),
+                "chainId": self.connector.config.chain_id,
+            }
+        )
 
         signed = self.connector.account.sign_transaction(tx)
         tx_hash = self.connector.web3.eth.send_raw_transaction(signed.raw_transaction)
@@ -165,7 +162,7 @@ class GovernanceClient:
             voting_duration=result[6],
         )
 
-    def get_members(self, consortium_id: bytes) -> List[str]:
+    def get_members(self, consortium_id: bytes) -> list[str]:
         """Get all member addresses for a consortium.
 
         Args:
@@ -187,8 +184,7 @@ class GovernanceClient:
             MemberInfo object.
         """
         result = self.contract.functions.getMember(
-            consortium_id,
-            Web3.to_checksum_address(address)
+            consortium_id, Web3.to_checksum_address(address)
         ).call()
 
         return MemberInfo(
@@ -223,23 +219,22 @@ class GovernanceClient:
         # Hash the encrypted data (we never store actual data on-chain)
         data_hash = Web3.keccak(encrypted_data)
         checksum_hash = Web3.keccak(
-            encrypted_data[:32] + encrypted_data[-32:] if len(encrypted_data) > 64
+            encrypted_data[:32] + encrypted_data[-32:]
+            if len(encrypted_data) > 64
             else encrypted_data
         )
 
         tx = self.contract.functions.recordContribution(
-            consortium_id,
-            record_count,
-            feature_count,
-            data_hash,
-            checksum_hash
-        ).build_transaction({
-            "from": self.connector.address,
-            "nonce": self.connector.get_nonce(),
-            "gas": 300000,
-            "gasPrice": self.connector.get_gas_price(),
-            "chainId": self.connector.config.chain_id,
-        })
+            consortium_id, record_count, feature_count, data_hash, checksum_hash
+        ).build_transaction(
+            {
+                "from": self.connector.address,
+                "nonce": self.connector.get_nonce(),
+                "gas": 300000,
+                "gasPrice": self.connector.get_gas_price(),
+                "chainId": self.connector.config.chain_id,
+            }
+        )
 
         signed = self.connector.account.sign_transaction(tx)
         tx_hash = self.connector.web3.eth.send_raw_transaction(signed.raw_transaction)
@@ -248,7 +243,7 @@ class GovernanceClient:
         # Extract contribution ID from event
         logs = self.contract.events.ContributionRecorded().process_receipt(receipt)
         if logs:
-            return logs[0]['args']['contributionId']
+            return logs[0]["args"]["contributionId"]
 
         raise RuntimeError("Failed to get contribution ID from transaction")
 
@@ -261,15 +256,15 @@ class GovernanceClient:
         Returns:
             Transaction hash.
         """
-        tx = self.contract.functions.verifyContribution(
-            contribution_id
-        ).build_transaction({
-            "from": self.connector.address,
-            "nonce": self.connector.get_nonce(),
-            "gas": 100000,
-            "gasPrice": self.connector.get_gas_price(),
-            "chainId": self.connector.config.chain_id,
-        })
+        tx = self.contract.functions.verifyContribution(contribution_id).build_transaction(
+            {
+                "from": self.connector.address,
+                "nonce": self.connector.get_nonce(),
+                "gas": 100000,
+                "gasPrice": self.connector.get_gas_price(),
+                "chainId": self.connector.config.chain_id,
+            }
+        )
 
         signed = self.connector.account.sign_transaction(tx)
         tx_hash = self.connector.web3.eth.send_raw_transaction(signed.raw_transaction)
@@ -299,26 +294,26 @@ class GovernanceClient:
             Proposal ID (bytes32).
         """
         tx = self.contract.functions.createProposal(
-            consortium_id,
-            proposal_type.value,
-            data
-        ).build_transaction({
-            "from": self.connector.address,
-            "nonce": self.connector.get_nonce(),
-            "gas": 300000,
-            "gasPrice": self.connector.get_gas_price(),
-            "chainId": self.connector.config.chain_id,
-        })
+            consortium_id, proposal_type.value, data
+        ).build_transaction(
+            {
+                "from": self.connector.address,
+                "nonce": self.connector.get_nonce(),
+                "gas": 300000,
+                "gasPrice": self.connector.get_gas_price(),
+                "chainId": self.connector.config.chain_id,
+            }
+        )
 
         signed = self.connector.account.sign_transaction(tx)
         tx_hash = self.connector.web3.eth.send_raw_transaction(signed.raw_transaction)
         receipt = self.connector.web3.eth.wait_for_transaction_receipt(tx_hash)
 
         # Get proposal ID from logs
-        for log in receipt['logs']:
-            if len(log['topics']) > 0:
+        for log in receipt["logs"]:
+            if len(log["topics"]) > 0:
                 # ProposalCreated event
-                return log['topics'][2]  # proposalId is indexed
+                return log["topics"][2]  # proposalId is indexed
 
         raise RuntimeError("Failed to get proposal ID")
 
@@ -350,23 +345,22 @@ class GovernanceClient:
         Returns:
             Transaction hash.
         """
-        tx = self.contract.functions.vote(
-            proposal_id,
-            support
-        ).build_transaction({
-            "from": self.connector.address,
-            "nonce": self.connector.get_nonce(),
-            "gas": 150000,
-            "gasPrice": self.connector.get_gas_price(),
-            "chainId": self.connector.config.chain_id,
-        })
+        tx = self.contract.functions.vote(proposal_id, support).build_transaction(
+            {
+                "from": self.connector.address,
+                "nonce": self.connector.get_nonce(),
+                "gas": 150000,
+                "gasPrice": self.connector.get_gas_price(),
+                "chainId": self.connector.config.chain_id,
+            }
+        )
 
         signed = self.connector.account.sign_transaction(tx)
         tx_hash = self.connector.web3.eth.send_raw_transaction(signed.raw_transaction)
         self.connector.web3.eth.wait_for_transaction_receipt(tx_hash)
         return tx_hash.hex()
 
-    def execute_proposal(self, proposal_id: bytes) -> Tuple[str, bool]:
+    def execute_proposal(self, proposal_id: bytes) -> tuple[str, bool]:
         """Execute a proposal after voting ends.
 
         Args:
@@ -375,19 +369,19 @@ class GovernanceClient:
         Returns:
             Tuple of (transaction hash, passed).
         """
-        tx = self.contract.functions.executeProposal(
-            proposal_id
-        ).build_transaction({
-            "from": self.connector.address,
-            "nonce": self.connector.get_nonce(),
-            "gas": 300000,
-            "gasPrice": self.connector.get_gas_price(),
-            "chainId": self.connector.config.chain_id,
-        })
+        tx = self.contract.functions.executeProposal(proposal_id).build_transaction(
+            {
+                "from": self.connector.address,
+                "nonce": self.connector.get_nonce(),
+                "gas": 300000,
+                "gasPrice": self.connector.get_gas_price(),
+                "chainId": self.connector.config.chain_id,
+            }
+        )
 
         signed = self.connector.account.sign_transaction(tx)
         tx_hash = self.connector.web3.eth.send_raw_transaction(signed.raw_transaction)
-        receipt = self.connector.web3.eth.wait_for_transaction_receipt(tx_hash)
+        self.connector.web3.eth.wait_for_transaction_receipt(tx_hash)
 
         # Check proposal status after execution
         proposal = self.get_proposal(proposal_id)
@@ -445,7 +439,7 @@ class GovernanceClient:
             previous_hash=result[5],
         )
 
-    def get_full_audit_trail(self, consortium_id: bytes) -> List[AuditEvent]:
+    def get_full_audit_trail(self, consortium_id: bytes) -> list[AuditEvent]:
         """Get complete audit trail for a consortium.
 
         Args:
@@ -487,16 +481,16 @@ class GovernanceClient:
         Returns:
             Transaction hash.
         """
-        tx = self.contract.functions.distributeRewards(
-            consortium_id
-        ).build_transaction({
-            "from": self.connector.address,
-            "value": amount_wei,
-            "nonce": self.connector.get_nonce(),
-            "gas": 500000,
-            "gasPrice": self.connector.get_gas_price(),
-            "chainId": self.connector.config.chain_id,
-        })
+        tx = self.contract.functions.distributeRewards(consortium_id).build_transaction(
+            {
+                "from": self.connector.address,
+                "value": amount_wei,
+                "nonce": self.connector.get_nonce(),
+                "gas": 500000,
+                "gasPrice": self.connector.get_gas_price(),
+                "chainId": self.connector.config.chain_id,
+            }
+        )
 
         signed = self.connector.account.sign_transaction(tx)
         tx_hash = self.connector.web3.eth.send_raw_transaction(signed.raw_transaction)
@@ -505,7 +499,7 @@ class GovernanceClient:
 
     # ============ Helpers ============
 
-    def _hash_config(self, config: Dict) -> bytes:
+    def _hash_config(self, config: dict) -> bytes:
         """Hash a configuration dictionary."""
         config_json = json.dumps(config, sort_keys=True)
         return Web3.keccak(text=config_json)

@@ -1,15 +1,13 @@
 """Tests for API module (auth, database, server)."""
 
-import sys
-from pathlib import Path
-import pytest
-import tempfile
-import os
-from datetime import datetime
-from unittest.mock import MagicMock, patch
-
 # Import database module directly to avoid TenSEAL dependency
 import importlib.util
+import sys
+import tempfile
+from datetime import datetime
+from pathlib import Path
+
+import pytest
 
 project_root = Path(__file__).parent.parent
 sdk_api_path = project_root / "sdk" / "api"
@@ -25,10 +23,7 @@ def load_module_from_path(module_name, file_path):
 
 
 # Load database module
-database_module = load_module_from_path(
-    "sdk.api.database",
-    sdk_api_path / "database.py"
-)
+database_module = load_module_from_path("sdk.api.database", sdk_api_path / "database.py")
 DatabaseManager = database_module.DatabaseManager
 ModelRecord = database_module.ModelRecord
 TrainingRun = database_module.TrainingRun
@@ -394,7 +389,6 @@ class TestDatabaseIntegration:
 
     def test_model_params_persistence(self, temp_db):
         """Test model parameters are persisted correctly."""
-        import pickle
 
         params = {
             "weights": [1.0, 2.0, 3.0],

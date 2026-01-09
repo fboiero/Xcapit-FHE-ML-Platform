@@ -7,13 +7,13 @@ This module tests the explainability features including:
 - Privacy-preserving explanations
 """
 
+import importlib.util
 import os
 import sys
 import tempfile
-import pytest
 from pathlib import Path
-from datetime import datetime
-import importlib.util
+
+import pytest
 
 # Set test mode before imports
 os.environ["FHEML_AUTH_DISABLED"] = "true"
@@ -35,8 +35,7 @@ def load_module_from_path(module_name, file_path):
 # Load consortium module package
 consortium_package_path = sdk_api_path / "consortium"
 consortium_module = load_module_from_path(
-    "sdk.api.consortium",
-    consortium_package_path / "__init__.py"
+    "sdk.api.consortium", consortium_package_path / "__init__.py"
 )
 ConsortiumManager = consortium_module.ConsortiumManager
 
@@ -58,7 +57,7 @@ class TestExplainabilitySchema:
             name="Test Consortium",
             description="For explainability testing",
             created_by="company_a",
-            model_type="logistic_regression"
+            model_type="logistic_regression",
         )
         return consortium
 
@@ -82,8 +81,17 @@ class TestExplainabilitySchema:
             cursor = conn.cursor()
             cursor.execute("PRAGMA table_info(explanation_requests)")
             columns = {row[1] for row in cursor.fetchall()}
-            expected = {'id', 'consortium_id', 'requester_id', 'explanation_type',
-                        'status', 'input_data', 'model_id', 'prediction_id', 'created_at'}
+            expected = {
+                "id",
+                "consortium_id",
+                "requester_id",
+                "explanation_type",
+                "status",
+                "input_data",
+                "model_id",
+                "prediction_id",
+                "created_at",
+            }
             assert expected.issubset(columns)
 
     def test_explanation_results_table_exists(self, manager):
@@ -137,7 +145,7 @@ class TestExplanationRequests:
             name="Explainability Test",
             description="Testing explanations",
             created_by="company_a",
-            model_type="logistic_regression"
+            model_type="logistic_regression",
         )
         return consortium
 
@@ -146,7 +154,7 @@ class TestExplanationRequests:
         result = manager.request_explanation(
             consortium_id=consortium.id,
             requester_id="company_a",
-            explanation_type="feature_importance"
+            explanation_type="feature_importance",
         )
 
         assert result is not None
@@ -161,7 +169,7 @@ class TestExplanationRequests:
             consortium_id=consortium.id,
             requester_id="company_a",
             explanation_type="shap",
-            input_data=input_data
+            input_data=input_data,
         )
 
         assert result is not None
@@ -174,7 +182,7 @@ class TestExplanationRequests:
             consortium_id=consortium.id,
             requester_id="company_a",
             explanation_type="decision_path",
-            input_data=input_data
+            input_data=input_data,
         )
 
         assert result is not None
@@ -187,7 +195,7 @@ class TestExplanationRequests:
             consortium_id=consortium.id,
             requester_id="company_a",
             explanation_type="counterfactual",
-            input_data=input_data
+            input_data=input_data,
         )
 
         assert result is not None
@@ -196,9 +204,7 @@ class TestExplanationRequests:
     def test_request_summary_explanation(self, manager, consortium):
         """Test requesting model summary explanation."""
         result = manager.request_explanation(
-            consortium_id=consortium.id,
-            requester_id="company_a",
-            explanation_type="summary"
+            consortium_id=consortium.id, requester_id="company_a", explanation_type="summary"
         )
 
         assert result is not None
@@ -210,7 +216,7 @@ class TestExplanationRequests:
             manager.request_explanation(
                 consortium_id=consortium.id,
                 requester_id="company_a",
-                explanation_type="invalid_type"
+                explanation_type="invalid_type",
             )
 
     def test_explanation_stored_in_database(self, manager, consortium):
@@ -218,15 +224,14 @@ class TestExplanationRequests:
         result = manager.request_explanation(
             consortium_id=consortium.id,
             requester_id="company_a",
-            explanation_type="feature_importance"
+            explanation_type="feature_importance",
         )
 
         # Retrieve from database
         with manager._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "SELECT * FROM explanation_requests WHERE id = ?",
-                (result["request_id"],)
+                "SELECT * FROM explanation_requests WHERE id = ?", (result["request_id"],)
             )
             row = cursor.fetchone()
             assert row is not None
@@ -249,7 +254,7 @@ class TestGetExplanation:
             name="Get Explanation Test",
             description="Testing get explanation",
             created_by="company_a",
-            model_type="linear_regression"
+            model_type="linear_regression",
         )
         return consortium
 
@@ -259,7 +264,7 @@ class TestGetExplanation:
         request = manager.request_explanation(
             consortium_id=consortium.id,
             requester_id="company_a",
-            explanation_type="feature_importance"
+            explanation_type="feature_importance",
         )
 
         # Get explanation
@@ -279,7 +284,7 @@ class TestGetExplanation:
         request = manager.request_explanation(
             consortium_id=consortium.id,
             requester_id="company_a",
-            explanation_type="feature_importance"
+            explanation_type="feature_importance",
         )
 
         result = manager.get_explanation(request["request_id"])
@@ -306,7 +311,7 @@ class TestListExplanations:
             name="List Explanations Test",
             description="Testing list explanations",
             created_by="company_a",
-            model_type="logistic_regression"
+            model_type="logistic_regression",
         )
         return consortium
 
@@ -321,9 +326,7 @@ class TestListExplanations:
         # Create multiple explanations
         for exp_type in ["feature_importance", "shap", "summary"]:
             manager.request_explanation(
-                consortium_id=consortium.id,
-                requester_id="company_a",
-                explanation_type=exp_type
+                consortium_id=consortium.id, requester_id="company_a", explanation_type=exp_type
             )
 
         results = manager.list_explanations(consortium_id=consortium.id)
@@ -335,17 +338,14 @@ class TestListExplanations:
         manager.request_explanation(
             consortium_id=consortium.id,
             requester_id="company_a",
-            explanation_type="feature_importance"
+            explanation_type="feature_importance",
         )
         manager.request_explanation(
-            consortium_id=consortium.id,
-            requester_id="company_a",
-            explanation_type="shap"
+            consortium_id=consortium.id, requester_id="company_a", explanation_type="shap"
         )
 
         results = manager.list_explanations(
-            consortium_id=consortium.id,
-            explanation_type="feature_importance"
+            consortium_id=consortium.id, explanation_type="feature_importance"
         )
 
         for r in results:
@@ -356,18 +356,15 @@ class TestListExplanations:
         manager.request_explanation(
             consortium_id=consortium.id,
             requester_id="company_a",
-            explanation_type="feature_importance"
+            explanation_type="feature_importance",
         )
         manager.request_explanation(
             consortium_id=consortium.id,
             requester_id="company_b",
-            explanation_type="feature_importance"
+            explanation_type="feature_importance",
         )
 
-        results = manager.list_explanations(
-            consortium_id=consortium.id,
-            requester_id="company_a"
-        )
+        results = manager.list_explanations(consortium_id=consortium.id, requester_id="company_a")
 
         for r in results:
             assert r["requester_id"] == "company_a"
@@ -379,13 +376,10 @@ class TestListExplanations:
             manager.request_explanation(
                 consortium_id=consortium.id,
                 requester_id="company_a",
-                explanation_type="feature_importance"
+                explanation_type="feature_importance",
             )
 
-        results = manager.list_explanations(
-            consortium_id=consortium.id,
-            limit=3
-        )
+        results = manager.list_explanations(consortium_id=consortium.id, limit=3)
 
         assert len(results) <= 3
 
@@ -407,7 +401,7 @@ class TestFeatureImportance:
             name="Feature Importance Test",
             description="Testing feature importance",
             created_by="company_a",
-            model_type="logistic_regression"
+            model_type="logistic_regression",
         )
         return consortium
 
@@ -447,7 +441,7 @@ class TestModelInsights:
             name="Model Insights Test",
             description="Testing model insights",
             created_by="company_a",
-            model_type="logistic_regression"
+            model_type="logistic_regression",
         )
         return consortium
 
@@ -470,10 +464,7 @@ class TestModelInsights:
 
     def test_insights_with_specific_model(self, manager, consortium):
         """Test computing insights for specific model."""
-        result = manager.compute_model_insights(
-            consortium_id=consortium.id,
-            model_id="model_123"
-        )
+        result = manager.compute_model_insights(consortium_id=consortium.id, model_id="model_123")
 
         assert result is not None
 
@@ -495,7 +486,7 @@ class TestExplainabilityStats:
             name="Stats Test",
             description="Testing stats",
             created_by="company_a",
-            model_type="linear_regression"
+            model_type="linear_regression",
         )
         return consortium
 
@@ -512,9 +503,7 @@ class TestExplainabilityStats:
         # Create some explanations
         for exp_type in ["feature_importance", "shap", "summary"]:
             manager.request_explanation(
-                consortium_id=consortium.id,
-                requester_id="company_a",
-                explanation_type=exp_type
+                consortium_id=consortium.id, requester_id="company_a", explanation_type=exp_type
             )
 
         result = manager.get_explainability_stats()
@@ -526,7 +515,7 @@ class TestExplainabilityStats:
         manager.request_explanation(
             consortium_id=consortium.id,
             requester_id="company_a",
-            explanation_type="feature_importance"
+            explanation_type="feature_importance",
         )
 
         result = manager.get_explainability_stats(consortium_id=consortium.id)
@@ -538,12 +527,10 @@ class TestExplainabilityStats:
         manager.request_explanation(
             consortium_id=consortium.id,
             requester_id="company_a",
-            explanation_type="feature_importance"
+            explanation_type="feature_importance",
         )
         manager.request_explanation(
-            consortium_id=consortium.id,
-            requester_id="company_a",
-            explanation_type="shap"
+            consortium_id=consortium.id, requester_id="company_a", explanation_type="shap"
         )
 
         result = manager.get_explainability_stats()
@@ -569,7 +556,7 @@ class TestExplanationPrivacy:
             name="Privacy Test",
             description="Testing privacy",
             created_by="company_a",
-            model_type="logistic_regression"
+            model_type="logistic_regression",
         )
         return consortium
 
@@ -578,7 +565,7 @@ class TestExplanationPrivacy:
         result = manager.request_explanation(
             consortium_id=consortium.id,
             requester_id="company_a",
-            explanation_type="feature_importance"
+            explanation_type="feature_importance",
         )
 
         explanation = manager.get_explanation(result["request_id"])
@@ -604,17 +591,16 @@ class TestExplainabilityAPI:
     def client(self):
         """Create test client."""
         from fastapi.testclient import TestClient
+
         from sdk.api.server import app
+
         return TestClient(app)
 
     def test_explain_endpoint_exists(self, client):
         """Test that explain endpoint exists."""
         response = client.post(
             "/api/v1/api/explainability/explain",
-            json={
-                "consortium_id": "test_consortium",
-                "explanation_type": "feature_importance"
-            }
+            json={"consortium_id": "test_consortium", "explanation_type": "feature_importance"},
         )
         # Should not be 404 (endpoint exists)
         assert response.status_code != 404
@@ -622,8 +608,7 @@ class TestExplainabilityAPI:
     def test_list_explanations_endpoint(self, client):
         """Test list explanations endpoint."""
         response = client.get(
-            "/api/v1/api/explainability/explanations",
-            params={"consortium_id": "test_consortium"}
+            "/api/v1/api/explainability/explanations", params={"consortium_id": "test_consortium"}
         )
         # Endpoint exists but may return 401 (auth required) or 404 (consortium not found)
         assert response.status_code in [200, 401, 403, 404, 422]
@@ -632,7 +617,7 @@ class TestExplainabilityAPI:
         """Test feature importance endpoint."""
         response = client.get(
             "/api/v1/api/explainability/feature-importance",
-            params={"consortium_id": "test_consortium"}
+            params={"consortium_id": "test_consortium"},
         )
         # Endpoint exists but may return 401 (auth required) or 404 (consortium not found)
         assert response.status_code in [200, 401, 403, 404, 422]
@@ -640,8 +625,7 @@ class TestExplainabilityAPI:
     def test_insights_endpoint(self, client):
         """Test insights endpoint."""
         response = client.post(
-            "/api/v1/api/explainability/insights",
-            json={"consortium_id": "test_consortium"}
+            "/api/v1/api/explainability/insights", json={"consortium_id": "test_consortium"}
         )
         # Endpoint exists but may return 401 (auth required) or 404 (consortium not found)
         assert response.status_code in [200, 401, 403, 404, 422]
@@ -669,7 +653,7 @@ class TestExplanationTypes:
             name="Explanation Types Test",
             description="Testing explanation types",
             created_by="company_a",
-            model_type="decision_tree"
+            model_type="decision_tree",
         )
         return consortium
 
@@ -678,7 +662,7 @@ class TestExplanationTypes:
         request = manager.request_explanation(
             consortium_id=consortium.id,
             requester_id="company_a",
-            explanation_type="feature_importance"
+            explanation_type="feature_importance",
         )
 
         result = manager.get_explanation(request["request_id"])
@@ -696,7 +680,7 @@ class TestExplanationTypes:
             consortium_id=consortium.id,
             requester_id="company_a",
             explanation_type="shap",
-            input_data={"feature_1": 0.5}
+            input_data={"feature_1": 0.5},
         )
 
         result = manager.get_explanation(request["request_id"])
@@ -711,7 +695,7 @@ class TestExplanationTypes:
             consortium_id=consortium.id,
             requester_id="company_a",
             explanation_type="decision_path",
-            input_data={"feature_1": 0.5}
+            input_data={"feature_1": 0.5},
         )
 
         result = manager.get_explanation(request["request_id"])
@@ -726,7 +710,7 @@ class TestExplanationTypes:
             consortium_id=consortium.id,
             requester_id="company_a",
             explanation_type="counterfactual",
-            input_data={"feature_1": 0.5}
+            input_data={"feature_1": 0.5},
         )
 
         result = manager.get_explanation(request["request_id"])
@@ -738,9 +722,7 @@ class TestExplanationTypes:
     def test_summary_result_structure(self, manager, consortium):
         """Test summary result has correct structure."""
         request = manager.request_explanation(
-            consortium_id=consortium.id,
-            requester_id="company_a",
-            explanation_type="summary"
+            consortium_id=consortium.id, requester_id="company_a", explanation_type="summary"
         )
 
         result = manager.get_explanation(request["request_id"])

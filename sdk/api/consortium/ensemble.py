@@ -14,7 +14,7 @@ import random
 import time
 import uuid
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Optional
 
 from .database import DatabaseManager
 
@@ -35,12 +35,8 @@ class EnsembleManager:
         self._db.init_ensemble_schema()
 
     def create_ensemble(
-        self,
-        name: str,
-        description: str,
-        owner_id: str,
-        ensemble_type: str = "voting"
-    ) -> Dict:
+        self, name: str, description: str, owner_id: str, ensemble_type: str = "voting"
+    ) -> dict:
         """Create a new multi-model ensemble."""
         self._init_ensemble_schema()
 
@@ -52,10 +48,13 @@ class EnsembleManager:
 
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO model_ensembles (id, name, description, owner_id, ensemble_type, status)
                 VALUES (?, ?, ?, ?, ?, 'draft')
-            """, (ensemble_id, name, description, owner_id, ensemble_type))
+            """,
+                (ensemble_id, name, description, owner_id, ensemble_type),
+            )
             conn.commit()
 
         return {
@@ -65,7 +64,7 @@ class EnsembleManager:
             "owner_id": owner_id,
             "ensemble_type": ensemble_type,
             "status": "draft",
-            "created_at": datetime.utcnow().isoformat()
+            "created_at": datetime.utcnow().isoformat(),
         }
 
     def add_model_to_ensemble(
@@ -74,8 +73,8 @@ class EnsembleManager:
         model_id: str,
         consortium_id: str,
         model_type: str,
-        weight: float = 1.0
-    ) -> Dict:
+        weight: float = 1.0,
+    ) -> dict:
         """Add a model from a consortium to an ensemble."""
         self._init_ensemble_schema()
 
@@ -88,15 +87,21 @@ class EnsembleManager:
             if not cursor.fetchone():
                 raise ValueError(f"Ensemble {ensemble_id} not found")
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO ensemble_models
                 (id, ensemble_id, model_id, consortium_id, model_type, weight)
                 VALUES (?, ?, ?, ?, ?, ?)
-            """, (entry_id, ensemble_id, model_id, consortium_id, model_type, weight))
+            """,
+                (entry_id, ensemble_id, model_id, consortium_id, model_type, weight),
+            )
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 UPDATE model_ensembles SET updated_at = CURRENT_TIMESTAMP WHERE id = ?
-            """, (ensemble_id,))
+            """,
+                (ensemble_id,),
+            )
 
             conn.commit()
 
@@ -107,10 +112,10 @@ class EnsembleManager:
             "consortium_id": consortium_id,
             "model_type": model_type,
             "weight": weight,
-            "added_at": datetime.utcnow().isoformat()
+            "added_at": datetime.utcnow().isoformat(),
         }
 
-    def get_ensemble(self, ensemble_id: str) -> Optional[Dict]:
+    def get_ensemble(self, ensemble_id: str) -> Optional[dict]:
         """Get ensemble details with member models."""
         self._init_ensemble_schema()
 
@@ -132,11 +137,8 @@ class EnsembleManager:
         return ensemble
 
     def list_ensembles(
-        self,
-        owner_id: Optional[str] = None,
-        status: Optional[str] = None,
-        limit: int = 50
-    ) -> List[Dict]:
+        self, owner_id: Optional[str] = None, status: Optional[str] = None, limit: int = 50
+    ) -> list[dict]:
         """List available ensembles."""
         self._init_ensemble_schema()
 
@@ -162,14 +164,13 @@ class EnsembleManager:
 
             for e in ensembles:
                 cursor.execute(
-                    "SELECT COUNT(*) FROM ensemble_models WHERE ensemble_id = ?",
-                    (e["id"],)
+                    "SELECT COUNT(*) FROM ensemble_models WHERE ensemble_id = ?", (e["id"],)
                 )
                 e["model_count"] = cursor.fetchone()[0]
 
         return ensembles
 
-    def activate_ensemble(self, ensemble_id: str, requester_id: str) -> Dict:
+    def activate_ensemble(self, ensemble_id: str, requester_id: str) -> dict:
         """Activate an ensemble for predictions."""
         self._init_ensemble_schema()
 
@@ -183,34 +184,31 @@ class EnsembleManager:
                 raise ValueError(f"Ensemble {ensemble_id} not found")
 
             cursor.execute(
-                "SELECT COUNT(*) FROM ensemble_models WHERE ensemble_id = ?",
-                (ensemble_id,)
+                "SELECT COUNT(*) FROM ensemble_models WHERE ensemble_id = ?", (ensemble_id,)
             )
             model_count = cursor.fetchone()[0]
 
             if model_count < 2:
                 raise ValueError("Ensemble must have at least 2 models")
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 UPDATE model_ensembles
                 SET status = 'active', updated_at = CURRENT_TIMESTAMP
                 WHERE id = ?
-            """, (ensemble_id,))
+            """,
+                (ensemble_id,),
+            )
             conn.commit()
 
         return {
             "ensemble_id": ensemble_id,
             "status": "active",
             "model_count": model_count,
-            "message": "Ensemble activated and ready for predictions"
+            "message": "Ensemble activated and ready for predictions",
         }
 
-    def predict_with_ensemble(
-        self,
-        ensemble_id: str,
-        requester_id: str,
-        input_data: Dict
-    ) -> Dict:
+    def predict_with_ensemble(self, ensemble_id: str, requester_id: str, input_data: dict) -> dict:
         """Make predictions using the ensemble."""
         self._init_ensemble_schema()
         start_time = time.time()
@@ -236,26 +234,34 @@ class EnsembleManager:
 
         for model in models:
             pred = random.uniform(0, 1)
-            model_predictions.append({
-                "model_id": model["model_id"],
-                "consortium_id": model["consortium_id"],
-                "prediction": round(pred, 4),
-                "weight": model["weight"]
-            })
+            model_predictions.append(
+                {
+                    "model_id": model["model_id"],
+                    "consortium_id": model["consortium_id"],
+                    "prediction": round(pred, 4),
+                    "weight": model["weight"],
+                }
+            )
 
         if ensemble_type == "voting":
             votes = sum(1 for p in model_predictions if p["prediction"] > 0.5)
             final_prediction = 1 if votes > len(model_predictions) / 2 else 0
             confidence = votes / len(model_predictions)
         elif ensemble_type == "averaging":
-            final_prediction = sum(p["prediction"] for p in model_predictions) / len(model_predictions)
+            final_prediction = sum(p["prediction"] for p in model_predictions) / len(
+                model_predictions
+            )
             confidence = 1 - abs(final_prediction - 0.5) * 2
         elif ensemble_type == "weighted":
             total_weight = sum(p["weight"] for p in model_predictions)
-            final_prediction = sum(p["prediction"] * p["weight"] for p in model_predictions) / total_weight
+            final_prediction = (
+                sum(p["prediction"] * p["weight"] for p in model_predictions) / total_weight
+            )
             confidence = 1 - abs(final_prediction - 0.5) * 2
         else:
-            final_prediction = sum(p["prediction"] for p in model_predictions) / len(model_predictions)
+            final_prediction = sum(p["prediction"] for p in model_predictions) / len(
+                model_predictions
+            )
             confidence = 0.85
 
         latency_ms = (time.time() - start_time) * 1000
@@ -263,16 +269,24 @@ class EnsembleManager:
         pred_id = f"epred_{uuid.uuid4().hex[:12]}"
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO ensemble_predictions
                 (id, ensemble_id, requester_id, input_hash, prediction_result, confidence, models_used, latency_ms, metadata)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                pred_id, ensemble_id, requester_id,
-                hashlib.sha256(str(input_data).encode()).hexdigest()[:16],
-                str(round(final_prediction, 4)), confidence, len(models), latency_ms,
-                json.dumps({"model_predictions": model_predictions})
-            ))
+            """,
+                (
+                    pred_id,
+                    ensemble_id,
+                    requester_id,
+                    hashlib.sha256(str(input_data).encode()).hexdigest()[:16],
+                    str(round(final_prediction, 4)),
+                    confidence,
+                    len(models),
+                    latency_ms,
+                    json.dumps({"model_predictions": model_predictions}),
+                ),
+            )
             conn.commit()
 
         return {
@@ -284,17 +298,18 @@ class EnsembleManager:
             "models_used": len(models),
             "model_predictions": model_predictions,
             "latency_ms": round(latency_ms, 2),
-            "privacy_note": "Prediction combines insights from multiple encrypted models"
+            "privacy_note": "Prediction combines insights from multiple encrypted models",
         }
 
-    def get_ensemble_performance(self, ensemble_id: str) -> Dict:
+    def get_ensemble_performance(self, ensemble_id: str) -> dict:
         """Get ensemble performance metrics."""
         self._init_ensemble_schema()
 
         with self._get_connection() as conn:
             cursor = conn.cursor()
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT
                     COUNT(*) as total_predictions,
                     AVG(confidence) as avg_confidence,
@@ -303,12 +318,13 @@ class EnsembleManager:
                     MAX(created_at) as last_prediction
                 FROM ensemble_predictions
                 WHERE ensemble_id = ?
-            """, (ensemble_id,))
+            """,
+                (ensemble_id,),
+            )
             stats = dict(cursor.fetchone())
 
             cursor.execute(
-                "SELECT COUNT(*) FROM ensemble_models WHERE ensemble_id = ?",
-                (ensemble_id,)
+                "SELECT COUNT(*) FROM ensemble_models WHERE ensemble_id = ?", (ensemble_id,)
             )
             model_count = cursor.fetchone()[0]
 
@@ -320,10 +336,10 @@ class EnsembleManager:
             "avg_latency_ms": round(stats.get("avg_latency_ms", 0) or 0, 2),
             "first_prediction": stats.get("first_prediction"),
             "last_prediction": stats.get("last_prediction"),
-            "privacy_note": "Metrics computed without exposing individual model data"
+            "privacy_note": "Metrics computed without exposing individual model data",
         }
 
-    def get_ensemble_stats(self, owner_id: Optional[str] = None) -> Dict:
+    def get_ensemble_stats(self, owner_id: Optional[str] = None) -> dict:
         """Get overall ensemble statistics."""
         self._init_ensemble_schema()
 
@@ -331,13 +347,18 @@ class EnsembleManager:
             cursor = conn.cursor()
 
             if owner_id:
-                cursor.execute("SELECT COUNT(*) FROM model_ensembles WHERE owner_id = ?", (owner_id,))
+                cursor.execute(
+                    "SELECT COUNT(*) FROM model_ensembles WHERE owner_id = ?", (owner_id,)
+                )
             else:
                 cursor.execute("SELECT COUNT(*) FROM model_ensembles")
             total_ensembles = cursor.fetchone()[0]
 
             if owner_id:
-                cursor.execute("SELECT COUNT(*) FROM model_ensembles WHERE owner_id = ? AND status = 'active'", (owner_id,))
+                cursor.execute(
+                    "SELECT COUNT(*) FROM model_ensembles WHERE owner_id = ? AND status = 'active'",
+                    (owner_id,),
+                )
             else:
                 cursor.execute("SELECT COUNT(*) FROM model_ensembles WHERE status = 'active'")
             active_ensembles = cursor.fetchone()[0]
@@ -361,7 +382,7 @@ class EnsembleManager:
             "total_predictions": total_predictions,
             "by_type": by_type,
             "ensemble_types_available": ["voting", "averaging", "weighted", "stacking", "boosting"],
-            "privacy_preserved": True
+            "privacy_preserved": True,
         }
 
 

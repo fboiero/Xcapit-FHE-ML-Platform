@@ -8,13 +8,13 @@ This module tests:
 - Statistics
 """
 
+import importlib.util
 import os
 import sys
 import tempfile
-import pytest
-from datetime import datetime, timedelta
 from pathlib import Path
-import importlib.util
+
+import pytest
 
 # Import consortium module using direct file loading to avoid TenSEAL dependency
 project_root = Path(__file__).parent.parent
@@ -33,8 +33,7 @@ def load_module_from_path(module_name, file_path):
 # Load consortium module package
 consortium_package_path = sdk_api_path / "consortium"
 consortium_module = load_module_from_path(
-    "sdk.api.consortium",
-    consortium_package_path / "__init__.py"
+    "sdk.api.consortium", consortium_package_path / "__init__.py"
 )
 ConsortiumManager = consortium_module.ConsortiumManager
 
@@ -61,10 +60,7 @@ class TestFederatedInference:
     @pytest.fixture
     def company(self, manager):
         """Create a test company."""
-        company, _ = manager.create_company(
-            name="Test Company",
-            email="test@company.com"
-        )
+        company, _ = manager.create_company(name="Test Company", email="test@company.com")
         return company
 
     @pytest.fixture
@@ -74,7 +70,7 @@ class TestFederatedInference:
             name="Test Consortium",
             owner_id=company.id,
             model_type="linear_regression",
-            description="For federated inference testing"
+            description="For federated inference testing",
         )
         return consortium
 
@@ -87,7 +83,7 @@ class TestFederatedInference:
             company_id=company.id,
             name="Fraud Detection API",
             description="Real-time fraud detection",
-            endpoint_type="realtime"
+            endpoint_type="realtime",
         )
 
         assert endpoint is not None
@@ -103,7 +99,7 @@ class TestFederatedInference:
             consortium_id=consortium.id,
             name="Test Model",
             model_type="neural_network",
-            created_by=company.id
+            created_by=company.id,
         )
 
         endpoint = manager.create_inference_endpoint(
@@ -111,7 +107,7 @@ class TestFederatedInference:
             company_id=company.id,
             name="ML API",
             model_id=model["id"],
-            endpoint_type="batch"
+            endpoint_type="batch",
         )
 
         assert endpoint["model_id"] == model["id"]
@@ -120,9 +116,7 @@ class TestFederatedInference:
     def test_get_inference_endpoint(self, manager, company, consortium):
         """Test getting an inference endpoint."""
         created = manager.create_inference_endpoint(
-            consortium_id=consortium.id,
-            company_id=company.id,
-            name="Test Endpoint"
+            consortium_id=consortium.id, company_id=company.id, name="Test Endpoint"
         )
 
         retrieved = manager.get_inference_endpoint(created["id"])
@@ -136,9 +130,7 @@ class TestFederatedInference:
         # Create multiple endpoints
         for i in range(3):
             manager.create_inference_endpoint(
-                consortium_id=consortium.id,
-                company_id=company.id,
-                name=f"Endpoint {i}"
+                consortium_id=consortium.id, company_id=company.id, name=f"Endpoint {i}"
             )
 
         endpoints = manager.list_inference_endpoints(company_id=company.id)
@@ -148,26 +140,19 @@ class TestFederatedInference:
     def test_list_endpoints_by_consortium(self, manager, company, consortium):
         """Test listing endpoints filtered by consortium."""
         manager.create_inference_endpoint(
-            consortium_id=consortium.id,
-            company_id=company.id,
-            name="Endpoint 1"
+            consortium_id=consortium.id, company_id=company.id, name="Endpoint 1"
         )
 
         # Create another consortium and endpoint
         consortium2 = manager.create_consortium(
-            name="Another Consortium",
-            owner_id=company.id,
-            model_type="logistic_regression"
+            name="Another Consortium", owner_id=company.id, model_type="logistic_regression"
         )
         manager.create_inference_endpoint(
-            consortium_id=consortium2.id,
-            company_id=company.id,
-            name="Endpoint 2"
+            consortium_id=consortium2.id, company_id=company.id, name="Endpoint 2"
         )
 
         endpoints = manager.list_inference_endpoints(
-            company_id=company.id,
-            consortium_id=consortium.id
+            company_id=company.id, consortium_id=consortium.id
         )
 
         assert len(endpoints) == 1
@@ -176,9 +161,7 @@ class TestFederatedInference:
     def test_delete_inference_endpoint(self, manager, company, consortium):
         """Test deleting an inference endpoint."""
         endpoint = manager.create_inference_endpoint(
-            consortium_id=consortium.id,
-            company_id=company.id,
-            name="To Delete"
+            consortium_id=consortium.id, company_id=company.id, name="To Delete"
         )
 
         success = manager.delete_inference_endpoint(endpoint["id"], company.id)
@@ -192,16 +175,14 @@ class TestFederatedInference:
     def test_submit_inference_request(self, manager, company, consortium):
         """Test submitting an inference request."""
         endpoint = manager.create_inference_endpoint(
-            consortium_id=consortium.id,
-            company_id=company.id,
-            name="Test Endpoint"
+            consortium_id=consortium.id, company_id=company.id, name="Test Endpoint"
         )
 
         request = manager.submit_inference_request(
             endpoint_id=endpoint["id"],
             requester_id=company.id,
             input_data={"feature1": 1.0, "feature2": 2.0},
-            priority="high"
+            priority="high",
         )
 
         assert request is not None
@@ -212,16 +193,14 @@ class TestFederatedInference:
     def test_inference_request_with_encryption_key(self, manager, company, consortium):
         """Test inference request with encryption key."""
         endpoint = manager.create_inference_endpoint(
-            consortium_id=consortium.id,
-            company_id=company.id,
-            name="Encrypted Endpoint"
+            consortium_id=consortium.id, company_id=company.id, name="Encrypted Endpoint"
         )
 
         request = manager.submit_inference_request(
             endpoint_id=endpoint["id"],
             requester_id=company.id,
             input_data={"data": [1, 2, 3]},
-            encryption_key_id="key_abc123"
+            encryption_key_id="key_abc123",
         )
 
         assert request["encryption_key_id"] == "key_abc123"
@@ -229,15 +208,11 @@ class TestFederatedInference:
     def test_get_inference_request(self, manager, company, consortium):
         """Test getting an inference request."""
         endpoint = manager.create_inference_endpoint(
-            consortium_id=consortium.id,
-            company_id=company.id,
-            name="Test Endpoint"
+            consortium_id=consortium.id, company_id=company.id, name="Test Endpoint"
         )
 
         submitted = manager.submit_inference_request(
-            endpoint_id=endpoint["id"],
-            requester_id=company.id,
-            input_data={"x": 1}
+            endpoint_id=endpoint["id"], requester_id=company.id, input_data={"x": 1}
         )
 
         retrieved = manager.get_inference_request(submitted["id"])
@@ -248,17 +223,13 @@ class TestFederatedInference:
     def test_list_inference_requests(self, manager, company, consortium):
         """Test listing inference requests."""
         endpoint = manager.create_inference_endpoint(
-            consortium_id=consortium.id,
-            company_id=company.id,
-            name="Test Endpoint"
+            consortium_id=consortium.id, company_id=company.id, name="Test Endpoint"
         )
 
         # Submit multiple requests
         for i in range(5):
             manager.submit_inference_request(
-                endpoint_id=endpoint["id"],
-                requester_id=company.id,
-                input_data={"iteration": i}
+                endpoint_id=endpoint["id"], requester_id=company.id, input_data={"iteration": i}
             )
 
         requests = manager.list_inference_requests(requester_id=company.id)
@@ -268,15 +239,11 @@ class TestFederatedInference:
     def test_get_inference_result(self, manager, company, consortium):
         """Test getting inference result."""
         endpoint = manager.create_inference_endpoint(
-            consortium_id=consortium.id,
-            company_id=company.id,
-            name="Test Endpoint"
+            consortium_id=consortium.id, company_id=company.id, name="Test Endpoint"
         )
 
         request = manager.submit_inference_request(
-            endpoint_id=endpoint["id"],
-            requester_id=company.id,
-            input_data={"x": 1}
+            endpoint_id=endpoint["id"], requester_id=company.id, input_data={"x": 1}
         )
 
         result = manager.get_inference_result(request["id"])
@@ -294,7 +261,7 @@ class TestFederatedInference:
             name="Fraud Detector",
             model_type="neural_network",
             created_by=company.id,
-            version="1.0.0"
+            version="1.0.0",
         )
 
         assert model is not None
@@ -310,7 +277,7 @@ class TestFederatedInference:
             name="XGBoost Model",
             model_type="xgboost",
             created_by=company.id,
-            config={"n_estimators": 100, "max_depth": 5}
+            config={"n_estimators": 100, "max_depth": 5},
         )
 
         assert model["config"]["n_estimators"] == 100
@@ -322,7 +289,7 @@ class TestFederatedInference:
             consortium_id=consortium.id,
             name="Test Model",
             model_type="linear_regression",
-            created_by=company.id
+            created_by=company.id,
         )
 
         retrieved = manager.get_federated_model(created["id"])
@@ -337,7 +304,7 @@ class TestFederatedInference:
                 consortium_id=consortium.id,
                 name=f"Model {i}",
                 model_type="neural_network",
-                created_by=company.id
+                created_by=company.id,
             )
 
         models = manager.list_federated_models(consortium_id=consortium.id)
@@ -350,12 +317,12 @@ class TestFederatedInference:
             consortium_id=consortium.id,
             name="Model 1",
             model_type="neural_network",
-            created_by=company.id
+            created_by=company.id,
         )
 
         models = manager.list_federated_models(
             consortium_id=consortium.id,
-            status="active"  # Default status
+            status="active",  # Default status
         )
 
         assert len(models) >= 1
@@ -368,7 +335,7 @@ class TestFederatedInference:
             company_id=company.id,
             name="On-Premise Server 1",
             node_type="inference",
-            hardware_info={"location": "Buenos Aires, AR", "gpu": True}
+            hardware_info={"location": "Buenos Aires, AR", "gpu": True},
         )
 
         assert node is not None
@@ -382,7 +349,7 @@ class TestFederatedInference:
             company_id=company.id,
             name="GPU Server",
             node_type="inference",
-            hardware_info={"gpu": True, "memory_gb": 64, "cpu_cores": 16}
+            hardware_info={"gpu": True, "memory_gb": 64, "cpu_cores": 16},
         )
 
         assert node["hardware_info"]["gpu"] is True
@@ -390,10 +357,7 @@ class TestFederatedInference:
 
     def test_get_edge_node(self, manager, company):
         """Test getting an edge node."""
-        created = manager.register_edge_node(
-            company_id=company.id,
-            name="Test Node"
-        )
+        created = manager.register_edge_node(company_id=company.id, name="Test Node")
 
         retrieved = manager.get_edge_node(created["id"])
 
@@ -403,10 +367,7 @@ class TestFederatedInference:
     def test_list_edge_nodes(self, manager, company):
         """Test listing edge nodes."""
         for i in range(3):
-            manager.register_edge_node(
-                company_id=company.id,
-                name=f"Node {i}"
-            )
+            manager.register_edge_node(company_id=company.id, name=f"Node {i}")
 
         nodes = manager.list_edge_nodes(company_id=company.id)
 
@@ -418,18 +379,13 @@ class TestFederatedInference:
             consortium_id=consortium.id,
             name="Deployable Model",
             model_type="linear_regression",
-            created_by=company.id
+            created_by=company.id,
         )
 
-        node = manager.register_edge_node(
-            company_id=company.id,
-            name="Deploy Target"
-        )
+        node = manager.register_edge_node(company_id=company.id, name="Deploy Target")
 
         result = manager.deploy_model_to_edge(
-            node_id=node["id"],
-            model_id=model["id"],
-            company_id=company.id
+            node_id=node["id"], model_id=model["id"], company_id=company.id
         )
 
         assert result["status"] == "deployed"
@@ -437,22 +393,17 @@ class TestFederatedInference:
 
     def test_deploy_multiple_models(self, manager, company, consortium):
         """Test deploying multiple models to same node."""
-        node = manager.register_edge_node(
-            company_id=company.id,
-            name="Multi-Model Node"
-        )
+        node = manager.register_edge_node(company_id=company.id, name="Multi-Model Node")
 
         for i in range(3):
             model = manager.create_federated_model(
                 consortium_id=consortium.id,
                 name=f"Model {i}",
                 model_type="neural_network",
-                created_by=company.id
+                created_by=company.id,
             )
             manager.deploy_model_to_edge(
-                node_id=node["id"],
-                model_id=model["id"],
-                company_id=company.id
+                node_id=node["id"], model_id=model["id"], company_id=company.id
             )
 
         updated_node = manager.get_edge_node(node["id"])
@@ -460,10 +411,7 @@ class TestFederatedInference:
 
     def test_update_edge_heartbeat(self, manager, company):
         """Test updating edge node heartbeat."""
-        node = manager.register_edge_node(
-            company_id=company.id,
-            name="Heartbeat Node"
-        )
+        node = manager.register_edge_node(company_id=company.id, name="Heartbeat Node")
 
         success = manager.update_edge_heartbeat(node["id"])
 
@@ -471,10 +419,7 @@ class TestFederatedInference:
 
     def test_delete_edge_node(self, manager, company):
         """Test deleting an edge node."""
-        node = manager.register_edge_node(
-            company_id=company.id,
-            name="To Delete"
-        )
+        node = manager.register_edge_node(company_id=company.id, name="To Delete")
 
         success = manager.delete_edge_node(node["id"], company.id)
         assert success is True
@@ -496,24 +441,17 @@ class TestFederatedInference:
         """Test getting stats with data."""
         # Create endpoint
         endpoint = manager.create_inference_endpoint(
-            consortium_id=consortium.id,
-            company_id=company.id,
-            name="Stats Endpoint"
+            consortium_id=consortium.id, company_id=company.id, name="Stats Endpoint"
         )
 
         # Submit requests
         for i in range(5):
             manager.submit_inference_request(
-                endpoint_id=endpoint["id"],
-                requester_id=company.id,
-                input_data={"i": i}
+                endpoint_id=endpoint["id"], requester_id=company.id, input_data={"i": i}
             )
 
         # Create edge node
-        manager.register_edge_node(
-            company_id=company.id,
-            name="Stats Node"
-        )
+        manager.register_edge_node(company_id=company.id, name="Stats Node")
 
         stats = manager.get_federated_stats(company_id=company.id)
 
@@ -525,16 +463,12 @@ class TestFederatedInference:
     def test_stats_avg_processing_time(self, manager, company, consortium):
         """Test that stats include average processing time."""
         endpoint = manager.create_inference_endpoint(
-            consortium_id=consortium.id,
-            company_id=company.id,
-            name="Timing Endpoint"
+            consortium_id=consortium.id, company_id=company.id, name="Timing Endpoint"
         )
 
         for i in range(3):
             manager.submit_inference_request(
-                endpoint_id=endpoint["id"],
-                requester_id=company.id,
-                input_data={"x": i}
+                endpoint_id=endpoint["id"], requester_id=company.id, input_data={"x": i}
             )
 
         stats = manager.get_federated_stats(company_id=company.id)
@@ -547,44 +481,31 @@ class TestFederatedInference:
     def test_cannot_delete_other_company_endpoint(self, manager, company, consortium):
         """Test that company cannot delete another company's endpoint."""
         endpoint = manager.create_inference_endpoint(
-            consortium_id=consortium.id,
-            company_id=company.id,
-            name="Protected Endpoint"
+            consortium_id=consortium.id, company_id=company.id, name="Protected Endpoint"
         )
 
         # Create another company
-        other_company, _ = manager.create_company(
-            name="Other Company",
-            email="other@company.com"
-        )
+        other_company, _ = manager.create_company(name="Other Company", email="other@company.com")
 
         success = manager.delete_inference_endpoint(endpoint["id"], other_company.id)
         assert success is False
 
     def test_cannot_deploy_to_other_company_node(self, manager, company, consortium):
         """Test that company cannot deploy to another company's node."""
-        node = manager.register_edge_node(
-            company_id=company.id,
-            name="Protected Node"
-        )
+        node = manager.register_edge_node(company_id=company.id, name="Protected Node")
 
         model = manager.create_federated_model(
             consortium_id=consortium.id,
             name="Test Model",
             model_type="linear_regression",
-            created_by=company.id
+            created_by=company.id,
         )
 
-        other_company, _ = manager.create_company(
-            name="Other Company",
-            email="other@company.com"
-        )
+        other_company, _ = manager.create_company(name="Other Company", email="other@company.com")
 
         with pytest.raises(ValueError):
             manager.deploy_model_to_edge(
-                node_id=node["id"],
-                model_id=model["id"],
-                company_id=other_company.id
+                node_id=node["id"], model_id=model["id"], company_id=other_company.id
             )
 
     # ============ Edge Cases Tests ============
@@ -592,15 +513,11 @@ class TestFederatedInference:
     def test_inference_with_empty_input(self, manager, company, consortium):
         """Test inference with empty input data."""
         endpoint = manager.create_inference_endpoint(
-            consortium_id=consortium.id,
-            company_id=company.id,
-            name="Empty Input Endpoint"
+            consortium_id=consortium.id, company_id=company.id, name="Empty Input Endpoint"
         )
 
         request = manager.submit_inference_request(
-            endpoint_id=endpoint["id"],
-            requester_id=company.id,
-            input_data={}
+            endpoint_id=endpoint["id"], requester_id=company.id, input_data={}
         )
 
         assert request is not None
@@ -623,14 +540,9 @@ class TestFederatedInference:
 
     def test_deploy_nonexistent_model(self, manager, company):
         """Test deploying a nonexistent model."""
-        node = manager.register_edge_node(
-            company_id=company.id,
-            name="Test Node"
-        )
+        node = manager.register_edge_node(company_id=company.id, name="Test Node")
 
         with pytest.raises(ValueError):
             manager.deploy_model_to_edge(
-                node_id=node["id"],
-                model_id="fm_nonexistent",
-                company_id=company.id
+                node_id=node["id"], model_id="fm_nonexistent", company_id=company.id
             )

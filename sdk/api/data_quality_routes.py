@@ -10,18 +10,19 @@ This module provides REST endpoints for:
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from .auth import get_current_company
 
-
 # ============ Enums ============
+
 
 class QualityMetric(str, Enum):
     """Quality metrics types."""
+
     COMPLETENESS = "completeness"
     CONSISTENCY = "consistency"
     UNIQUENESS = "uniqueness"
@@ -32,12 +33,14 @@ class QualityMetric(str, Enum):
 
 class AlertSeverity(str, Enum):
     """Alert severity levels."""
+
     WARNING = "warning"
     CRITICAL = "critical"
 
 
 class AlertStatus(str, Enum):
     """Alert status."""
+
     ACTIVE = "active"
     ACKNOWLEDGED = "acknowledged"
     RESOLVED = "resolved"
@@ -45,8 +48,10 @@ class AlertStatus(str, Enum):
 
 # ============ Request Models ============
 
+
 class AssessQualityRequest(BaseModel):
     """Request to assess data quality."""
+
     consortium_id: str
     contribution_id: Optional[str] = None
     record_count: int = Field(..., ge=0)
@@ -58,11 +63,12 @@ class AssessQualityRequest(BaseModel):
     format_violations: int = Field(default=0, ge=0, description="Records with format issues")
     range_violations: int = Field(default=0, ge=0, description="Records with out-of-range values")
     last_updated: Optional[datetime] = Field(default=None, description="When data was last updated")
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: Optional[dict[str, Any]] = None
 
 
 class SetQualityRuleRequest(BaseModel):
     """Request to set a quality rule."""
+
     consortium_id: str
     metric: QualityMetric
     warning_threshold: float = Field(..., ge=0, le=100)
@@ -72,13 +78,16 @@ class SetQualityRuleRequest(BaseModel):
 
 class AcknowledgeAlertRequest(BaseModel):
     """Request to acknowledge an alert."""
+
     notes: Optional[str] = Field(default=None, max_length=500)
 
 
 # ============ Response Models ============
 
+
 class QualityAssessmentResponse(BaseModel):
     """Data quality assessment response."""
+
     id: str
     consortium_id: str
     company_id: str
@@ -96,11 +105,12 @@ class QualityAssessmentResponse(BaseModel):
     duplicate_ratio: float
     outlier_ratio: float
     assessed_at: datetime
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: Optional[dict[str, Any]] = None
 
 
 class QualityRuleResponse(BaseModel):
     """Quality rule response."""
+
     id: str
     consortium_id: str
     metric: str
@@ -113,6 +123,7 @@ class QualityRuleResponse(BaseModel):
 
 class QualityAlertResponse(BaseModel):
     """Quality alert response."""
+
     id: str
     consortium_id: str
     company_id: str
@@ -131,6 +142,7 @@ class QualityAlertResponse(BaseModel):
 
 class QualityHistoryResponse(BaseModel):
     """Quality history entry response."""
+
     id: str
     consortium_id: str
     company_id: str
@@ -141,6 +153,7 @@ class QualityHistoryResponse(BaseModel):
 
 class CompanyQualitySummary(BaseModel):
     """Quality summary for a company."""
+
     company_id: str
     company_name: Optional[str] = None
     overall_score: float
@@ -156,6 +169,7 @@ class CompanyQualitySummary(BaseModel):
 
 class QualityDashboardResponse(BaseModel):
     """Quality dashboard response."""
+
     consortium_id: str
     overall_score: float
     completeness_avg: float
@@ -166,7 +180,7 @@ class QualityDashboardResponse(BaseModel):
     total_records: int
     total_companies: int
     total_assessments: int
-    companies: List[CompanyQualitySummary]
+    companies: list[CompanyQualitySummary]
     active_alerts: int
     last_assessment: Optional[datetime] = None
 
@@ -177,6 +191,7 @@ router = APIRouter(prefix="/quality", tags=["data-quality"])
 
 
 # ============ Assessments ============
+
 
 @router.post("/assess", response_model=QualityAssessmentResponse)
 async def assess_data_quality(
@@ -197,8 +212,7 @@ async def assess_data_quality(
     membership = manager.get_membership(request.consortium_id, company["id"])
     if not membership or membership.status.value != "active":
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not an active member of this consortium"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not an active member of this consortium"
         )
 
     # Assess quality using real DataQualityCalculator
@@ -215,7 +229,7 @@ async def assess_data_quality(
         format_violations=request.format_violations,
         range_violations=request.range_violations,
         last_updated=request.last_updated,
-        metadata=request.metadata
+        metadata=request.metadata,
     )
 
     # Record audit event
@@ -225,17 +239,14 @@ async def assess_data_quality(
         actor_id=company["id"],
         target_id=assessment["id"],
         target_type="quality_assessment",
-        data={
-            "overall_score": assessment["overall_score"],
-            "record_count": request.record_count
-        }
+        data={"overall_score": assessment["overall_score"], "record_count": request.record_count},
     )
 
     assessment["company_name"] = company["name"]
     return assessment
 
 
-@router.get("/assessments/{consortium_id}", response_model=List[QualityAssessmentResponse])
+@router.get("/assessments/{consortium_id}", response_model=list[QualityAssessmentResponse])
 async def get_quality_assessments(
     consortium_id: str,
     company_id: Optional[str] = None,
@@ -252,15 +263,10 @@ async def get_quality_assessments(
     membership = manager.get_membership(consortium_id, company["id"])
     if not membership:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not a member of this consortium"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this consortium"
         )
 
-    assessments = manager.get_quality_assessments(
-        consortium_id,
-        company_id=company_id,
-        limit=limit
-    )
+    assessments = manager.get_quality_assessments(consortium_id, company_id=company_id, limit=limit)
     return assessments
 
 
@@ -280,30 +286,24 @@ async def get_latest_assessment(
     membership = manager.get_membership(consortium_id, company["id"])
     if not membership:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not a member of this consortium"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this consortium"
         )
 
     # Use target company or current company
     check_company_id = target_company_id or company["id"]
 
-    assessment = manager.get_latest_quality_assessment(
-        consortium_id,
-        check_company_id
-    )
+    assessment = manager.get_latest_quality_assessment(consortium_id, check_company_id)
 
     if not assessment:
-        raise HTTPException(
-            status_code=404,
-            detail="No assessments found for this company"
-        )
+        raise HTTPException(status_code=404, detail="No assessments found for this company")
 
     return assessment
 
 
 # ============ History ============
 
-@router.get("/history/{consortium_id}", response_model=List[QualityHistoryResponse])
+
+@router.get("/history/{consortium_id}", response_model=list[QualityHistoryResponse])
 async def get_quality_history(
     consortium_id: str,
     metric: Optional[QualityMetric] = None,
@@ -321,20 +321,17 @@ async def get_quality_history(
     membership = manager.get_membership(consortium_id, company["id"])
     if not membership:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not a member of this consortium"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this consortium"
         )
 
     history = manager.get_quality_history(
-        consortium_id,
-        metric=metric.value if metric else None,
-        company_id=company_id,
-        days=days
+        consortium_id, metric=metric.value if metric else None, company_id=company_id, days=days
     )
     return history
 
 
 # ============ Rules ============
+
 
 @router.post("/rules", response_model=QualityRuleResponse)
 async def set_quality_rule(
@@ -359,14 +356,14 @@ async def set_quality_rule(
     if not membership or membership.role.value not in ["owner", "admin"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only owners or admins can set quality rules"
+            detail="Only owners or admins can set quality rules",
         )
 
     # Validate thresholds
     if request.critical_threshold > request.warning_threshold:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Critical threshold must be less than or equal to warning threshold"
+            detail="Critical threshold must be less than or equal to warning threshold",
         )
 
     # Set rule
@@ -375,7 +372,7 @@ async def set_quality_rule(
         metric=request.metric.value,
         warning_threshold=request.warning_threshold,
         critical_threshold=request.critical_threshold,
-        enabled=request.enabled
+        enabled=request.enabled,
     )
 
     # Record audit event
@@ -388,14 +385,14 @@ async def set_quality_rule(
         data={
             "metric": request.metric.value,
             "warning_threshold": request.warning_threshold,
-            "critical_threshold": request.critical_threshold
-        }
+            "critical_threshold": request.critical_threshold,
+        },
     )
 
     return rule
 
 
-@router.get("/rules/{consortium_id}", response_model=List[QualityRuleResponse])
+@router.get("/rules/{consortium_id}", response_model=list[QualityRuleResponse])
 async def get_quality_rules(
     consortium_id: str,
     company: dict = Depends(get_current_company),
@@ -410,8 +407,7 @@ async def get_quality_rules(
     membership = manager.get_membership(consortium_id, company["id"])
     if not membership:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not a member of this consortium"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this consortium"
         )
 
     rules = manager.get_quality_rules(consortium_id)
@@ -420,7 +416,8 @@ async def get_quality_rules(
 
 # ============ Alerts ============
 
-@router.get("/alerts/{consortium_id}", response_model=List[QualityAlertResponse])
+
+@router.get("/alerts/{consortium_id}", response_model=list[QualityAlertResponse])
 async def get_quality_alerts(
     consortium_id: str,
     severity: Optional[AlertSeverity] = None,
@@ -437,14 +434,13 @@ async def get_quality_alerts(
     membership = manager.get_membership(consortium_id, company["id"])
     if not membership:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not a member of this consortium"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this consortium"
         )
 
     alerts = manager.get_quality_alerts(
         consortium_id,
         severity=severity.value if severity else None,
-        status=alert_status.value if alert_status else None
+        status=alert_status.value if alert_status else None,
     )
     return alerts
 
@@ -463,21 +459,17 @@ async def acknowledge_alert(
 
     # Acknowledge alert
     result = manager.acknowledge_alert(
-        alert_id=alert_id,
-        acknowledged_by=company["id"],
-        notes=request.notes
+        alert_id=alert_id, acknowledged_by=company["id"], notes=request.notes
     )
 
     if not result:
-        raise HTTPException(
-            status_code=404,
-            detail="Alert not found"
-        )
+        raise HTTPException(status_code=404, detail="Alert not found")
 
     return {"status": "acknowledged", "alert_id": alert_id}
 
 
 # ============ Dashboard ============
+
 
 @router.get("/dashboard/{consortium_id}", response_model=QualityDashboardResponse)
 async def get_quality_dashboard(
@@ -497,8 +489,7 @@ async def get_quality_dashboard(
     membership = manager.get_membership(consortium_id, company["id"])
     if not membership:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not a member of this consortium"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this consortium"
         )
 
     dashboard = manager.get_consortium_quality_dashboard(consortium_id)

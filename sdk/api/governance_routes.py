@@ -9,18 +9,19 @@ This module provides REST endpoints for:
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from .auth import get_current_company
 
-
 # ============ Pydantic Models ============
+
 
 class ProposalType(str, Enum):
     """Types of governance proposals."""
+
     ADD_MEMBER = "add_member"
     REMOVE_MEMBER = "remove_member"
     CHANGE_MODEL = "change_model"
@@ -32,6 +33,7 @@ class ProposalType(str, Enum):
 
 class ProposalStatus(str, Enum):
     """Status of a proposal."""
+
     ACTIVE = "active"
     PASSED = "passed"
     REJECTED = "rejected"
@@ -41,6 +43,7 @@ class ProposalStatus(str, Enum):
 
 class AuditEventType(str, Enum):
     """Types of audit events."""
+
     CONSORTIUM_CREATED = "consortium_created"
     MEMBER_JOINED = "member_joined"
     MEMBER_LEFT = "member_left"
@@ -58,6 +61,7 @@ class AuditEventType(str, Enum):
 # Request Models
 class RecordContributionRequest(BaseModel):
     """Request to record a contribution proof."""
+
     consortium_id: str
     record_count: int = Field(..., gt=0, description="Number of records contributed")
     feature_count: int = Field(..., gt=0, description="Number of features")
@@ -67,15 +71,17 @@ class RecordContributionRequest(BaseModel):
 
 class CreateProposalRequest(BaseModel):
     """Request to create a proposal."""
+
     consortium_id: str
     proposal_type: ProposalType
     title: str = Field(..., min_length=1, max_length=200)
     description: str = Field(default="", max_length=2000)
-    data: Optional[Dict[str, Any]] = Field(default=None, description="Proposal-specific data")
+    data: Optional[dict[str, Any]] = Field(default=None, description="Proposal-specific data")
 
 
 class VoteRequest(BaseModel):
     """Request to cast a vote."""
+
     proposal_id: str
     support: bool = Field(..., description="True for yes, False for no")
     comment: Optional[str] = Field(default=None, max_length=500)
@@ -83,6 +89,7 @@ class VoteRequest(BaseModel):
 
 class DistributeRewardsRequest(BaseModel):
     """Request to distribute rewards."""
+
     consortium_id: str
     amount: float = Field(..., gt=0, description="Amount to distribute (in ETH)")
 
@@ -90,6 +97,7 @@ class DistributeRewardsRequest(BaseModel):
 # Response Models
 class ContributionProof(BaseModel):
     """Contribution proof response."""
+
     id: str
     consortium_id: str
     contributor_id: str
@@ -105,6 +113,7 @@ class ContributionProof(BaseModel):
 
 class Proposal(BaseModel):
     """Proposal response."""
+
     id: str
     consortium_id: str
     proposal_type: ProposalType
@@ -113,7 +122,7 @@ class Proposal(BaseModel):
     proposer_id: str
     proposer_name: str
     status: ProposalStatus
-    data: Optional[Dict[str, Any]]
+    data: Optional[dict[str, Any]]
     yes_votes: int
     no_votes: int
     total_voters: int
@@ -127,6 +136,7 @@ class Proposal(BaseModel):
 
 class Vote(BaseModel):
     """Vote response."""
+
     id: str
     proposal_id: str
     voter_id: str
@@ -139,6 +149,7 @@ class Vote(BaseModel):
 
 class AuditEvent(BaseModel):
     """Audit event response."""
+
     id: str
     consortium_id: str
     event_type: AuditEventType
@@ -146,7 +157,7 @@ class AuditEvent(BaseModel):
     actor_name: str
     target_id: Optional[str]
     target_type: Optional[str]
-    data: Dict[str, Any]
+    data: dict[str, Any]
     timestamp: datetime
     blockchain_tx: Optional[str] = None
     previous_hash: Optional[str] = None
@@ -154,6 +165,7 @@ class AuditEvent(BaseModel):
 
 class MemberContribution(BaseModel):
     """Member contribution summary."""
+
     member_id: str
     member_name: str
     total_records: int
@@ -164,11 +176,12 @@ class MemberContribution(BaseModel):
 
 class RewardDistribution(BaseModel):
     """Reward distribution record."""
+
     id: str
     consortium_id: str
     total_amount: float
     distributed_at: datetime
-    distributions: List[Dict[str, Any]]  # member_id, amount, weight
+    distributions: list[dict[str, Any]]  # member_id, amount, weight
     blockchain_tx: Optional[str] = None
 
 
@@ -178,6 +191,7 @@ router = APIRouter(prefix="/governance", tags=["governance"])
 
 
 # ============ Contribution Proofs ============
+
 
 @router.post("/contributions", response_model=ContributionProof)
 async def record_contribution(
@@ -199,8 +213,7 @@ async def record_contribution(
     membership = manager.get_membership(request.consortium_id, company["id"])
     if not membership or membership.status.value != "active":
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not an active member of this consortium"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not an active member of this consortium"
         )
 
     # Record contribution in local DB
@@ -223,7 +236,7 @@ async def record_contribution(
             "record_count": request.record_count,
             "feature_count": request.feature_count,
             "data_hash": request.data_hash,
-        }
+        },
     )
 
     return ContributionProof(
@@ -241,7 +254,7 @@ async def record_contribution(
     )
 
 
-@router.get("/contributions/{consortium_id}", response_model=List[ContributionProof])
+@router.get("/contributions/{consortium_id}", response_model=list[ContributionProof])
 async def get_contributions(
     consortium_id: str,
     company: dict = Depends(get_current_company),
@@ -256,15 +269,14 @@ async def get_contributions(
     membership = manager.get_membership(consortium_id, company["id"])
     if not membership:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not a member of this consortium"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this consortium"
         )
 
     contributions = manager.get_contribution_proofs(consortium_id)
     return contributions
 
 
-@router.get("/contributions/{consortium_id}/summary", response_model=List[MemberContribution])
+@router.get("/contributions/{consortium_id}/summary", response_model=list[MemberContribution])
 async def get_contribution_summary(
     consortium_id: str,
     company: dict = Depends(get_current_company),
@@ -279,8 +291,7 @@ async def get_contribution_summary(
     membership = manager.get_membership(consortium_id, company["id"])
     if not membership:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not a member of this consortium"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this consortium"
         )
 
     summary = manager.get_contribution_summary(consortium_id)
@@ -288,6 +299,7 @@ async def get_contribution_summary(
 
 
 # ============ Voting System ============
+
 
 @router.post("/proposals", response_model=Proposal)
 async def create_proposal(
@@ -304,8 +316,7 @@ async def create_proposal(
     membership = manager.get_membership(request.consortium_id, company["id"])
     if not membership or membership.status.value != "active":
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not an active member of this consortium"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not an active member of this consortium"
         )
 
     # Get consortium for voting duration
@@ -332,14 +343,14 @@ async def create_proposal(
         data={
             "proposal_type": request.proposal_type.value,
             "title": request.title,
-        }
+        },
     )
 
     proposal = manager.get_proposal(proposal_id)
     return proposal
 
 
-@router.get("/proposals/{consortium_id}", response_model=List[Proposal])
+@router.get("/proposals/{consortium_id}", response_model=list[Proposal])
 async def get_proposals(
     consortium_id: str,
     status_filter: Optional[ProposalStatus] = None,
@@ -355,13 +366,11 @@ async def get_proposals(
     membership = manager.get_membership(consortium_id, company["id"])
     if not membership:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not a member of this consortium"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this consortium"
         )
 
     proposals = manager.get_proposals(
-        consortium_id,
-        status_filter=status_filter.value if status_filter else None
+        consortium_id, status_filter=status_filter.value if status_filter else None
     )
     return proposals
 
@@ -382,8 +391,7 @@ async def get_proposal(
     membership = manager.get_membership(consortium_id, company["id"])
     if not membership:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not a member of this consortium"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this consortium"
         )
 
     proposal = manager.get_proposal(proposal_id)
@@ -413,30 +421,27 @@ async def cast_vote(
     membership = manager.get_membership(proposal.consortium_id, company["id"])
     if not membership or membership.status.value != "active":
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not an active member of this consortium"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not an active member of this consortium"
         )
 
     # Check proposal is still active
     if proposal.status != "active":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Proposal is {proposal.status}, voting not allowed"
+            detail=f"Proposal is {proposal.status}, voting not allowed",
         )
 
     # Check voting deadline
     if datetime.utcnow() > proposal.expires_at:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Voting period has ended"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Voting period has ended"
         )
 
     # Check if already voted
     existing_vote = manager.get_vote(request.proposal_id, company["id"])
     if existing_vote:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Already voted on this proposal"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Already voted on this proposal"
         )
 
     # Calculate voting weight based on contributions
@@ -463,7 +468,7 @@ async def cast_vote(
         data={
             "support": request.support,
             "weight": weight,
-        }
+        },
     )
 
     return Vote(
@@ -498,22 +503,19 @@ async def execute_proposal(
     membership = manager.get_membership(proposal.consortium_id, company["id"])
     if not membership:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not a member of this consortium"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this consortium"
         )
 
     # Check proposal status
     if proposal.status != "active":
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Proposal is already {proposal.status}"
+            status_code=status.HTTP_400_BAD_REQUEST, detail=f"Proposal is already {proposal.status}"
         )
 
     # Check voting has ended
     if datetime.utcnow() < proposal.expires_at:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Voting period has not ended yet"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Voting period has not ended yet"
         )
 
     # Execute proposal
@@ -529,7 +531,7 @@ async def execute_proposal(
             "passed": result["passed"],
             "yes_votes": result["yes_votes"],
             "no_votes": result["no_votes"],
-        }
+        },
     )
 
     return {
@@ -541,7 +543,7 @@ async def execute_proposal(
     }
 
 
-@router.get("/proposals/{proposal_id}/votes", response_model=List[Vote])
+@router.get("/proposals/{proposal_id}/votes", response_model=list[Vote])
 async def get_votes(
     proposal_id: str,
     company: dict = Depends(get_current_company),
@@ -561,8 +563,7 @@ async def get_votes(
     membership = manager.get_membership(proposal.consortium_id, company["id"])
     if not membership:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not a member of this consortium"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this consortium"
         )
 
     votes = manager.get_proposal_votes(proposal_id)
@@ -571,7 +572,8 @@ async def get_votes(
 
 # ============ Audit Trail ============
 
-@router.get("/audit/{consortium_id}", response_model=List[AuditEvent])
+
+@router.get("/audit/{consortium_id}", response_model=list[AuditEvent])
 async def get_audit_trail(
     consortium_id: str,
     event_type: Optional[AuditEventType] = None,
@@ -589,8 +591,7 @@ async def get_audit_trail(
     membership = manager.get_membership(consortium_id, company["id"])
     if not membership:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not a member of this consortium"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this consortium"
         )
 
     events = manager.get_audit_trail(
@@ -617,8 +618,7 @@ async def verify_audit_trail(
     membership = manager.get_membership(consortium_id, company["id"])
     if not membership:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not a member of this consortium"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this consortium"
         )
 
     is_valid = manager.verify_audit_trail(consortium_id)
@@ -631,6 +631,7 @@ async def verify_audit_trail(
 
 
 # ============ Rewards ============
+
 
 @router.post("/rewards/distribute", response_model=RewardDistribution)
 async def distribute_rewards(
@@ -655,7 +656,7 @@ async def distribute_rewards(
     if consortium.owner_id != company["id"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only the consortium owner can distribute rewards"
+            detail="Only the consortium owner can distribute rewards",
         )
 
     # Calculate distributions based on contribution weights
@@ -680,7 +681,7 @@ async def distribute_rewards(
         data={
             "total_amount": request.amount,
             "recipient_count": len(distributions),
-        }
+        },
     )
 
     return RewardDistribution(
@@ -693,7 +694,7 @@ async def distribute_rewards(
     )
 
 
-@router.get("/rewards/{consortium_id}", response_model=List[RewardDistribution])
+@router.get("/rewards/{consortium_id}", response_model=list[RewardDistribution])
 async def get_reward_history(
     consortium_id: str,
     company: dict = Depends(get_current_company),
@@ -708,8 +709,7 @@ async def get_reward_history(
     membership = manager.get_membership(consortium_id, company["id"])
     if not membership:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not a member of this consortium"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this consortium"
         )
 
     history = manager.get_reward_distributions(consortium_id)

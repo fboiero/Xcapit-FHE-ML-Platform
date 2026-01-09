@@ -4,68 +4,65 @@ This module provides a Python client for interacting with the
 ModelRegistry smart contract for model verification and audit trail.
 """
 
-from dataclasses import dataclass
-from datetime import datetime
-from typing import Any, Dict, List, Optional
 import hashlib
 import json
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Any, Optional
+
 import numpy as np
 
-from .connector import BlockchainConnector, Network
-
+from .connector import BlockchainConnector
 
 # ModelRegistry contract ABI (subset of functions we use)
 MODEL_REGISTRY_ABI = [
     {
-        "inputs": [
-            {"name": "modelType", "type": "string"},
-            {"name": "version", "type": "string"}
-        ],
+        "inputs": [{"name": "modelType", "type": "string"}, {"name": "version", "type": "string"}],
         "name": "registerModel",
         "outputs": [{"name": "modelId", "type": "bytes32"}],
         "stateMutability": "nonpayable",
-        "type": "function"
+        "type": "function",
     },
     {
         "inputs": [
             {"name": "modelId", "type": "bytes32"},
             {"name": "epoch", "type": "uint256"},
             {"name": "weightsHash", "type": "bytes32"},
-            {"name": "metricsHash", "type": "bytes32"}
+            {"name": "metricsHash", "type": "bytes32"},
         ],
         "name": "saveCheckpoint",
         "outputs": [],
         "stateMutability": "nonpayable",
-        "type": "function"
+        "type": "function",
     },
     {
         "inputs": [
             {"name": "modelId", "type": "bytes32"},
-            {"name": "datasetHash", "type": "bytes32"}
+            {"name": "datasetHash", "type": "bytes32"},
         ],
         "name": "startTraining",
         "outputs": [{"name": "runId", "type": "bytes32"}],
         "stateMutability": "nonpayable",
-        "type": "function"
+        "type": "function",
     },
     {
         "inputs": [
             {"name": "modelId", "type": "bytes32"},
             {"name": "runIndex", "type": "uint256"},
             {"name": "totalEpochs", "type": "uint256"},
-            {"name": "finalWeightsHash", "type": "bytes32"}
+            {"name": "finalWeightsHash", "type": "bytes32"},
         ],
         "name": "completeTraining",
         "outputs": [],
         "stateMutability": "nonpayable",
-        "type": "function"
+        "type": "function",
     },
     {
         "inputs": [{"name": "modelId", "type": "bytes32"}],
         "name": "verifyModel",
         "outputs": [],
         "stateMutability": "nonpayable",
-        "type": "function"
+        "type": "function",
     },
     {
         "inputs": [{"name": "modelId", "type": "bytes32"}],
@@ -78,50 +75,47 @@ MODEL_REGISTRY_ABI = [
             {"name": "createdAt", "type": "uint256"},
             {"name": "updatedAt", "type": "uint256"},
             {"name": "verified", "type": "bool"},
-            {"name": "active", "type": "bool"}
+            {"name": "active", "type": "bool"},
         ],
         "stateMutability": "view",
-        "type": "function"
+        "type": "function",
     },
     {
         "inputs": [{"name": "modelId", "type": "bytes32"}],
         "name": "getCheckpointCount",
         "outputs": [{"name": "", "type": "uint256"}],
         "stateMutability": "view",
-        "type": "function"
+        "type": "function",
     },
     {
-        "inputs": [
-            {"name": "modelId", "type": "bytes32"},
-            {"name": "index", "type": "uint256"}
-        ],
+        "inputs": [{"name": "modelId", "type": "bytes32"}, {"name": "index", "type": "uint256"}],
         "name": "getCheckpoint",
         "outputs": [
             {"name": "epoch", "type": "uint256"},
             {"name": "weightsHash", "type": "bytes32"},
             {"name": "metricsHash", "type": "bytes32"},
-            {"name": "timestamp", "type": "uint256"}
+            {"name": "timestamp", "type": "uint256"},
         ],
         "stateMutability": "view",
-        "type": "function"
+        "type": "function",
     },
     {
         "inputs": [
             {"name": "modelId", "type": "bytes32"},
             {"name": "epoch", "type": "uint256"},
-            {"name": "weightsHash", "type": "bytes32"}
+            {"name": "weightsHash", "type": "bytes32"},
         ],
         "name": "verifyCheckpoint",
         "outputs": [{"name": "", "type": "bool"}],
         "stateMutability": "view",
-        "type": "function"
+        "type": "function",
     },
     {
         "inputs": [{"name": "owner", "type": "address"}],
         "name": "getOwnerModels",
         "outputs": [{"name": "", "type": "bytes32[]"}],
         "stateMutability": "view",
-        "type": "function"
+        "type": "function",
     },
 ]
 
@@ -203,7 +197,7 @@ class ModelRegistryClient:
         return hashlib.sha256(weights_bytes).digest()
 
     @staticmethod
-    def compute_metrics_hash(metrics: Dict[str, Any]) -> bytes:
+    def compute_metrics_hash(metrics: dict[str, Any]) -> bytes:
         """Compute SHA256 hash of training metrics.
 
         Args:
@@ -234,21 +228,21 @@ class ModelRegistryClient:
         tx = self._contract.functions.registerModel(
             model_type,
             version,
-        ).build_transaction({
-            "from": self._connector.address,
-            "nonce": self._connector.get_nonce(),
-            "gas": 200000,
-            "gasPrice": self._connector.get_gas_price(),
-            "chainId": self._connector.config.chain_id,
-        })
-
-        signed = self._connector.account.sign_transaction(tx)
-        tx_hash = self._connector.web3.eth.send_raw_transaction(
-            signed.raw_transaction
+        ).build_transaction(
+            {
+                "from": self._connector.address,
+                "nonce": self._connector.get_nonce(),
+                "gas": 200000,
+                "gasPrice": self._connector.get_gas_price(),
+                "chainId": self._connector.config.chain_id,
+            }
         )
 
+        signed = self._connector.account.sign_transaction(tx)
+        tx_hash = self._connector.web3.eth.send_raw_transaction(signed.raw_transaction)
+
         if wait:
-            receipt = self._connector.web3.eth.wait_for_transaction_receipt(tx_hash)
+            self._connector.web3.eth.wait_for_transaction_receipt(tx_hash)
             # Extract model_id from logs
             # For now, return tx hash as placeholder
             return tx_hash.hex()
@@ -260,7 +254,7 @@ class ModelRegistryClient:
         model_id: str,
         epoch: int,
         weights: np.ndarray,
-        metrics: Optional[Dict[str, Any]] = None,
+        metrics: Optional[dict[str, Any]] = None,
         wait: bool = True,
     ) -> str:
         """Save a training checkpoint.
@@ -289,18 +283,18 @@ class ModelRegistryClient:
             epoch,
             weights_hash,
             metrics_hash,
-        ).build_transaction({
-            "from": self._connector.address,
-            "nonce": self._connector.get_nonce(),
-            "gas": 150000,
-            "gasPrice": self._connector.get_gas_price(),
-            "chainId": self._connector.config.chain_id,
-        })
+        ).build_transaction(
+            {
+                "from": self._connector.address,
+                "nonce": self._connector.get_nonce(),
+                "gas": 150000,
+                "gasPrice": self._connector.get_gas_price(),
+                "chainId": self._connector.config.chain_id,
+            }
+        )
 
         signed = self._connector.account.sign_transaction(tx)
-        tx_hash = self._connector.web3.eth.send_raw_transaction(
-            signed.raw_transaction
-        )
+        tx_hash = self._connector.web3.eth.send_raw_transaction(signed.raw_transaction)
 
         if wait:
             self._connector.web3.eth.wait_for_transaction_receipt(tx_hash)
@@ -331,18 +325,18 @@ class ModelRegistryClient:
         tx = self._contract.functions.startTraining(
             model_id_bytes,
             dataset_hash,
-        ).build_transaction({
-            "from": self._connector.address,
-            "nonce": self._connector.get_nonce(),
-            "gas": 150000,
-            "gasPrice": self._connector.get_gas_price(),
-            "chainId": self._connector.config.chain_id,
-        })
+        ).build_transaction(
+            {
+                "from": self._connector.address,
+                "nonce": self._connector.get_nonce(),
+                "gas": 150000,
+                "gasPrice": self._connector.get_gas_price(),
+                "chainId": self._connector.config.chain_id,
+            }
+        )
 
         signed = self._connector.account.sign_transaction(tx)
-        tx_hash = self._connector.web3.eth.send_raw_transaction(
-            signed.raw_transaction
-        )
+        tx_hash = self._connector.web3.eth.send_raw_transaction(signed.raw_transaction)
 
         if wait:
             self._connector.web3.eth.wait_for_transaction_receipt(tx_hash)
@@ -381,18 +375,18 @@ class ModelRegistryClient:
             run_index,
             total_epochs,
             final_hash,
-        ).build_transaction({
-            "from": self._connector.address,
-            "nonce": self._connector.get_nonce(),
-            "gas": 150000,
-            "gasPrice": self._connector.get_gas_price(),
-            "chainId": self._connector.config.chain_id,
-        })
+        ).build_transaction(
+            {
+                "from": self._connector.address,
+                "nonce": self._connector.get_nonce(),
+                "gas": 150000,
+                "gasPrice": self._connector.get_gas_price(),
+                "chainId": self._connector.config.chain_id,
+            }
+        )
 
         signed = self._connector.account.sign_transaction(tx)
-        tx_hash = self._connector.web3.eth.send_raw_transaction(
-            signed.raw_transaction
-        )
+        tx_hash = self._connector.web3.eth.send_raw_transaction(signed.raw_transaction)
 
         if wait:
             self._connector.web3.eth.wait_for_transaction_receipt(tx_hash)
@@ -499,15 +493,13 @@ class ModelRegistryClient:
             weights_hash,
         ).call()
 
-    def get_my_models(self) -> List[str]:
+    def get_my_models(self) -> list[str]:
         """Get all models owned by current account.
 
         Returns:
             List of model IDs.
         """
-        result = self._contract.functions.getOwnerModels(
-            self._connector.address
-        ).call()
+        result = self._contract.functions.getOwnerModels(self._connector.address).call()
 
         return [m.hex() for m in result]
 

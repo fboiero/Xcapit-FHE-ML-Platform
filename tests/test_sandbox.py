@@ -8,12 +8,12 @@ Tests cover:
 - Statistics
 """
 
-import sys
-from pathlib import Path
-import pytest
-import tempfile
-from datetime import datetime
 import importlib.util
+import sys
+import tempfile
+from pathlib import Path
+
+import pytest
 
 project_root = Path(__file__).parent.parent
 sdk_api_path = project_root / "sdk" / "api"
@@ -31,8 +31,7 @@ def load_module_from_path(module_name, file_path):
 # Load consortium module package
 consortium_package_path = sdk_api_path / "consortium"
 consortium_module = load_module_from_path(
-    "sdk.api.consortium",
-    consortium_package_path / "__init__.py"
+    "sdk.api.consortium", consortium_package_path / "__init__.py"
 )
 ConsortiumManager = consortium_module.ConsortiumManager
 ConsortiumStatus = consortium_module.ConsortiumStatus
@@ -100,7 +99,9 @@ class TestSandboxTemplates:
         all_templates = manager.list_sandbox_templates()
 
         # Find a specific industry (not 'general')
-        industries = [t["industry"] for t in all_templates if t.get("industry") and t["industry"] != "general"]
+        industries = [
+            t["industry"] for t in all_templates if t.get("industry") and t["industry"] != "general"
+        ]
         if industries:
             target_industry = industries[0]
             filtered_templates = manager.list_sandbox_templates(industry=target_industry)
@@ -126,18 +127,13 @@ class TestSandboxEnvironments:
     @pytest.fixture
     def company(self, manager):
         """Create a test company."""
-        company, _ = manager.create_company(
-            name="Test Corp",
-            email="test@testcorp.com"
-        )
+        company, _ = manager.create_company(name="Test Corp", email="test@testcorp.com")
         return company
 
     def test_create_sandbox(self, manager, company):
         """Test creating a sandbox environment."""
         sandbox = manager.create_sandbox(
-            name="Test Sandbox",
-            owner_id=company.id,
-            description="A test sandbox environment"
+            name="Test Sandbox", owner_id=company.id, description="A test sandbox environment"
         )
 
         assert sandbox is not None
@@ -152,7 +148,7 @@ class TestSandboxEnvironments:
             name="Fraud Test Sandbox",
             owner_id=company.id,
             template_id="tpl_fraud_basic",
-            industry="fraud"
+            industry="fraud",
         )
 
         assert sandbox is not None
@@ -161,10 +157,7 @@ class TestSandboxEnvironments:
 
     def test_get_sandbox(self, manager, company):
         """Test retrieving a sandbox by ID."""
-        created = manager.create_sandbox(
-            name="Get Test Sandbox",
-            owner_id=company.id
-        )
+        created = manager.create_sandbox(name="Get Test Sandbox", owner_id=company.id)
 
         sandbox = manager.get_sandbox(created["id"])
 
@@ -186,10 +179,7 @@ class TestSandboxEnvironments:
         """Test filtering sandboxes by status."""
         manager.create_sandbox(name="Active Sandbox", owner_id=company.id)
 
-        active_sandboxes = manager.list_sandboxes(
-            owner_id=company.id,
-            status="active"
-        )
+        active_sandboxes = manager.list_sandboxes(owner_id=company.id, status="active")
 
         assert len(active_sandboxes) >= 1
         for sandbox in active_sandboxes:
@@ -197,10 +187,7 @@ class TestSandboxEnvironments:
 
     def test_delete_sandbox(self, manager, company):
         """Test deleting a sandbox."""
-        sandbox = manager.create_sandbox(
-            name="To Delete",
-            owner_id=company.id
-        )
+        sandbox = manager.create_sandbox(name="To Delete", owner_id=company.id)
 
         result = manager.delete_sandbox(sandbox["id"], company.id)
         assert result is True
@@ -211,9 +198,7 @@ class TestSandboxEnvironments:
     def test_sandbox_expires_at(self, manager, company):
         """Test that sandbox has expiration date."""
         sandbox = manager.create_sandbox(
-            name="Expiring Sandbox",
-            owner_id=company.id,
-            expires_days=7
+            name="Expiring Sandbox", owner_id=company.id, expires_days=7
         )
 
         assert sandbox["expires_at"] is not None
@@ -233,14 +218,8 @@ class TestSyntheticDatasets:
     @pytest.fixture
     def sandbox(self, manager):
         """Create a test sandbox."""
-        company, _ = manager.create_company(
-            name="Dataset Test Corp",
-            email="dataset@testcorp.com"
-        )
-        sandbox = manager.create_sandbox(
-            name="Dataset Test Sandbox",
-            owner_id=company.id
-        )
+        company, _ = manager.create_company(name="Dataset Test Corp", email="dataset@testcorp.com")
+        sandbox = manager.create_sandbox(name="Dataset Test Sandbox", owner_id=company.id)
         sandbox["company"] = company
         return sandbox
 
@@ -251,7 +230,7 @@ class TestSyntheticDatasets:
             name="Test Transactions",
             dataset_type="transactions",
             record_count=500,
-            created_by=sandbox["company"].id
+            created_by=sandbox["company"].id,
         )
 
         assert dataset is not None
@@ -269,7 +248,7 @@ class TestSyntheticDatasets:
             name="Test Applications",
             dataset_type="applications",
             record_count=300,
-            created_by=sandbox["company"].id
+            created_by=sandbox["company"].id,
         )
 
         assert dataset is not None
@@ -283,7 +262,7 @@ class TestSyntheticDatasets:
             name="Test Customers",
             dataset_type="customers",
             record_count=200,
-            created_by=sandbox["company"].id
+            created_by=sandbox["company"].id,
         )
 
         assert dataset is not None
@@ -296,7 +275,7 @@ class TestSyntheticDatasets:
             name="Test Patients",
             dataset_type="patients",
             record_count=100,
-            created_by=sandbox["company"].id
+            created_by=sandbox["company"].id,
         )
 
         assert dataset is not None
@@ -309,7 +288,7 @@ class TestSyntheticDatasets:
             name="Test Generic",
             dataset_type="generic",
             record_count=150,
-            created_by=sandbox["company"].id
+            created_by=sandbox["company"].id,
         )
 
         assert dataset is not None
@@ -322,7 +301,7 @@ class TestSyntheticDatasets:
             name="Stats Test",
             dataset_type="transactions",
             record_count=500,
-            created_by=sandbox["company"].id
+            created_by=sandbox["company"].id,
         )
 
         assert "statistics" in dataset
@@ -337,7 +316,7 @@ class TestSyntheticDatasets:
             name="Preview Test",
             dataset_type="transactions",
             record_count=500,
-            created_by=sandbox["company"].id
+            created_by=sandbox["company"].id,
         )
 
         assert "data_preview" in dataset
@@ -351,14 +330,14 @@ class TestSyntheticDatasets:
             name="Dataset 1",
             dataset_type="transactions",
             record_count=100,
-            created_by=sandbox["company"].id
+            created_by=sandbox["company"].id,
         )
         manager.generate_synthetic_dataset(
             sandbox_id=sandbox["id"],
             name="Dataset 2",
             dataset_type="customers",
             record_count=100,
-            created_by=sandbox["company"].id
+            created_by=sandbox["company"].id,
         )
 
         datasets = manager.list_datasets(sandbox["id"])
@@ -372,7 +351,7 @@ class TestSyntheticDatasets:
             name="Get Test Dataset",
             dataset_type="transactions",
             record_count=100,
-            created_by=sandbox["company"].id
+            created_by=sandbox["company"].id,
         )
 
         dataset = manager.get_dataset(created["id"])
@@ -388,7 +367,7 @@ class TestSyntheticDatasets:
             name="To Delete",
             dataset_type="generic",
             record_count=100,
-            created_by=sandbox["company"].id
+            created_by=sandbox["company"].id,
         )
 
         result = manager.delete_dataset(dataset["id"], sandbox["company"].id)
@@ -409,26 +388,16 @@ class TestSandboxExperiments:
     @pytest.fixture
     def sandbox_with_dataset(self, manager):
         """Create a sandbox with a dataset."""
-        company, _ = manager.create_company(
-            name="Experiment Test Corp",
-            email="exp@testcorp.com"
-        )
-        sandbox = manager.create_sandbox(
-            name="Experiment Test Sandbox",
-            owner_id=company.id
-        )
+        company, _ = manager.create_company(name="Experiment Test Corp", email="exp@testcorp.com")
+        sandbox = manager.create_sandbox(name="Experiment Test Sandbox", owner_id=company.id)
         dataset = manager.generate_synthetic_dataset(
             sandbox_id=sandbox["id"],
             name="Experiment Dataset",
             dataset_type="transactions",
             record_count=500,
-            created_by=company.id
+            created_by=company.id,
         )
-        return {
-            "company": company,
-            "sandbox": sandbox,
-            "dataset": dataset
-        }
+        return {"company": company, "sandbox": sandbox, "dataset": dataset}
 
     def test_create_experiment(self, manager, sandbox_with_dataset):
         """Test creating an experiment."""
@@ -438,7 +407,7 @@ class TestSandboxExperiments:
             experiment_type="training",
             created_by=sandbox_with_dataset["company"].id,
             model_type="logistic_regression",
-            dataset_id=sandbox_with_dataset["dataset"]["id"]
+            dataset_id=sandbox_with_dataset["dataset"]["id"],
         )
 
         assert experiment is not None
@@ -454,7 +423,7 @@ class TestSandboxExperiments:
             name="Evaluation Test",
             experiment_type="evaluation",
             created_by=sandbox_with_dataset["company"].id,
-            dataset_id=sandbox_with_dataset["dataset"]["id"]
+            dataset_id=sandbox_with_dataset["dataset"]["id"],
         )
 
         assert experiment["experiment_type"] == "evaluation"
@@ -467,7 +436,7 @@ class TestSandboxExperiments:
             experiment_type="clustering",
             created_by=sandbox_with_dataset["company"].id,
             model_type="kmeans",
-            dataset_id=sandbox_with_dataset["dataset"]["id"]
+            dataset_id=sandbox_with_dataset["dataset"]["id"],
         )
 
         assert experiment["experiment_type"] == "clustering"
@@ -478,7 +447,7 @@ class TestSandboxExperiments:
             sandbox_id=sandbox_with_dataset["sandbox"]["id"],
             name="Encryption Benchmark",
             experiment_type="encryption_benchmark",
-            created_by=sandbox_with_dataset["company"].id
+            created_by=sandbox_with_dataset["company"].id,
         )
 
         assert experiment["experiment_type"] == "encryption_benchmark"
@@ -491,7 +460,7 @@ class TestSandboxExperiments:
             experiment_type="training",
             created_by=sandbox_with_dataset["company"].id,
             model_type="linear_regression",
-            dataset_id=sandbox_with_dataset["dataset"]["id"]
+            dataset_id=sandbox_with_dataset["dataset"]["id"],
         )
 
         result = manager.run_experiment(experiment["id"])
@@ -510,7 +479,7 @@ class TestSandboxExperiments:
             experiment_type="training",
             created_by=sandbox_with_dataset["company"].id,
             model_type="random_forest",
-            dataset_id=sandbox_with_dataset["dataset"]["id"]
+            dataset_id=sandbox_with_dataset["dataset"]["id"],
         )
 
         result = manager.run_experiment(experiment["id"])
@@ -526,13 +495,13 @@ class TestSandboxExperiments:
             sandbox_id=sandbox_with_dataset["sandbox"]["id"],
             name="Experiment 1",
             experiment_type="training",
-            created_by=sandbox_with_dataset["company"].id
+            created_by=sandbox_with_dataset["company"].id,
         )
         manager.create_experiment(
             sandbox_id=sandbox_with_dataset["sandbox"]["id"],
             name="Experiment 2",
             experiment_type="evaluation",
-            created_by=sandbox_with_dataset["company"].id
+            created_by=sandbox_with_dataset["company"].id,
         )
 
         experiments = manager.list_experiments(sandbox_with_dataset["sandbox"]["id"])
@@ -545,7 +514,7 @@ class TestSandboxExperiments:
             sandbox_id=sandbox_with_dataset["sandbox"]["id"],
             name="Get Test Experiment",
             experiment_type="training",
-            created_by=sandbox_with_dataset["company"].id
+            created_by=sandbox_with_dataset["company"].id,
         )
 
         experiment = manager.get_experiment(created["id"])
@@ -560,13 +529,10 @@ class TestSandboxExperiments:
             sandbox_id=sandbox_with_dataset["sandbox"]["id"],
             name="To Delete",
             experiment_type="training",
-            created_by=sandbox_with_dataset["company"].id
+            created_by=sandbox_with_dataset["company"].id,
         )
 
-        result = manager.delete_experiment(
-            experiment["id"],
-            sandbox_with_dataset["company"].id
-        )
+        result = manager.delete_experiment(experiment["id"], sandbox_with_dataset["company"].id)
         assert result is True
 
 
@@ -584,14 +550,8 @@ class TestSandboxStatistics:
     @pytest.fixture
     def populated_sandbox(self, manager):
         """Create a sandbox with datasets and experiments."""
-        company, _ = manager.create_company(
-            name="Stats Test Corp",
-            email="stats@testcorp.com"
-        )
-        sandbox = manager.create_sandbox(
-            name="Stats Test Sandbox",
-            owner_id=company.id
-        )
+        company, _ = manager.create_company(name="Stats Test Corp", email="stats@testcorp.com")
+        sandbox = manager.create_sandbox(name="Stats Test Sandbox", owner_id=company.id)
 
         # Create datasets
         dataset = manager.generate_synthetic_dataset(
@@ -599,7 +559,7 @@ class TestSandboxStatistics:
             name="Stats Dataset",
             dataset_type="transactions",
             record_count=500,
-            created_by=company.id
+            created_by=company.id,
         )
 
         # Create experiments
@@ -608,7 +568,7 @@ class TestSandboxStatistics:
             name="Stats Exp 1",
             experiment_type="training",
             created_by=company.id,
-            dataset_id=dataset["id"]
+            dataset_id=dataset["id"],
         )
         manager.run_experiment(exp1["id"])
 
@@ -616,21 +576,15 @@ class TestSandboxStatistics:
             sandbox_id=sandbox["id"],
             name="Stats Exp 2",
             experiment_type="evaluation",
-            created_by=company.id
+            created_by=company.id,
         )
         manager.run_experiment(exp2["id"])
 
-        return {
-            "company": company,
-            "sandbox": sandbox,
-            "dataset": dataset
-        }
+        return {"company": company, "sandbox": sandbox, "dataset": dataset}
 
     def test_get_sandbox_stats(self, manager, populated_sandbox):
         """Test retrieving sandbox statistics."""
-        stats = manager.get_sandbox_stats(
-            owner_id=populated_sandbox["company"].id
-        )
+        stats = manager.get_sandbox_stats(owner_id=populated_sandbox["company"].id)
 
         assert stats is not None
         assert "total_sandboxes" in stats
@@ -641,9 +595,7 @@ class TestSandboxStatistics:
 
     def test_stats_reflect_counts(self, manager, populated_sandbox):
         """Test that stats reflect actual counts."""
-        stats = manager.get_sandbox_stats(
-            owner_id=populated_sandbox["company"].id
-        )
+        stats = manager.get_sandbox_stats(owner_id=populated_sandbox["company"].id)
 
         assert stats["total_sandboxes"] >= 1
         assert stats["total_datasets"] >= 1

@@ -7,15 +7,13 @@ Tests cover:
 - Reward distribution
 """
 
-import sys
-from pathlib import Path
-import pytest
-import tempfile
-from datetime import datetime, timedelta
-from unittest.mock import MagicMock, patch
-
 # Import consortium module
 import importlib.util
+import sys
+import tempfile
+from pathlib import Path
+
+import pytest
 
 project_root = Path(__file__).parent.parent
 sdk_api_path = project_root / "sdk" / "api"
@@ -33,8 +31,7 @@ def load_module_from_path(module_name, file_path):
 # Load consortium module package
 consortium_package_path = sdk_api_path / "consortium"
 consortium_module = load_module_from_path(
-    "sdk.api.consortium",
-    consortium_package_path / "__init__.py"
+    "sdk.api.consortium", consortium_package_path / "__init__.py"
 )
 ConsortiumManager = consortium_module.ConsortiumManager
 ConsortiumStatus = consortium_module.ConsortiumStatus
@@ -67,7 +64,7 @@ class TestContributionProofs:
             name="Test Consortium",
             description="Testing governance",
             owner_id=owner.id,
-            model_type="linear_regression"
+            model_type="linear_regression",
         )
 
         # Add member via invitation
@@ -75,15 +72,11 @@ class TestContributionProofs:
             consortium_id=consortium.id,
             invited_by=owner.id,
             invite_email="member@test.com",
-            role=MemberRole.CONTRIBUTOR
+            role=MemberRole.CONTRIBUTOR,
         )
         manager.accept_invitation(invitation.invite_code, member.id)
 
-        return {
-            "consortium": consortium,
-            "owner": owner,
-            "member": member
-        }
+        return {"consortium": consortium, "owner": owner, "member": member}
 
     def test_record_contribution_proof(self, manager, setup_consortium):
         """Test recording a contribution proof."""
@@ -96,7 +89,7 @@ class TestContributionProofs:
             record_count=1000,
             feature_count=10,
             data_hash="abc123hash",
-            checksum="checksum456"
+            checksum="checksum456",
         )
 
         assert proof_id is not None
@@ -115,7 +108,7 @@ class TestContributionProofs:
             record_count=1000,
             feature_count=10,
             data_hash="owner_hash",
-            checksum="owner_checksum"
+            checksum="owner_checksum",
         )
 
         manager.record_contribution_proof(
@@ -124,7 +117,7 @@ class TestContributionProofs:
             record_count=500,
             feature_count=10,
             data_hash="member_hash",
-            checksum="member_checksum"
+            checksum="member_checksum",
         )
 
         proofs = manager.get_contribution_proofs(consortium.id)
@@ -148,7 +141,7 @@ class TestContributionProofs:
             record_count=1000,
             feature_count=10,
             data_hash="owner_hash",
-            checksum="owner_checksum"
+            checksum="owner_checksum",
         )
 
         # Member contributes 500 records (33.33%)
@@ -158,7 +151,7 @@ class TestContributionProofs:
             record_count=500,
             feature_count=10,
             data_hash="member_hash",
-            checksum="member_checksum"
+            checksum="member_checksum",
         )
 
         summary = manager.get_contribution_summary(consortium.id)
@@ -186,7 +179,7 @@ class TestContributionProofs:
             record_count=1000,
             feature_count=10,
             data_hash="hash",
-            checksum="checksum"
+            checksum="checksum",
         )
 
         summary = manager.get_member_contribution_summary(consortium.id, owner.id)
@@ -227,7 +220,7 @@ class TestVotingSystem:
             name="Voting Test Consortium",
             description="Testing voting",
             owner_id=owner.id,
-            model_type="logistic_regression"
+            model_type="logistic_regression",
         )
 
         # Add members
@@ -236,16 +229,11 @@ class TestVotingSystem:
                 consortium_id=consortium.id,
                 invited_by=owner.id,
                 invite_email=f"{member.id}@test.com",
-                role=MemberRole.CONTRIBUTOR
+                role=MemberRole.CONTRIBUTOR,
             )
             manager.accept_invitation(inv.invite_code, member.id)
 
-        return {
-            "consortium": consortium,
-            "owner": owner,
-            "member1": member1,
-            "member2": member2
-        }
+        return {"consortium": consortium, "owner": owner, "member1": member1, "member2": member2}
 
     def test_create_proposal(self, manager, setup_consortium):
         """Test creating a proposal."""
@@ -258,7 +246,7 @@ class TestVotingSystem:
             proposal_type="start_training",
             title="Start model training",
             description="Let's start training the model with current data",
-            voting_duration=86400
+            voting_duration=86400,
         )
 
         assert proposal_id is not None
@@ -275,7 +263,7 @@ class TestVotingSystem:
             proposal_type="add_member",
             title="Add new member",
             description="Proposal to add new company",
-            data={"new_member_email": "new@company.com"}
+            data={"new_member_email": "new@company.com"},
         )
 
         proposal = manager.get_proposal(proposal_id)
@@ -296,13 +284,13 @@ class TestVotingSystem:
             consortium_id=consortium.id,
             proposer_id=owner.id,
             proposal_type="start_training",
-            title="Proposal 1"
+            title="Proposal 1",
         )
         manager.create_proposal(
             consortium_id=consortium.id,
             proposer_id=owner.id,
             proposal_type="distribute_rewards",
-            title="Proposal 2"
+            title="Proposal 2",
         )
 
         proposals = manager.get_proposals(consortium.id)
@@ -322,7 +310,7 @@ class TestVotingSystem:
             consortium_id=consortium.id,
             proposer_id=owner.id,
             proposal_type="start_training",
-            title="Active Proposal"
+            title="Active Proposal",
         )
 
         active_proposals = manager.get_proposals(consortium.id, status_filter="active")
@@ -340,15 +328,11 @@ class TestVotingSystem:
             consortium_id=consortium.id,
             proposer_id=owner.id,
             proposal_type="start_training",
-            title="Vote Test"
+            title="Vote Test",
         )
 
         vote_id = manager.record_vote(
-            proposal_id=proposal_id,
-            voter_id=member1.id,
-            support=True,
-            weight=10,
-            comment="I agree"
+            proposal_id=proposal_id, voter_id=member1.id, support=True, weight=10, comment="I agree"
         )
 
         assert vote_id is not None
@@ -365,7 +349,7 @@ class TestVotingSystem:
             consortium_id=consortium.id,
             proposer_id=owner.id,
             proposal_type="start_training",
-            title="Count Test"
+            title="Count Test",
         )
 
         # Vote yes with weight 10
@@ -391,7 +375,7 @@ class TestVotingSystem:
             consortium_id=consortium.id,
             proposer_id=owner.id,
             proposal_type="start_training",
-            title="Get Vote Test"
+            title="Get Vote Test",
         )
 
         manager.record_vote(proposal_id, member1.id, support=True, weight=10)
@@ -413,7 +397,7 @@ class TestVotingSystem:
             consortium_id=consortium.id,
             proposer_id=owner.id,
             proposal_type="start_training",
-            title="All Votes Test"
+            title="All Votes Test",
         )
 
         manager.record_vote(proposal_id, member1.id, support=True, weight=10)
@@ -434,7 +418,7 @@ class TestVotingSystem:
             consortium_id=consortium.id,
             proposer_id=owner.id,
             proposal_type="start_training",
-            title="Execution Test"
+            title="Execution Test",
         )
 
         # Majority votes yes
@@ -459,7 +443,7 @@ class TestVotingSystem:
             consortium_id=consortium.id,
             proposer_id=owner.id,
             proposal_type="start_training",
-            title="Rejection Test"
+            title="Rejection Test",
         )
 
         # Majority votes no
@@ -497,13 +481,10 @@ class TestAuditTrail:
             name="Audit Test Consortium",
             description="Testing audit trail",
             owner_id=owner.id,
-            model_type="linear_regression"
+            model_type="linear_regression",
         )
 
-        return {
-            "consortium": consortium,
-            "owner": owner
-        }
+        return {"consortium": consortium, "owner": owner}
 
     def test_record_audit_event(self, manager, setup_consortium):
         """Test recording an audit event."""
@@ -515,7 +496,7 @@ class TestAuditTrail:
             event_type="data_contributed",
             actor_id=owner.id,
             target_id="data_123",
-            data={"record_count": 1000}
+            data={"record_count": 1000},
         )
 
         assert event_id is not None
@@ -527,17 +508,13 @@ class TestAuditTrail:
         owner = setup_consortium["owner"]
 
         # Record first event
-        event1_id = manager.record_audit_event(
-            consortium_id=consortium.id,
-            event_type="consortium_created",
-            actor_id=owner.id
+        manager.record_audit_event(
+            consortium_id=consortium.id, event_type="consortium_created", actor_id=owner.id
         )
 
         # Record second event
-        event2_id = manager.record_audit_event(
-            consortium_id=consortium.id,
-            event_type="member_joined",
-            actor_id=owner.id
+        manager.record_audit_event(
+            consortium_id=consortium.id, event_type="member_joined", actor_id=owner.id
         )
 
         # Get audit trail
@@ -561,9 +538,7 @@ class TestAuditTrail:
         # Record multiple events
         for event_type in ["consortium_created", "member_joined", "data_contributed"]:
             manager.record_audit_event(
-                consortium_id=consortium.id,
-                event_type=event_type,
-                actor_id=owner.id
+                consortium_id=consortium.id, event_type=event_type, actor_id=owner.id
             )
 
         trail = manager.get_audit_trail(consortium.id)
@@ -579,10 +554,7 @@ class TestAuditTrail:
         manager.record_audit_event(consortium.id, "member_joined", owner.id)
         manager.record_audit_event(consortium.id, "data_contributed", owner.id)
 
-        data_events = manager.get_audit_trail(
-            consortium.id,
-            event_type="data_contributed"
-        )
+        data_events = manager.get_audit_trail(consortium.id, event_type="data_contributed")
 
         assert len(data_events) == 2
         assert all(e["event_type"] == "data_contributed" for e in data_events)
@@ -642,10 +614,7 @@ class TestAuditTrail:
             actor_id=owner.id,
             target_id="prop_123",
             target_type="proposal",
-            data={
-                "proposal_type": "add_member",
-                "title": "Add new member"
-            }
+            data={"proposal_type": "add_member", "title": "Add new member"},
         )
 
         trail = manager.get_audit_trail(consortium.id)
@@ -677,7 +646,7 @@ class TestRewardDistribution:
             name="Rewards Test",
             description="Testing rewards",
             owner_id=owner.id,
-            model_type="linear_regression"
+            model_type="linear_regression",
         )
 
         # Add members
@@ -685,30 +654,19 @@ class TestRewardDistribution:
             inv = manager.create_invitation(
                 consortium_id=consortium.id,
                 invited_by=owner.id,
-                invite_email=f"{member.id}@test.com"
+                invite_email=f"{member.id}@test.com",
             )
             manager.accept_invitation(inv.invite_code, member.id)
 
         # Add contributions
         # Owner: 500 records (50%)
-        manager.record_contribution_proof(
-            consortium.id, owner.id, 500, 10, "hash1", "checksum1"
-        )
+        manager.record_contribution_proof(consortium.id, owner.id, 500, 10, "hash1", "checksum1")
         # Member1: 300 records (30%)
-        manager.record_contribution_proof(
-            consortium.id, member1.id, 300, 10, "hash2", "checksum2"
-        )
+        manager.record_contribution_proof(consortium.id, member1.id, 300, 10, "hash2", "checksum2")
         # Member2: 200 records (20%)
-        manager.record_contribution_proof(
-            consortium.id, member2.id, 200, 10, "hash3", "checksum3"
-        )
+        manager.record_contribution_proof(consortium.id, member2.id, 200, 10, "hash3", "checksum3")
 
-        return {
-            "consortium": consortium,
-            "owner": owner,
-            "member1": member1,
-            "member2": member2
-        }
+        return {"consortium": consortium, "owner": owner, "member1": member1, "member2": member2}
 
     def test_calculate_reward_distribution(self, manager, setup_consortium_with_contributions):
         """Test calculating reward distribution based on weights."""
@@ -738,9 +696,7 @@ class TestRewardDistribution:
         distributions = manager.calculate_reward_distribution(consortium.id, 10.0)
 
         dist_id = manager.record_reward_distribution(
-            consortium_id=consortium.id,
-            total_amount=10.0,
-            distributions=distributions
+            consortium_id=consortium.id, total_amount=10.0, distributions=distributions
         )
 
         assert dist_id is not None
@@ -777,7 +733,9 @@ class TestRewardDistribution:
 
             assert len(distributions) == 0
 
-    def test_reward_distribution_stored_correctly(self, manager, setup_consortium_with_contributions):
+    def test_reward_distribution_stored_correctly(
+        self, manager, setup_consortium_with_contributions
+    ):
         """Test that distribution details are stored correctly."""
         consortium = setup_consortium_with_contributions["consortium"]
 
@@ -841,8 +799,7 @@ class TestGovernanceIntegration:
 
         # 4. Create and vote on proposal
         proposal_id = manager.create_proposal(
-            consortium.id, owner.id, "distribute_rewards",
-            "Distribute 100 ETH to members"
+            consortium.id, owner.id, "distribute_rewards", "Distribute 100 ETH to members"
         )
 
         manager.record_vote(proposal_id, owner.id, support=True, weight=60)
@@ -858,8 +815,7 @@ class TestGovernanceIntegration:
 
         # 7. Record final audit event
         manager.record_audit_event(
-            consortium.id, "rewards_distributed", owner.id,
-            data={"amount": 100.0}
+            consortium.id, "rewards_distributed", owner.id, data={"amount": 100.0}
         )
 
         # 8. Verify audit trail exists
@@ -888,26 +844,16 @@ class TestGovernanceIntegration:
         manager.accept_invitation(inv.invite_code, small_contributor.id)
 
         # Owner contributes 900 records (90%)
-        manager.record_contribution_proof(
-            consortium.id, owner.id, 900, 10, "h1", "c1"
-        )
+        manager.record_contribution_proof(consortium.id, owner.id, 900, 10, "h1", "c1")
         # Small contributor: 100 records (10%)
-        manager.record_contribution_proof(
-            consortium.id, small_contributor.id, 100, 10, "h2", "c2"
-        )
+        manager.record_contribution_proof(consortium.id, small_contributor.id, 100, 10, "h2", "c2")
 
         # Get contribution weights
-        owner_summary = manager.get_member_contribution_summary(
-            consortium.id, owner.id
-        )
-        small_summary = manager.get_member_contribution_summary(
-            consortium.id, small_contributor.id
-        )
+        owner_summary = manager.get_member_contribution_summary(consortium.id, owner.id)
+        small_summary = manager.get_member_contribution_summary(consortium.id, small_contributor.id)
 
         # Create proposal
-        proposal_id = manager.create_proposal(
-            consortium.id, owner.id, "test", "Test Proposal"
-        )
+        proposal_id = manager.create_proposal(consortium.id, owner.id, "test", "Test Proposal")
 
         # Vote with contribution-based weights
         owner_weight = int(owner_summary["contribution_weight"])  # ~90

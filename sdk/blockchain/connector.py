@@ -4,10 +4,10 @@ This module provides connection management for EVM-compatible blockchains,
 with primary support for Arbitrum.
 """
 
+import json
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, Optional
-import json
+from typing import Any, Optional
 
 from eth_account import Account
 from eth_account.signers.local import LocalAccount
@@ -48,7 +48,7 @@ class NetworkConfig:
 
 
 # Network configurations
-NETWORK_CONFIGS: Dict[Network, NetworkConfig] = {
+NETWORK_CONFIGS: dict[Network, NetworkConfig] = {
     Network.ARBITRUM_ONE: NetworkConfig(
         name="Arbitrum One",
         chain_id=42161,
@@ -176,8 +176,7 @@ class BlockchainConnector:
             chain_id = self._web3.eth.chain_id
             if chain_id != self._config.chain_id:
                 raise ConnectionError(
-                    f"Chain ID mismatch. Expected {self._config.chain_id}, "
-                    f"got {chain_id}"
+                    f"Chain ID mismatch. Expected {self._config.chain_id}, got {chain_id}"
                 )
 
             self._connected = True
@@ -221,7 +220,7 @@ class BlockchainConnector:
         Returns:
             Account address.
         """
-        with open(keyfile_path, 'r') as f:
+        with open(keyfile_path) as f:
             keyfile = json.load(f)
 
         private_key = Account.decrypt(keyfile, password)
@@ -253,7 +252,7 @@ class BlockchainConnector:
             Balance in ETH.
         """
         wei = self.get_balance(address)
-        return float(Web3.from_wei(wei, 'ether'))
+        return float(Web3.from_wei(wei, "ether"))
 
     def get_nonce(self, address: Optional[str] = None) -> int:
         """Get transaction nonce for address.
@@ -271,7 +270,7 @@ class BlockchainConnector:
 
         return self.web3.eth.get_transaction_count(address)
 
-    def estimate_gas(self, transaction: Dict[str, Any]) -> int:
+    def estimate_gas(self, transaction: dict[str, Any]) -> int:
         """Estimate gas for a transaction.
 
         Args:
@@ -352,7 +351,7 @@ class BlockchainConnector:
         self,
         tx_hash: str,
         timeout: int = 120,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Wait for transaction confirmation.
 
         Args:
@@ -396,13 +395,15 @@ class BlockchainConnector:
         gas_price_with_buffer = int(base_gas_price * 1.2)
 
         # Build deployment transaction
-        tx = contract.constructor(*constructor_args).build_transaction({
-            "from": self._account.address,
-            "nonce": self.get_nonce(),
-            "gas": gas or 3000000,
-            "gasPrice": gas_price_with_buffer,
-            "chainId": self._config.chain_id,
-        })
+        tx = contract.constructor(*constructor_args).build_transaction(
+            {
+                "from": self._account.address,
+                "nonce": self.get_nonce(),
+                "gas": gas or 3000000,
+                "gasPrice": gas_price_with_buffer,
+                "chainId": self._config.chain_id,
+            }
+        )
 
         # Sign and send
         signed = self._account.sign_transaction(tx)

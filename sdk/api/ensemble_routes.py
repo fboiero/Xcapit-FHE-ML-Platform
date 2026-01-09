@@ -4,13 +4,13 @@ This module provides REST API endpoints for creating and using
 ensembles that combine models from multiple consortiums.
 """
 
-from typing import Optional, Dict, List
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
 from .auth import get_current_company
 from .consortium import ConsortiumManager
-
 
 router = APIRouter(prefix="/api/ensemble", tags=["multi-model-ensemble"])
 
@@ -18,13 +18,17 @@ router = APIRouter(prefix="/api/ensemble", tags=["multi-model-ensemble"])
 # Request/Response Models
 class CreateEnsembleRequest(BaseModel):
     """Request to create an ensemble."""
+
     name: str = Field(..., description="Ensemble name")
     description: str = Field(..., description="Description")
-    ensemble_type: str = Field("voting", description="Type: voting, averaging, weighted, stacking, boosting")
+    ensemble_type: str = Field(
+        "voting", description="Type: voting, averaging, weighted, stacking, boosting"
+    )
 
 
 class AddModelRequest(BaseModel):
     """Request to add a model to ensemble."""
+
     model_id: str = Field(..., description="Model ID to add")
     consortium_id: str = Field(..., description="Source consortium")
     model_type: str = Field(..., description="Model type")
@@ -33,7 +37,8 @@ class AddModelRequest(BaseModel):
 
 class PredictRequest(BaseModel):
     """Request for ensemble prediction."""
-    input_data: Dict = Field(..., description="Input features for prediction")
+
+    input_data: dict = Field(..., description="Input features for prediction")
 
 
 # Helper
@@ -66,7 +71,7 @@ async def create_ensemble(
     if request.ensemble_type not in valid_types:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Ensemble type must be one of: {valid_types}"
+            detail=f"Ensemble type must be one of: {valid_types}",
         )
 
     try:
@@ -74,14 +79,11 @@ async def create_ensemble(
             name=request.name,
             description=request.description,
             owner_id=company["id"],
-            ensemble_type=request.ensemble_type
+            ensemble_type=request.ensemble_type,
         )
         return result
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.post("/{ensemble_id}/models")
@@ -103,14 +105,11 @@ async def add_model_to_ensemble(
             model_id=request.model_id,
             consortium_id=request.consortium_id,
             model_type=request.model_type,
-            weight=request.weight
+            weight=request.weight,
         )
         return result
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
 @router.get("/{ensemble_id}")
@@ -123,10 +122,7 @@ async def get_ensemble(
     result = manager.get_ensemble(ensemble_id)
 
     if not result:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Ensemble not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ensemble not found")
 
     return result
 
@@ -139,16 +135,9 @@ async def list_ensembles(
     manager: ConsortiumManager = Depends(get_manager),
 ):
     """List available ensembles."""
-    ensembles = manager.list_ensembles(
-        owner_id=company["id"],
-        status=status_filter,
-        limit=limit
-    )
+    ensembles = manager.list_ensembles(owner_id=company["id"], status=status_filter, limit=limit)
 
-    return {
-        "count": len(ensembles),
-        "ensembles": ensembles
-    }
+    return {"count": len(ensembles), "ensembles": ensembles}
 
 
 @router.post("/{ensemble_id}/activate")
@@ -162,16 +151,10 @@ async def activate_ensemble(
     Requires at least 2 models in the ensemble.
     """
     try:
-        result = manager.activate_ensemble(
-            ensemble_id=ensemble_id,
-            requester_id=company["id"]
-        )
+        result = manager.activate_ensemble(ensemble_id=ensemble_id, requester_id=company["id"])
         return result
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.post("/{ensemble_id}/predict")
@@ -191,16 +174,11 @@ async def predict_with_ensemble(
     """
     try:
         result = manager.predict_with_ensemble(
-            ensemble_id=ensemble_id,
-            requester_id=company["id"],
-            input_data=request.input_data
+            ensemble_id=ensemble_id, requester_id=company["id"], input_data=request.input_data
         )
         return result
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.get("/{ensemble_id}/performance")
@@ -237,33 +215,28 @@ async def remove_model_from_ensemble(
             cursor = conn.cursor()
 
             # Verify ownership
-            cursor.execute(
-                "SELECT owner_id FROM model_ensembles WHERE id = ?",
-                (ensemble_id,)
-            )
+            cursor.execute("SELECT owner_id FROM model_ensembles WHERE id = ?", (ensemble_id,))
             row = cursor.fetchone()
 
             if not row:
                 raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Ensemble not found"
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Ensemble not found"
                 )
 
             if row["owner_id"] != company["id"]:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Only ensemble owner can remove models"
+                    detail="Only ensemble owner can remove models",
                 )
 
             cursor.execute(
                 "DELETE FROM ensemble_models WHERE id = ? AND ensemble_id = ?",
-                (model_entry_id, ensemble_id)
+                (model_entry_id, ensemble_id),
             )
 
             if cursor.rowcount == 0:
                 raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Model entry not found"
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Model entry not found"
                 )
 
             conn.commit()
@@ -272,7 +245,4 @@ async def remove_model_from_ensemble(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))

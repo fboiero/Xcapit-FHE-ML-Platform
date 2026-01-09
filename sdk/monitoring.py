@@ -6,17 +6,17 @@ Provides structured logging, metrics collection, and performance monitoring.
 import json
 import logging
 import sys
+import threading
 import time
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime
 from functools import wraps
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, TypeVar
-import threading
-
+from typing import Any, Callable, Optional, TypeVar
 
 # ========== Structured Logger ==========
+
 
 class StructuredFormatter(logging.Formatter):
     """JSON-based structured log formatter."""
@@ -36,13 +36,32 @@ class StructuredFormatter(logging.Formatter):
 
         # Add extra fields
         extra_fields = {
-            k: v for k, v in record.__dict__.items()
-            if k not in {
-                "name", "msg", "args", "created", "filename", "funcName",
-                "levelname", "levelno", "lineno", "module", "msecs",
-                "pathname", "process", "processName", "relativeCreated",
-                "stack_info", "exc_info", "exc_text", "thread", "threadName",
-                "message", "asctime"
+            k: v
+            for k, v in record.__dict__.items()
+            if k
+            not in {
+                "name",
+                "msg",
+                "args",
+                "created",
+                "filename",
+                "funcName",
+                "levelname",
+                "levelno",
+                "lineno",
+                "module",
+                "msecs",
+                "pathname",
+                "process",
+                "processName",
+                "relativeCreated",
+                "stack_info",
+                "exc_info",
+                "exc_text",
+                "thread",
+                "threadName",
+                "message",
+                "asctime",
             }
         }
         if extra_fields:
@@ -55,11 +74,11 @@ class ConsoleFormatter(logging.Formatter):
     """Human-readable console log formatter with colors."""
 
     COLORS = {
-        "DEBUG": "\033[36m",    # Cyan
-        "INFO": "\033[32m",     # Green
+        "DEBUG": "\033[36m",  # Cyan
+        "INFO": "\033[32m",  # Green
         "WARNING": "\033[33m",  # Yellow
-        "ERROR": "\033[31m",    # Red
-        "CRITICAL": "\033[35m", # Magenta
+        "ERROR": "\033[31m",  # Red
+        "CRITICAL": "\033[35m",  # Magenta
     }
     RESET = "\033[0m"
 
@@ -73,13 +92,32 @@ class ConsoleFormatter(logging.Formatter):
 
         # Add extra context
         extra_fields = {
-            k: v for k, v in record.__dict__.items()
-            if k not in {
-                "name", "msg", "args", "created", "filename", "funcName",
-                "levelname", "levelno", "lineno", "module", "msecs",
-                "pathname", "process", "processName", "relativeCreated",
-                "stack_info", "exc_info", "exc_text", "thread", "threadName",
-                "message", "asctime"
+            k: v
+            for k, v in record.__dict__.items()
+            if k
+            not in {
+                "name",
+                "msg",
+                "args",
+                "created",
+                "filename",
+                "funcName",
+                "levelname",
+                "levelno",
+                "lineno",
+                "module",
+                "msecs",
+                "pathname",
+                "process",
+                "processName",
+                "relativeCreated",
+                "stack_info",
+                "exc_info",
+                "exc_text",
+                "thread",
+                "threadName",
+                "message",
+                "asctime",
             }
         }
         if extra_fields:
@@ -144,13 +182,15 @@ def get_logger(name: str = "fheml") -> logging.Logger:
 
 # ========== Metrics Collection ==========
 
+
 @dataclass
 class MetricPoint:
     """A single metric data point."""
+
     name: str
     value: float
     timestamp: datetime = field(default_factory=datetime.utcnow)
-    tags: Dict[str, str] = field(default_factory=dict)
+    tags: dict[str, str] = field(default_factory=dict)
 
 
 class MetricsCollector:
@@ -160,13 +200,15 @@ class MetricsCollector:
     """
 
     def __init__(self):
-        self._counters: Dict[str, float] = {}
-        self._gauges: Dict[str, float] = {}
-        self._histograms: Dict[str, List[float]] = {}
+        self._counters: dict[str, float] = {}
+        self._gauges: dict[str, float] = {}
+        self._histograms: dict[str, list[float]] = {}
         self._lock = threading.Lock()
         self._start_time = time.time()
 
-    def increment(self, name: str, value: float = 1.0, tags: Optional[Dict[str, str]] = None) -> None:
+    def increment(
+        self, name: str, value: float = 1.0, tags: Optional[dict[str, str]] = None
+    ) -> None:
         """Increment a counter.
 
         Args:
@@ -178,7 +220,7 @@ class MetricsCollector:
         with self._lock:
             self._counters[key] = self._counters.get(key, 0) + value
 
-    def gauge(self, name: str, value: float, tags: Optional[Dict[str, str]] = None) -> None:
+    def gauge(self, name: str, value: float, tags: Optional[dict[str, str]] = None) -> None:
         """Set a gauge value.
 
         Args:
@@ -190,7 +232,7 @@ class MetricsCollector:
         with self._lock:
             self._gauges[key] = value
 
-    def histogram(self, name: str, value: float, tags: Optional[Dict[str, str]] = None) -> None:
+    def histogram(self, name: str, value: float, tags: Optional[dict[str, str]] = None) -> None:
         """Record a histogram value.
 
         Args:
@@ -205,7 +247,7 @@ class MetricsCollector:
             self._histograms[key].append(value)
 
     @contextmanager
-    def timer(self, name: str, tags: Optional[Dict[str, str]] = None):
+    def timer(self, name: str, tags: Optional[dict[str, str]] = None):
         """Context manager to time operations.
 
         Args:
@@ -223,26 +265,28 @@ class MetricsCollector:
             elapsed_ms = (time.perf_counter() - start) * 1000
             self.histogram(name, elapsed_ms, tags)
 
-    def _make_key(self, name: str, tags: Optional[Dict[str, str]] = None) -> str:
+    def _make_key(self, name: str, tags: Optional[dict[str, str]] = None) -> str:
         """Create a unique key from name and tags."""
         if not tags:
             return name
         tag_str = ",".join(f"{k}={v}" for k, v in sorted(tags.items()))
         return f"{name}[{tag_str}]"
 
-    def get_counter(self, name: str, tags: Optional[Dict[str, str]] = None) -> float:
+    def get_counter(self, name: str, tags: Optional[dict[str, str]] = None) -> float:
         """Get current counter value."""
         key = self._make_key(name, tags)
         with self._lock:
             return self._counters.get(key, 0)
 
-    def get_gauge(self, name: str, tags: Optional[Dict[str, str]] = None) -> float:
+    def get_gauge(self, name: str, tags: Optional[dict[str, str]] = None) -> float:
         """Get current gauge value."""
         key = self._make_key(name, tags)
         with self._lock:
             return self._gauges.get(key, 0)
 
-    def get_histogram_stats(self, name: str, tags: Optional[Dict[str, str]] = None) -> Dict[str, float]:
+    def get_histogram_stats(
+        self, name: str, tags: Optional[dict[str, str]] = None
+    ) -> dict[str, float]:
         """Get histogram statistics.
 
         Returns:
@@ -269,7 +313,7 @@ class MetricsCollector:
             "p99": values_sorted[int(count * 0.99)] if count >= 100 else values_sorted[-1],
         }
 
-    def get_all_metrics(self) -> Dict[str, Any]:
+    def get_all_metrics(self) -> dict[str, Any]:
         """Get all metrics as a dict.
 
         Returns:
@@ -280,17 +324,14 @@ class MetricsCollector:
                 "uptime_seconds": time.time() - self._start_time,
                 "counters": dict(self._counters),
                 "gauges": dict(self._gauges),
-                "histograms": {
-                    k: self._get_stats(v)
-                    for k, v in self._histograms.items()
-                },
+                "histograms": {k: self._get_stats(v) for k, v in self._histograms.items()},
             }
 
-    def _get_stats(self, values: List[float]) -> Dict[str, float]:
+    def _get_stats(self, values: list[float]) -> dict[str, float]:
         """Calculate statistics for a list of values."""
         if not values:
             return {"count": 0}
-        values_sorted = sorted(values)
+        sorted(values)
         count = len(values)
         return {
             "count": count,
@@ -336,16 +377,21 @@ def log_call(logger: Optional[logging.Logger] = None, level: str = "DEBUG") -> C
     Returns:
         Decorated function.
     """
+
     def decorator(func: F) -> F:
         log = logger or get_logger()
 
         @wraps(func)
         def wrapper(*args, **kwargs):
             log_level = getattr(logging, level.upper())
-            log.log(log_level, f"Calling {func.__name__}", extra={
-                "args_count": len(args),
-                "kwargs": list(kwargs.keys()),
-            })
+            log.log(
+                log_level,
+                f"Calling {func.__name__}",
+                extra={
+                    "args_count": len(args),
+                    "kwargs": list(kwargs.keys()),
+                },
+            )
             try:
                 result = func(*args, **kwargs)
                 log.log(log_level, f"Completed {func.__name__}")
@@ -355,10 +401,13 @@ def log_call(logger: Optional[logging.Logger] = None, level: str = "DEBUG") -> C
                 raise
 
         return wrapper  # type: ignore
+
     return decorator
 
 
-def timed(metric_name: Optional[str] = None, tags: Optional[Dict[str, str]] = None) -> Callable[[F], F]:
+def timed(
+    metric_name: Optional[str] = None, tags: Optional[dict[str, str]] = None
+) -> Callable[[F], F]:
     """Decorator to time function execution.
 
     Args:
@@ -368,6 +417,7 @@ def timed(metric_name: Optional[str] = None, tags: Optional[Dict[str, str]] = No
     Returns:
         Decorated function.
     """
+
     def decorator(func: F) -> F:
         name = metric_name or f"{func.__module__}.{func.__name__}"
 
@@ -377,10 +427,13 @@ def timed(metric_name: Optional[str] = None, tags: Optional[Dict[str, str]] = No
                 return func(*args, **kwargs)
 
         return wrapper  # type: ignore
+
     return decorator
 
 
-def count_calls(metric_name: Optional[str] = None, tags: Optional[Dict[str, str]] = None) -> Callable[[F], F]:
+def count_calls(
+    metric_name: Optional[str] = None, tags: Optional[dict[str, str]] = None
+) -> Callable[[F], F]:
     """Decorator to count function calls.
 
     Args:
@@ -390,6 +443,7 @@ def count_calls(metric_name: Optional[str] = None, tags: Optional[Dict[str, str]
     Returns:
         Decorated function.
     """
+
     def decorator(func: F) -> F:
         name = metric_name or f"{func.__module__}.{func.__name__}_calls"
 
@@ -399,17 +453,20 @@ def count_calls(metric_name: Optional[str] = None, tags: Optional[Dict[str, str]
             return func(*args, **kwargs)
 
         return wrapper  # type: ignore
+
     return decorator
 
 
 # ========== Health Check ==========
 
+
 @dataclass
 class HealthStatus:
     """System health status."""
+
     status: str  # healthy, degraded, unhealthy
-    checks: Dict[str, bool]
-    metrics: Dict[str, Any]
+    checks: dict[str, bool]
+    metrics: dict[str, Any]
     uptime_seconds: float
 
 
@@ -443,6 +500,7 @@ def get_health_status() -> HealthStatus:
 
 
 # ========== Standard Metrics Names ==========
+
 
 class Metrics:
     """Standard metric names for the platform."""

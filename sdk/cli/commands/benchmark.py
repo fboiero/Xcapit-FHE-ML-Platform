@@ -7,7 +7,7 @@ import numpy as np
 
 def cmd_benchmark(args) -> int:
     """Run FHE benchmark tests."""
-    from ...encryption import FHEContextManager, CKKSEncryptor, CKKSParameters
+    from ...encryption import CKKSEncryptor, CKKSParameters, FHEContextManager
 
     print("Running FHE Benchmarks...")
     print("=" * 50)
@@ -45,7 +45,7 @@ def cmd_benchmark(args) -> int:
     encrypted2 = encryptor.encrypt_vector(test_vector)
     start = time.perf_counter()
     for _ in range(args.iterations):
-        result = encrypted + encrypted2
+        encrypted + encrypted2
     add_time = (time.perf_counter() - start) * 1000 / args.iterations
     print(f"   Time: {add_time:.2f} ms (avg of {args.iterations})")
 
@@ -53,7 +53,7 @@ def cmd_benchmark(args) -> int:
     print("\n5. Encrypted Multiplication")
     start = time.perf_counter()
     for _ in range(args.iterations):
-        result = encrypted * encrypted2
+        encrypted * encrypted2
     mul_time = (time.perf_counter() - start) * 1000 / args.iterations
     print(f"   Time: {mul_time:.2f} ms (avg of {args.iterations})")
 
@@ -61,7 +61,7 @@ def cmd_benchmark(args) -> int:
     print("\n6. Precision Check")
     original = np.array(test_vector)
     decrypted = np.array(encryptor.decrypt_vector(encrypted))
-    error = np.max(np.abs(original - decrypted[:len(original)]))
+    error = np.max(np.abs(original - decrypted[: len(original)]))
     print(f"   Max error: {error:.2e}")
 
     # Summary

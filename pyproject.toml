@@ -123,8 +123,21 @@ exclude = '''
 '''
 
 [tool.ruff]
-line-length = 88
+line-length = 100
 target-version = "py39"
+exclude = [
+    ".git",
+    ".venv",
+    ".docgen_venv",
+    "__pycache__",
+    "build",
+    "dist",
+    "*.egg-info",
+    "node_modules",
+    "dashboard",
+]
+
+[tool.ruff.lint]
 select = [
     "E",   # pycodestyle errors
     "W",   # pycodestyle warnings
@@ -135,12 +148,22 @@ select = [
     "UP",  # pyupgrade
 ]
 ignore = [
-    "E501",  # line too long (handled by black)
+    "E501",  # line too long
     "B008",  # do not perform function calls in argument defaults
+    "B030",  # dynamic except handlers
+    "B904",  # raise from in except (too noisy)
+    "B905",  # zip without strict parameter
+    "UP006", # Use builtin types for annotations (requires Python 3.9+ but breaks IDE hints)
+    "UP007", # Use X | Y for type annotations (requires Python 3.10+)
+    "UP035", # deprecated typing imports (we support Python 3.9)
 ]
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 known-first-party = ["sdk"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["B011", "B017", "E402"]  # Allow assert, pytest.raises, late imports
+"sdk/api/server.py" = ["E402"]  # Dynamic imports after setup
 
 [tool.mypy]
 python_version = "3.9"

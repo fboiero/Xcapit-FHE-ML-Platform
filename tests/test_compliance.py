@@ -9,12 +9,12 @@ Tests cover:
 - Compliance dashboard
 """
 
-import sys
-from pathlib import Path
-import pytest
-import tempfile
-from datetime import datetime, timedelta
 import importlib.util
+import sys
+import tempfile
+from pathlib import Path
+
+import pytest
 
 project_root = Path(__file__).parent.parent
 sdk_api_path = project_root / "sdk" / "api"
@@ -32,8 +32,7 @@ def load_module_from_path(module_name, file_path):
 # Load consortium module package
 consortium_package_path = sdk_api_path / "consortium"
 consortium_module = load_module_from_path(
-    "sdk.api.consortium",
-    consortium_package_path / "__init__.py"
+    "sdk.api.consortium", consortium_package_path / "__init__.py"
 )
 ConsortiumManager = consortium_module.ConsortiumManager
 ConsortiumStatus = consortium_module.ConsortiumStatus
@@ -66,7 +65,7 @@ class TestComplianceFrameworks:
             name="Test Consortium",
             description="Testing compliance",
             owner_id=owner.id,
-            model_type="linear_regression"
+            model_type="linear_regression",
         )
 
         # Add member via invitation
@@ -74,15 +73,11 @@ class TestComplianceFrameworks:
             consortium_id=consortium.id,
             invited_by=owner.id,
             invite_email="member@test.com",
-            role=MemberRole.CONTRIBUTOR
+            role=MemberRole.CONTRIBUTOR,
         )
         manager.accept_invitation(invitation.invite_code, member.id)
 
-        return {
-            "consortium": consortium,
-            "owner": owner,
-            "member": member
-        }
+        return {"consortium": consortium, "owner": owner, "member": member}
 
     def test_get_compliance_frameworks(self, manager):
         """Test getting all compliance frameworks."""
@@ -113,10 +108,7 @@ class TestComplianceFrameworks:
         """Test enabling a compliance framework for a consortium."""
         consortium = setup_consortium["consortium"]
 
-        result = manager.enable_compliance_framework(
-            consortium.id,
-            "framework_gdpr"
-        )
+        result = manager.enable_compliance_framework(consortium.id, "framework_gdpr")
 
         assert result["consortium_id"] == consortium.id
         assert "framework_gdpr" in result["enabled_frameworks"]
@@ -163,7 +155,7 @@ class TestComplianceSettings:
             name="Test Consortium",
             description="Testing compliance settings",
             owner_id=owner.id,
-            model_type="linear_regression"
+            model_type="linear_regression",
         )
         return {"consortium": consortium, "owner": owner}
 
@@ -207,7 +199,7 @@ class TestComplianceChecks:
             name="Test Consortium",
             description="Testing compliance checks",
             owner_id=owner.id,
-            model_type="linear_regression"
+            model_type="linear_regression",
         )
         manager.enable_compliance_framework(consortium.id, "framework_gdpr")
         return {"consortium": consortium, "owner": owner}
@@ -225,7 +217,7 @@ class TestComplianceChecks:
             result="Data encryption verified",
             evidence={"encryption_type": "AES-256", "verified": True},
             checked_by=owner.id,
-            notes="Automated verification"
+            notes="Automated verification",
         )
 
         assert check_id is not None
@@ -243,7 +235,7 @@ class TestComplianceChecks:
             control_id="gdpr_encryption",
             status="passed",
             result="Encryption OK",
-            checked_by=owner.id
+            checked_by=owner.id,
         )
         manager.record_compliance_check(
             consortium_id=consortium.id,
@@ -251,7 +243,7 @@ class TestComplianceChecks:
             control_id="gdpr_access_control",
             status="failed",
             result="Access control needs improvement",
-            checked_by=owner.id
+            checked_by=owner.id,
         )
 
         checks = manager.get_compliance_checks(consortium.id)
@@ -273,7 +265,7 @@ class TestComplianceChecks:
             control_id="gdpr_encryption",
             status="passed",
             result="OK",
-            checked_by=owner.id
+            checked_by=owner.id,
         )
         manager.record_compliance_check(
             consortium_id=consortium.id,
@@ -281,7 +273,7 @@ class TestComplianceChecks:
             control_id="hipaa_phi_protection",
             status="pending",
             result="Pending review",
-            checked_by=owner.id
+            checked_by=owner.id,
         )
 
         # Get only GDPR checks
@@ -300,7 +292,7 @@ class TestComplianceChecks:
             control_id="gdpr_check_1",
             status="passed",
             result="OK",
-            checked_by=owner.id
+            checked_by=owner.id,
         )
         manager.record_compliance_check(
             consortium_id=consortium.id,
@@ -308,7 +300,7 @@ class TestComplianceChecks:
             control_id="gdpr_check_2",
             status="failed",
             result="Failed",
-            checked_by=owner.id
+            checked_by=owner.id,
         )
 
         passed_checks = manager.get_compliance_checks(consortium.id, status="passed")
@@ -335,7 +327,7 @@ class TestComplianceReports:
             name="Test Consortium",
             description="Testing reports",
             owner_id=owner.id,
-            model_type="linear_regression"
+            model_type="linear_regression",
         )
         manager.enable_compliance_framework(consortium.id, "framework_gdpr")
 
@@ -346,7 +338,7 @@ class TestComplianceReports:
             control_id="gdpr_check_1",
             status="passed",
             result="OK",
-            checked_by=owner.id
+            checked_by=owner.id,
         )
         manager.record_compliance_check(
             consortium_id=consortium.id,
@@ -354,7 +346,7 @@ class TestComplianceReports:
             control_id="gdpr_check_2",
             status="passed",
             result="OK",
-            checked_by=owner.id
+            checked_by=owner.id,
         )
         manager.record_compliance_check(
             consortium_id=consortium.id,
@@ -362,7 +354,7 @@ class TestComplianceReports:
             control_id="gdpr_check_3",
             status="failed",
             result="Needs attention",
-            checked_by=owner.id
+            checked_by=owner.id,
         )
 
         return {"consortium": consortium, "owner": owner}
@@ -393,7 +385,7 @@ class TestComplianceReports:
                 name="Perfect Consortium",
                 description="All checks pass",
                 owner_id=owner.id,
-                model_type="linear_regression"
+                model_type="linear_regression",
             )
             mgr.enable_compliance_framework(consortium.id, "framework_gdpr")
 
@@ -405,7 +397,7 @@ class TestComplianceReports:
                     control_id=f"gdpr_check_{i}",
                     status="passed",
                     result="OK",
-                    checked_by=owner.id
+                    checked_by=owner.id,
                 )
 
             report = mgr.generate_compliance_report(consortium.id, "framework_gdpr")
@@ -445,7 +437,7 @@ class TestAttestations:
             name="Test Consortium",
             description="Testing attestations",
             owner_id=owner.id,
-            model_type="linear_regression"
+            model_type="linear_regression",
         )
         manager.enable_compliance_framework(consortium.id, "framework_gdpr")
         return {"consortium": consortium, "owner": owner}
@@ -463,7 +455,7 @@ class TestAttestations:
             attester_role="CTO",
             attestation_type="security",
             evidence_urls=["https://docs.example.com/security-policy"],
-            valid_days=365
+            valid_days=365,
         )
 
         assert attestation_id is not None
@@ -478,13 +470,13 @@ class TestAttestations:
             consortium_id=consortium.id,
             framework_id="framework_gdpr",
             attested_by=owner.id,
-            statement="Attestation 1"
+            statement="Attestation 1",
         )
         manager.create_attestation(
             consortium_id=consortium.id,
             framework_id="framework_gdpr",
             attested_by=owner.id,
-            statement="Attestation 2"
+            statement="Attestation 2",
         )
 
         attestations = manager.get_attestations(consortium.id)
@@ -502,18 +494,16 @@ class TestAttestations:
             consortium_id=consortium.id,
             framework_id="framework_gdpr",
             attested_by=owner.id,
-            statement="GDPR attestation"
+            statement="GDPR attestation",
         )
         manager.create_attestation(
             consortium_id=consortium.id,
             framework_id="framework_hipaa",
             attested_by=owner.id,
-            statement="HIPAA attestation"
+            statement="HIPAA attestation",
         )
 
-        gdpr_attestations = manager.get_attestations(
-            consortium.id, framework_id="framework_gdpr"
-        )
+        gdpr_attestations = manager.get_attestations(consortium.id, framework_id="framework_gdpr")
 
         assert len(gdpr_attestations) == 1
         assert gdpr_attestations[0]["statement"] == "GDPR attestation"
@@ -538,7 +528,7 @@ class TestDataProcessingRecords:
             name="Test Consortium",
             description="Testing DPR",
             owner_id=owner.id,
-            model_type="linear_regression"
+            model_type="linear_regression",
         )
         return {"consortium": consortium, "owner": owner}
 
@@ -557,7 +547,7 @@ class TestDataProcessingRecords:
             recipients=["Consortium members"],
             retention_period="2 years",
             security_measures=["Encryption", "Access control", "FHE"],
-            cross_border_transfer=False
+            cross_border_transfer=False,
         )
 
         assert record_id is not None
@@ -568,14 +558,14 @@ class TestDataProcessingRecords:
         consortium = setup_consortium["consortium"]
         owner = setup_consortium["owner"]
 
-        record_id = manager.record_data_processing(
+        manager.record_data_processing(
             consortium_id=consortium.id,
             company_id=owner.id,
             processing_purpose="International fraud analysis",
             data_categories=["transaction_data"],
             legal_basis="Contractual necessity",
             cross_border_transfer=True,
-            transfer_safeguards="Standard Contractual Clauses"
+            transfer_safeguards="Standard Contractual Clauses",
         )
 
         records = manager.get_data_processing_records(consortium.id)
@@ -593,14 +583,14 @@ class TestDataProcessingRecords:
             company_id=owner.id,
             processing_purpose="Purpose 1",
             data_categories=["category1"],
-            legal_basis="Legal basis 1"
+            legal_basis="Legal basis 1",
         )
         manager.record_data_processing(
             consortium_id=consortium.id,
             company_id=owner.id,
             processing_purpose="Purpose 2",
             data_categories=["category2", "category3"],
-            legal_basis="Legal basis 2"
+            legal_basis="Legal basis 2",
         )
 
         records = manager.get_data_processing_records(consortium.id)
@@ -615,9 +605,7 @@ class TestDataProcessingRecords:
         # Create another company
         other, _ = manager.create_company("Other Corp", "other@test.com")
         invitation = manager.create_invitation(
-            consortium_id=consortium.id,
-            invited_by=owner.id,
-            invite_email="other@test.com"
+            consortium_id=consortium.id, invited_by=owner.id, invite_email="other@test.com"
         )
         manager.accept_invitation(invitation.invite_code, other.id)
 
@@ -627,7 +615,7 @@ class TestDataProcessingRecords:
             company_id=owner.id,
             processing_purpose="Owner processing",
             data_categories=["cat1"],
-            legal_basis="Basis 1"
+            legal_basis="Basis 1",
         )
         # Record for other
         manager.record_data_processing(
@@ -635,12 +623,10 @@ class TestDataProcessingRecords:
             company_id=other.id,
             processing_purpose="Other processing",
             data_categories=["cat2"],
-            legal_basis="Basis 2"
+            legal_basis="Basis 2",
         )
 
-        owner_records = manager.get_data_processing_records(
-            consortium.id, company_id=owner.id
-        )
+        owner_records = manager.get_data_processing_records(consortium.id, company_id=owner.id)
 
         assert len(owner_records) == 1
         assert owner_records[0]["processing_purpose"] == "Owner processing"
@@ -665,7 +651,7 @@ class TestComplianceDashboard:
             name="Test Consortium",
             description="Testing dashboard",
             owner_id=owner.id,
-            model_type="linear_regression"
+            model_type="linear_regression",
         )
 
         # Enable frameworks
@@ -679,7 +665,7 @@ class TestComplianceDashboard:
             control_id="gdpr_1",
             status="passed",
             result="OK",
-            checked_by=owner.id
+            checked_by=owner.id,
         )
         manager.record_compliance_check(
             consortium_id=consortium.id,
@@ -687,7 +673,7 @@ class TestComplianceDashboard:
             control_id="gdpr_2",
             status="passed",
             result="OK",
-            checked_by=owner.id
+            checked_by=owner.id,
         )
         manager.record_compliance_check(
             consortium_id=consortium.id,
@@ -695,7 +681,7 @@ class TestComplianceDashboard:
             control_id="gdpr_3",
             status="failed",
             result="Failed",
-            checked_by=owner.id
+            checked_by=owner.id,
         )
 
         # SOC2 checks: all passed
@@ -705,7 +691,7 @@ class TestComplianceDashboard:
             control_id="soc2_1",
             status="passed",
             result="OK",
-            checked_by=owner.id
+            checked_by=owner.id,
         )
         manager.record_compliance_check(
             consortium_id=consortium.id,
@@ -713,7 +699,7 @@ class TestComplianceDashboard:
             control_id="soc2_2",
             status="passed",
             result="OK",
-            checked_by=owner.id
+            checked_by=owner.id,
         )
 
         return {"consortium": consortium, "owner": owner}
@@ -772,7 +758,7 @@ class TestComplianceDashboard:
                 name="Empty Consortium",
                 description="No compliance",
                 owner_id=owner.id,
-                model_type="linear_regression"
+                model_type="linear_regression",
             )
 
             dashboard = mgr.get_compliance_dashboard(consortium.id)
@@ -802,7 +788,7 @@ class TestComplianceIntegration:
             name="Fraud Detection Consortium",
             description="Collaborative fraud detection",
             owner_id=owner.id,
-            model_type="logistic_regression"
+            model_type="logistic_regression",
         )
 
         # 2. Enable compliance frameworks
@@ -820,7 +806,7 @@ class TestComplianceIntegration:
             recipients=["Consortium members only"],
             retention_period="24 months",
             security_measures=["FHE encryption", "Access controls", "Audit logging"],
-            cross_border_transfer=False
+            cross_border_transfer=False,
         )
         assert dpr_id is not None
 
@@ -840,7 +826,7 @@ class TestComplianceIntegration:
                 control_id=control,
                 status=status,
                 result=f"{control} verification complete",
-                checked_by=owner.id
+                checked_by=owner.id,
             )
 
         # 5. Create attestation
@@ -850,7 +836,7 @@ class TestComplianceIntegration:
             attested_by=owner.id,
             statement="All personal data is encrypted using FHE and never exposed in plaintext",
             attester_role="CTO",
-            attestation_type="technical"
+            attestation_type="technical",
         )
 
         # 6. Generate reports

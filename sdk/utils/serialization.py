@@ -9,25 +9,24 @@ import json
 import pickle
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Optional, Type, Union
+from typing import Any, Optional, Union
 
 from ..models import (
     BaseFHEModel,
-    LinearRegression,
-    LogisticRegression,
     DecisionTree,
     DecisionTreeClassifier,
     DecisionTreeRegressor,
     KMeans,
+    KMeansConfig,
+    LinearRegression,
+    LogisticRegression,
     MiniBatchKMeans,
     ModelConfig,
     TreeConfig,
-    KMeansConfig,
 )
 
-
 # Model type registry
-MODEL_REGISTRY: Dict[str, Type[BaseFHEModel]] = {
+MODEL_REGISTRY: dict[str, type[BaseFHEModel]] = {
     "LinearRegression": LinearRegression,
     "LogisticRegression": LogisticRegression,
     "DecisionTree": DecisionTree,
@@ -56,8 +55,8 @@ def save_model(
     model: BaseFHEModel,
     path: Union[str, Path],
     include_history: bool = True,
-    metadata: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
+    metadata: Optional[dict[str, Any]] = None,
+) -> dict[str, Any]:
     """Save a trained model to disk.
 
     Args:
@@ -198,6 +197,7 @@ def load_model(
             )
         elif config_type == "KMeansConfig":
             from ..models.kmeans import InitMethod
+
             config = KMeansConfig(
                 n_clusters=config_data.get("n_clusters", 3),
                 max_iter=config_data.get("max_iter", 100),
@@ -232,7 +232,7 @@ def load_model(
     return model
 
 
-def get_model_info(path: Union[str, Path]) -> Dict[str, Any]:
+def get_model_info(path: Union[str, Path]) -> dict[str, Any]:
     """Get information about a saved model without fully loading it.
 
     Args:
@@ -321,7 +321,7 @@ def import_weights_json(
     """
     path = Path(path)
 
-    with open(path, "r") as f:
+    with open(path) as f:
         import_data = json.load(f)
 
     params = {

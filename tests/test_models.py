@@ -2,16 +2,16 @@
 
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import numpy as np
 import pandas as pd
 import pytest
-from sklearn.linear_model import LinearRegression as SklearnLinearRegression
 from sklearn.datasets import make_regression
+from sklearn.linear_model import LinearRegression as SklearnLinearRegression
 
 from sdk.models import (
-    BaseFHEModel,
     FHEModel,
     LinearRegression,
     LogisticRegression,
@@ -684,6 +684,7 @@ class TestDecisionTree:
         """Test creating DecisionTree via factory."""
         tree = FHEModel.DecisionTree()
         from sdk.models import DecisionTree
+
         assert isinstance(tree, DecisionTree)
 
     def test_decision_tree_regressor(self, regression_data):
@@ -718,9 +719,7 @@ class TestDecisionTree:
         tree2 = DecisionTree(config=TreeConfig(max_depth=2))
         tree2.set_params(params)
 
-        np.testing.assert_array_almost_equal(
-            tree.thresholds, tree2.thresholds
-        )
+        np.testing.assert_array_almost_equal(tree.thresholds, tree2.thresholds)
 
     def test_decision_tree_repr(self):
         """Test string representation."""
@@ -834,9 +833,7 @@ class TestKMeans:
 
         assert probs.shape == (len(X), 3)
         # Probabilities should sum to 1
-        np.testing.assert_array_almost_equal(
-            probs.sum(axis=1), np.ones(len(X))
-        )
+        np.testing.assert_array_almost_equal(probs.sum(axis=1), np.ones(len(X)))
         # All probabilities should be non-negative
         assert np.all(probs >= 0)
 
@@ -888,7 +885,7 @@ class TestKMeans:
 
     def test_kmeans_init_methods(self, cluster_data):
         """Test different initialization methods."""
-        from sdk.models import KMeans, KMeansConfig, InitMethod
+        from sdk.models import InitMethod, KMeans, KMeansConfig
 
         X, _ = cluster_data
 
@@ -904,6 +901,7 @@ class TestKMeans:
         """Test creating KMeans via factory."""
         kmeans = FHEModel.KMeans(n_clusters=4)
         from sdk.models import KMeans
+
         assert isinstance(kmeans, KMeans)
         assert kmeans.n_clusters == 4
 
@@ -953,9 +951,7 @@ class TestKMeans:
         kmeans2 = KMeans(n_clusters=3)
         kmeans2.set_params(params)
 
-        np.testing.assert_array_almost_equal(
-            kmeans.centroids, kmeans2.centroids
-        )
+        np.testing.assert_array_almost_equal(kmeans.centroids, kmeans2.centroids)
 
     def test_kmeans_sklearn_compatible_attrs(self, cluster_data):
         """Test sklearn-compatible attribute names."""
@@ -971,9 +967,7 @@ class TestKMeans:
         assert kmeans.inertia_ is not None
         assert kmeans.n_iter_ > 0
 
-        np.testing.assert_array_equal(
-            kmeans.centroids, kmeans.cluster_centers_
-        )
+        np.testing.assert_array_equal(kmeans.centroids, kmeans.cluster_centers_)
 
     def test_kmeans_repr(self):
         """Test string representation."""

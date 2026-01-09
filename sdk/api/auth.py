@@ -6,14 +6,12 @@ This module provides API key authentication middleware and utilities.
 import os
 import secrets
 from datetime import datetime
-from functools import wraps
-from typing import Callable, List, Optional
+from typing import Optional
 
 from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import APIKeyHeader, APIKeyQuery
 
 from .database import get_database
-
 
 # API key header and query parameter names
 API_KEY_HEADER_NAME = "X-API-Key"
@@ -44,7 +42,7 @@ def generate_api_key(prefix: str = "fheml") -> str:
 
 def create_api_key(
     name: str,
-    permissions: Optional[List[str]] = None,
+    permissions: Optional[list[str]] = None,
     rate_limit: int = 100,
 ) -> tuple:
     """Create a new API key and store it in the database.
@@ -117,7 +115,7 @@ async def get_api_key(
 
 
 def require_api_key(
-    permissions: Optional[List[str]] = None,
+    permissions: Optional[list[str]] = None,
     optional: bool = False,
 ):
     """Dependency to require API key authentication.
@@ -129,6 +127,7 @@ def require_api_key(
     Returns:
         FastAPI dependency function.
     """
+
     async def dependency(
         key_info: Optional[dict] = Depends(get_api_key),
     ) -> Optional[dict]:
@@ -198,8 +197,7 @@ class RateLimiter:
         # Clean old entries and count recent requests
         if key_name in self._requests:
             self._requests[key_name] = [
-                (ts, count) for ts, count in self._requests[key_name]
-                if ts > window_start
+                (ts, count) for ts, count in self._requests[key_name] if ts > window_start
             ]
             recent_count = sum(count for _, count in self._requests[key_name])
         else:
@@ -235,10 +233,7 @@ class RateLimiter:
         if key_name not in self._requests:
             return rate_limit
 
-        recent_count = sum(
-            count for ts, count in self._requests[key_name]
-            if ts > window_start
-        )
+        recent_count = sum(count for ts, count in self._requests[key_name] if ts > window_start)
         return max(0, rate_limit - recent_count)
 
 
@@ -269,7 +264,7 @@ def check_rate_limit(key_info: Optional[dict] = None):
 
 
 # CLI helper functions
-def list_api_keys() -> List[dict]:
+def list_api_keys() -> list[dict]:
     """List all API keys (for admin use).
 
     Returns:
@@ -311,10 +306,13 @@ def revoke_api_key(key_hash_prefix: str) -> bool:
     db = get_database()
     with db._get_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("""
+        cursor.execute(
+            """
             UPDATE api_keys SET is_active = 0
             WHERE key_hash LIKE ?
-        """, (key_hash_prefix + "%",))
+        """,
+            (key_hash_prefix + "%",),
+        )
         return cursor.rowcount > 0
 
 

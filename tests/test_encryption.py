@@ -2,6 +2,7 @@
 
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import numpy as np
@@ -206,10 +207,12 @@ class TestSecureDataLoader:
 
     def test_encrypt_dataframe(self, loader):
         """Test encrypting pandas DataFrame."""
-        df = pd.DataFrame({
-            "feature_a": [1.0, 2.0, 3.0],
-            "feature_b": [4.0, 5.0, 6.0],
-        })
+        df = pd.DataFrame(
+            {
+                "feature_a": [1.0, 2.0, 3.0],
+                "feature_b": [4.0, 5.0, 6.0],
+            }
+        )
         encrypted = loader.encrypt(df)
 
         assert encrypted.n_samples == 3
@@ -218,10 +221,12 @@ class TestSecureDataLoader:
 
     def test_encrypt_with_target(self, loader):
         """Test encrypting DataFrame with target column."""
-        df = pd.DataFrame({
-            "feature_a": [1.0, 2.0, 3.0],
-            "target": [0.0, 1.0, 0.0],
-        })
+        df = pd.DataFrame(
+            {
+                "feature_a": [1.0, 2.0, 3.0],
+                "target": [0.0, 1.0, 0.0],
+            }
+        )
         encrypted = loader.encrypt(df, target_column="target")
 
         assert encrypted.n_features == 1

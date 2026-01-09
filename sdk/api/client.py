@@ -15,19 +15,20 @@ Usage:
     predictions = client.predict(model_id, X_test)
 """
 
-import json
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
 import numpy as np
 
 try:
     import httpx
+
     HAS_HTTPX = True
 except ImportError:
     HAS_HTTPX = False
 
 try:
     import requests
+
     HAS_REQUESTS = True
 except ImportError:
     HAS_REQUESTS = False
@@ -35,6 +36,7 @@ except ImportError:
 
 class FHEMLClientError(Exception):
     """Base exception for FHE-ML client errors."""
+
     pass
 
 
@@ -50,6 +52,7 @@ class APIError(FHEMLClientError):
 
 class ConnectionError(FHEMLClientError):
     """Failed to connect to API server."""
+
     pass
 
 
@@ -87,11 +90,10 @@ class FHEMLClient:
             self._use_httpx = False
         else:
             raise ImportError(
-                "Either 'httpx' or 'requests' is required. "
-                "Install with: pip install httpx"
+                "Either 'httpx' or 'requests' is required. Install with: pip install httpx"
             )
 
-    def _get_headers(self) -> Dict[str, str]:
+    def _get_headers(self) -> dict[str, str]:
         """Get request headers."""
         headers = {"Content-Type": "application/json"}
         if self.api_key:
@@ -102,8 +104,8 @@ class FHEMLClient:
         self,
         method: str,
         endpoint: str,
-        data: Optional[Dict] = None,
-    ) -> Dict[str, Any]:
+        data: Optional[dict] = None,
+    ) -> dict[str, Any]:
         """Make an HTTP request to the API.
 
         Args:
@@ -151,12 +153,12 @@ class FHEMLClient:
 
             return response_data
 
-        except (httpx.ConnectError if HAS_HTTPX else Exception) as e:
+        except httpx.ConnectError if HAS_HTTPX else Exception as e:
             if "ConnectError" in str(type(e).__name__) or "Connection" in str(e):
                 raise ConnectionError(f"Failed to connect to {url}: {e}")
             raise
 
-    def health(self) -> Dict[str, Any]:
+    def health(self) -> dict[str, Any]:
         """Check API health.
 
         Returns:
@@ -164,7 +166,7 @@ class FHEMLClient:
         """
         return self._request("GET", "/health")
 
-    def get_model_types(self) -> List[Dict[str, Any]]:
+    def get_model_types(self) -> list[dict[str, Any]]:
         """Get available model types.
 
         Returns:
@@ -176,7 +178,7 @@ class FHEMLClient:
     def create_model(
         self,
         model_type: str,
-        config: Optional[Dict[str, Any]] = None,
+        config: Optional[dict[str, Any]] = None,
     ) -> str:
         """Create a new model.
 
@@ -194,13 +196,17 @@ class FHEMLClient:
             ...     config={"learning_rate": 0.1, "n_epochs": 100}
             ... )
         """
-        response = self._request("POST", "/models", {
-            "model_type": model_type,
-            "config": config,
-        })
+        response = self._request(
+            "POST",
+            "/models",
+            {
+                "model_type": model_type,
+                "config": config,
+            },
+        )
         return response["model_id"]
 
-    def get_model(self, model_id: str) -> Dict[str, Any]:
+    def get_model(self, model_id: str) -> dict[str, Any]:
         """Get model details.
 
         Args:
@@ -211,7 +217,7 @@ class FHEMLClient:
         """
         return self._request("GET", f"/models/{model_id}")
 
-    def list_models(self) -> List[Dict[str, Any]]:
+    def list_models(self) -> list[dict[str, Any]]:
         """List all models.
 
         Returns:
@@ -231,7 +237,7 @@ class FHEMLClient:
         self._request("DELETE", f"/models/{model_id}")
         return True
 
-    def get_params(self, model_id: str) -> Dict[str, Any]:
+    def get_params(self, model_id: str) -> dict[str, Any]:
         """Get model parameters.
 
         Args:
@@ -245,9 +251,9 @@ class FHEMLClient:
     def train(
         self,
         model_id: str,
-        X: Union[List[List[float]], np.ndarray],
-        y: Optional[Union[List[float], np.ndarray]] = None,
-    ) -> Dict[str, Any]:
+        X: Union[list[list[float]], np.ndarray],
+        y: Optional[Union[list[float], np.ndarray]] = None,
+    ) -> dict[str, Any]:
         """Train a model.
 
         Args:
@@ -277,7 +283,7 @@ class FHEMLClient:
     def predict(
         self,
         model_id: str,
-        X: Union[List[List[float]], np.ndarray],
+        X: Union[list[list[float]], np.ndarray],
     ) -> np.ndarray:
         """Make predictions.
 
@@ -301,7 +307,7 @@ class FHEMLClient:
     def predict_proba(
         self,
         model_id: str,
-        X: Union[List[List[float]], np.ndarray],
+        X: Union[list[list[float]], np.ndarray],
     ) -> Optional[np.ndarray]:
         """Get prediction probabilities (for classification models).
 
@@ -324,9 +330,9 @@ class FHEMLClient:
     def fit_predict(
         self,
         model_type: str,
-        X: Union[List[List[float]], np.ndarray],
-        y: Optional[Union[List[float], np.ndarray]] = None,
-        config: Optional[Dict[str, Any]] = None,
+        X: Union[list[list[float]], np.ndarray],
+        y: Optional[Union[list[float], np.ndarray]] = None,
+        config: Optional[dict[str, Any]] = None,
     ) -> tuple:
         """Create model, train, and predict in one call.
 
@@ -353,7 +359,7 @@ class FHEMLClient:
         """Close the client connection."""
         if self._use_httpx:
             self._client.close()
-        elif hasattr(self, '_session'):
+        elif hasattr(self, "_session"):
             self._session.close()
 
     def __enter__(self):

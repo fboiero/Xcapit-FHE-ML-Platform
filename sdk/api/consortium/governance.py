@@ -9,7 +9,7 @@ import json
 import secrets
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Optional
 
 from .database import DatabaseManager
 
@@ -36,7 +36,7 @@ class GovernanceManager:
         record_count: int,
         feature_count: int,
         data_hash: str,
-        checksum: str
+        checksum: str,
     ) -> str:
         """Record a contribution proof.
 
@@ -55,34 +55,49 @@ class GovernanceManager:
 
         with self._db.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO contribution_proofs
                 (id, consortium_id, company_id, record_count, feature_count, data_hash, checksum)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (proof_id, consortium_id, company_id, record_count, feature_count, data_hash, checksum))
+            """,
+                (
+                    proof_id,
+                    consortium_id,
+                    company_id,
+                    record_count,
+                    feature_count,
+                    data_hash,
+                    checksum,
+                ),
+            )
 
         return proof_id
 
-    def get_contribution_proofs(self, consortium_id: str) -> List[Dict]:
+    def get_contribution_proofs(self, consortium_id: str) -> list[dict]:
         """Get all contribution proofs for a consortium."""
         with self._db.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT cp.*, c.name as contributor_name
                 FROM contribution_proofs cp
                 JOIN companies c ON cp.company_id = c.id
                 WHERE cp.consortium_id = ?
                 ORDER BY cp.timestamp DESC
-            """, (consortium_id,))
+            """,
+                (consortium_id,),
+            )
             rows = cursor.fetchall()
 
         return [dict(row) for row in rows]
 
-    def get_contribution_summary(self, consortium_id: str) -> List[Dict]:
+    def get_contribution_summary(self, consortium_id: str) -> list[dict]:
         """Get contribution summary per member."""
         with self._db.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT
                     cp.company_id as member_id,
                     c.name as member_name,
@@ -93,7 +108,9 @@ class GovernanceManager:
                 JOIN companies c ON cp.company_id = c.id
                 WHERE cp.consortium_id = ?
                 GROUP BY cp.company_id
-            """, (consortium_id,))
+            """,
+                (consortium_id,),
+            )
             rows = cursor.fetchall()
 
         total_records = sum(row["total_records"] for row in rows) or 1
@@ -105,7 +122,7 @@ class GovernanceManager:
 
         return result
 
-    def get_member_contribution_summary(self, consortium_id: str, company_id: str) -> Dict:
+    def get_member_contribution_summary(self, consortium_id: str, company_id: str) -> dict:
         """Get contribution summary for a specific member."""
         summary = self.get_contribution_summary(consortium_id)
         for s in summary:
@@ -122,8 +139,8 @@ class GovernanceManager:
         proposal_type: str,
         title: str,
         description: str = "",
-        data: Optional[Dict] = None,
-        voting_duration: int = 86400
+        data: Optional[dict] = None,
+        voting_duration: int = 86400,
     ) -> str:
         """Create a new governance proposal.
 
@@ -145,25 +162,39 @@ class GovernanceManager:
 
         with self._db.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO proposals
                 (id, consortium_id, proposer_id, proposal_type, title, description, data, expires_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """, (proposal_id, consortium_id, proposer_id, proposal_type, title, description,
-                  json.dumps(data) if data else None, expires_at))
+            """,
+                (
+                    proposal_id,
+                    consortium_id,
+                    proposer_id,
+                    proposal_type,
+                    title,
+                    description,
+                    json.dumps(data) if data else None,
+                    expires_at,
+                ),
+            )
 
         return proposal_id
 
-    def get_proposal(self, proposal_id: str) -> Optional[Dict]:
+    def get_proposal(self, proposal_id: str) -> Optional[dict]:
         """Get proposal details."""
         with self._db.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT p.*, c.name as proposer_name
                 FROM proposals p
                 JOIN companies c ON p.proposer_id = c.id
                 WHERE p.id = ?
-            """, (proposal_id,))
+            """,
+                (proposal_id,),
+            )
             row = cursor.fetchone()
 
         if not row:
@@ -174,7 +205,7 @@ class GovernanceManager:
             result["data"] = json.loads(result["data"])
         return result
 
-    def get_proposals(self, consortium_id: str, status_filter: Optional[str] = None) -> List[Dict]:
+    def get_proposals(self, consortium_id: str, status_filter: Optional[str] = None) -> list[dict]:
         """Get all proposals for a consortium."""
         with self._db.get_connection() as conn:
             cursor = conn.cursor()
@@ -211,7 +242,7 @@ class GovernanceManager:
         voter_id: str,
         support: bool,
         weight: int,
-        comment: Optional[str] = None
+        comment: Optional[str] = None,
     ) -> str:
         """Record a vote on a proposal.
 
@@ -230,53 +261,68 @@ class GovernanceManager:
         with self._db.get_connection() as conn:
             cursor = conn.cursor()
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO votes (id, proposal_id, voter_id, support, weight, comment)
                 VALUES (?, ?, ?, ?, ?, ?)
-            """, (vote_id, proposal_id, voter_id, 1 if support else 0, weight, comment))
+            """,
+                (vote_id, proposal_id, voter_id, 1 if support else 0, weight, comment),
+            )
 
             if support:
-                cursor.execute("""
+                cursor.execute(
+                    """
                     UPDATE proposals
                     SET yes_votes = yes_votes + 1, voting_weight_yes = voting_weight_yes + ?
                     WHERE id = ?
-                """, (weight, proposal_id))
+                """,
+                    (weight, proposal_id),
+                )
             else:
-                cursor.execute("""
+                cursor.execute(
+                    """
                     UPDATE proposals
                     SET no_votes = no_votes + 1, voting_weight_no = voting_weight_no + ?
                     WHERE id = ?
-                """, (weight, proposal_id))
+                """,
+                    (weight, proposal_id),
+                )
 
         return vote_id
 
-    def get_vote(self, proposal_id: str, voter_id: str) -> Optional[Dict]:
+    def get_vote(self, proposal_id: str, voter_id: str) -> Optional[dict]:
         """Get a specific vote."""
         with self._db.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT * FROM votes WHERE proposal_id = ? AND voter_id = ?
-            """, (proposal_id, voter_id))
+            """,
+                (proposal_id, voter_id),
+            )
             row = cursor.fetchone()
 
         return dict(row) if row else None
 
-    def get_proposal_votes(self, proposal_id: str) -> List[Dict]:
+    def get_proposal_votes(self, proposal_id: str) -> list[dict]:
         """Get all votes for a proposal."""
         with self._db.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT v.*, c.name as voter_name
                 FROM votes v
                 JOIN companies c ON v.voter_id = c.id
                 WHERE v.proposal_id = ?
                 ORDER BY v.voted_at
-            """, (proposal_id,))
+            """,
+                (proposal_id,),
+            )
             rows = cursor.fetchall()
 
         return [dict(row) for row in rows]
 
-    def execute_proposal(self, proposal_id: str) -> Dict:
+    def execute_proposal(self, proposal_id: str) -> dict:
         """Execute a proposal after voting ends.
 
         Args:
@@ -294,11 +340,14 @@ class GovernanceManager:
 
         with self._db.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 UPDATE proposals
                 SET status = ?, executed_at = ?
                 WHERE id = ?
-            """, (new_status, datetime.utcnow(), proposal_id))
+            """,
+                (new_status, datetime.utcnow(), proposal_id),
+            )
 
         return {
             "passed": passed,
@@ -318,7 +367,7 @@ class GovernanceManager:
         actor_id: str,
         target_id: Optional[str] = None,
         target_type: Optional[str] = None,
-        data: Optional[Dict] = None
+        data: Optional[dict] = None,
     ) -> str:
         """Record an audit event.
 
@@ -337,11 +386,14 @@ class GovernanceManager:
 
         with self._db.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT id, timestamp FROM audit_events
                 WHERE consortium_id = ?
                 ORDER BY timestamp DESC LIMIT 1
-            """, (consortium_id,))
+            """,
+                (consortium_id,),
+            )
             last_event = cursor.fetchone()
 
             previous_hash = None
@@ -350,12 +402,23 @@ class GovernanceManager:
                     f"{last_event['id']}:{last_event['timestamp']}".encode()
                 ).hexdigest()
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO audit_events
                 (id, consortium_id, event_type, actor_id, target_id, target_type, data, previous_hash)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """, (event_id, consortium_id, event_type, actor_id, target_id, target_type,
-                  json.dumps(data) if data else None, previous_hash))
+            """,
+                (
+                    event_id,
+                    consortium_id,
+                    event_type,
+                    actor_id,
+                    target_id,
+                    target_type,
+                    json.dumps(data) if data else None,
+                    previous_hash,
+                ),
+            )
 
         return event_id
 
@@ -364,8 +427,8 @@ class GovernanceManager:
         consortium_id: str,
         event_type: Optional[str] = None,
         limit: int = 100,
-        offset: int = 0
-    ) -> List[Dict]:
+        offset: int = 0,
+    ) -> list[dict]:
         """Get audit trail for a consortium.
 
         Args:
@@ -419,11 +482,14 @@ class GovernanceManager:
         """
         with self._db.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT id, timestamp, previous_hash FROM audit_events
                 WHERE consortium_id = ?
                 ORDER BY timestamp ASC
-            """, (consortium_id,))
+            """,
+                (consortium_id,),
+            )
             rows = cursor.fetchall()
 
         if not rows:
@@ -433,19 +499,13 @@ class GovernanceManager:
         for row in rows:
             if row["previous_hash"] != expected_hash:
                 return False
-            expected_hash = hashlib.sha256(
-                f"{row['id']}:{row['timestamp']}".encode()
-            ).hexdigest()
+            expected_hash = hashlib.sha256(f"{row['id']}:{row['timestamp']}".encode()).hexdigest()
 
         return True
 
     # ========== Reward Distribution ==========
 
-    def calculate_reward_distribution(
-        self,
-        consortium_id: str,
-        total_amount: float
-    ) -> List[Dict]:
+    def calculate_reward_distribution(self, consortium_id: str, total_amount: float) -> list[dict]:
         """Calculate reward distribution based on contribution weights.
 
         Args:
@@ -461,20 +521,19 @@ class GovernanceManager:
         for member in summary:
             if member["contribution_weight"] > 0:
                 amount = (member["contribution_weight"] / 100) * total_amount
-                distributions.append({
-                    "member_id": member["member_id"],
-                    "member_name": member["member_name"],
-                    "weight": member["contribution_weight"],
-                    "amount": round(amount, 6),
-                })
+                distributions.append(
+                    {
+                        "member_id": member["member_id"],
+                        "member_name": member["member_name"],
+                        "weight": member["contribution_weight"],
+                        "amount": round(amount, 6),
+                    }
+                )
 
         return distributions
 
     def record_reward_distribution(
-        self,
-        consortium_id: str,
-        total_amount: float,
-        distributions: List[Dict]
+        self, consortium_id: str, total_amount: float, distributions: list[dict]
     ) -> str:
         """Record a reward distribution.
 
@@ -490,23 +549,29 @@ class GovernanceManager:
 
         with self._db.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO reward_distributions
                 (id, consortium_id, total_amount, distributions)
                 VALUES (?, ?, ?, ?)
-            """, (distribution_id, consortium_id, total_amount, json.dumps(distributions)))
+            """,
+                (distribution_id, consortium_id, total_amount, json.dumps(distributions)),
+            )
 
         return distribution_id
 
-    def get_reward_distributions(self, consortium_id: str) -> List[Dict]:
+    def get_reward_distributions(self, consortium_id: str) -> list[dict]:
         """Get reward distribution history."""
         with self._db.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT * FROM reward_distributions
                 WHERE consortium_id = ?
                 ORDER BY distributed_at DESC
-            """, (consortium_id,))
+            """,
+                (consortium_id,),
+            )
             rows = cursor.fetchall()
 
         result = []

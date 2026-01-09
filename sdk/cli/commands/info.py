@@ -15,6 +15,7 @@ def cmd_version(args) -> int:
     # Check TenSEAL availability
     try:
         import tenseal
+
         print(f"TenSEAL: {tenseal.__version__}")
     except ImportError:
         print("TenSEAL: Not installed")
@@ -56,7 +57,11 @@ def cmd_info(args) -> int:
                 weights = params["weights"]
                 print(f"    Weights: {len(weights)} features")
                 if args.verbose:
-                    print(f"    Weight values: {weights[:5]}..." if len(weights) > 5 else f"    Weight values: {weights}")
+                    print(
+                        f"    Weight values: {weights[:5]}..."
+                        if len(weights) > 5
+                        else f"    Weight values: {weights}"
+                    )
             if params.get("bias") is not None:
                 print(f"    Bias: {params['bias']:.6f}")
             if params.get("state"):

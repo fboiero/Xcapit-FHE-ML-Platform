@@ -11,19 +11,16 @@ This module provides:
 import hashlib
 import threading
 import time
+import weakref
+from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from enum import Enum
 from typing import (
     Callable,
-    Dict,
-    Iterator,
-    List,
     Optional,
-    Tuple,
     Union,
 )
-import weakref
 
 import numpy as np
 import tenseal as ts
@@ -55,7 +52,7 @@ class ProfileConfig:
     """Configuration for each optimization profile."""
 
     poly_modulus_degree: int
-    coeff_mod_bit_sizes: Tuple[int, ...]
+    coeff_mod_bit_sizes: tuple[int, ...]
     scale_bits: int
     batch_size: int
     num_threads: int
@@ -65,11 +62,11 @@ class ProfileConfig:
 
     @property
     def scale(self) -> float:
-        return 2 ** self.scale_bits
+        return 2**self.scale_bits
 
 
 # Predefined profile configurations
-PROFILE_CONFIGS: Dict[OptimizationProfile, ProfileConfig] = {
+PROFILE_CONFIGS: dict[OptimizationProfile, ProfileConfig] = {
     OptimizationProfile.FAST: ProfileConfig(
         poly_modulus_degree=4096,
         coeff_mod_bit_sizes=(40, 20, 40),
@@ -129,7 +126,7 @@ class ContextPool:
     ):
         self._params = params
         self._pool_size = pool_size
-        self._pool: List[ts.Context] = []
+        self._pool: list[ts.Context] = []
         self._lock = threading.Lock()
         self._in_use: weakref.WeakSet = weakref.WeakSet()
 
@@ -192,8 +189,8 @@ class LazyEncryptedVector:
     def __init__(
         self,
         data: Optional[ts.CKKSVector] = None,
-        shape: Tuple[int, ...] = (),
-        pending_ops: Optional[List[Callable]] = None,
+        shape: tuple[int, ...] = (),
+        pending_ops: Optional[list[Callable]] = None,
     ):
         self._data = data
         self._shape = shape
@@ -247,7 +244,7 @@ class LazyEncryptedVector:
         return len(self._pending_ops)
 
     @property
-    def shape(self) -> Tuple[int, ...]:
+    def shape(self) -> tuple[int, ...]:
         return self._shape
 
 
@@ -268,17 +265,15 @@ class EncryptionStats:
         self.total_encryptions += 1
         self.total_time_ms += time_ms
         self.avg_encryption_time_ms = (
-            (self.avg_encryption_time_ms * (self.total_encryptions - 1) + time_ms)
-            / self.total_encryptions
-        )
+            self.avg_encryption_time_ms * (self.total_encryptions - 1) + time_ms
+        ) / self.total_encryptions
 
     def record_decryption(self, time_ms: float):
         self.total_decryptions += 1
         self.total_time_ms += time_ms
         self.avg_decryption_time_ms = (
-            (self.avg_decryption_time_ms * (self.total_decryptions - 1) + time_ms)
-            / self.total_decryptions
-        )
+            self.avg_decryption_time_ms * (self.total_decryptions - 1) + time_ms
+        ) / self.total_decryptions
 
 
 class OptimizedFHEEngine:
@@ -342,15 +337,13 @@ class OptimizedFHEEngine:
         self._primary_context = self._context_pool.acquire()
 
         # Thread pool for parallel operations
-        self._executor = ThreadPoolExecutor(
-            max_workers=self._config.num_threads
-        )
+        self._executor = ThreadPoolExecutor(max_workers=self._config.num_threads)
 
         # Statistics tracking
         self._stats = EncryptionStats()
 
         # Encryption cache (hash -> encrypted)
-        self._encryption_cache: Dict[str, bytes] = {}
+        self._encryption_cache: dict[str, bytes] = {}
         self._cache_lock = threading.Lock()
 
     @property
@@ -373,14 +366,14 @@ class OptimizedFHEEngine:
         """Maximum values per ciphertext."""
         return self._params.poly_modulus_degree // 2
 
-    def _compute_cache_key(self, data: List[float]) -> str:
+    def _compute_cache_key(self, data: list[float]) -> str:
         """Compute cache key for data."""
         data_bytes = np.array(data, dtype=np.float64).tobytes()
         return hashlib.sha256(data_bytes).hexdigest()[:16]
 
     def encrypt(
         self,
-        data: Union[List[float], np.ndarray],
+        data: Union[list[float], np.ndarray],
         use_cache: bool = True,
     ) -> ts.CKKSVector:
         """Encrypt a vector of values.
@@ -440,9 +433,9 @@ class OptimizedFHEEngine:
 
     def encrypt_batch(
         self,
-        data_batch: List[Union[List[float], np.ndarray]],
+        data_batch: list[Union[list[float], np.ndarray]],
         parallel: bool = True,
-    ) -> List[ts.CKKSVector]:
+    ) -> list[ts.CKKSVector]:
         """Encrypt a batch of vectors in parallel.
 
         Args:
@@ -458,7 +451,9 @@ class OptimizedFHEEngine:
         # Parallel encryption
         results = [None] * len(data_batch)
 
-        def encrypt_item(idx: int, data: Union[List[float], np.ndarray]) -> Tuple[int, ts.CKKSVector]:
+        def encrypt_item(
+            idx: int, data: Union[list[float], np.ndarray]
+        ) -> tuple[int, ts.CKKSVector]:
             context = self._context_pool.acquire()
             try:
                 if isinstance(data, np.ndarray):
@@ -468,10 +463,7 @@ class OptimizedFHEEngine:
             finally:
                 self._context_pool.release(context)
 
-        futures = [
-            self._executor.submit(encrypt_item, i, d)
-            for i, d in enumerate(data_batch)
-        ]
+        futures = [self._executor.submit(encrypt_item, i, d) for i, d in enumerate(data_batch)]
 
         for future in as_completed(futures):
             idx, encrypted = future.result()
@@ -481,9 +473,9 @@ class OptimizedFHEEngine:
 
     def decrypt_batch(
         self,
-        encrypted_batch: List[ts.CKKSVector],
+        encrypted_batch: list[ts.CKKSVector],
         parallel: bool = True,
-    ) -> List[np.ndarray]:
+    ) -> list[np.ndarray]:
         """Decrypt a batch of vectors in parallel.
 
         Args:
@@ -498,16 +490,13 @@ class OptimizedFHEEngine:
 
         results = [None] * len(encrypted_batch)
 
-        def decrypt_item(idx: int, encrypted: ts.CKKSVector) -> Tuple[int, np.ndarray]:
+        def decrypt_item(idx: int, encrypted: ts.CKKSVector) -> tuple[int, np.ndarray]:
             start = time.time()
             decrypted = np.array(encrypted.decrypt())
             self._stats.record_decryption((time.time() - start) * 1000)
             return idx, decrypted
 
-        futures = [
-            self._executor.submit(decrypt_item, i, e)
-            for i, e in enumerate(encrypted_batch)
-        ]
+        futures = [self._executor.submit(decrypt_item, i, e) for i, e in enumerate(encrypted_batch)]
 
         for future in as_completed(futures):
             idx, decrypted = future.result()
@@ -519,7 +508,7 @@ class OptimizedFHEEngine:
         self,
         data: np.ndarray,
         chunk_size: Optional[int] = None,
-    ) -> Iterator[List[ts.CKKSVector]]:
+    ) -> Iterator[list[ts.CKKSVector]]:
         """Stream encrypt large datasets in chunks.
 
         Args:
@@ -540,7 +529,7 @@ class OptimizedFHEEngine:
             chunk = data[start:end]
 
             encrypted_chunk = self.encrypt_batch(
-                [row for row in chunk],
+                list(chunk),
                 parallel=True,
             )
 
@@ -548,7 +537,7 @@ class OptimizedFHEEngine:
 
     def create_lazy_vector(
         self,
-        data: Union[List[float], np.ndarray],
+        data: Union[list[float], np.ndarray],
     ) -> LazyEncryptedVector:
         """Create a lazy-evaluated encrypted vector.
 
@@ -585,8 +574,8 @@ class OptimizedFHEEngine:
 
     def encrypted_matrix_vector_multiply(
         self,
-        encrypted_matrix: List[ts.CKKSVector],
-        plain_vector: Union[List[float], np.ndarray],
+        encrypted_matrix: list[ts.CKKSVector],
+        plain_vector: Union[list[float], np.ndarray],
     ) -> ts.CKKSVector:
         """Multiply encrypted matrix by plaintext vector.
 
@@ -617,7 +606,7 @@ class OptimizedFHEEngine:
         with self._cache_lock:
             self._encryption_cache.clear()
 
-    def get_cache_stats(self) -> Dict[str, int]:
+    def get_cache_stats(self) -> dict[str, int]:
         """Get cache statistics."""
         return {
             "size": len(self._encryption_cache),
@@ -625,8 +614,7 @@ class OptimizedFHEEngine:
             "hits": self._stats.cache_hits,
             "misses": self._stats.cache_misses,
             "hit_rate": (
-                self._stats.cache_hits /
-                (self._stats.cache_hits + self._stats.cache_misses)
+                self._stats.cache_hits / (self._stats.cache_hits + self._stats.cache_misses)
                 if (self._stats.cache_hits + self._stats.cache_misses) > 0
                 else 0.0
             ),
@@ -636,7 +624,7 @@ class OptimizedFHEEngine:
         self,
         vector_size: int = 1000,
         n_operations: int = 100,
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """Run benchmark to measure performance.
 
         Args:

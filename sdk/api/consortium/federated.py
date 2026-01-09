@@ -12,8 +12,7 @@ import json
 import random
 import time
 import uuid
-from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Optional
 
 from .database import DatabaseManager
 
@@ -42,42 +41,54 @@ class FederatedManager:
         model_id: Optional[str] = None,
         endpoint_type: str = "private",
         max_batch_size: int = 100,
-        config: Optional[Dict] = None
-    ) -> Dict:
+        config: Optional[dict] = None,
+    ) -> dict:
         """Create a new federated inference endpoint."""
         self._init_federated_schema()
         endpoint_id = f"ep_{uuid.uuid4().hex[:16]}"
 
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO inference_endpoints
                 (id, consortium_id, company_id, name, description, model_id,
                  endpoint_type, max_batch_size, config)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                endpoint_id, consortium_id, company_id, name, description,
-                model_id, endpoint_type, max_batch_size,
-                json.dumps(config or {})
-            ))
+            """,
+                (
+                    endpoint_id,
+                    consortium_id,
+                    company_id,
+                    name,
+                    description,
+                    model_id,
+                    endpoint_type,
+                    max_batch_size,
+                    json.dumps(config or {}),
+                ),
+            )
             conn.commit()
 
         return self.get_inference_endpoint(endpoint_id)
 
-    def get_inference_endpoint(self, endpoint_id: str) -> Optional[Dict]:
+    def get_inference_endpoint(self, endpoint_id: str) -> Optional[dict]:
         """Get an inference endpoint by ID."""
         self._init_federated_schema()
 
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT e.*, c.name as company_name,
                        (SELECT COUNT(*) FROM inference_requests WHERE endpoint_id = e.id) as request_count,
                        (SELECT COUNT(*) FROM inference_requests WHERE endpoint_id = e.id AND status = 'completed') as completed_count
                 FROM inference_endpoints e
                 JOIN companies c ON e.company_id = c.id
                 WHERE e.id = ?
-            """, (endpoint_id,))
+            """,
+                (endpoint_id,),
+            )
             row = cursor.fetchone()
 
         if not row:
@@ -91,8 +102,8 @@ class FederatedManager:
         self,
         consortium_id: Optional[str] = None,
         company_id: Optional[str] = None,
-        status: Optional[str] = None
-    ) -> List[Dict]:
+        status: Optional[str] = None,
+    ) -> list[dict]:
         """List inference endpoints with optional filters."""
         self._init_federated_schema()
 
@@ -135,11 +146,11 @@ class FederatedManager:
         self,
         endpoint_id: str,
         requester_id: str,
-        input_data: Dict,
+        input_data: dict,
         request_type: str = "single",
         priority: str = "normal",
-        encryption_key_id: Optional[str] = None
-    ) -> Dict:
+        encryption_key_id: Optional[str] = None,
+    ) -> dict:
         """Submit a federated inference request."""
         self._init_federated_schema()
 
@@ -150,16 +161,23 @@ class FederatedManager:
             raise ValueError("Endpoint is not active")
 
         request_id = f"req_{uuid.uuid4().hex[:16]}"
-        batch_size = len(input_data.get("samples", [input_data])) if isinstance(input_data.get("samples"), list) else 1
+        batch_size = (
+            len(input_data.get("samples", [input_data]))
+            if isinstance(input_data.get("samples"), list)
+            else 1
+        )
         input_shape = json.dumps(input_data.get("shape", [batch_size]))
 
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO inference_requests
                 (id, endpoint_id, requester_id, request_type, input_shape, batch_size, status)
                 VALUES (?, ?, ?, ?, ?, ?, 'processing')
-            """, (request_id, endpoint_id, requester_id, request_type, input_shape, batch_size))
+            """,
+                (request_id, endpoint_id, requester_id, request_type, input_shape, batch_size),
+            )
             conn.commit()
 
         result = self._process_federated_inference(request_id, endpoint, input_data)
@@ -170,59 +188,82 @@ class FederatedManager:
         return result
 
     def _process_federated_inference(
-        self,
-        request_id: str,
-        endpoint: Dict,
-        input_data: Dict
-    ) -> Dict:
+        self, request_id: str, endpoint: dict, input_data: dict
+    ) -> dict:
         """Process a federated inference request (simulated)."""
         start_time = time.time()
 
-        batch_size = len(input_data.get("samples", [input_data])) if isinstance(input_data.get("samples"), list) else 1
+        batch_size = (
+            len(input_data.get("samples", [input_data]))
+            if isinstance(input_data.get("samples"), list)
+            else 1
+        )
         processing_time = random.uniform(0.05, 0.2) * batch_size
 
         model_type = endpoint.get("config", {}).get("model_type", "classification")
 
         if model_type == "classification":
-            predictions = [{
-                "class": random.randint(0, 1),
-                "probability_encrypted": f"enc_{uuid.uuid4().hex[:32]}",
-                "confidence": round(random.uniform(0.7, 0.99), 3)
-            } for _ in range(batch_size)]
+            predictions = [
+                {
+                    "class": random.randint(0, 1),
+                    "probability_encrypted": f"enc_{uuid.uuid4().hex[:32]}",
+                    "confidence": round(random.uniform(0.7, 0.99), 3),
+                }
+                for _ in range(batch_size)
+            ]
         elif model_type == "regression":
-            predictions = [{
-                "value_encrypted": f"enc_{uuid.uuid4().hex[:32]}",
-                "uncertainty": round(random.uniform(0.01, 0.1), 4)
-            } for _ in range(batch_size)]
+            predictions = [
+                {
+                    "value_encrypted": f"enc_{uuid.uuid4().hex[:32]}",
+                    "uncertainty": round(random.uniform(0.01, 0.1), 4),
+                }
+                for _ in range(batch_size)
+            ]
         else:
-            predictions = [{
-                "cluster": random.randint(0, 4),
-                "distance_encrypted": f"enc_{uuid.uuid4().hex[:32]}"
-            } for _ in range(batch_size)]
+            predictions = [
+                {
+                    "cluster": random.randint(0, 4),
+                    "distance_encrypted": f"enc_{uuid.uuid4().hex[:32]}",
+                }
+                for _ in range(batch_size)
+            ]
 
         processing_time_ms = int((time.time() - start_time + processing_time) * 1000)
 
         result_id = f"result_{uuid.uuid4().hex[:16]}"
-        encrypted_output = json.dumps({
-            "predictions": predictions,
-            "encryption_scheme": endpoint.get("encryption_scheme", "CKKS"),
-            "version": "1.0"
-        })
+        encrypted_output = json.dumps(
+            {
+                "predictions": predictions,
+                "encryption_scheme": endpoint.get("encryption_scheme", "CKKS"),
+                "version": "1.0",
+            }
+        )
 
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 UPDATE inference_requests
                 SET status = 'completed', processing_time_ms = ?, completed_at = CURRENT_TIMESTAMP
                 WHERE id = ?
-            """, (processing_time_ms, request_id))
+            """,
+                (processing_time_ms, request_id),
+            )
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO inference_results
                 (id, request_id, result_type, encrypted_output, output_shape, metadata)
                 VALUES (?, ?, 'prediction', ?, ?, ?)
-            """, (result_id, request_id, encrypted_output, json.dumps([batch_size]),
-                  json.dumps({"processing_time_ms": processing_time_ms})))
+            """,
+                (
+                    result_id,
+                    request_id,
+                    encrypted_output,
+                    json.dumps([batch_size]),
+                    json.dumps({"processing_time_ms": processing_time_ms}),
+                ),
+            )
             conn.commit()
 
         return {
@@ -234,22 +275,25 @@ class FederatedManager:
             "processing_time_ms": processing_time_ms,
             "predictions": predictions,
             "encryption_verified": True,
-            "data_stayed_local": True
+            "data_stayed_local": True,
         }
 
-    def get_inference_request(self, request_id: str) -> Optional[Dict]:
+    def get_inference_request(self, request_id: str) -> Optional[dict]:
         """Get an inference request by ID."""
         self._init_federated_schema()
 
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT r.*, e.name as endpoint_name, c.name as requester_name
                 FROM inference_requests r
                 JOIN inference_endpoints e ON r.endpoint_id = e.id
                 JOIN companies c ON r.requester_id = c.id
                 WHERE r.id = ?
-            """, (request_id,))
+            """,
+                (request_id,),
+            )
             row = cursor.fetchone()
 
         if not row:
@@ -259,7 +303,9 @@ class FederatedManager:
         if request["status"] == "completed":
             with self._get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute("SELECT * FROM inference_results WHERE request_id = ?", (request_id,))
+                cursor.execute(
+                    "SELECT * FROM inference_results WHERE request_id = ?", (request_id,)
+                )
                 result_row = cursor.fetchone()
 
             if result_row:
@@ -270,7 +316,7 @@ class FederatedManager:
 
         return request
 
-    def get_inference_result(self, request_id: str) -> Optional[Dict]:
+    def get_inference_result(self, request_id: str) -> Optional[dict]:
         """Get the result of an inference request."""
         self._init_federated_schema()
 
@@ -301,8 +347,8 @@ class FederatedManager:
         endpoint_id: Optional[str] = None,
         requester_id: Optional[str] = None,
         status: Optional[str] = None,
-        limit: int = 50
-    ) -> List[Dict]:
+        limit: int = 50,
+    ) -> list[dict]:
         """List inference requests with optional filters."""
         self._init_federated_schema()
 
@@ -342,44 +388,57 @@ class FederatedManager:
         model_type: str,
         created_by: Optional[str] = None,
         description: Optional[str] = None,
-        input_features: Optional[List[str]] = None,
+        input_features: Optional[list[str]] = None,
         output_type: str = "classification",
         accuracy: Optional[float] = None,
-        config: Optional[Dict] = None,
-        version: Optional[str] = None
-    ) -> Dict:
+        config: Optional[dict] = None,
+        version: Optional[str] = None,
+    ) -> dict:
         """Register a federated model for inference."""
         self._init_federated_schema()
         model_id = f"fm_{uuid.uuid4().hex[:16]}"
 
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO federated_models
                 (id, consortium_id, name, description, model_type, input_features,
                  output_type, accuracy, config, version)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                model_id, consortium_id, name, description, model_type,
-                json.dumps(input_features or []), output_type, accuracy,
-                json.dumps(config or {}), version or "1.0.0"
-            ))
+            """,
+                (
+                    model_id,
+                    consortium_id,
+                    name,
+                    description,
+                    model_type,
+                    json.dumps(input_features or []),
+                    output_type,
+                    accuracy,
+                    json.dumps(config or {}),
+                    version or "1.0.0",
+                ),
+            )
             conn.commit()
 
         return self.get_federated_model(model_id)
 
-    def get_federated_model(self, model_id: str) -> Optional[Dict]:
+    def get_federated_model(self, model_id: str) -> Optional[dict]:
         """Get a federated model by ID."""
         self._init_federated_schema()
 
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT m.*,
                        (SELECT COUNT(*) FROM inference_endpoints WHERE model_id = m.id) as endpoint_count
                 FROM federated_models m
                 WHERE m.id = ?
-            """, (model_id,))
+            """,
+                (model_id,),
+            )
             row = cursor.fetchone()
 
         if not row:
@@ -394,8 +453,8 @@ class FederatedManager:
         self,
         consortium_id: Optional[str] = None,
         model_type: Optional[str] = None,
-        status: Optional[str] = None
-    ) -> List[Dict]:
+        status: Optional[str] = None,
+    ) -> list[dict]:
         """List federated models with optional filters."""
         self._init_federated_schema()
 
@@ -435,35 +494,41 @@ class FederatedManager:
         company_id: str,
         name: str,
         node_type: str = "inference",
-        hardware_info: Optional[Dict] = None
-    ) -> Dict:
+        hardware_info: Optional[dict] = None,
+    ) -> dict:
         """Register an edge node for federated inference."""
         self._init_federated_schema()
         node_id = f"node_{uuid.uuid4().hex[:16]}"
 
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO edge_nodes
                 (id, company_id, name, node_type, hardware_info, last_heartbeat)
                 VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-            """, (node_id, company_id, name, node_type, json.dumps(hardware_info or {})))
+            """,
+                (node_id, company_id, name, node_type, json.dumps(hardware_info or {})),
+            )
             conn.commit()
 
         return self.get_edge_node(node_id)
 
-    def get_edge_node(self, node_id: str) -> Optional[Dict]:
+    def get_edge_node(self, node_id: str) -> Optional[dict]:
         """Get an edge node by ID."""
         self._init_federated_schema()
 
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT n.*, c.name as company_name
                 FROM edge_nodes n
                 JOIN companies c ON n.company_id = c.id
                 WHERE n.id = ?
-            """, (node_id,))
+            """,
+                (node_id,),
+            )
             row = cursor.fetchone()
 
         if not row:
@@ -475,10 +540,8 @@ class FederatedManager:
         return node
 
     def list_edge_nodes(
-        self,
-        company_id: Optional[str] = None,
-        status: Optional[str] = None
-    ) -> List[Dict]:
+        self, company_id: Optional[str] = None, status: Optional[str] = None
+    ) -> list[dict]:
         """List edge nodes with optional filters."""
         self._init_federated_schema()
 
@@ -515,11 +578,8 @@ class FederatedManager:
         return nodes
 
     def deploy_model_to_edge(
-        self,
-        node_id: str,
-        model_id: str,
-        company_id: Optional[str] = None
-    ) -> Dict:
+        self, node_id: str, model_id: str, company_id: Optional[str] = None
+    ) -> dict:
         """Deploy a federated model to an edge node."""
         self._init_federated_schema()
 
@@ -540,16 +600,19 @@ class FederatedManager:
 
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 UPDATE edge_nodes SET models_deployed = ? WHERE id = ?
-            """, (json.dumps(models_deployed), node_id))
+            """,
+                (json.dumps(models_deployed), node_id),
+            )
             conn.commit()
 
         return {
             "node_id": node_id,
             "model_id": model_id,
             "status": "deployed",
-            "models_deployed": models_deployed
+            "models_deployed": models_deployed,
         }
 
     def update_edge_heartbeat(self, node_id: str) -> bool:
@@ -558,9 +621,12 @@ class FederatedManager:
 
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 UPDATE edge_nodes SET last_heartbeat = CURRENT_TIMESTAMP WHERE id = ?
-            """, (node_id,))
+            """,
+                (node_id,),
+            )
             conn.commit()
             return cursor.rowcount > 0
 
@@ -571,13 +637,19 @@ class FederatedManager:
         with self._get_connection() as conn:
             cursor = conn.cursor()
             if company_id:
-                cursor.execute("""
+                cursor.execute(
+                    """
                     DELETE FROM inference_endpoints WHERE id = ? AND company_id = ?
-                """, (endpoint_id, company_id))
+                """,
+                    (endpoint_id, company_id),
+                )
             else:
-                cursor.execute("""
+                cursor.execute(
+                    """
                     DELETE FROM inference_endpoints WHERE id = ?
-                """, (endpoint_id,))
+                """,
+                    (endpoint_id,),
+                )
             conn.commit()
             return cursor.rowcount > 0
 
@@ -588,17 +660,23 @@ class FederatedManager:
         with self._get_connection() as conn:
             cursor = conn.cursor()
             if company_id:
-                cursor.execute("""
+                cursor.execute(
+                    """
                     DELETE FROM edge_nodes WHERE id = ? AND company_id = ?
-                """, (node_id, company_id))
+                """,
+                    (node_id, company_id),
+                )
             else:
-                cursor.execute("""
+                cursor.execute(
+                    """
                     DELETE FROM edge_nodes WHERE id = ?
-                """, (node_id,))
+                """,
+                    (node_id,),
+                )
             conn.commit()
             return cursor.rowcount > 0
 
-    def get_federated_stats(self, company_id: Optional[str] = None) -> Dict:
+    def get_federated_stats(self, company_id: Optional[str] = None) -> dict:
         """Get federated inference statistics."""
         self._init_federated_schema()
 
@@ -606,49 +684,67 @@ class FederatedManager:
             cursor = conn.cursor()
 
             if company_id:
-                cursor.execute("SELECT COUNT(*) FROM inference_endpoints WHERE company_id = ?", (company_id,))
+                cursor.execute(
+                    "SELECT COUNT(*) FROM inference_endpoints WHERE company_id = ?", (company_id,)
+                )
             else:
                 cursor.execute("SELECT COUNT(*) FROM inference_endpoints")
             total_endpoints = cursor.fetchone()[0]
 
             if company_id:
-                cursor.execute("SELECT COUNT(*) FROM inference_endpoints WHERE company_id = ? AND status = 'active'", (company_id,))
+                cursor.execute(
+                    "SELECT COUNT(*) FROM inference_endpoints WHERE company_id = ? AND status = 'active'",
+                    (company_id,),
+                )
             else:
                 cursor.execute("SELECT COUNT(*) FROM inference_endpoints WHERE status = 'active'")
             active_endpoints = cursor.fetchone()[0]
 
             if company_id:
-                cursor.execute("""
+                cursor.execute(
+                    """
                     SELECT COUNT(*) FROM inference_requests r
                     JOIN inference_endpoints e ON r.endpoint_id = e.id
                     WHERE e.company_id = ?
-                """, (company_id,))
+                """,
+                    (company_id,),
+                )
             else:
                 cursor.execute("SELECT COUNT(*) FROM inference_requests")
             total_requests = cursor.fetchone()[0]
 
             if company_id:
-                cursor.execute("""
+                cursor.execute(
+                    """
                     SELECT COUNT(*) FROM inference_requests r
                     JOIN inference_endpoints e ON r.endpoint_id = e.id
                     WHERE e.company_id = ? AND r.status = 'completed'
-                """, (company_id,))
+                """,
+                    (company_id,),
+                )
             else:
                 cursor.execute("SELECT COUNT(*) FROM inference_requests WHERE status = 'completed'")
             completed_requests = cursor.fetchone()[0]
 
             if company_id:
-                cursor.execute("""
+                cursor.execute(
+                    """
                     SELECT AVG(r.processing_time_ms) FROM inference_requests r
                     JOIN inference_endpoints e ON r.endpoint_id = e.id
                     WHERE e.company_id = ? AND r.status = 'completed'
-                """, (company_id,))
+                """,
+                    (company_id,),
+                )
             else:
-                cursor.execute("SELECT AVG(processing_time_ms) FROM inference_requests WHERE status = 'completed'")
+                cursor.execute(
+                    "SELECT AVG(processing_time_ms) FROM inference_requests WHERE status = 'completed'"
+                )
             avg_processing_time = cursor.fetchone()[0] or 0
 
             if company_id:
-                cursor.execute("SELECT COUNT(*) FROM edge_nodes WHERE company_id = ?", (company_id,))
+                cursor.execute(
+                    "SELECT COUNT(*) FROM edge_nodes WHERE company_id = ?", (company_id,)
+                )
             else:
                 cursor.execute("SELECT COUNT(*) FROM edge_nodes")
             total_edge_nodes = cursor.fetchone()[0]
@@ -664,7 +760,7 @@ class FederatedManager:
             "avg_processing_time_ms": round(avg_processing_time, 2),
             "total_edge_nodes": total_edge_nodes,
             "total_federated_models": total_models,
-            "data_privacy_preserved": True
+            "data_privacy_preserved": True,
         }
 
 

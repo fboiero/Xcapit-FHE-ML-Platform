@@ -8,48 +8,40 @@ Usage:
     python -m sdk.api.server
 """
 
-import base64
-import hashlib
-import json
-import pickle
-import tempfile
 import uuid
 from datetime import datetime
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional
 
 import numpy as np
-from fastapi import FastAPI, HTTPException, UploadFile, File, BackgroundTasks, Depends
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
-
-from .auth import (
-    require_api_key,
-    require_read,
-    require_write,
-    optional_auth,
-    check_rate_limit,
-    rate_limiter,
-    create_api_key,
-    list_api_keys,
-    revoke_api_key,
-)
 
 # SDK imports
 from ..models import (
-    LinearRegression,
-    LogisticRegression,
     DecisionTreeClassifier,
     DecisionTreeRegressor,
     KMeans,
+    KMeansConfig,
+    LinearRegression,
+    LogisticRegression,
     ModelConfig,
     TreeConfig,
-    KMeansConfig,
+)
+from .auth import (
+    check_rate_limit,
+    create_api_key,
+    list_api_keys,
+    optional_auth,
+    rate_limiter,
+    require_api_key,
+    require_read,
+    require_write,
+    revoke_api_key,
 )
 
-
 # ============ Pydantic Models ============
+
 
 class HealthResponse(BaseModel):
     status: str
@@ -58,8 +50,10 @@ class HealthResponse(BaseModel):
 
 
 class ModelCreateRequest(BaseModel):
-    model_type: str = Field(..., description="Model type: linear_regression, logistic_regression, decision_tree, kmeans")
-    config: Optional[Dict[str, Any]] = Field(default=None, description="Model configuration")
+    model_type: str = Field(
+        ..., description="Model type: linear_regression, logistic_regression, decision_tree, kmeans"
+    )
+    config: Optional[dict[str, Any]] = Field(default=None, description="Model configuration")
 
 
 class ModelResponse(BaseModel):
@@ -67,12 +61,12 @@ class ModelResponse(BaseModel):
     model_type: str
     status: str
     created_at: str
-    config: Dict[str, Any]
+    config: dict[str, Any]
 
 
 class TrainRequest(BaseModel):
-    X: List[List[float]] = Field(..., description="Feature matrix")
-    y: Optional[List[float]] = Field(None, description="Target vector (optional for clustering)")
+    X: list[list[float]] = Field(..., description="Feature matrix")
+    y: Optional[list[float]] = Field(None, description="Target vector (optional for clustering)")
 
 
 class TrainResponse(BaseModel):
@@ -80,25 +74,25 @@ class TrainResponse(BaseModel):
     status: str
     epochs: int
     final_loss: Optional[float]
-    metrics: Dict[str, Any]
+    metrics: dict[str, Any]
 
 
 class PredictRequest(BaseModel):
-    X: List[List[float]] = Field(..., description="Feature matrix for prediction")
+    X: list[list[float]] = Field(..., description="Feature matrix for prediction")
 
 
 class PredictResponse(BaseModel):
     model_id: str
-    predictions: List[float]
-    probabilities: Optional[List[List[float]]] = None
+    predictions: list[float]
+    probabilities: Optional[list[list[float]]] = None
 
 
 class ModelParams(BaseModel):
-    weights: Optional[List[float]] = None
+    weights: Optional[list[float]] = None
     bias: Optional[float] = None
     n_features: Optional[int] = None
     state: str
-    extra: Dict[str, Any] = {}
+    extra: dict[str, Any] = {}
 
 
 class ErrorResponse(BaseModel):
@@ -108,10 +102,10 @@ class ErrorResponse(BaseModel):
 
 # ============ Database Storage ============
 
-from .database import get_database, DatabaseManager
+from .database import DatabaseManager, get_database
 
 # In-memory cache for loaded model instances (optional, for performance)
-_model_cache: Dict[str, Any] = {}
+_model_cache: dict[str, Any] = {}
 
 
 def get_db() -> DatabaseManager:
@@ -124,9 +118,9 @@ class ModelStore:
 
     def __init__(self, use_cache: bool = True):
         self.use_cache = use_cache
-        self._cache: Dict[str, Any] = {}
+        self._cache: dict[str, Any] = {}
 
-    def save(self, model_id: str, model: Any, metadata: Dict) -> None:
+    def save(self, model_id: str, model: Any, metadata: dict) -> None:
         """Save model to database."""
         db = get_db()
         db.save_model(
@@ -189,7 +183,7 @@ class ModelStore:
             del self._cache[model_id]
         return get_db().delete_model(model_id)
 
-    def list_models(self) -> List[Dict]:
+    def list_models(self) -> list[dict]:
         """List all models from database."""
         db = get_db()
         records = db.list_models()
@@ -231,6 +225,7 @@ model_store = ModelStore(use_cache=True)
 
 # ============ FastAPI App ============
 
+
 def create_app() -> FastAPI:
     """Create and configure FastAPI application."""
 
@@ -253,42 +248,52 @@ def create_app() -> FastAPI:
 
     # Include consortium routes
     from .consortium_routes import router as consortium_router
+
     app.include_router(consortium_router, prefix="/api/v1")
 
     # Include governance routes (TIER 2)
     from .governance_routes import router as governance_router
+
     app.include_router(governance_router, prefix="/api/v1")
 
     # Include compliance routes (TIER 3)
     from .compliance_routes import router as compliance_router
+
     app.include_router(compliance_router, prefix="/api/v1")
 
     # Include data quality routes (TIER 3)
     from .data_quality_routes import router as data_quality_router
+
     app.include_router(data_quality_router, prefix="/api/v1")
 
     # Include marketplace routes (TIER 3)
     from .marketplace_routes import router as marketplace_router
+
     app.include_router(marketplace_router, prefix="/api/v1")
 
     # Include sandbox routes (TIER 3)
     from .sandbox_routes import router as sandbox_router
+
     app.include_router(sandbox_router, prefix="/api/v1")
 
     # Include federated inference routes (TIER 4)
     from .federated_routes import router as federated_router
+
     app.include_router(federated_router, prefix="/api/v1")
 
     # Include explainability routes (TIER 4)
     from .explainability_routes import router as explainability_router
+
     app.include_router(explainability_router, prefix="/api/v1")
 
     # Include competitive insights routes (TIER 4)
     from .competitive_routes import router as competitive_router
+
     app.include_router(competitive_router, prefix="/api/v1")
 
     # Include ensemble routes (TIER 4)
     from .ensemble_routes import router as ensemble_router
+
     app.include_router(ensemble_router, prefix="/api/v1")
 
     return app
@@ -299,7 +304,8 @@ app = create_app()
 
 # ============ Helper Functions ============
 
-def create_model(model_type: str, config: Optional[Dict] = None):
+
+def create_model(model_type: str, config: Optional[dict] = None):
     """Create a model instance based on type."""
     config = config or {}
 
@@ -348,6 +354,7 @@ def generate_model_id() -> str:
 
 # ============ API Endpoints ============
 
+
 @app.get("/", response_model=HealthResponse)
 async def root():
     """Health check endpoint."""
@@ -372,6 +379,7 @@ async def health():
 async def health_detailed():
     """Detailed health check with system metrics."""
     from ..monitoring import get_health_status
+
     status = get_health_status()
     return {
         "status": status.status,
@@ -386,11 +394,13 @@ async def health_detailed():
 async def get_metrics_endpoint():
     """Get system metrics."""
     from ..monitoring import get_metrics
+
     metrics = get_metrics()
     return metrics.get_all_metrics()
 
 
 # ---- Model Management ----
+
 
 @app.post("/models", response_model=ModelResponse)
 async def create_model_endpoint(
@@ -424,7 +434,7 @@ async def create_model_endpoint(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@app.get("/models", response_model=List[Dict])
+@app.get("/models", response_model=list[dict])
 async def list_models(
     auth: dict = Depends(require_read),
 ):
@@ -481,13 +491,18 @@ async def get_model_params(
             bias=params.get("bias"),
             n_features=params.get("n_features"),
             state=params.get("state", "unknown"),
-            extra={k: v for k, v in params.items() if k not in ["weights", "bias", "n_features", "state"]},
+            extra={
+                k: v
+                for k, v in params.items()
+                if k not in ["weights", "bias", "n_features", "state"]
+            },
         )
     except KeyError:
         raise HTTPException(status_code=404, detail=f"Model {model_id} not found")
 
 
 # ---- Training ----
+
 
 @app.post("/models/{model_id}/train", response_model=TrainResponse)
 async def train_model(
@@ -511,7 +526,9 @@ async def train_model(
             model.fit(X)
         else:
             if y is None:
-                raise HTTPException(status_code=400, detail="Target y is required for supervised models")
+                raise HTTPException(
+                    status_code=400, detail="Target y is required for supervised models"
+                )
             model.fit(X, y)
 
         # Get metrics
@@ -548,6 +565,7 @@ async def train_model(
 
 # ---- Prediction ----
 
+
 @app.post("/models/{model_id}/predict", response_model=PredictResponse)
 async def predict(
     model_id: str,
@@ -557,6 +575,7 @@ async def predict(
     """Make predictions with a trained model (requires read permission)."""
     check_rate_limit(auth)
     import time
+
     start_time = time.perf_counter()
 
     try:
@@ -606,10 +625,11 @@ async def predict(
 
 # ---- Stats ----
 
+
 class StatsResponse(BaseModel):
-    models: Dict[str, int]
-    predictions: Dict[str, Any]
-    training_runs: Dict[str, int]
+    models: dict[str, int]
+    predictions: dict[str, Any]
+    training_runs: dict[str, int]
 
 
 @app.get("/stats", response_model=StatsResponse)
@@ -637,6 +657,7 @@ async def get_prediction_stats(
 
 
 # ---- Model Types Info ----
+
 
 @app.get("/model-types")
 async def get_model_types():
@@ -666,7 +687,11 @@ async def get_model_types():
                     "max_depth": {"type": "int", "default": 4},
                     "learning_rate": {"type": "float", "default": 0.1},
                     "n_epochs": {"type": "int", "default": 50},
-                    "task": {"type": "str", "default": "classification", "options": ["classification", "regression"]},
+                    "task": {
+                        "type": "str",
+                        "default": "classification",
+                        "options": ["classification", "regression"],
+                    },
                 },
             },
             {
@@ -683,9 +708,10 @@ async def get_model_types():
 
 # ---- API Key Management ----
 
+
 class CreateApiKeyRequest(BaseModel):
     name: str = Field(..., description="Human-readable name for the key")
-    permissions: Optional[List[str]] = Field(default=["read", "write"], description="Permissions")
+    permissions: Optional[list[str]] = Field(default=["read", "write"], description="Permissions")
     rate_limit: int = Field(default=100, description="Requests per minute")
 
 
@@ -693,7 +719,7 @@ class ApiKeyResponse(BaseModel):
     api_key: str = Field(..., description="The API key (save this, it won't be shown again)")
     key_hash: str = Field(..., description="Key hash for reference")
     name: str
-    permissions: List[str]
+    permissions: list[str]
     rate_limit: int
 
 
@@ -732,7 +758,7 @@ async def admin_revoke_api_key(
 ):
     """Revoke an API key (requires admin permission)."""
     if revoke_api_key(key_hash_prefix):
-        return {"message": f"API key revoked"}
+        return {"message": "API key revoked"}
     raise HTTPException(status_code=404, detail="API key not found")
 
 
@@ -757,9 +783,11 @@ async def get_current_auth(
 
 # ============ Main ============
 
+
 def main():
     """Run the API server."""
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)
 
 

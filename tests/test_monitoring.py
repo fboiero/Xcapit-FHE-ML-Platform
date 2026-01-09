@@ -10,32 +10,31 @@ Tests cover:
 
 import json
 import logging
-import time
 import threading
+import time
 from datetime import datetime
-from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock
 
 import pytest
 
 from sdk.monitoring import (
-    StructuredFormatter,
     ConsoleFormatter,
-    setup_logging,
-    get_logger,
+    HealthStatus,
     MetricPoint,
+    Metrics,
     MetricsCollector,
+    StructuredFormatter,
+    count_calls,
+    get_health_status,
+    get_logger,
     get_metrics,
     log_call,
+    setup_logging,
     timed,
-    count_calls,
-    HealthStatus,
-    get_health_status,
-    Metrics,
 )
 
-
 # ========== StructuredFormatter Tests ==========
+
 
 class TestStructuredFormatter:
     """Tests for StructuredFormatter."""
@@ -70,6 +69,7 @@ class TestStructuredFormatter:
             raise ValueError("Test error")
         except ValueError:
             import sys
+
             exc_info = sys.exc_info()
 
         record = logging.LogRecord(
@@ -113,6 +113,7 @@ class TestStructuredFormatter:
 
 
 # ========== ConsoleFormatter Tests ==========
+
 
 class TestConsoleFormatter:
     """Tests for ConsoleFormatter."""
@@ -180,6 +181,7 @@ class TestConsoleFormatter:
 
 # ========== setup_logging Tests ==========
 
+
 class TestSetupLogging:
     """Tests for setup_logging function."""
 
@@ -216,6 +218,7 @@ class TestSetupLogging:
 
 # ========== get_logger Tests ==========
 
+
 class TestGetLogger:
     """Tests for get_logger function."""
 
@@ -231,13 +234,14 @@ class TestGetLogger:
 
     def test_logger_hierarchy(self):
         """Test logger hierarchy."""
-        parent = get_logger("fheml")
+        get_logger("fheml")
         child = get_logger("fheml.child")
 
         assert child.parent.name == "fheml"
 
 
 # ========== MetricPoint Tests ==========
+
 
 class TestMetricPoint:
     """Tests for MetricPoint dataclass."""
@@ -254,9 +258,7 @@ class TestMetricPoint:
     def test_metric_point_with_tags(self):
         """Test creating a metric point with tags."""
         point = MetricPoint(
-            name="test_metric",
-            value=100.0,
-            tags={"env": "prod", "region": "us-east"}
+            name="test_metric", value=100.0, tags={"env": "prod", "region": "us-east"}
         )
 
         assert point.tags["env"] == "prod"
@@ -264,6 +266,7 @@ class TestMetricPoint:
 
 
 # ========== MetricsCollector Tests ==========
+
 
 class TestMetricsCollector:
     """Tests for MetricsCollector."""
@@ -429,6 +432,7 @@ class TestMetricsCollector:
 
 # ========== get_metrics Tests ==========
 
+
 class TestGetMetrics:
     """Tests for get_metrics singleton."""
 
@@ -445,6 +449,7 @@ class TestGetMetrics:
 
 
 # ========== Decorator Tests ==========
+
 
 class TestLogCallDecorator:
     """Tests for log_call decorator."""
@@ -548,6 +553,7 @@ class TestCountCallsDecorator:
 
 # ========== Health Check Tests ==========
 
+
 class TestHealthStatus:
     """Tests for HealthStatus dataclass."""
 
@@ -591,6 +597,7 @@ class TestGetHealthStatus:
 
 # ========== Metrics Constants Tests ==========
 
+
 class TestMetricsConstants:
     """Tests for Metrics constants class."""
 
@@ -618,6 +625,7 @@ class TestMetricsConstants:
 
 # ========== Integration Tests ==========
 
+
 class TestMonitoringIntegration:
     """Integration tests for monitoring module."""
 
@@ -635,7 +643,7 @@ class TestMonitoringIntegration:
         logger.info("Starting application", extra={"version": "1.0.0"})
 
         # Record some metrics
-        for i in range(5):
+        for _i in range(5):
             with metrics.timer(Metrics.API_LATENCY):
                 time.sleep(0.001)
             metrics.increment(Metrics.API_REQUESTS)

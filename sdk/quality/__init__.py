@@ -6,14 +6,14 @@ working only with metadata and aggregated statistics.
 
 from .calculator import (
     DataProfile,
-    QualityScore,
     DataQualityCalculator,
+    QualityScore,
     calculate_quality_from_encrypted_metadata,
 )
 
 __all__ = [
-    'DataProfile',
-    'QualityScore',
-    'DataQualityCalculator',
-    'calculate_quality_from_encrypted_metadata',
+    "DataProfile",
+    "QualityScore",
+    "DataQualityCalculator",
+    "calculate_quality_from_encrypted_metadata",
 ]

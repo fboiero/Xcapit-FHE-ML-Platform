@@ -8,42 +8,35 @@ Tests cover:
 
 import json
 import pickle
-from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pandas as pd
 import pytest
 
 from sdk.models import (
-    LinearRegression,
-    LogisticRegression,
     DecisionTreeClassifier,
     KMeans,
-    ModelConfig,
-    TreeConfig,
-    KMeansConfig,
+    LinearRegression,
 )
 from sdk.utils.serialization import (
     MODEL_REGISTRY,
     compute_weights_hash,
-    save_model,
-    load_model,
-    get_model_info,
     export_weights_json,
-    import_weights_json,
+    get_model_info,
+    load_model,
+    save_model,
 )
 from sdk.utils.validators import (
     ValidationError,
-    validate_numeric_data,
+    check_fhe_compatibility,
     validate_data_shape,
     validate_feature_range,
+    validate_numeric_data,
     validate_target,
-    check_fhe_compatibility,
 )
 
-
 # ========== Model Registry Tests ==========
+
 
 class TestModelRegistry:
     """Tests for MODEL_REGISTRY."""
@@ -64,11 +57,12 @@ class TestModelRegistry:
 
     def test_registry_values_are_classes(self):
         """Test that registry values are model classes."""
-        for name, cls in MODEL_REGISTRY.items():
+        for _name, cls in MODEL_REGISTRY.items():
             assert isinstance(cls, type)
 
 
 # ========== compute_weights_hash Tests ==========
+
 
 class TestComputeWeightsHash:
     """Tests for compute_weights_hash function."""
@@ -110,6 +104,7 @@ class TestComputeWeightsHash:
 
 
 # ========== save_model Tests ==========
+
 
 class TestSaveModel:
     """Tests for save_model function."""
@@ -209,6 +204,7 @@ class TestSaveModel:
 
 # ========== load_model Tests ==========
 
+
 class TestLoadModel:
     """Tests for load_model function."""
 
@@ -233,6 +229,7 @@ class TestLoadModel:
 
 
 # ========== get_model_info Tests ==========
+
 
 class TestGetModelInfo:
     """Tests for get_model_info function."""
@@ -286,6 +283,7 @@ class TestGetModelInfo:
 
 # ========== export_weights_json Tests ==========
 
+
 class TestExportWeightsJson:
     """Tests for export_weights_json function."""
 
@@ -323,6 +321,7 @@ class TestExportWeightsJson:
 
 # ========== import_weights_json Tests ==========
 
+
 class TestImportWeightsJson:
     """Tests for import_weights_json function."""
 
@@ -346,6 +345,7 @@ class TestImportWeightsJson:
 
 
 # ========== Validators Tests ==========
+
 
 class TestValidationError:
     """Tests for ValidationError."""
@@ -594,6 +594,7 @@ class TestCheckFheCompatibility:
 
 
 # ========== Integration Tests ==========
+
 
 class TestSerializationIntegration:
     """Integration tests for serialization utilities."""

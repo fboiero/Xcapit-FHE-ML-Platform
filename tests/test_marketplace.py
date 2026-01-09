@@ -8,12 +8,12 @@ Tests cover:
 - Marketplace statistics
 """
 
-import sys
-from pathlib import Path
-import pytest
-import tempfile
-from datetime import datetime
 import importlib.util
+import sys
+import tempfile
+from pathlib import Path
+
+import pytest
 
 project_root = Path(__file__).parent.parent
 sdk_api_path = project_root / "sdk" / "api"
@@ -31,8 +31,7 @@ def load_module_from_path(module_name, file_path):
 # Load consortium module package
 consortium_package_path = sdk_api_path / "consortium"
 consortium_module = load_module_from_path(
-    "sdk.api.consortium",
-    consortium_package_path / "__init__.py"
+    "sdk.api.consortium", consortium_package_path / "__init__.py"
 )
 ConsortiumManager = consortium_module.ConsortiumManager
 ConsortiumStatus = consortium_module.ConsortiumStatus
@@ -124,9 +123,17 @@ class TestMarketplaceModels:
         model = models[0]
 
         required_fields = [
-            "id", "name", "description", "industry", "model_type",
-            "version", "pricing_type", "is_featured", "downloads",
-            "rating", "rating_count"
+            "id",
+            "name",
+            "description",
+            "industry",
+            "model_type",
+            "version",
+            "pricing_type",
+            "is_featured",
+            "downloads",
+            "rating",
+            "rating_count",
         ]
 
         for field in required_fields:
@@ -154,7 +161,7 @@ class TestMarketplaceModels:
 
         assert len(models) >= 1
         for model in models:
-            assert model["is_featured"] == True
+            assert model["is_featured"]
 
     def test_sort_by_downloads(self, manager):
         """Test sorting models by downloads."""
@@ -193,7 +200,7 @@ class TestMarketplaceModels:
         assert len(models) >= 1
         assert len(models) <= 4
         for model in models:
-            assert model["is_featured"] == True
+            assert model["is_featured"]
 
     def test_get_single_model(self, manager):
         """Test retrieving a single model by ID."""
@@ -236,22 +243,18 @@ class TestMarketplaceDeployments:
             name="Test Consortium",
             description="Testing marketplace",
             owner_id=owner.id,
-            model_type="linear_regression"
+            model_type="linear_regression",
         )
 
         invitation = manager.create_invitation(
             consortium_id=consortium.id,
             invited_by=owner.id,
             invite_email="member@test.com",
-            role=MemberRole.CONTRIBUTOR
+            role=MemberRole.CONTRIBUTOR,
         )
         manager.accept_invitation(invitation.invite_code, member.id)
 
-        return {
-            "consortium": consortium,
-            "owner": owner,
-            "member": member
-        }
+        return {"consortium": consortium, "owner": owner, "member": member}
 
     def test_deploy_marketplace_model(self, manager, setup_consortium):
         """Test deploying a model to a consortium."""
@@ -263,9 +266,7 @@ class TestMarketplaceDeployments:
         model = models[0]
 
         deployment = manager.deploy_marketplace_model(
-            model_id=model["id"],
-            consortium_id=consortium.id,
-            deployed_by=owner.id
+            model_id=model["id"], consortium_id=consortium.id, deployed_by=owner.id
         )
 
         assert deployment is not None
@@ -286,10 +287,7 @@ class TestMarketplaceDeployments:
         config = {"threshold": 0.5, "max_predictions": 1000}
 
         deployment = manager.deploy_marketplace_model(
-            model_id=model["id"],
-            consortium_id=consortium.id,
-            deployed_by=owner.id,
-            config=config
+            model_id=model["id"], consortium_id=consortium.id, deployed_by=owner.id, config=config
         )
 
         assert deployment is not None
@@ -303,9 +301,7 @@ class TestMarketplaceDeployments:
         # Deploy a model
         models = manager.get_marketplace_models()
         manager.deploy_marketplace_model(
-            model_id=models[0]["id"],
-            consortium_id=consortium.id,
-            deployed_by=owner.id
+            model_id=models[0]["id"], consortium_id=consortium.id, deployed_by=owner.id
         )
 
         deployments = manager.get_consortium_deployments(consortium.id)
@@ -321,15 +317,13 @@ class TestMarketplaceDeployments:
         # Deploy a model first
         models = manager.get_marketplace_models()
         deployment = manager.deploy_marketplace_model(
-            model_id=models[0]["id"],
-            consortium_id=consortium.id,
-            deployed_by=owner.id
+            model_id=models[0]["id"], consortium_id=consortium.id, deployed_by=owner.id
         )
 
         # Undeploy it
         success = manager.undeploy_model(deployment["id"], owner.id)
 
-        assert success == True
+        assert success
 
         # Verify it's removed
         deployments = manager.get_consortium_deployments(consortium.id)
@@ -343,9 +337,7 @@ class TestMarketplaceDeployments:
 
         with pytest.raises(ValueError):
             manager.deploy_marketplace_model(
-                model_id="nonexistent_model",
-                consortium_id=consortium.id,
-                deployed_by=owner.id
+                model_id="nonexistent_model", consortium_id=consortium.id, deployed_by=owner.id
             )
 
 
@@ -378,7 +370,7 @@ class TestMarketplaceReviews:
             reviewer_id=company.id,
             rating=5,
             title="Great model!",
-            comment="This model works perfectly for our use case."
+            comment="This model works perfectly for our use case.",
         )
 
         assert review_id is not None
@@ -391,7 +383,7 @@ class TestMarketplaceReviews:
             name="Test Consortium",
             description="Testing",
             owner_id=company.id,
-            model_type="linear_regression"
+            model_type="linear_regression",
         )
 
         models = manager.get_marketplace_models()
@@ -403,7 +395,7 @@ class TestMarketplaceReviews:
             rating=4,
             title="Good model",
             comment="Works well in our consortium.",
-            consortium_id=consortium.id
+            consortium_id=consortium.id,
         )
 
         assert review_id is not None
@@ -421,7 +413,7 @@ class TestMarketplaceReviews:
             reviewer_id=company.id,
             rating=5,
             title="Excellent!",
-            comment="Highly recommended."
+            comment="Highly recommended.",
         )
 
         reviews = manager.get_model_reviews(model["id"])
@@ -440,19 +432,13 @@ class TestMarketplaceReviews:
         # Rating too low
         with pytest.raises(ValueError):
             manager.add_model_review(
-                model_id=model["id"],
-                reviewer_id=company.id,
-                rating=0,
-                title="Test"
+                model_id=model["id"], reviewer_id=company.id, rating=0, title="Test"
             )
 
         # Rating too high
         with pytest.raises(ValueError):
             manager.add_model_review(
-                model_id=model["id"],
-                reviewer_id=company.id,
-                rating=6,
-                title="Test"
+                model_id=model["id"], reviewer_id=company.id, rating=6, title="Test"
             )
 
     def test_review_updates_model_rating(self, manager, setup_company):
@@ -464,10 +450,7 @@ class TestMarketplaceReviews:
 
         # Add a review
         manager.add_model_review(
-            model_id=model["id"],
-            reviewer_id=company.id,
-            rating=5,
-            title="Test review"
+            model_id=model["id"], reviewer_id=company.id, rating=5, title="Test review"
         )
 
         # Verify the review was added
@@ -545,7 +528,7 @@ class TestMarketplaceIntegration:
             name="Enterprise Consortium",
             description="For testing marketplace workflow",
             owner_id=company.id,
-            model_type="logistic_regression"
+            model_type="logistic_regression",
         )
 
         # Browse marketplace categories
@@ -562,9 +545,7 @@ class TestMarketplaceIntegration:
 
         # Deploy model to consortium
         deployment = manager.deploy_marketplace_model(
-            model_id=model["id"],
-            consortium_id=consortium.id,
-            deployed_by=company.id
+            model_id=model["id"], consortium_id=consortium.id, deployed_by=company.id
         )
         assert deployment is not None
 
@@ -579,7 +560,7 @@ class TestMarketplaceIntegration:
             rating=5,
             title="Excellent fraud detection",
             comment="Reduced our false positives by 40%",
-            consortium_id=consortium.id
+            consortium_id=consortium.id,
         )
         assert review_id is not None
 
@@ -593,7 +574,7 @@ class TestMarketplaceIntegration:
 
         # Undeploy model
         success = manager.undeploy_model(deployment["id"], company.id)
-        assert success == True
+        assert success
 
     def test_multiple_deployments(self, manager):
         """Test deploying multiple models to same consortium."""
@@ -603,7 +584,7 @@ class TestMarketplaceIntegration:
             name="Multi Model Consortium",
             description="Testing multiple deployments",
             owner_id=company.id,
-            model_type="logistic_regression"
+            model_type="logistic_regression",
         )
 
         models = manager.get_marketplace_models(limit=3)
@@ -611,9 +592,7 @@ class TestMarketplaceIntegration:
         # Deploy multiple models
         for model in models:
             manager.deploy_marketplace_model(
-                model_id=model["id"],
-                consortium_id=consortium.id,
-                deployed_by=company.id
+                model_id=model["id"], consortium_id=consortium.id, deployed_by=company.id
             )
 
         deployments = manager.get_consortium_deployments(consortium.id)
@@ -622,10 +601,7 @@ class TestMarketplaceIntegration:
     def test_search_and_filter_combination(self, manager):
         """Test combining search with filters."""
         # Search for fraud in credit category (should return empty or matching)
-        models = manager.get_marketplace_models(
-            industry="cat_credit",
-            search="default"
-        )
+        models = manager.get_marketplace_models(industry="cat_credit", search="default")
 
         for model in models:
             assert model["industry"] == "cat_credit"

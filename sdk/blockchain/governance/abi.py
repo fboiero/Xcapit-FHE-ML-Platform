@@ -8,22 +8,22 @@ GOVERNANCE_ABI = [
             {"name": "name", "type": "string"},
             {"name": "minVotingQuorum", "type": "uint256"},
             {"name": "votingDuration", "type": "uint256"},
-            {"name": "modelConfigHash", "type": "bytes32"}
+            {"name": "modelConfigHash", "type": "bytes32"},
         ],
         "name": "createConsortium",
         "outputs": [{"name": "consortiumId", "type": "bytes32"}],
         "stateMutability": "nonpayable",
-        "type": "function"
+        "type": "function",
     },
     {
         "inputs": [
             {"name": "consortiumId", "type": "bytes32"},
-            {"name": "newMember", "type": "address"}
+            {"name": "newMember", "type": "address"},
         ],
         "name": "addMember",
         "outputs": [],
         "stateMutability": "nonpayable",
-        "type": "function"
+        "type": "function",
     },
     # Contributions
     {
@@ -32,48 +32,45 @@ GOVERNANCE_ABI = [
             {"name": "recordCount", "type": "uint256"},
             {"name": "featureCount", "type": "uint256"},
             {"name": "dataHash", "type": "bytes32"},
-            {"name": "checksumHash", "type": "bytes32"}
+            {"name": "checksumHash", "type": "bytes32"},
         ],
         "name": "recordContribution",
         "outputs": [{"name": "contributionId", "type": "bytes32"}],
         "stateMutability": "nonpayable",
-        "type": "function"
+        "type": "function",
     },
     {
         "inputs": [{"name": "contributionId", "type": "bytes32"}],
         "name": "verifyContribution",
         "outputs": [],
         "stateMutability": "nonpayable",
-        "type": "function"
+        "type": "function",
     },
     # Proposals
     {
         "inputs": [
             {"name": "consortiumId", "type": "bytes32"},
             {"name": "proposalType", "type": "uint8"},
-            {"name": "data", "type": "bytes"}
+            {"name": "data", "type": "bytes"},
         ],
         "name": "createProposal",
         "outputs": [{"name": "proposalId", "type": "bytes32"}],
         "stateMutability": "nonpayable",
-        "type": "function"
+        "type": "function",
     },
     {
-        "inputs": [
-            {"name": "proposalId", "type": "bytes32"},
-            {"name": "support", "type": "bool"}
-        ],
+        "inputs": [{"name": "proposalId", "type": "bytes32"}, {"name": "support", "type": "bool"}],
         "name": "vote",
         "outputs": [],
         "stateMutability": "nonpayable",
-        "type": "function"
+        "type": "function",
     },
     {
         "inputs": [{"name": "proposalId", "type": "bytes32"}],
         "name": "executeProposal",
         "outputs": [],
         "stateMutability": "nonpayable",
-        "type": "function"
+        "type": "function",
     },
     # Rewards
     {
@@ -81,7 +78,7 @@ GOVERNANCE_ABI = [
         "name": "distributeRewards",
         "outputs": [],
         "stateMutability": "payable",
-        "type": "function"
+        "type": "function",
     },
     # View Functions
     {
@@ -94,15 +91,15 @@ GOVERNANCE_ABI = [
             {"name": "memberCount", "type": "uint256"},
             {"name": "totalContributions", "type": "uint256"},
             {"name": "minVotingQuorum", "type": "uint256"},
-            {"name": "votingDuration", "type": "uint256"}
+            {"name": "votingDuration", "type": "uint256"},
         ],
         "stateMutability": "view",
-        "type": "function"
+        "type": "function",
     },
     {
         "inputs": [
             {"name": "consortiumId", "type": "bytes32"},
-            {"name": "addr", "type": "address"}
+            {"name": "addr", "type": "address"},
         ],
         "name": "getMember",
         "outputs": [
@@ -110,17 +107,17 @@ GOVERNANCE_ABI = [
             {"name": "joinedAt", "type": "uint256"},
             {"name": "contributionCount", "type": "uint256"},
             {"name": "contributionWeight", "type": "uint256"},
-            {"name": "lastContributionAt", "type": "uint256"}
+            {"name": "lastContributionAt", "type": "uint256"},
         ],
         "stateMutability": "view",
-        "type": "function"
+        "type": "function",
     },
     {
         "inputs": [{"name": "consortiumId", "type": "bytes32"}],
         "name": "getMembers",
         "outputs": [{"name": "", "type": "address[]"}],
         "stateMutability": "view",
-        "type": "function"
+        "type": "function",
     },
     {
         "inputs": [{"name": "proposalId", "type": "bytes32"}],
@@ -133,22 +130,22 @@ GOVERNANCE_ABI = [
             {"name": "yesVotes", "type": "uint256"},
             {"name": "noVotes", "type": "uint256"},
             {"name": "expiresAt", "type": "uint256"},
-            {"name": "executed", "type": "bool"}
+            {"name": "executed", "type": "bool"},
         ],
         "stateMutability": "view",
-        "type": "function"
+        "type": "function",
     },
     {
         "inputs": [{"name": "consortiumId", "type": "bytes32"}],
         "name": "getAuditTrailLength",
         "outputs": [{"name": "", "type": "uint256"}],
         "stateMutability": "view",
-        "type": "function"
+        "type": "function",
     },
     {
         "inputs": [
             {"name": "consortiumId", "type": "bytes32"},
-            {"name": "index", "type": "uint256"}
+            {"name": "index", "type": "uint256"},
         ],
         "name": "getAuditEvent",
         "outputs": [
@@ -157,31 +154,31 @@ GOVERNANCE_ABI = [
             {"name": "actor", "type": "address"},
             {"name": "targetId", "type": "bytes32"},
             {"name": "timestamp", "type": "uint256"},
-            {"name": "previousEventHash", "type": "bytes32"}
+            {"name": "previousEventHash", "type": "bytes32"},
         ],
         "stateMutability": "view",
-        "type": "function"
+        "type": "function",
     },
     {
         "inputs": [{"name": "consortiumId", "type": "bytes32"}],
         "name": "verifyAuditTrail",
         "outputs": [{"name": "", "type": "bool"}],
         "stateMutability": "view",
-        "type": "function"
+        "type": "function",
     },
     {
         "inputs": [{"name": "consortiumId", "type": "bytes32"}],
         "name": "getContributionCount",
         "outputs": [{"name": "", "type": "uint256"}],
         "stateMutability": "view",
-        "type": "function"
+        "type": "function",
     },
     {
         "inputs": [{"name": "consortiumId", "type": "bytes32"}],
         "name": "getProposalCount",
         "outputs": [{"name": "", "type": "uint256"}],
         "stateMutability": "view",
-        "type": "function"
+        "type": "function",
     },
     # Events
     {
@@ -189,10 +186,10 @@ GOVERNANCE_ABI = [
         "inputs": [
             {"indexed": True, "name": "consortiumId", "type": "bytes32"},
             {"indexed": False, "name": "name", "type": "string"},
-            {"indexed": True, "name": "owner", "type": "address"}
+            {"indexed": True, "name": "owner", "type": "address"},
         ],
         "name": "ConsortiumCreated",
-        "type": "event"
+        "type": "event",
     },
     {
         "anonymous": False,
@@ -200,10 +197,10 @@ GOVERNANCE_ABI = [
             {"indexed": True, "name": "consortiumId", "type": "bytes32"},
             {"indexed": True, "name": "contributionId", "type": "bytes32"},
             {"indexed": True, "name": "contributor", "type": "address"},
-            {"indexed": False, "name": "recordCount", "type": "uint256"}
+            {"indexed": False, "name": "recordCount", "type": "uint256"},
         ],
         "name": "ContributionRecorded",
-        "type": "event"
+        "type": "event",
     },
     {
         "anonymous": False,
@@ -211,10 +208,10 @@ GOVERNANCE_ABI = [
             {"indexed": True, "name": "proposalId", "type": "bytes32"},
             {"indexed": True, "name": "voter", "type": "address"},
             {"indexed": False, "name": "vote", "type": "bool"},
-            {"indexed": False, "name": "weight", "type": "uint256"}
+            {"indexed": False, "name": "weight", "type": "uint256"},
         ],
         "name": "VoteCast",
-        "type": "event"
+        "type": "event",
     },
 ]
 

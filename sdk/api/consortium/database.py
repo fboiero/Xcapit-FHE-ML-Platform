@@ -28,8 +28,7 @@ class DatabaseManager:
     def get_connection(self):
         """Get database connection."""
         conn = sqlite3.connect(
-            str(self.db_path),
-            detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
+            str(self.db_path), detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
         )
         conn.row_factory = sqlite3.Row
         try:
@@ -137,12 +136,24 @@ class DatabaseManager:
             """)
 
             # Indexes
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_consortiums_owner ON consortiums(owner_id)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_consortiums_status ON consortiums(status)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_memberships_consortium ON memberships(consortium_id)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_memberships_company ON memberships(company_id)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_invitations_code ON invitations(invite_code)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_invitations_email ON invitations(invite_email)")
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_consortiums_owner ON consortiums(owner_id)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_consortiums_status ON consortiums(status)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_memberships_consortium ON memberships(consortium_id)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_memberships_company ON memberships(company_id)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_invitations_code ON invitations(invite_code)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_invitations_email ON invitations(invite_email)"
+            )
 
         self._schemas_initialized.add("core")
 
@@ -398,17 +409,48 @@ class DatabaseManager:
     def _seed_compliance_frameworks(self, cursor, conn):
         """Seed default compliance frameworks."""
         frameworks = [
-            ("framework_gdpr", "GDPR", "2016/679", "General Data Protection Regulation - EU data privacy law", "EU", "all"),
-            ("framework_hipaa", "HIPAA", "1996", "Health Insurance Portability and Accountability Act - US healthcare data", "US", "healthcare"),
-            ("framework_soc2", "SOC2", "Type II", "Service Organization Control 2 - Security, availability, processing integrity", "global", "technology"),
-            ("framework_pci_dss", "PCI-DSS", "4.0", "Payment Card Industry Data Security Standard", "global", "finance"),
+            (
+                "framework_gdpr",
+                "GDPR",
+                "2016/679",
+                "General Data Protection Regulation - EU data privacy law",
+                "EU",
+                "all",
+            ),
+            (
+                "framework_hipaa",
+                "HIPAA",
+                "1996",
+                "Health Insurance Portability and Accountability Act - US healthcare data",
+                "US",
+                "healthcare",
+            ),
+            (
+                "framework_soc2",
+                "SOC2",
+                "Type II",
+                "Service Organization Control 2 - Security, availability, processing integrity",
+                "global",
+                "technology",
+            ),
+            (
+                "framework_pci_dss",
+                "PCI-DSS",
+                "4.0",
+                "Payment Card Industry Data Security Standard",
+                "global",
+                "finance",
+            ),
         ]
 
         for fw in frameworks:
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT OR IGNORE INTO compliance_frameworks (id, name, version, description, region, industry)
                 VALUES (?, ?, ?, ?, ?, ?)
-            """, fw)
+            """,
+                fw,
+            )
         conn.commit()
 
     def init_data_quality_schema(self):
@@ -589,19 +631,43 @@ class DatabaseManager:
 
         # Seed categories
         categories = [
-            ("cat_fraud", "Fraud Detection", "Modelos para deteccion de fraude", "shield-exclamation", None, 1),
-            ("cat_credit", "Credit Scoring", "Modelos para evaluacion crediticia", "banknotes", None, 2),
+            (
+                "cat_fraud",
+                "Fraud Detection",
+                "Modelos para deteccion de fraude",
+                "shield-exclamation",
+                None,
+                1,
+            ),
+            (
+                "cat_credit",
+                "Credit Scoring",
+                "Modelos para evaluacion crediticia",
+                "banknotes",
+                None,
+                2,
+            ),
             ("cat_health", "Healthcare", "Modelos para el sector salud", "heart", None, 3),
-            ("cat_retail", "Retail & E-commerce", "Modelos para comercio", "shopping-cart", None, 4),
+            (
+                "cat_retail",
+                "Retail & E-commerce",
+                "Modelos para comercio",
+                "shopping-cart",
+                None,
+                4,
+            ),
             ("cat_insurance", "Insurance", "Modelos para seguros", "shield-check", None, 5),
         ]
 
         for cat in categories:
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT OR IGNORE INTO model_categories
                 (id, name, description, icon, parent_id, display_order)
                 VALUES (?, ?, ?, ?, ?, ?)
-            """, cat)
+            """,
+                cat,
+            )
 
         # Seed pre-trained models
         models = [
@@ -614,13 +680,17 @@ class DatabaseManager:
                 "version": "2.1.0",
                 "accuracy": 94.5,
                 "training_samples": 1500000,
-                "features": json.dumps(["amount", "merchant_category", "time_of_day", "device_type", "location_risk"]),
-                "use_cases": json.dumps(["Deteccion en tiempo real", "Scoring de riesgo", "Alertas automaticas"]),
+                "features": json.dumps(
+                    ["amount", "merchant_category", "time_of_day", "device_type", "location_risk"]
+                ),
+                "use_cases": json.dumps(
+                    ["Deteccion en tiempo real", "Scoring de riesgo", "Alertas automaticas"]
+                ),
                 "pricing_type": "free",
                 "is_featured": 1,
                 "downloads": 234,
                 "rating": 4.8,
-                "rating_count": 45
+                "rating_count": 45,
             },
             {
                 "id": "model_fraud_account",
@@ -631,13 +701,15 @@ class DatabaseManager:
                 "version": "1.3.0",
                 "accuracy": 91.2,
                 "training_samples": 800000,
-                "features": json.dumps(["login_frequency", "ip_changes", "device_fingerprint", "session_duration"]),
+                "features": json.dumps(
+                    ["login_frequency", "ip_changes", "device_fingerprint", "session_duration"]
+                ),
                 "use_cases": json.dumps(["Proteccion de cuentas", "Verificacion de identidad"]),
                 "pricing_type": "free",
                 "is_featured": 0,
                 "downloads": 156,
                 "rating": 4.5,
-                "rating_count": 28
+                "rating_count": 28,
             },
             {
                 "id": "model_credit_default",
@@ -648,13 +720,17 @@ class DatabaseManager:
                 "version": "3.0.0",
                 "accuracy": 88.7,
                 "training_samples": 2000000,
-                "features": json.dumps(["income_ratio", "credit_history", "debt_to_income", "payment_history"]),
-                "use_cases": json.dumps(["Evaluacion de prestamos", "Limite de credito", "Pricing de riesgo"]),
+                "features": json.dumps(
+                    ["income_ratio", "credit_history", "debt_to_income", "payment_history"]
+                ),
+                "use_cases": json.dumps(
+                    ["Evaluacion de prestamos", "Limite de credito", "Pricing de riesgo"]
+                ),
                 "pricing_type": "free",
                 "is_featured": 1,
                 "downloads": 312,
                 "rating": 4.7,
-                "rating_count": 67
+                "rating_count": 67,
             },
             {
                 "id": "model_credit_score",
@@ -665,13 +741,15 @@ class DatabaseManager:
                 "version": "1.5.0",
                 "accuracy": 82.3,
                 "training_samples": 500000,
-                "features": json.dumps(["utility_payments", "mobile_usage", "social_data", "employment"]),
+                "features": json.dumps(
+                    ["utility_payments", "mobile_usage", "social_data", "employment"]
+                ),
                 "use_cases": json.dumps(["Inclusion financiera", "Microfinanzas"]),
                 "pricing_type": "free",
                 "is_featured": 0,
                 "downloads": 89,
                 "rating": 4.2,
-                "rating_count": 15
+                "rating_count": 15,
             },
             {
                 "id": "model_health_readmission",
@@ -682,13 +760,17 @@ class DatabaseManager:
                 "version": "2.0.0",
                 "accuracy": 86.4,
                 "training_samples": 350000,
-                "features": json.dumps(["diagnosis_codes", "length_of_stay", "age_group", "comorbidities"]),
-                "use_cases": json.dumps(["Gestion de casos", "Prevencion de readmisiones", "Optimizacion de recursos"]),
+                "features": json.dumps(
+                    ["diagnosis_codes", "length_of_stay", "age_group", "comorbidities"]
+                ),
+                "use_cases": json.dumps(
+                    ["Gestion de casos", "Prevencion de readmisiones", "Optimizacion de recursos"]
+                ),
                 "pricing_type": "free",
                 "is_featured": 1,
                 "downloads": 178,
                 "rating": 4.6,
-                "rating_count": 34
+                "rating_count": 34,
             },
             {
                 "id": "model_health_diagnosis",
@@ -699,13 +781,15 @@ class DatabaseManager:
                 "version": "1.2.0",
                 "accuracy": 84.1,
                 "training_samples": 200000,
-                "features": json.dumps(["symptoms", "medical_history", "lab_results", "vital_signs"]),
+                "features": json.dumps(
+                    ["symptoms", "medical_history", "lab_results", "vital_signs"]
+                ),
                 "use_cases": json.dumps(["Triaje", "Segunda opinion", "Alertas clinicas"]),
                 "pricing_type": "free",
                 "is_featured": 0,
                 "downloads": 145,
                 "rating": 4.4,
-                "rating_count": 22
+                "rating_count": 22,
             },
             {
                 "id": "model_retail_churn",
@@ -716,13 +800,17 @@ class DatabaseManager:
                 "version": "2.2.0",
                 "accuracy": 87.8,
                 "training_samples": 1200000,
-                "features": json.dumps(["purchase_frequency", "recency", "monetary_value", "engagement_score"]),
-                "use_cases": json.dumps(["Retencion proactiva", "Campanas personalizadas", "Segmentacion"]),
+                "features": json.dumps(
+                    ["purchase_frequency", "recency", "monetary_value", "engagement_score"]
+                ),
+                "use_cases": json.dumps(
+                    ["Retencion proactiva", "Campanas personalizadas", "Segmentacion"]
+                ),
                 "pricing_type": "free",
                 "is_featured": 1,
                 "downloads": 267,
                 "rating": 4.5,
-                "rating_count": 52
+                "rating_count": 52,
             },
             {
                 "id": "model_retail_recommend",
@@ -733,13 +821,15 @@ class DatabaseManager:
                 "version": "1.8.0",
                 "accuracy": 79.5,
                 "training_samples": 3000000,
-                "features": json.dumps(["purchase_history", "browsing_behavior", "category_affinity"]),
+                "features": json.dumps(
+                    ["purchase_history", "browsing_behavior", "category_affinity"]
+                ),
                 "use_cases": json.dumps(["Cross-selling", "Personalizacion", "Email marketing"]),
                 "pricing_type": "free",
                 "is_featured": 0,
                 "downloads": 198,
                 "rating": 4.3,
-                "rating_count": 41
+                "rating_count": 41,
             },
             {
                 "id": "model_insurance_claim",
@@ -750,13 +840,17 @@ class DatabaseManager:
                 "version": "1.6.0",
                 "accuracy": 89.3,
                 "training_samples": 600000,
-                "features": json.dumps(["claim_amount", "claim_frequency", "policy_age", "incident_type"]),
-                "use_cases": json.dumps(["Investigacion de reclamos", "Fast-track de aprobacion", "SIU support"]),
+                "features": json.dumps(
+                    ["claim_amount", "claim_frequency", "policy_age", "incident_type"]
+                ),
+                "use_cases": json.dumps(
+                    ["Investigacion de reclamos", "Fast-track de aprobacion", "SIU support"]
+                ),
                 "pricing_type": "free",
                 "is_featured": 1,
                 "downloads": 134,
                 "rating": 4.7,
-                "rating_count": 29
+                "rating_count": 29,
             },
             {
                 "id": "model_insurance_risk",
@@ -767,28 +861,46 @@ class DatabaseManager:
                 "version": "2.4.0",
                 "accuracy": 85.6,
                 "training_samples": 450000,
-                "features": json.dumps(["age", "health_indicators", "lifestyle_factors", "claims_history"]),
-                "use_cases": json.dumps(["Pricing de polizas", "Seleccion de riesgo", "Segmentacion"]),
+                "features": json.dumps(
+                    ["age", "health_indicators", "lifestyle_factors", "claims_history"]
+                ),
+                "use_cases": json.dumps(
+                    ["Pricing de polizas", "Seleccion de riesgo", "Segmentacion"]
+                ),
                 "pricing_type": "free",
                 "is_featured": 0,
                 "downloads": 112,
                 "rating": 4.4,
-                "rating_count": 18
-            }
+                "rating_count": 18,
+            },
         ]
 
         for model in models:
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT OR IGNORE INTO marketplace_models
                 (id, name, description, industry, model_type, version, accuracy, training_samples,
                  features, use_cases, pricing_type, is_featured, downloads, rating, rating_count)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                model["id"], model["name"], model["description"], model["industry"],
-                model["model_type"], model["version"], model["accuracy"], model["training_samples"],
-                model["features"], model["use_cases"], model["pricing_type"], model["is_featured"],
-                model["downloads"], model["rating"], model["rating_count"]
-            ))
+            """,
+                (
+                    model["id"],
+                    model["name"],
+                    model["description"],
+                    model["industry"],
+                    model["model_type"],
+                    model["version"],
+                    model["accuracy"],
+                    model["training_samples"],
+                    model["features"],
+                    model["use_cases"],
+                    model["pricing_type"],
+                    model["is_featured"],
+                    model["downloads"],
+                    model["rating"],
+                    model["rating_count"],
+                ),
+            )
         conn.commit()
 
     def init_sandbox_schema(self):
@@ -890,29 +1002,95 @@ class DatabaseManager:
             return
 
         templates = [
-            ("tpl_fraud_basic", "Fraud Detection Starter", "Ambiente basico para detectar fraudes", "fraud", "starter",
-             json.dumps([{"type": "transactions", "records": 10000, "fraud_rate": 0.02}]),
-             json.dumps([{"type": "training", "model": "logistic_regression"}])),
-            ("tpl_credit_basic", "Credit Scoring Starter", "Ambiente para construir modelos de scoring crediticio", "credit", "starter",
-             json.dumps([{"type": "applications", "records": 5000, "default_rate": 0.15}]),
-             json.dumps([{"type": "training", "model": "decision_tree"}])),
-            ("tpl_health_basic", "Healthcare Analytics Starter", "Ambiente para analisis de datos clinicos", "health", "starter",
-             json.dumps([{"type": "patients", "records": 2000}, {"type": "diagnoses", "records": 8000}, {"type": "lab_results", "records": 20000}]),
-             json.dumps([{"type": "training", "model": "logistic_regression"}, {"type": "clustering", "model": "kmeans"}])),
-            ("tpl_retail_basic", "Retail Analytics Starter", "Ambiente para analisis de clientes y prediccion de churn", "retail", "starter",
-             json.dumps([{"type": "customers", "records": 5000}, {"type": "transactions", "records": 100000}, {"type": "products", "records": 500}]),
-             json.dumps([{"type": "segmentation", "model": "kmeans"}, {"type": "churn_prediction", "model": "logistic_regression"}])),
-            ("tpl_advanced_fhe", "FHE Advanced Workshop", "Ambiente avanzado para experimentar con encriptacion homomorfica", "general", "advanced",
-             json.dumps([{"type": "numeric", "records": 1000, "features": 20}, {"type": "encrypted_sample", "records": 100}]),
-             json.dumps([{"type": "encryption_benchmark"}, {"type": "training_encrypted"}, {"type": "inference_encrypted"}])),
+            (
+                "tpl_fraud_basic",
+                "Fraud Detection Starter",
+                "Ambiente basico para detectar fraudes",
+                "fraud",
+                "starter",
+                json.dumps([{"type": "transactions", "records": 10000, "fraud_rate": 0.02}]),
+                json.dumps([{"type": "training", "model": "logistic_regression"}]),
+            ),
+            (
+                "tpl_credit_basic",
+                "Credit Scoring Starter",
+                "Ambiente para construir modelos de scoring crediticio",
+                "credit",
+                "starter",
+                json.dumps([{"type": "applications", "records": 5000, "default_rate": 0.15}]),
+                json.dumps([{"type": "training", "model": "decision_tree"}]),
+            ),
+            (
+                "tpl_health_basic",
+                "Healthcare Analytics Starter",
+                "Ambiente para analisis de datos clinicos",
+                "health",
+                "starter",
+                json.dumps(
+                    [
+                        {"type": "patients", "records": 2000},
+                        {"type": "diagnoses", "records": 8000},
+                        {"type": "lab_results", "records": 20000},
+                    ]
+                ),
+                json.dumps(
+                    [
+                        {"type": "training", "model": "logistic_regression"},
+                        {"type": "clustering", "model": "kmeans"},
+                    ]
+                ),
+            ),
+            (
+                "tpl_retail_basic",
+                "Retail Analytics Starter",
+                "Ambiente para analisis de clientes y prediccion de churn",
+                "retail",
+                "starter",
+                json.dumps(
+                    [
+                        {"type": "customers", "records": 5000},
+                        {"type": "transactions", "records": 100000},
+                        {"type": "products", "records": 500},
+                    ]
+                ),
+                json.dumps(
+                    [
+                        {"type": "segmentation", "model": "kmeans"},
+                        {"type": "churn_prediction", "model": "logistic_regression"},
+                    ]
+                ),
+            ),
+            (
+                "tpl_advanced_fhe",
+                "FHE Advanced Workshop",
+                "Ambiente avanzado para experimentar con encriptacion homomorfica",
+                "general",
+                "advanced",
+                json.dumps(
+                    [
+                        {"type": "numeric", "records": 1000, "features": 20},
+                        {"type": "encrypted_sample", "records": 100},
+                    ]
+                ),
+                json.dumps(
+                    [
+                        {"type": "encryption_benchmark"},
+                        {"type": "training_encrypted"},
+                        {"type": "inference_encrypted"},
+                    ]
+                ),
+            ),
         ]
 
         for tpl in templates:
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT OR IGNORE INTO sandbox_templates
                 (id, name, description, industry, template_type, datasets, experiments)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, tpl)
+            """,
+                tpl,
+            )
         conn.commit()
 
     def init_federated_schema(self):

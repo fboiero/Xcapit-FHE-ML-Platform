@@ -25,7 +25,7 @@ def cmd_blockchain_connect(args) -> int:
 
     try:
         connector.connect()
-        print(f"  Connected!")
+        print("  Connected!")
         print(f"  Chain ID: {connector.config.chain_id}")
         print(f"  RPC: {connector._rpc_url}")
 
@@ -43,7 +43,7 @@ def cmd_blockchain_connect(args) -> int:
 
 def cmd_blockchain_register(args) -> int:
     """Register a model on blockchain."""
-    from ...blockchain import BlockchainConnector, Network, ModelRegistryClient
+    from ...blockchain import BlockchainConnector, ModelRegistryClient, Network
 
     network_map = {
         "arbitrum": Network.ARBITRUM_ONE,
@@ -100,7 +100,7 @@ def cmd_blockchain_register(args) -> int:
 
 def cmd_blockchain_checkpoint(args) -> int:
     """Save a training checkpoint to blockchain."""
-    from ...blockchain import BlockchainConnector, Network, ModelRegistryClient
+    from ...blockchain import BlockchainConnector, ModelRegistryClient, Network
 
     network_map = {
         "arbitrum": Network.ARBITRUM_ONE,
@@ -162,7 +162,7 @@ def cmd_blockchain_checkpoint(args) -> int:
 
 def cmd_blockchain_verify(args) -> int:
     """Verify a model checkpoint on blockchain."""
-    from ...blockchain import BlockchainConnector, Network, ModelRegistryClient
+    from ...blockchain import BlockchainConnector, ModelRegistryClient, Network
 
     network_map = {
         "arbitrum": Network.ARBITRUM_ONE,

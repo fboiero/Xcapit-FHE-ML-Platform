@@ -7,8 +7,8 @@ Provides HTTP endpoints for:
 - Model registry
 """
 
-from .server import create_app, app
-from .client import FHEMLClient, connect, APIError, ConnectionError
+from .client import APIError, ConnectionError, FHEMLClient, connect
+from .server import app, create_app
 
 __all__ = [
     # Server

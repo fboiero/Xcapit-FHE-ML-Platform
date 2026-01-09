@@ -8,18 +8,19 @@ This module provides REST endpoints for:
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from .auth import get_current_company
 
-
 # ============ Request Models ============
+
 
 class CreateSandboxRequest(BaseModel):
     """Request to create a sandbox environment."""
+
     name: str = Field(..., min_length=1, max_length=100)
     description: Optional[str] = Field(default=None, max_length=500)
     template_id: Optional[str] = None
@@ -29,27 +30,35 @@ class CreateSandboxRequest(BaseModel):
 
 class GenerateDatasetRequest(BaseModel):
     """Request to generate a synthetic dataset."""
+
     name: str = Field(..., min_length=1, max_length=100)
-    dataset_type: str = Field(..., description="Type of dataset: transactions, applications, customers, patients, generic")
+    dataset_type: str = Field(
+        ..., description="Type of dataset: transactions, applications, customers, patients, generic"
+    )
     record_count: int = Field(default=1000, ge=100, le=100000)
     description: Optional[str] = None
-    config: Optional[Dict[str, Any]] = None
+    config: Optional[dict[str, Any]] = None
 
 
 class CreateExperimentRequest(BaseModel):
     """Request to create an experiment."""
+
     name: str = Field(..., min_length=1, max_length=100)
-    experiment_type: str = Field(..., description="Type: training, evaluation, clustering, encryption_benchmark")
+    experiment_type: str = Field(
+        ..., description="Type: training, evaluation, clustering, encryption_benchmark"
+    )
     model_type: Optional[str] = None
     dataset_id: Optional[str] = None
     description: Optional[str] = None
-    config: Optional[Dict[str, Any]] = None
+    config: Optional[dict[str, Any]] = None
 
 
 # ============ Response Models ============
 
+
 class SandboxResponse(BaseModel):
     """Sandbox environment response."""
+
     id: str
     name: str
     description: Optional[str]
@@ -60,13 +69,14 @@ class SandboxResponse(BaseModel):
     status: str
     created_at: Optional[datetime]
     expires_at: Optional[datetime]
-    config: Dict[str, Any]
+    config: dict[str, Any]
     dataset_count: int
     experiment_count: int
 
 
 class DatasetResponse(BaseModel):
     """Synthetic dataset response."""
+
     id: str
     sandbox_id: str
     name: str
@@ -75,18 +85,20 @@ class DatasetResponse(BaseModel):
     industry: Optional[str]
     record_count: int
     feature_count: int
-    features: List[Dict[str, Any]]
-    statistics: Dict[str, Any]
+    features: list[dict[str, Any]]
+    statistics: dict[str, Any]
     created_at: Optional[datetime]
 
 
 class DatasetDetailResponse(DatasetResponse):
     """Detailed dataset response with preview."""
-    data_preview: List[Dict[str, Any]]
+
+    data_preview: list[dict[str, Any]]
 
 
 class ExperimentResponse(BaseModel):
     """Experiment response."""
+
     id: str
     sandbox_id: str
     name: str
@@ -96,8 +108,8 @@ class ExperimentResponse(BaseModel):
     dataset_id: Optional[str]
     dataset_name: Optional[str]
     status: str
-    config: Dict[str, Any]
-    results: Dict[str, Any]
+    config: dict[str, Any]
+    results: dict[str, Any]
     created_at: Optional[datetime]
     started_at: Optional[datetime]
     completed_at: Optional[datetime]
@@ -105,17 +117,19 @@ class ExperimentResponse(BaseModel):
 
 class TemplateResponse(BaseModel):
     """Sandbox template response."""
+
     id: str
     name: str
     description: Optional[str]
     industry: Optional[str]
     template_type: str
-    datasets: List[Dict[str, Any]]
-    experiments: List[Dict[str, Any]]
+    datasets: list[dict[str, Any]]
+    experiments: list[dict[str, Any]]
 
 
 class SandboxStatsResponse(BaseModel):
     """Sandbox statistics response."""
+
     total_sandboxes: int
     active_sandboxes: int
     total_datasets: int
@@ -130,7 +144,8 @@ router = APIRouter(prefix="/sandbox", tags=["sandbox"])
 
 # ============ Templates ============
 
-@router.get("/templates", response_model=List[TemplateResponse])
+
+@router.get("/templates", response_model=list[TemplateResponse])
 async def list_templates(
     industry: Optional[str] = None,
 ):
@@ -144,6 +159,7 @@ async def list_templates(
 
 
 # ============ Sandboxes ============
+
 
 @router.post("/environments", response_model=SandboxResponse)
 async def create_sandbox(
@@ -162,13 +178,13 @@ async def create_sandbox(
         description=request.description,
         template_id=request.template_id,
         industry=request.industry,
-        expires_days=request.expires_days
+        expires_days=request.expires_days,
     )
 
     return sandbox
 
 
-@router.get("/environments", response_model=List[SandboxResponse])
+@router.get("/environments", response_model=list[SandboxResponse])
 async def list_sandboxes(
     company: dict = Depends(get_current_company),
     status: Optional[str] = None,
@@ -231,6 +247,7 @@ async def delete_sandbox(
 
 # ============ Datasets ============
 
+
 @router.post("/environments/{sandbox_id}/datasets", response_model=DatasetDetailResponse)
 async def generate_dataset(
     sandbox_id: str,
@@ -257,13 +274,13 @@ async def generate_dataset(
         record_count=request.record_count,
         created_by=company["id"],
         description=request.description,
-        config=request.config
+        config=request.config,
     )
 
     return dataset
 
 
-@router.get("/environments/{sandbox_id}/datasets", response_model=List[DatasetResponse])
+@router.get("/environments/{sandbox_id}/datasets", response_model=list[DatasetResponse])
 async def list_datasets(
     sandbox_id: str,
     company: dict = Depends(get_current_company),
@@ -328,6 +345,7 @@ async def delete_dataset(
 
 # ============ Experiments ============
 
+
 @router.post("/environments/{sandbox_id}/experiments", response_model=ExperimentResponse)
 async def create_experiment(
     sandbox_id: str,
@@ -355,13 +373,13 @@ async def create_experiment(
         model_type=request.model_type,
         dataset_id=request.dataset_id,
         description=request.description,
-        config=request.config
+        config=request.config,
     )
 
     return experiment
 
 
-@router.get("/environments/{sandbox_id}/experiments", response_model=List[ExperimentResponse])
+@router.get("/environments/{sandbox_id}/experiments", response_model=list[ExperimentResponse])
 async def list_experiments(
     sandbox_id: str,
     company: dict = Depends(get_current_company),
@@ -452,6 +470,7 @@ async def delete_experiment(
 
 
 # ============ Statistics ============
+
 
 @router.get("/stats", response_model=SandboxStatsResponse)
 async def get_sandbox_stats(

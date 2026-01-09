@@ -1,4 +1,5 @@
 """Test configuration for Xcapit FHE-ML SDK."""
+
 import sys
 from pathlib import Path
 

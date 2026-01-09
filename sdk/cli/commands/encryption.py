@@ -9,7 +9,7 @@ from ..utils import get_version
 
 def cmd_init(args) -> int:
     """Initialize a new FHE context and save keys."""
-    from ...encryption import FHEContextManager, SecurityLevel, CKKSParameters
+    from ...encryption import CKKSParameters, FHEContextManager, SecurityLevel
 
     print("Initializing FHE context...")
 
@@ -66,6 +66,7 @@ def cmd_init(args) -> int:
 def cmd_encrypt(args) -> int:
     """Encrypt data from CSV file."""
     import pandas as pd
+
     from ...utils import SecureDataLoader
 
     print(f"Encrypting data from: {args.input}")
@@ -92,13 +93,12 @@ def cmd_encrypt(args) -> int:
     if keys_dir.exists() and (keys_dir / "context.bin").exists():
         # Load existing context
         print(f"  Loading existing FHE context from: {keys_dir}")
-        from ...encryption import FHEContextManager, CKKSEncryptor
+        from ...encryption import CKKSEncryptor, FHEContextManager
 
         manager = FHEContextManager()
         manager.load_from_file(str(keys_dir / "context.bin"))
 
         # Create loader with existing context's encryptor
-        from ...encryption import CKKSParameters
         loader = SecureDataLoader(
             encryption_scheme="CKKS",
             params=manager._params,
@@ -117,13 +117,9 @@ def cmd_encrypt(args) -> int:
 
         # Save the new context for later use
         keys_dir.mkdir(parents=True, exist_ok=True)
+        loader.context_manager.save_to_file(str(keys_dir / "context.bin"), include_secret_key=True)
         loader.context_manager.save_to_file(
-            str(keys_dir / "context.bin"),
-            include_secret_key=True
-        )
-        loader.context_manager.save_to_file(
-            str(keys_dir / "context_public.bin"),
-            include_secret_key=False
+            str(keys_dir / "context_public.bin"), include_secret_key=False
         )
         print(f"  New keys saved to: {keys_dir}")
 
@@ -131,7 +127,9 @@ def cmd_encrypt(args) -> int:
     print("  Encrypting...")
     encrypted_dataset = loader.encrypt(df, target_column=target_col)
 
-    print(f"  Encrypted {encrypted_dataset.n_samples} samples, {encrypted_dataset.n_features} features")
+    print(
+        f"  Encrypted {encrypted_dataset.n_samples} samples, {encrypted_dataset.n_features} features"
+    )
     if encrypted_dataset.y is not None:
         print(f"  Target column '{target_col}' encrypted separately")
 
@@ -172,7 +170,8 @@ def cmd_encrypt(args) -> int:
 def cmd_decrypt(args) -> int:
     """Decrypt encrypted data back to CSV."""
     import pandas as pd
-    from ...encryption import FHEContextManager, CKKSEncryptor
+
+    from ...encryption import CKKSEncryptor, FHEContextManager
     from ...encryption.ckks_wrapper import EncryptedMatrix, EncryptedVector
 
     print(f"Decrypting data from: {args.input}")
@@ -187,7 +186,9 @@ def cmd_decrypt(args) -> int:
         bundle = pickle.load(f)
 
     # Load context with secret key
-    keys_dir = Path(args.keys) if args.keys else Path(bundle.get("keys_path", "./fhe_workspace/keys"))
+    keys_dir = (
+        Path(args.keys) if args.keys else Path(bundle.get("keys_path", "./fhe_workspace/keys"))
+    )
 
     if not (keys_dir / "context.bin").exists():
         print(f"Error: Secret key not found at {keys_dir}/context.bin")
@@ -214,16 +215,16 @@ def cmd_decrypt(args) -> int:
         X_decrypted = X_decrypted * norm_params["range"] + norm_params["min"]
 
     # Create DataFrame
-    feature_names = bundle.get("feature_names", [f"feature_{i}" for i in range(X_decrypted.shape[1])])
+    feature_names = bundle.get(
+        "feature_names", [f"feature_{i}" for i in range(X_decrypted.shape[1])]
+    )
     df = pd.DataFrame(X_decrypted, columns=feature_names)
 
     # Decrypt target if present
     if bundle.get("serialized_y") is not None:
         print("  Decrypting target...")
         encrypted_y = EncryptedVector.deserialize(
-            bundle["serialized_y"],
-            manager.context,
-            bundle["y_shape"]
+            bundle["serialized_y"], manager.context, bundle["y_shape"]
         )
         y_decrypted = encryptor.decrypt_vector(encrypted_y)
 
@@ -231,7 +232,7 @@ def cmd_decrypt(args) -> int:
             y_decrypted = (y_decrypted + 1) / 2 * norm_params["y_range"] + norm_params["y_min"]
 
         target_name = bundle.get("target", "target")
-        df[target_name] = y_decrypted[:len(df)]  # Trim to match sample count
+        df[target_name] = y_decrypted[: len(df)]  # Trim to match sample count
 
     # Save or print
     if args.output:

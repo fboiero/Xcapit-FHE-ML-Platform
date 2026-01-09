@@ -9,25 +9,19 @@ Tests cover:
 """
 
 import argparse
-import json
 import pickle
-import sys
-from io import StringIO
-from pathlib import Path
-from unittest.mock import MagicMock, patch, mock_open
 
-import numpy as np
 import pytest
 
 from sdk.cli import (
-    get_version,
-    cmd_version,
     cmd_info,
+    cmd_version,
     create_parser,
+    get_version,
 )
 
-
 # ========== get_version Tests ==========
+
 
 class TestGetVersion:
     """Tests for get_version function."""
@@ -46,6 +40,7 @@ class TestGetVersion:
 
 
 # ========== cmd_version Tests ==========
+
 
 class TestCmdVersion:
     """Tests for cmd_version command."""
@@ -70,6 +65,7 @@ class TestCmdVersion:
 
 
 # ========== cmd_info Tests ==========
+
 
 class TestCmdInfo:
     """Tests for cmd_info command."""
@@ -124,10 +120,7 @@ class TestCmdInfo:
 
     def test_info_nonexistent_file(self, tmp_path, capsys):
         """Test info command with nonexistent file."""
-        args = argparse.Namespace(
-            path=str(tmp_path / "nonexistent.pkl"),
-            verbose=False
-        )
+        args = argparse.Namespace(path=str(tmp_path / "nonexistent.pkl"), verbose=False)
         result = cmd_info(args)
 
         assert result == 1
@@ -161,6 +154,7 @@ class TestCmdInfo:
 
 # ========== create_parser Tests ==========
 
+
 class TestCreateParser:
     """Tests for argument parser creation."""
 
@@ -188,12 +182,9 @@ class TestCreateParser:
     def test_parser_encrypt_command(self):
         """Test parsing encrypt command."""
         parser = create_parser()
-        args = parser.parse_args([
-            "encrypt",
-            "-i", "data.csv",
-            "-o", "encrypted.bin",
-            "-t", "target_col"
-        ])
+        args = parser.parse_args(
+            ["encrypt", "-i", "data.csv", "-o", "encrypted.bin", "-t", "target_col"]
+        )
 
         assert args.input == "data.csv"
         assert args.output == "encrypted.bin"
@@ -202,14 +193,21 @@ class TestCreateParser:
     def test_parser_train_command(self):
         """Test parsing train command."""
         parser = create_parser()
-        args = parser.parse_args([
-            "train",
-            "-m", "linear-regression",
-            "-d", "data.bin",
-            "-o", "model.bin",
-            "--epochs", "50",
-            "--learning-rate", "0.1"
-        ])
+        args = parser.parse_args(
+            [
+                "train",
+                "-m",
+                "linear-regression",
+                "-d",
+                "data.bin",
+                "-o",
+                "model.bin",
+                "--epochs",
+                "50",
+                "--learning-rate",
+                "0.1",
+            ]
+        )
 
         assert args.model == "linear-regression"
         assert args.data == "data.bin"
@@ -220,13 +218,19 @@ class TestCreateParser:
     def test_parser_predict_command(self):
         """Test parsing predict command."""
         parser = create_parser()
-        args = parser.parse_args([
-            "predict",
-            "-m", "model.bin",
-            "-i", "input.bin",
-            "-o", "predictions.csv",
-            "--format", "json"
-        ])
+        args = parser.parse_args(
+            [
+                "predict",
+                "-m",
+                "model.bin",
+                "-i",
+                "input.bin",
+                "-o",
+                "predictions.csv",
+                "--format",
+                "json",
+            ]
+        )
 
         assert args.model == "model.bin"
         assert args.input == "input.bin"
@@ -236,11 +240,7 @@ class TestCreateParser:
     def test_parser_decrypt_command(self):
         """Test parsing decrypt command."""
         parser = create_parser()
-        args = parser.parse_args([
-            "decrypt",
-            "-i", "encrypted.bin",
-            "-o", "output.csv"
-        ])
+        args = parser.parse_args(["decrypt", "-i", "encrypted.bin", "-o", "output.csv"])
 
         assert args.input == "encrypted.bin"
         assert args.output == "output.csv"
@@ -256,12 +256,9 @@ class TestCreateParser:
     def test_parser_benchmark_command(self):
         """Test parsing benchmark command."""
         parser = create_parser()
-        args = parser.parse_args([
-            "benchmark",
-            "--poly-degree", "16384",
-            "--vector-size", "500",
-            "--iterations", "5"
-        ])
+        args = parser.parse_args(
+            ["benchmark", "--poly-degree", "16384", "--vector-size", "500", "--iterations", "5"]
+        )
 
         assert args.poly_degree == 16384
         assert args.vector_size == 500
@@ -293,6 +290,7 @@ class TestCreateParser:
 
 
 # ========== Command Error Handling Tests ==========
+
 
 class TestCommandErrorHandling:
     """Tests for error handling in commands."""
@@ -378,6 +376,7 @@ class TestCommandErrorHandling:
 
 # ========== Integration Tests ==========
 
+
 class TestCliIntegration:
     """Integration tests for CLI module."""
 
@@ -424,6 +423,7 @@ class TestCliIntegration:
 
 # ========== Security Tests ==========
 
+
 class TestCliSecurity:
     """Security-related tests for CLI."""
 
@@ -438,6 +438,7 @@ class TestCliSecurity:
     def test_private_key_not_logged(self, capsys):
         """Test that private keys are not printed in output."""
         from sdk.cli import cmd_version
+
         args = argparse.Namespace()
         cmd_version(args)
 

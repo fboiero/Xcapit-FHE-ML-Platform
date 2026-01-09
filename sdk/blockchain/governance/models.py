@@ -8,6 +8,7 @@ from typing import Optional
 
 class ConsortiumStatus(IntEnum):
     """Consortium status enum matching Solidity."""
+
     ACTIVE = 0
     PAUSED = 1
     COMPLETED = 2
@@ -16,6 +17,7 @@ class ConsortiumStatus(IntEnum):
 
 class MemberStatus(IntEnum):
     """Member status enum matching Solidity."""
+
     PENDING = 0
     ACTIVE = 1
     SUSPENDED = 2
@@ -24,6 +26,7 @@ class MemberStatus(IntEnum):
 
 class ProposalType(IntEnum):
     """Proposal type enum matching Solidity."""
+
     ADD_MEMBER = 0
     REMOVE_MEMBER = 1
     CHANGE_MODEL = 2
@@ -35,6 +38,7 @@ class ProposalType(IntEnum):
 
 class ProposalStatus(IntEnum):
     """Proposal status enum matching Solidity."""
+
     ACTIVE = 0
     PASSED = 1
     REJECTED = 2
@@ -44,6 +48,7 @@ class ProposalStatus(IntEnum):
 
 class AuditEventType(IntEnum):
     """Audit event type enum matching Solidity."""
+
     CONSORTIUM_CREATED = 0
     MEMBER_JOINED = 1
     MEMBER_LEFT = 2
@@ -61,6 +66,7 @@ class AuditEventType(IntEnum):
 @dataclass
 class ConsortiumInfo:
     """Consortium information."""
+
     id: bytes
     name: str
     owner: str
@@ -74,6 +80,7 @@ class ConsortiumInfo:
 @dataclass
 class MemberInfo:
     """Member information."""
+
     address: str
     status: MemberStatus
     joined_at: datetime
@@ -85,6 +92,7 @@ class MemberInfo:
 @dataclass
 class ContributionInfo:
     """Contribution proof information."""
+
     id: bytes
     consortium_id: bytes
     contributor: str
@@ -99,6 +107,7 @@ class ContributionInfo:
 @dataclass
 class ProposalInfo:
     """Proposal information."""
+
     id: bytes
     consortium_id: bytes
     proposal_type: ProposalType
@@ -113,6 +122,7 @@ class ProposalInfo:
 @dataclass
 class AuditEvent:
     """Audit event information."""
+
     id: bytes
     event_type: AuditEventType
     actor: str

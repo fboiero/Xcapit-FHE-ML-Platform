@@ -5,7 +5,8 @@ on encrypted data using polynomial approximations of the sigmoid function.
 """
 
 from enum import Enum
-from typing import Optional, Tuple, Union
+from typing import Optional, Union
+
 import numpy as np
 
 from ..encryption.ckks_wrapper import (
@@ -147,7 +148,7 @@ class LogisticRegression(BaseFHEModel):
 
         for i, coeff in enumerate(coeffs):
             if coeff != 0:
-                result += coeff * (x ** i)
+                result += coeff * (x**i)
 
         # Clip to [0, 1] for numerical stability
         return np.clip(result, 0.0, 1.0)
@@ -157,7 +158,7 @@ class LogisticRegression(BaseFHEModel):
         X_plain: np.ndarray,
         y_plain: np.ndarray,
         use_polynomial: bool = False,
-    ) -> Tuple[float, np.ndarray, float]:
+    ) -> tuple[float, np.ndarray, float]:
         """Compute binary cross-entropy loss and gradients.
 
         Args:
@@ -184,14 +185,11 @@ class LogisticRegression(BaseFHEModel):
         probs_clipped = np.clip(probs, eps, 1 - eps)
 
         # Binary cross-entropy loss
-        loss = -np.mean(
-            y_plain * np.log(probs_clipped) +
-            (1 - y_plain) * np.log(1 - probs_clipped)
-        )
+        loss = -np.mean(y_plain * np.log(probs_clipped) + (1 - y_plain) * np.log(1 - probs_clipped))
 
         # Add L2 regularization to loss
         if self._regularization > 0:
-            loss += 0.5 * self._regularization * np.sum(self._weights ** 2)
+            loss += 0.5 * self._regularization * np.sum(self._weights**2)
 
         # Gradients
         errors = probs - y_plain

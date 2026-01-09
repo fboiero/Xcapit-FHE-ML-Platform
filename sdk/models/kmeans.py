@@ -10,16 +10,17 @@ softmax, enabling gradient-based optimization and encrypted inference.
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
+
 import numpy as np
 
-from .base import BaseFHEModel, ModelConfig, ModelState
 from ..encryption.ckks_wrapper import (
     CKKSEncryptor,
     EncryptedMatrix,
     EncryptedVector,
 )
 from ..utils.data_loader import EncryptedDataset
+from .base import BaseFHEModel, ModelConfig, ModelState
 
 
 class InitMethod(Enum):
@@ -174,10 +175,7 @@ class KMeans(BaseFHEModel):
             # Remaining centroids: weighted by distance squared
             for i in range(1, n_clusters):
                 # Compute distances to nearest centroid
-                distances = np.min(
-                    np.sum((X[:, np.newaxis] - centroids[:i]) ** 2, axis=2),
-                    axis=1
-                )
+                distances = np.min(np.sum((X[:, np.newaxis] - centroids[:i]) ** 2, axis=2), axis=1)
                 # Probability proportional to distance squared
                 probs = distances / distances.sum()
                 idx = np.random.choice(n_samples, p=probs)
@@ -212,7 +210,7 @@ class KMeans(BaseFHEModel):
         # centroids: (n_clusters, n_features)
         # Result: (n_samples, n_clusters)
         diff = X[:, np.newaxis, :] - centroids[np.newaxis, :, :]
-        distances = np.sum(diff ** 2, axis=2)
+        distances = np.sum(diff**2, axis=2)
         return distances
 
     def _soft_assignments(
@@ -265,7 +263,7 @@ class KMeans(BaseFHEModel):
         clipped = np.clip(shifted, -3, 3)
 
         # Taylor expansion of exp: 1 + x + x^2/2 + x^3/6
-        exp_approx = 1 + clipped + (clipped ** 2) / 2 + (clipped ** 3) / 6
+        exp_approx = 1 + clipped + (clipped**2) / 2 + (clipped**3) / 6
 
         # Normalize
         probs = exp_approx / np.sum(exp_approx, axis=1, keepdims=True)
@@ -353,19 +351,16 @@ class KMeans(BaseFHEModel):
             print(f"Fitting KMeans: {n_samples} samples, {n_features} features")
             print(f"Clusters: {self.n_clusters}")
 
-        best_inertia = float('inf')
+        best_inertia = float("inf")
         best_centroids = None
         best_n_iter = 0
 
         # Multiple random initializations
         for init_run in range(self._kmeans_config.n_init):
             # Initialize centroids
-            centroids = self._initialize_centroids(
-                X_train,
-                self._kmeans_config.init_method
-            )
+            centroids = self._initialize_centroids(X_train, self._kmeans_config.init_method)
 
-            prev_inertia = float('inf')
+            prev_inertia = float("inf")
 
             # Iterative optimization
             for iteration in range(self._kmeans_config.max_iter):
@@ -373,10 +368,7 @@ class KMeans(BaseFHEModel):
                 distances = self._compute_distances(X_train, centroids)
 
                 # Soft assignments
-                assignments = self._soft_assignments(
-                    distances,
-                    self._kmeans_config.temperature
-                )
+                assignments = self._soft_assignments(distances, self._kmeans_config.temperature)
 
                 # Update centroids
                 new_centroids = self._update_centroids(X_train, assignments)
@@ -424,7 +416,7 @@ class KMeans(BaseFHEModel):
 
     def predict(
         self,
-        X: Union[EncryptedMatrix, np.ndarray, List],
+        X: Union[EncryptedMatrix, np.ndarray, list],
     ) -> Union[EncryptedVector, np.ndarray]:
         """Predict cluster labels.
 
@@ -477,15 +469,9 @@ class KMeans(BaseFHEModel):
         distances = self._compute_distances(X_pred, self._centroids)
 
         if use_polynomial:
-            return self._soft_assignments_polynomial(
-                distances,
-                self._kmeans_config.temperature
-            )
+            return self._soft_assignments_polynomial(distances, self._kmeans_config.temperature)
         else:
-            return self._soft_assignments(
-                distances,
-                self._kmeans_config.temperature
-            )
+            return self._soft_assignments(distances, self._kmeans_config.temperature)
 
     def transform(
         self,
@@ -527,7 +513,7 @@ class KMeans(BaseFHEModel):
 
     def _predict_encrypted(
         self,
-        X: Union[EncryptedMatrix, List[EncryptedVector]],
+        X: Union[EncryptedMatrix, list[EncryptedVector]],
     ) -> EncryptedVector:
         """Predict on encrypted data.
 
@@ -589,18 +575,20 @@ class KMeans(BaseFHEModel):
         inertia = sum(distances[i, labels[i]] for i in range(len(X_pred)))
         return -inertia
 
-    def get_params(self) -> Dict[str, Any]:
+    def get_params(self) -> dict[str, Any]:
         """Get model parameters as dictionary."""
         params = super().get_params()
-        params.update({
-            "n_clusters": self._kmeans_config.n_clusters,
-            "centroids": self._centroids.tolist() if self._centroids is not None else None,
-            "inertia": self._inertia,
-            "n_iter": self._n_iter,
-        })
+        params.update(
+            {
+                "n_clusters": self._kmeans_config.n_clusters,
+                "centroids": self._centroids.tolist() if self._centroids is not None else None,
+                "inertia": self._inertia,
+                "n_iter": self._n_iter,
+            }
+        )
         return params
 
-    def set_params(self, params: Dict[str, Any]) -> None:
+    def set_params(self, params: dict[str, Any]) -> None:
         """Set model parameters from dictionary."""
         super().set_params(params)
         if params.get("centroids") is not None:
@@ -670,10 +658,7 @@ class MiniBatchKMeans(KMeans):
         self._n_features = n_features
 
         # Initialize centroids
-        self._centroids = self._initialize_centroids(
-            X_train,
-            self._kmeans_config.init_method
-        )
+        self._centroids = self._initialize_centroids(X_train, self._kmeans_config.init_method)
 
         # Track counts for averaging
         self._counts = np.ones(self.n_clusters)

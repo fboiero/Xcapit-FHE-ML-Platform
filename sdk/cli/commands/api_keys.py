@@ -45,7 +45,9 @@ def cmd_api_key_list(args) -> int:
 
     for key in keys:
         active = "Yes" if key["is_active"] else "No"
-        print(f"{key['name']:<20} {key['key_hash']:<15} {key['permissions']:<25} {active:<8} {key['rate_limit']}")
+        print(
+            f"{key['name']:<20} {key['key_hash']:<15} {key['permissions']:<25} {active:<8} {key['rate_limit']}"
+        )
 
     return 0
 

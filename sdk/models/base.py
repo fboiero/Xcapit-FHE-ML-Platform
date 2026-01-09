@@ -7,7 +7,8 @@ machine learning models in the Xcapit FHE-ML SDK.
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
+
 import numpy as np
 
 from ..encryption.ckks_wrapper import (
@@ -37,9 +38,9 @@ class TrainingHistory:
         metrics: Additional metrics per epoch.
     """
 
-    losses: List[float] = field(default_factory=list)
+    losses: list[float] = field(default_factory=list)
     epochs: int = 0
-    metrics: Dict[str, List[float]] = field(default_factory=dict)
+    metrics: dict[str, list[float]] = field(default_factory=dict)
 
     def add_epoch(self, loss: float, **kwargs) -> None:
         """Record metrics for an epoch."""
@@ -217,7 +218,7 @@ class BaseFHEModel(ABC):
             return self.predict(X.X)
         return self.predict(X)
 
-    def get_params(self) -> Dict[str, Any]:
+    def get_params(self) -> dict[str, Any]:
         """Get model parameters as dictionary."""
         return {
             "weights": self._weights.tolist() if self._weights is not None else None,
@@ -230,7 +231,7 @@ class BaseFHEModel(ABC):
             },
         }
 
-    def set_params(self, params: Dict[str, Any]) -> None:
+    def set_params(self, params: dict[str, Any]) -> None:
         """Set model parameters from dictionary."""
         if params.get("weights") is not None:
             self._weights = np.array(params["weights"])

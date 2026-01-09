@@ -4,7 +4,8 @@ This module provides validation functions for input data
 to ensure compatibility with FHE operations.
 """
 
-from typing import List, Optional, Union
+from typing import Optional, Union
+
 import numpy as np
 import pandas as pd
 
@@ -37,9 +38,7 @@ def validate_numeric_data(
 
     # Check for non-numeric types
     if not np.issubdtype(arr.dtype, np.number):
-        raise ValidationError(
-            f"Data must be numeric, got dtype: {arr.dtype}"
-        )
+        raise ValidationError(f"Data must be numeric, got dtype: {arr.dtype}")
 
     # Check for NaN
     if not allow_nan and np.any(np.isnan(arr)):
@@ -84,26 +83,17 @@ def validate_data_shape(
         elif arr.ndim == 2:
             n_samples, n_features = arr.shape
         else:
-            raise ValidationError(
-                f"Data must be 1D or 2D, got {arr.ndim}D array"
-            )
+            raise ValidationError(f"Data must be 1D or 2D, got {arr.ndim}D array")
 
     if n_samples < min_samples:
-        raise ValidationError(
-            f"Data must have at least {min_samples} samples, "
-            f"got {n_samples}"
-        )
+        raise ValidationError(f"Data must have at least {min_samples} samples, got {n_samples}")
 
     if n_features < min_features:
-        raise ValidationError(
-            f"Data must have at least {min_features} features, "
-            f"got {n_features}"
-        )
+        raise ValidationError(f"Data must have at least {min_features} features, got {n_features}")
 
     if max_features is not None and n_features > max_features:
         raise ValidationError(
-            f"Data has {n_features} features, exceeding maximum of "
-            f"{max_features} (FHE slot limit)"
+            f"Data has {n_features} features, exceeding maximum of {max_features} (FHE slot limit)"
         )
 
 
@@ -130,16 +120,12 @@ def validate_feature_range(
     if min_value is not None:
         actual_min = np.min(arr)
         if actual_min < min_value:
-            raise ValidationError(
-                f"Data contains value {actual_min} below minimum {min_value}"
-            )
+            raise ValidationError(f"Data contains value {actual_min} below minimum {min_value}")
 
     if max_value is not None:
         actual_max = np.max(arr)
         if actual_max > max_value:
-            raise ValidationError(
-                f"Data contains value {actual_max} above maximum {max_value}"
-            )
+            raise ValidationError(f"Data contains value {actual_max} above maximum {max_value}")
 
 
 def validate_target(
@@ -163,22 +149,17 @@ def validate_target(
         arr = np.asarray(target)
 
     if arr.ndim != 1:
-        raise ValidationError(
-            f"Target must be 1D, got {arr.ndim}D array"
-        )
+        raise ValidationError(f"Target must be 1D, got {arr.ndim}D array")
 
     if len(arr) != n_samples:
         raise ValidationError(
-            f"Target length {len(arr)} doesn't match "
-            f"number of samples {n_samples}"
+            f"Target length {len(arr)} doesn't match number of samples {n_samples}"
         )
 
     if task_type == "classification":
         unique_values = np.unique(arr)
         if len(unique_values) < 2:
-            raise ValidationError(
-                "Classification target must have at least 2 classes"
-            )
+            raise ValidationError("Classification target must have at least 2 classes")
 
 
 def check_fhe_compatibility(
@@ -209,15 +190,13 @@ def check_fhe_compatibility(
         else:
             n_samples, n_features = arr.shape
 
-    warnings: List[str] = []
+    warnings: list[str] = []
     compatible = True
 
     # Check slot limit
     if n_features > max_slots:
         compatible = False
-        warnings.append(
-            f"Features ({n_features}) exceed max slots ({max_slots})"
-        )
+        warnings.append(f"Features ({n_features}) exceed max slots ({max_slots})")
 
     # Check for non-numeric
     if not np.issubdtype(arr.dtype, np.number):

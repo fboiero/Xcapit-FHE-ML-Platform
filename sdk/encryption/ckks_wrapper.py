@@ -4,11 +4,12 @@ This module provides high-level encryption/decryption operations
 using the CKKS homomorphic encryption scheme via TenSEAL.
 """
 
-from typing import List, Optional, Union
+from typing import Optional, Union
+
 import numpy as np
 import tenseal as ts
 
-from .context_manager import FHEContextManager, CKKSParameters
+from .context_manager import CKKSParameters, FHEContextManager
 
 
 class EncryptedVector:
@@ -102,7 +103,7 @@ class EncryptedVector:
 class EncryptedMatrix:
     """Wrapper for encrypted matrices (list of encrypted row vectors)."""
 
-    def __init__(self, rows: List[EncryptedVector], shape: tuple):
+    def __init__(self, rows: list[EncryptedVector], shape: tuple):
         """Initialize encrypted matrix.
 
         Args:
@@ -113,7 +114,7 @@ class EncryptedMatrix:
         self._shape = shape
 
     @property
-    def rows(self) -> List[EncryptedVector]:
+    def rows(self) -> list[EncryptedVector]:
         """Get encrypted rows."""
         return self._rows
 
@@ -220,7 +221,7 @@ class CKKSEncryptor:
 
     def encrypt_vector(
         self,
-        data: Union[List[float], np.ndarray],
+        data: Union[list[float], np.ndarray],
     ) -> EncryptedVector:
         """Encrypt a 1D vector of values.
 
@@ -259,7 +260,7 @@ class CKKSEncryptor:
 
     def encrypt_matrix(
         self,
-        data: Union[List[List[float]], np.ndarray],
+        data: Union[list[list[float]], np.ndarray],
     ) -> EncryptedMatrix:
         """Encrypt a 2D matrix (row-wise encryption).
 
@@ -281,9 +282,7 @@ class CKKSEncryptor:
         n_rows, n_cols = data.shape
 
         if n_cols > self.max_slots:
-            raise ValueError(
-                f"Row length {n_cols} exceeds max slots {self.max_slots}."
-            )
+            raise ValueError(f"Row length {n_cols} exceeds max slots {self.max_slots}.")
 
         encrypted_rows = []
         for row in data:

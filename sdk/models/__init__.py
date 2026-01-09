@@ -11,22 +11,22 @@ from .base import (
     ModelState,
     TrainingHistory,
 )
-from .linear_regression import LinearRegression
-from .logistic_regression import LogisticRegression, SigmoidApproximation
 from .decision_tree import (
     DecisionTree,
     DecisionTreeClassifier,
     DecisionTreeRegressor,
+    SplitFunction,
     TreeConfig,
     TreeType,
-    SplitFunction,
 )
 from .kmeans import (
-    KMeans,
-    MiniBatchKMeans,
-    KMeansConfig,
     InitMethod,
+    KMeans,
+    KMeansConfig,
+    MiniBatchKMeans,
 )
+from .linear_regression import LinearRegression
+from .logistic_regression import LogisticRegression, SigmoidApproximation
 
 __all__ = [
     # Base

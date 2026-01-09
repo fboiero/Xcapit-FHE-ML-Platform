@@ -8,60 +8,69 @@ This module provides REST endpoints for:
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from .auth import get_current_company
 
-
 # ============ Request Models ============
+
 
 class CreateEndpointRequest(BaseModel):
     """Request to create an inference endpoint."""
+
     consortium_id: str
     name: str = Field(..., min_length=1, max_length=100)
     description: Optional[str] = Field(default=None, max_length=500)
     model_id: Optional[str] = None
     endpoint_type: str = Field(default="realtime", description="Type: realtime, batch, streaming")
-    config: Optional[Dict[str, Any]] = None
+    config: Optional[dict[str, Any]] = None
 
 
 class SubmitInferenceRequest(BaseModel):
     """Request to submit an inference request."""
-    input_data: Dict[str, Any] = Field(..., description="Input data for prediction")
+
+    input_data: dict[str, Any] = Field(..., description="Input data for prediction")
     priority: str = Field(default="normal", description="Priority: low, normal, high")
     encryption_key_id: Optional[str] = None
 
 
 class CreateFederatedModelRequest(BaseModel):
     """Request to create a federated model."""
+
     consortium_id: str
     name: str = Field(..., min_length=1, max_length=100)
-    model_type: str = Field(..., description="Type: linear_regression, logistic_regression, neural_network, xgboost")
+    model_type: str = Field(
+        ..., description="Type: linear_regression, logistic_regression, neural_network, xgboost"
+    )
     description: Optional[str] = None
     version: str = Field(default="1.0.0")
-    config: Optional[Dict[str, Any]] = None
+    config: Optional[dict[str, Any]] = None
 
 
 class RegisterEdgeNodeRequest(BaseModel):
     """Request to register an edge node."""
+
     name: str = Field(..., min_length=1, max_length=100)
     node_type: str = Field(default="on_premise", description="Type: on_premise, cloud, hybrid")
     location: Optional[str] = None
-    capabilities: Optional[Dict[str, Any]] = None
+    capabilities: Optional[dict[str, Any]] = None
 
 
 class DeployModelRequest(BaseModel):
     """Request to deploy a model to an edge node."""
+
     model_id: str
 
 
 # ============ Response Models ============
 
+
 class EndpointResponse(BaseModel):
     """Inference endpoint response."""
+
     id: str
     consortium_id: str
     company_id: str
@@ -73,7 +82,7 @@ class EndpointResponse(BaseModel):
     endpoint_type: str
     status: str
     url: Optional[str]
-    config: Dict[str, Any]
+    config: dict[str, Any]
     request_count: int
     avg_latency_ms: float
     created_at: Optional[datetime]
@@ -82,6 +91,7 @@ class EndpointResponse(BaseModel):
 
 class InferenceRequestResponse(BaseModel):
     """Inference request response."""
+
     id: str
     endpoint_id: str
     requester_id: str
@@ -98,15 +108,17 @@ class InferenceRequestResponse(BaseModel):
 
 class InferenceResultResponse(BaseModel):
     """Inference result response."""
+
     request_id: str
     encrypted_output: str
-    output_metadata: Dict[str, Any]
-    confidence_scores: List[float]
+    output_metadata: dict[str, Any]
+    confidence_scores: list[float]
     created_at: Optional[datetime]
 
 
 class FederatedModelResponse(BaseModel):
     """Federated model response."""
+
     id: str
     consortium_id: str
     name: str
@@ -114,8 +126,8 @@ class FederatedModelResponse(BaseModel):
     model_type: str
     version: str
     status: str
-    config: Dict[str, Any]
-    metrics: Dict[str, Any]
+    config: dict[str, Any]
+    metrics: dict[str, Any]
     deployment_count: int
     created_at: Optional[datetime]
     updated_at: Optional[datetime]
@@ -123,6 +135,7 @@ class FederatedModelResponse(BaseModel):
 
 class EdgeNodeResponse(BaseModel):
     """Edge node response."""
+
     id: str
     company_id: str
     company_name: Optional[str]
@@ -130,14 +143,15 @@ class EdgeNodeResponse(BaseModel):
     node_type: str
     location: Optional[str]
     status: str
-    capabilities: Dict[str, Any]
-    deployed_models: List[str]
+    capabilities: dict[str, Any]
+    deployed_models: list[str]
     last_heartbeat: Optional[datetime]
     created_at: Optional[datetime]
 
 
 class FederatedStatsResponse(BaseModel):
     """Federated inference statistics response."""
+
     total_endpoints: int
     active_endpoints: int
     total_requests: int
@@ -155,6 +169,7 @@ router = APIRouter(prefix="/federated", tags=["federated"])
 
 
 # ============ Inference Endpoints ============
+
 
 @router.post("/endpoints", response_model=EndpointResponse)
 async def create_endpoint(
@@ -174,13 +189,13 @@ async def create_endpoint(
         description=request.description,
         model_id=request.model_id,
         endpoint_type=request.endpoint_type,
-        config=request.config
+        config=request.config,
     )
 
     return endpoint
 
 
-@router.get("/endpoints", response_model=List[EndpointResponse])
+@router.get("/endpoints", response_model=list[EndpointResponse])
 async def list_endpoints(
     company: dict = Depends(get_current_company),
     consortium_id: Optional[str] = None,
@@ -192,9 +207,7 @@ async def list_endpoints(
 
     manager = ConsortiumManager(get_db_path())
     endpoints = manager.list_inference_endpoints(
-        company_id=company["id"],
-        consortium_id=consortium_id,
-        status=status
+        company_id=company["id"], consortium_id=consortium_id, status=status
     )
 
     return endpoints
@@ -241,6 +254,7 @@ async def delete_endpoint(
 
 # ============ Inference Requests ============
 
+
 @router.post("/endpoints/{endpoint_id}/infer", response_model=InferenceRequestResponse)
 async def submit_inference(
     endpoint_id: str,
@@ -263,13 +277,13 @@ async def submit_inference(
         requester_id=company["id"],
         input_data=request.input_data,
         priority=request.priority,
-        encryption_key_id=request.encryption_key_id
+        encryption_key_id=request.encryption_key_id,
     )
 
     return inference_request
 
 
-@router.get("/requests", response_model=List[InferenceRequestResponse])
+@router.get("/requests", response_model=list[InferenceRequestResponse])
 async def list_inference_requests(
     company: dict = Depends(get_current_company),
     endpoint_id: Optional[str] = None,
@@ -281,9 +295,7 @@ async def list_inference_requests(
 
     manager = ConsortiumManager(get_db_path())
     requests = manager.list_inference_requests(
-        requester_id=company["id"],
-        endpoint_id=endpoint_id,
-        status=status
+        requester_id=company["id"], endpoint_id=endpoint_id, status=status
     )
 
     return requests
@@ -338,6 +350,7 @@ async def get_inference_result(
 
 # ============ Federated Models ============
 
+
 @router.post("/models", response_model=FederatedModelResponse)
 async def create_federated_model(
     request: CreateFederatedModelRequest,
@@ -356,13 +369,13 @@ async def create_federated_model(
         created_by=company["id"],
         description=request.description,
         version=request.version,
-        config=request.config
+        config=request.config,
     )
 
     return model
 
 
-@router.get("/models", response_model=List[FederatedModelResponse])
+@router.get("/models", response_model=list[FederatedModelResponse])
 async def list_federated_models(
     company: dict = Depends(get_current_company),
     consortium_id: Optional[str] = None,
@@ -373,10 +386,7 @@ async def list_federated_models(
     from .database import get_db_path
 
     manager = ConsortiumManager(get_db_path())
-    models = manager.list_federated_models(
-        consortium_id=consortium_id,
-        status=status
-    )
+    models = manager.list_federated_models(consortium_id=consortium_id, status=status)
 
     return models
 
@@ -401,6 +411,7 @@ async def get_federated_model(
 
 # ============ Edge Nodes ============
 
+
 @router.post("/nodes", response_model=EdgeNodeResponse)
 async def register_edge_node(
     request: RegisterEdgeNodeRequest,
@@ -417,13 +428,13 @@ async def register_edge_node(
         name=request.name,
         node_type=request.node_type,
         location=request.location,
-        capabilities=request.capabilities
+        capabilities=request.capabilities,
     )
 
     return node
 
 
-@router.get("/nodes", response_model=List[EdgeNodeResponse])
+@router.get("/nodes", response_model=list[EdgeNodeResponse])
 async def list_edge_nodes(
     company: dict = Depends(get_current_company),
     status: Optional[str] = None,
@@ -433,10 +444,7 @@ async def list_edge_nodes(
     from .database import get_db_path
 
     manager = ConsortiumManager(get_db_path())
-    nodes = manager.list_edge_nodes(
-        company_id=company["id"],
-        status=status
-    )
+    nodes = manager.list_edge_nodes(company_id=company["id"], status=status)
 
     return nodes
 
@@ -475,9 +483,7 @@ async def deploy_model_to_node(
     manager = ConsortiumManager(get_db_path())
 
     node = manager.deploy_model_to_edge(
-        node_id=node_id,
-        model_id=request.model_id,
-        company_id=company["id"]
+        node_id=node_id, model_id=request.model_id, company_id=company["id"]
     )
 
     if not node:
@@ -529,6 +535,7 @@ async def delete_edge_node(
 
 
 # ============ Statistics ============
+
 
 @router.get("/stats", response_model=FederatedStatsResponse)
 async def get_federated_stats(

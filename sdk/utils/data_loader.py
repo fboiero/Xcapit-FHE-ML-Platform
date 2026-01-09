@@ -5,16 +5,17 @@ for encrypting and decrypting data in the Xcapit FHE-ML SDK.
 """
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Optional, Union
+
 import numpy as np
 import pandas as pd
 
-from ..encryption.context_manager import CKKSParameters, FHEContextManager
 from ..encryption.ckks_wrapper import (
     CKKSEncryptor,
     EncryptedMatrix,
     EncryptedVector,
 )
+from ..encryption.context_manager import CKKSParameters, FHEContextManager
 
 
 @dataclass
@@ -32,10 +33,10 @@ class EncryptedDataset:
 
     X: EncryptedMatrix
     y: Optional[EncryptedVector]
-    feature_names: List[str]
+    feature_names: list[str]
     n_samples: int
     n_features: int
-    normalization_params: Optional[Dict] = None
+    normalization_params: Optional[dict] = None
 
     def __repr__(self) -> str:
         has_y = "with" if self.y is not None else "without"
@@ -90,7 +91,7 @@ class SecureDataLoader:
         self._context_manager = FHEContextManager(params)
         self._context_manager.create_context()
         self._encryptor = CKKSEncryptor(self._context_manager)
-        self._normalization_params: Dict = {}
+        self._normalization_params: dict = {}
 
     @property
     def encryption_scheme(self) -> str:
@@ -111,7 +112,7 @@ class SecureDataLoader:
         self,
         data: np.ndarray,
         fit: bool = True,
-    ) -> Tuple[np.ndarray, Dict]:
+    ) -> tuple[np.ndarray, dict]:
         """Normalize data to [-1, 1] range for better FHE precision.
 
         Args:
@@ -144,7 +145,7 @@ class SecureDataLoader:
     def _denormalize_data(
         self,
         data: np.ndarray,
-        params: Optional[Dict] = None,
+        params: Optional[dict] = None,
     ) -> np.ndarray:
         """Reverse normalization to original scale.
 
