@@ -5,7 +5,7 @@ on encrypted data using polynomial approximations of the sigmoid function.
 """
 
 from enum import Enum
-from typing import List, Optional, Tuple, Union
+from typing import Optional, Tuple, Union
 import numpy as np
 
 from ..encryption.ckks_wrapper import (

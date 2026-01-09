@@ -15,7 +15,7 @@ from ..encryption.ckks_wrapper import (
     EncryptedMatrix,
     EncryptedVector,
 )
-from ..utils.data_loader import EncryptedDataset, SecureDataLoader
+from ..utils.data_loader import EncryptedDataset
 
 
 class ModelState(Enum):

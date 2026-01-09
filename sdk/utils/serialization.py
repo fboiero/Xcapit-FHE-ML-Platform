@@ -11,8 +11,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional, Type, Union
 
-import numpy as np
-
 from ..models import (
     BaseFHEModel,
     LinearRegression,

@@ -12,9 +12,8 @@ import hashlib
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
-from functools import lru_cache
 from typing import (
     Callable,
     Dict,
@@ -29,7 +28,7 @@ import weakref
 import numpy as np
 import tenseal as ts
 
-from .context_manager import CKKSParameters, FHEContextManager, SecurityLevel
+from .context_manager import CKKSParameters, SecurityLevel
 
 
 class OptimizationProfile(Enum):

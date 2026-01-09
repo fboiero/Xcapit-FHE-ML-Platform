@@ -9,12 +9,12 @@ functions to approximate the comparison, allowing gradient-based training
 and encrypted inference.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple, Union
 import numpy as np
 
-from .base import BaseFHEModel, ModelConfig, ModelState, TrainingHistory
+from .base import BaseFHEModel, ModelConfig, ModelState
 from ..encryption.ckks_wrapper import (
     CKKSEncryptor,
     EncryptedMatrix,

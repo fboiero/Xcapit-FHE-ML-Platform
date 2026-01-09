@@ -10,10 +10,10 @@ softmax, enabling gradient-based optimization and encrypted inference.
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
 import numpy as np
 
-from .base import BaseFHEModel, ModelConfig, ModelState, TrainingHistory
+from .base import BaseFHEModel, ModelConfig, ModelState
 from ..encryption.ckks_wrapper import (
     CKKSEncryptor,
     EncryptedMatrix,
