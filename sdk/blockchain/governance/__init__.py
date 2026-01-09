@@ -1,17 +1,17 @@
 """Consortium Governance client for blockchain interaction.
 
-This module is a wrapper for backward compatibility.
-The actual implementation is in the sdk/blockchain/governance/ package.
+This package provides Python interface to the ConsortiumGovernance smart contract,
+enabling contribution proofs, voting, and audit trail functionality.
 """
 
-from .governance import (
-    GOVERNANCE_ABI,
+from .abi import GOVERNANCE_ABI
+from .client import GovernanceClient
+from .models import (
     AuditEvent,
     AuditEventType,
     ConsortiumInfo,
     ConsortiumStatus,
     ContributionInfo,
-    GovernanceClient,
     MemberInfo,
     MemberStatus,
     ProposalInfo,
@@ -20,13 +20,17 @@ from .governance import (
 )
 
 __all__ = [
+    # Client
     "GovernanceClient",
+    # ABI
     "GOVERNANCE_ABI",
+    # Enums
     "ConsortiumStatus",
     "MemberStatus",
     "ProposalType",
     "ProposalStatus",
     "AuditEventType",
+    # Dataclasses
     "ConsortiumInfo",
     "MemberInfo",
     "ContributionInfo",
