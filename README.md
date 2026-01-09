@@ -354,6 +354,16 @@ xcapit-fhe-ml/
 ├── sdk/                    # Python SDK
 │   ├── models/             # ML model implementations
 │   ├── encryption/         # FHE encryption layer
+│   ├── cli/                # Modular CLI package
+│   │   ├── commands/             # Command implementations
+│   │   │   ├── encryption.py     # init, encrypt, decrypt
+│   │   │   ├── training.py       # train
+│   │   │   ├── prediction.py     # predict
+│   │   │   ├── blockchain.py     # blockchain operations
+│   │   │   ├── api_keys.py       # API key management
+│   │   │   ├── benchmark.py      # FHE benchmarks
+│   │   │   └── info.py           # version, info
+│   │   └── utils.py              # Common utilities
 │   ├── api/                # FastAPI server
 │   │   ├── consortium/     # Modular consortium management
 │   │   │   ├── core.py           # Company, Consortium, Membership
@@ -368,6 +378,10 @@ xcapit-fhe-ml/
 │   │   │   └── ensemble.py       # Multi-model ensembles
 │   │   └── *_routes.py     # API endpoints
 │   ├── blockchain/         # Smart contract integration
+│   │   └── governance/     # Modular governance client
+│   │       ├── models.py         # Enums & dataclasses
+│   │       ├── abi.py            # Contract ABI
+│   │       └── client.py         # GovernanceClient
 │   └── quality/            # Data quality calculator
 ├── sdk-typescript/         # TypeScript SDK
 │   └── src/
