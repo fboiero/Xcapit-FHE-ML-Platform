@@ -4,37 +4,57 @@ Provides functions for saving and loading FHE models,
 including weights, configuration, and metadata.
 """
 
+from __future__ import annotations
+
 import hashlib
 import json
 import pickle
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
-from ..models import (
-    BaseFHEModel,
-    DecisionTree,
-    DecisionTreeClassifier,
-    DecisionTreeRegressor,
-    KMeans,
-    KMeansConfig,
-    LinearRegression,
-    LogisticRegression,
-    MiniBatchKMeans,
-    ModelConfig,
-    TreeConfig,
-)
+if TYPE_CHECKING:
+    from ..models import BaseFHEModel
 
-# Model type registry
-MODEL_REGISTRY: dict[str, type[BaseFHEModel]] = {
-    "LinearRegression": LinearRegression,
-    "LogisticRegression": LogisticRegression,
-    "DecisionTree": DecisionTree,
-    "DecisionTreeClassifier": DecisionTreeClassifier,
-    "DecisionTreeRegressor": DecisionTreeRegressor,
-    "KMeans": KMeans,
-    "MiniBatchKMeans": MiniBatchKMeans,
-}
+
+_MODEL_REGISTRY_CACHE: dict[str, type] | None = None
+
+
+def _get_model_registry() -> dict[str, type]:
+    """Lazily get model registry to avoid circular imports."""
+    global _MODEL_REGISTRY_CACHE
+    if _MODEL_REGISTRY_CACHE is not None:
+        return _MODEL_REGISTRY_CACHE
+
+    from ..models import (
+        DecisionTree,
+        DecisionTreeClassifier,
+        DecisionTreeRegressor,
+        KMeans,
+        LinearRegression,
+        LogisticRegression,
+        MiniBatchKMeans,
+    )
+
+    _MODEL_REGISTRY_CACHE = {
+        "LinearRegression": LinearRegression,
+        "LogisticRegression": LogisticRegression,
+        "DecisionTree": DecisionTree,
+        "DecisionTreeClassifier": DecisionTreeClassifier,
+        "DecisionTreeRegressor": DecisionTreeRegressor,
+        "KMeans": KMeans,
+        "MiniBatchKMeans": MiniBatchKMeans,
+    }
+    return _MODEL_REGISTRY_CACHE
+
+
+def get_model_registry() -> dict[str, type]:
+    """Get the model type registry.
+
+    Returns:
+        Dictionary mapping model names to model classes.
+    """
+    return _get_model_registry()
 
 
 def compute_weights_hash(model: BaseFHEModel) -> str:
@@ -84,6 +104,8 @@ def save_model(
 
     # Add config
     if hasattr(model, "_config"):
+        from ..models import KMeansConfig, ModelConfig, TreeConfig
+
         config = model._config
         if isinstance(config, ModelConfig):
             save_data["config"] = {
@@ -169,12 +191,16 @@ def load_model(
 
     # Get model type
     model_type = save_data.get("model_type")
-    if model_type not in MODEL_REGISTRY:
+    model_registry = _get_model_registry()
+    if model_type not in model_registry:
         raise ValueError(f"Unknown model type: {model_type}")
 
     # Recreate config
     config = None
     if "config" in save_data:
+        from ..models import KMeansConfig, ModelConfig, TreeConfig
+        from ..models.kmeans import InitMethod
+
         config_data = save_data["config"]
         config_type = config_data.get("type")
 
@@ -196,8 +222,6 @@ def load_model(
                 temperature=config_data.get("temperature", 1.0),
             )
         elif config_type == "KMeansConfig":
-            from ..models.kmeans import InitMethod
-
             config = KMeansConfig(
                 n_clusters=config_data.get("n_clusters", 3),
                 max_iter=config_data.get("max_iter", 100),
@@ -206,7 +230,7 @@ def load_model(
             )
 
     # Create model instance
-    model_class = MODEL_REGISTRY[model_type]
+    model_class = model_registry[model_type]
     if config:
         model = model_class(config=config)
     else:

@@ -19,10 +19,10 @@ from sdk.models import (
     LinearRegression,
 )
 from sdk.utils.serialization import (
-    MODEL_REGISTRY,
     compute_weights_hash,
     export_weights_json,
     get_model_info,
+    get_model_registry,
     load_model,
     save_model,
 )
@@ -39,10 +39,11 @@ from sdk.utils.validators import (
 
 
 class TestModelRegistry:
-    """Tests for MODEL_REGISTRY."""
+    """Tests for get_model_registry function."""
 
     def test_registry_contains_all_models(self):
         """Test that registry contains all expected models."""
+        registry = get_model_registry()
         expected_models = [
             "LinearRegression",
             "LogisticRegression",
@@ -53,11 +54,12 @@ class TestModelRegistry:
             "MiniBatchKMeans",
         ]
         for model_name in expected_models:
-            assert model_name in MODEL_REGISTRY
+            assert model_name in registry
 
     def test_registry_values_are_classes(self):
         """Test that registry values are model classes."""
-        for _name, cls in MODEL_REGISTRY.items():
+        registry = get_model_registry()
+        for _name, cls in registry.items():
             assert isinstance(cls, type)
 
 

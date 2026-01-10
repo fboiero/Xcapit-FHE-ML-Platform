@@ -153,9 +153,10 @@ ignore = [
     "B030",  # dynamic except handlers
     "B904",  # raise from in except (too noisy)
     "B905",  # zip without strict parameter
-    "UP006", # Use builtin types for annotations (requires Python 3.9+ but breaks IDE hints)
-    "UP007", # Use X | Y for type annotations (requires Python 3.10+)
-    "UP035", # deprecated typing imports (we support Python 3.9)
+    "UP006",  # Use builtin types for annotations (requires Python 3.9+ but breaks IDE hints)
+    "UP007",  # Use X | Y for Union (requires Python 3.10+)
+    "UP035",  # deprecated typing imports (we support Python 3.9)
+    "UP045",  # Use X | None for Optional (requires Python 3.10+)
 ]
 
 [tool.ruff.lint.isort]
