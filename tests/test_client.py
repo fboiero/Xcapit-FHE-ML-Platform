@@ -1,8 +1,12 @@
 """Tests for FHE-ML REST API client."""
 
+import sys
 from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
+
+# Mock tenseal before importing sdk modules
+sys.modules["tenseal"] = MagicMock()
 
 from sdk.api.client import (
     FHEMLClient,
@@ -509,6 +513,82 @@ class TestFHEMLClientContextManager:
 
                 assert "FHEMLClient" in repr(client)
                 assert "http://test:8000" in repr(client)
+
+
+class TestFHEMLClientRequestsBackend:
+    """Tests for client using requests library as backend."""
+
+    def test_init_with_requests_fallback(self):
+        """Test client falls back to requests when httpx unavailable."""
+        with patch("sdk.api.client.HAS_HTTPX", False):
+            with patch("sdk.api.client.HAS_REQUESTS", True):
+                with patch("sdk.api.client.requests") as mock_requests:
+                    mock_session = MagicMock()
+                    mock_requests.Session.return_value = mock_session
+
+                    client = FHEMLClient()
+
+                    assert client._use_httpx is False
+                    assert hasattr(client, "_session")
+                    mock_requests.Session.assert_called_once()
+
+    def test_request_using_requests_backend(self):
+        """Test HTTP request using requests library."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.content = b'{"result": "success"}'
+        mock_response.json.return_value = {"result": "success"}
+
+        with patch("sdk.api.client.HAS_HTTPX", False):
+            with patch("sdk.api.client.HAS_REQUESTS", True):
+                with patch("sdk.api.client.requests") as mock_requests:
+                    mock_session = MagicMock()
+                    mock_session.request.return_value = mock_response
+                    mock_requests.Session.return_value = mock_session
+
+                    client = FHEMLClient(timeout=45.0)
+                    result = client._request("GET", "/test")
+
+                    assert result == {"result": "success"}
+                    mock_session.request.assert_called_once()
+                    call_kwargs = mock_session.request.call_args[1]
+                    assert call_kwargs["timeout"] == 45.0
+
+    def test_close_with_requests_backend(self):
+        """Test close with requests session."""
+        with patch("sdk.api.client.HAS_HTTPX", False):
+            with patch("sdk.api.client.HAS_REQUESTS", True):
+                with patch("sdk.api.client.requests") as mock_requests:
+                    mock_session = MagicMock()
+                    mock_requests.Session.return_value = mock_session
+
+                    client = FHEMLClient()
+                    client.close()
+
+                    mock_session.close.assert_called_once()
+
+
+class TestFHEMLClientPredictProbaNumpy:
+    """Additional tests for predict_proba numpy conversion."""
+
+    def test_predict_proba_converts_numpy_input(self):
+        """Test predict_proba converts numpy array to list."""
+        with patch("sdk.api.client.HAS_HTTPX", True):
+            with patch("sdk.api.client.httpx") as mock_httpx:
+                mock_httpx.Client.return_value = MagicMock()
+                client = FHEMLClient()
+
+                with patch.object(client, "_request") as mock_request:
+                    mock_request.return_value = {
+                        "predictions": [1],
+                        "probabilities": [[0.3, 0.7]],
+                    }
+                    X = np.array([[1, 2]])
+                    result = client.predict_proba("model_123", X)
+
+                    call_data = mock_request.call_args[0][2]
+                    assert call_data["X"] == [[1, 2]]
+                    assert result is not None
 
 
 class TestConnectFunction:
