@@ -1,16 +1,23 @@
 """Tests for API authentication module."""
 
 import os
+import sys
 import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 
+# Mock tenseal before importing sdk modules
+sys.modules["tenseal"] = MagicMock()
+
 from sdk.api.auth import (
     RateLimiter,
     generate_api_key,
     check_rate_limit,
+    get_api_key,
+    MASTER_API_KEY_ENV,
+    API_KEY_HEADER_NAME,
 )
 
 
@@ -291,135 +298,373 @@ class TestRevokeApiKey:
 class TestRequireApiKey:
     """Tests for require_api_key dependency factory."""
 
-    @pytest.mark.asyncio
-    async def test_require_api_key_auth_disabled(self):
+    def test_require_api_key_auth_disabled(self):
         """Test require_api_key when auth is disabled."""
+        import asyncio
         from sdk.api.auth import require_api_key
 
-        with patch.dict(os.environ, {"FHEML_AUTH_DISABLED": "true"}):
-            dependency = require_api_key()
-            result = await dependency(None)
+        async def run_test():
+            with patch.dict(os.environ, {"FHEML_AUTH_DISABLED": "true"}):
+                dependency = require_api_key()
+                result = await dependency(None)
+                assert result["name"] == "anonymous"
+                assert "read" in result["permissions"]
 
-            assert result["name"] == "anonymous"
-            assert "read" in result["permissions"]
+        asyncio.run(run_test())
 
-    @pytest.mark.asyncio
-    async def test_require_api_key_optional_no_key(self):
+    def test_require_api_key_optional_no_key(self):
         """Test optional auth with no key."""
+        import asyncio
         from sdk.api.auth import require_api_key
 
-        with patch.dict(os.environ, {"FHEML_AUTH_DISABLED": "false"}, clear=False):
-            # Ensure auth is not disabled
+        async def run_test():
             os.environ.pop("FHEML_AUTH_DISABLED", None)
-
             dependency = require_api_key(optional=True)
             result = await dependency(None)
-
             assert result is None
 
-    @pytest.mark.asyncio
-    async def test_require_api_key_required_no_key(self):
+        asyncio.run(run_test())
+
+    def test_require_api_key_required_no_key(self):
         """Test required auth with no key raises exception."""
+        import asyncio
         from fastapi import HTTPException
         from sdk.api.auth import require_api_key
 
-        # Ensure auth is not disabled
-        os.environ.pop("FHEML_AUTH_DISABLED", None)
+        async def run_test():
+            os.environ.pop("FHEML_AUTH_DISABLED", None)
+            dependency = require_api_key(optional=False)
+            with pytest.raises(HTTPException) as exc_info:
+                await dependency(None)
+            assert exc_info.value.status_code == 401
 
-        dependency = require_api_key(optional=False)
+        asyncio.run(run_test())
 
-        with pytest.raises(HTTPException) as exc_info:
-            await dependency(None)
-
-        assert exc_info.value.status_code == 401
-
-    @pytest.mark.asyncio
-    async def test_require_api_key_with_permissions(self):
+    def test_require_api_key_with_permissions(self):
         """Test require_api_key checks permissions."""
+        import asyncio
         from sdk.api.auth import require_api_key
 
-        os.environ.pop("FHEML_AUTH_DISABLED", None)
+        async def run_test():
+            os.environ.pop("FHEML_AUTH_DISABLED", None)
+            key_info = {"name": "test", "permissions": ["read"]}
+            dependency = require_api_key(permissions=["read"])
+            result = await dependency(key_info)
+            assert result == key_info
 
-        key_info = {"name": "test", "permissions": ["read"]}
-        dependency = require_api_key(permissions=["read"])
-        result = await dependency(key_info)
+        asyncio.run(run_test())
 
-        assert result == key_info
-
-    @pytest.mark.asyncio
-    async def test_require_api_key_missing_permission(self):
+    def test_require_api_key_missing_permission(self):
         """Test require_api_key fails when permission missing."""
+        import asyncio
         from fastapi import HTTPException
         from sdk.api.auth import require_api_key
 
-        os.environ.pop("FHEML_AUTH_DISABLED", None)
+        async def run_test():
+            os.environ.pop("FHEML_AUTH_DISABLED", None)
+            key_info = {"name": "test", "permissions": ["read"]}
+            dependency = require_api_key(permissions=["admin"])
+            with pytest.raises(HTTPException) as exc_info:
+                await dependency(key_info)
+            assert exc_info.value.status_code == 403
+            assert "admin" in str(exc_info.value.detail)
 
-        key_info = {"name": "test", "permissions": ["read"]}
-        dependency = require_api_key(permissions=["admin"])
+        asyncio.run(run_test())
 
-        with pytest.raises(HTTPException) as exc_info:
-            await dependency(key_info)
-
-        assert exc_info.value.status_code == 403
-        assert "admin" in str(exc_info.value.detail)
-
-    @pytest.mark.asyncio
-    async def test_require_api_key_admin_bypasses(self):
+    def test_require_api_key_admin_bypasses(self):
         """Test admin permission bypasses other requirements."""
+        import asyncio
         from sdk.api.auth import require_api_key
 
-        os.environ.pop("FHEML_AUTH_DISABLED", None)
+        async def run_test():
+            os.environ.pop("FHEML_AUTH_DISABLED", None)
+            key_info = {"name": "admin_user", "permissions": ["admin"]}
+            dependency = require_api_key(permissions=["special_permission"])
+            result = await dependency(key_info)
+            assert result == key_info
 
-        key_info = {"name": "admin_user", "permissions": ["admin"]}
-        dependency = require_api_key(permissions=["special_permission"])
-        result = await dependency(key_info)
-
-        assert result == key_info
+        asyncio.run(run_test())
 
 
 class TestGetCurrentCompany:
     """Tests for get_current_company dependency."""
 
-    @pytest.mark.asyncio
-    async def test_get_current_company_auth_disabled(self):
+    def test_get_current_company_auth_disabled(self):
         """Test get_current_company when auth disabled."""
+        import asyncio
         from sdk.api.auth import get_current_company
 
-        with patch.dict(os.environ, {"FHEML_AUTH_DISABLED": "true"}):
-            result = await get_current_company(None)
+        async def run_test():
+            with patch.dict(os.environ, {"FHEML_AUTH_DISABLED": "true"}):
+                result = await get_current_company(None)
+                assert result["id"] == "demo_company"
+                assert result["name"] == "Demo Company"
 
-            assert result["id"] == "demo_company"
-            assert result["name"] == "Demo Company"
+        asyncio.run(run_test())
 
-    @pytest.mark.asyncio
-    async def test_get_current_company_no_key(self):
+    def test_get_current_company_no_key(self):
         """Test get_current_company with no key raises exception."""
+        import asyncio
         from fastapi import HTTPException
         from sdk.api.auth import get_current_company
 
-        os.environ.pop("FHEML_AUTH_DISABLED", None)
+        async def run_test():
+            os.environ.pop("FHEML_AUTH_DISABLED", None)
+            with pytest.raises(HTTPException) as exc_info:
+                await get_current_company(None)
+            assert exc_info.value.status_code == 401
 
-        with pytest.raises(HTTPException) as exc_info:
-            await get_current_company(None)
+        asyncio.run(run_test())
 
-        assert exc_info.value.status_code == 401
-
-    @pytest.mark.asyncio
-    async def test_get_current_company_with_key(self):
+    def test_get_current_company_with_key(self):
         """Test get_current_company extracts company info."""
+        import asyncio
         from sdk.api.auth import get_current_company
 
-        os.environ.pop("FHEML_AUTH_DISABLED", None)
+        async def run_test():
+            os.environ.pop("FHEML_AUTH_DISABLED", None)
+            key_info = {
+                "name": "test_company",
+                "company_id": "comp_123",
+                "company_name": "Test Corp",
+                "permissions": ["read", "write"],
+            }
+            result = await get_current_company(key_info)
+            assert result["id"] == "comp_123"
+            assert result["name"] == "Test Corp"
+            assert result["permissions"] == ["read", "write"]
 
-        key_info = {
-            "name": "test_company",
-            "company_id": "comp_123",
-            "company_name": "Test Corp",
+        asyncio.run(run_test())
+
+    def test_get_current_company_fallback_to_name(self):
+        """Test get_current_company uses name as fallback."""
+        import asyncio
+        from sdk.api.auth import get_current_company
+
+        async def run_test():
+            os.environ.pop("FHEML_AUTH_DISABLED", None)
+            key_info = {
+                "name": "fallback_user",
+                "permissions": ["read"],
+            }
+            result = await get_current_company(key_info)
+            assert result["id"] == "fallback_user"
+            assert result["name"] == "fallback_user"
+
+        asyncio.run(run_test())
+
+
+class TestGetApiKey:
+    """Tests for get_api_key function."""
+
+    def test_get_api_key_no_key_provided(self):
+        """Test get_api_key returns None when no key provided."""
+        import asyncio
+
+        async def run_test():
+            result = await get_api_key(header_key=None, query_key=None)
+            assert result is None
+
+        asyncio.run(run_test())
+
+    def test_get_api_key_from_header(self):
+        """Test get_api_key extracts key from header."""
+        import asyncio
+
+        mock_db = MagicMock()
+        mock_db.validate_api_key.return_value = {
+            "name": "header_key",
             "permissions": ["read", "write"],
+            "rate_limit": 100
         }
 
-        result = await get_current_company(key_info)
+        async def run_test():
+            with patch("sdk.api.auth.get_database", return_value=mock_db):
+                with patch.dict(os.environ, {}, clear=False):
+                    os.environ.pop(MASTER_API_KEY_ENV, None)
+                    result = await get_api_key(header_key="test_header_key", query_key=None)
+            assert result["name"] == "header_key"
+            mock_db.validate_api_key.assert_called_once_with("test_header_key")
 
-        assert result["id"] == "comp_123"
-        assert result["name"] == "Test Corp"
-        assert result["permissions"] == ["read", "write"]
+        asyncio.run(run_test())
+
+    def test_get_api_key_from_query(self):
+        """Test get_api_key extracts key from query parameter."""
+        import asyncio
+
+        mock_db = MagicMock()
+        mock_db.validate_api_key.return_value = {
+            "name": "query_key",
+            "permissions": ["read"],
+            "rate_limit": 50
+        }
+
+        async def run_test():
+            with patch("sdk.api.auth.get_database", return_value=mock_db):
+                with patch.dict(os.environ, {}, clear=False):
+                    os.environ.pop(MASTER_API_KEY_ENV, None)
+                    result = await get_api_key(header_key=None, query_key="test_query_key")
+            assert result["name"] == "query_key"
+            mock_db.validate_api_key.assert_called_once_with("test_query_key")
+
+        asyncio.run(run_test())
+
+    def test_get_api_key_header_takes_priority(self):
+        """Test header key takes priority over query key."""
+        import asyncio
+
+        mock_db = MagicMock()
+        mock_db.validate_api_key.return_value = {
+            "name": "priority_key",
+            "permissions": ["read"],
+            "rate_limit": 100
+        }
+
+        async def run_test():
+            with patch("sdk.api.auth.get_database", return_value=mock_db):
+                with patch.dict(os.environ, {}, clear=False):
+                    os.environ.pop(MASTER_API_KEY_ENV, None)
+                    await get_api_key(header_key="header_key", query_key="query_key")
+            # Should validate header key, not query
+            mock_db.validate_api_key.assert_called_once_with("header_key")
+
+        asyncio.run(run_test())
+
+    def test_get_api_key_master_key(self):
+        """Test master key from environment bypasses database."""
+        import asyncio
+
+        async def run_test():
+            with patch.dict(os.environ, {MASTER_API_KEY_ENV: "master_secret_123"}):
+                result = await get_api_key(header_key="master_secret_123", query_key=None)
+            assert result["name"] == "master"
+            assert result["is_master"] is True
+            assert "admin" in result["permissions"]
+            assert result["rate_limit"] == 10000
+
+        asyncio.run(run_test())
+
+    def test_get_api_key_invalid_key(self):
+        """Test get_api_key raises exception for invalid key."""
+        import asyncio
+        from fastapi import HTTPException
+
+        mock_db = MagicMock()
+        mock_db.validate_api_key.return_value = None
+
+        async def run_test():
+            with patch("sdk.api.auth.get_database", return_value=mock_db):
+                with patch.dict(os.environ, {}, clear=False):
+                    os.environ.pop(MASTER_API_KEY_ENV, None)
+                    with pytest.raises(HTTPException) as exc_info:
+                        await get_api_key(header_key="invalid_key", query_key=None)
+                    assert exc_info.value.status_code == 401
+                    assert "Invalid API key" in str(exc_info.value.detail)
+
+        asyncio.run(run_test())
+
+
+class TestAuthIntegration:
+    """Integration tests for auth with FastAPI."""
+
+    def test_protected_endpoint_with_valid_key(self):
+        """Test accessing protected endpoint with valid API key."""
+        from fastapi import FastAPI, Depends
+        from fastapi.testclient import TestClient
+        from sdk.api.auth import require_api_key
+
+        app = FastAPI()
+
+        @app.get("/protected")
+        async def protected_route(key: dict = Depends(require_api_key(permissions=["read"]))):
+            return {"key_name": key.get("name")}
+
+        mock_db = MagicMock()
+        mock_db.validate_api_key.return_value = {
+            "name": "test_user",
+            "permissions": ["read", "write"],
+            "rate_limit": 100
+        }
+
+        with patch("sdk.api.auth.get_database", return_value=mock_db):
+            with patch.dict(os.environ, {}, clear=False):
+                os.environ.pop(MASTER_API_KEY_ENV, None)
+                os.environ.pop("FHEML_AUTH_DISABLED", None)
+                client = TestClient(app)
+                response = client.get(
+                    "/protected",
+                    headers={API_KEY_HEADER_NAME: "valid_key_123"}
+                )
+
+        assert response.status_code == 200
+        assert response.json()["key_name"] == "test_user"
+
+    def test_protected_endpoint_without_key(self):
+        """Test protected endpoint rejects requests without key."""
+        from fastapi import FastAPI, Depends
+        from fastapi.testclient import TestClient
+        from sdk.api.auth import require_api_key
+
+        app = FastAPI()
+
+        @app.get("/protected")
+        async def protected_route(key: dict = Depends(require_api_key())):
+            return {"message": "success"}
+
+        with patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("FHEML_AUTH_DISABLED", None)
+            client = TestClient(app)
+            response = client.get("/protected")
+
+        assert response.status_code == 401
+
+    def test_optional_auth_endpoint(self):
+        """Test endpoint with optional authentication."""
+        from fastapi import FastAPI, Depends
+        from fastapi.testclient import TestClient
+        from sdk.api.auth import require_api_key
+
+        app = FastAPI()
+
+        @app.get("/optional")
+        async def optional_route(key: dict = Depends(require_api_key(optional=True))):
+            if key:
+                return {"authenticated": True}
+            return {"authenticated": False}
+
+        with patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("FHEML_AUTH_DISABLED", None)
+            client = TestClient(app)
+            response = client.get("/optional")
+
+        assert response.status_code == 200
+        assert response.json()["authenticated"] is False
+
+    def test_query_param_authentication(self):
+        """Test authentication via query parameter."""
+        from fastapi import FastAPI, Depends
+        from fastapi.testclient import TestClient
+        from sdk.api.auth import require_api_key
+
+        app = FastAPI()
+
+        @app.get("/query-auth")
+        async def query_route(key: dict = Depends(require_api_key(permissions=["read"]))):
+            return {"name": key.get("name")}
+
+        mock_db = MagicMock()
+        mock_db.validate_api_key.return_value = {
+            "name": "query_user",
+            "permissions": ["read"],
+            "rate_limit": 100
+        }
+
+        with patch("sdk.api.auth.get_database", return_value=mock_db):
+            with patch.dict(os.environ, {}, clear=False):
+                os.environ.pop(MASTER_API_KEY_ENV, None)
+                os.environ.pop("FHEML_AUTH_DISABLED", None)
+                client = TestClient(app)
+                response = client.get("/query-auth?api_key=test_query_key")
+
+        assert response.status_code == 200
+        assert response.json()["name"] == "query_user"
