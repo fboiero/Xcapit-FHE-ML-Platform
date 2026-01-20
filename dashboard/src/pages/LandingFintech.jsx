@@ -184,16 +184,31 @@ function HeroIllustration() {
   )
 }
 
-// Stat card component
-function StatCard({ value, label, icon }) {
+// Animated stat card component
+function StatCard({ value, label, icon, delay = 0, isVisible = true }) {
+  const numericValue = parseInt(String(value).replace(/[^0-9]/g, '')) || 0
+  const prefix = value.startsWith('+') ? '+' : value.startsWith('-') ? '-' : ''
+  const suffix = String(value).replace(/[0-9+-]/g, '')
+  const count = useCounter(numericValue, 2000, isVisible)
+  const [show, setShow] = useState(false)
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShow(true), delay)
+    return () => clearTimeout(timer)
+  }, [delay])
+
   return (
-    <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:border-brand-400/30 transition-all duration-300">
+    <div
+      className={`bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:border-brand-400/30 hover:bg-white/10 transition-all duration-500 transform ${
+        show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+      }`}
+    >
       <div className="flex items-center gap-4">
         <div className="w-12 h-12 bg-gradient-to-br from-brand-500/20 to-indigo-500/20 rounded-xl flex items-center justify-center text-2xl">
           {icon}
         </div>
         <div>
-          <div className="text-3xl font-bold text-white">{value}</div>
+          <div className="text-3xl font-bold text-white">{prefix}{count}{suffix}</div>
           <div className="text-slate-400 text-sm">{label}</div>
         </div>
       </div>
@@ -365,17 +380,33 @@ function ContactForm({ lang }) {
   )
 }
 
-// Use Case Card Component
-function UseCaseCard({ title, problem, solution, metric, icon, lang }) {
+// Use Case Card Component with animation
+function UseCaseCard({ title, problem, solution, metric, icon, lang, delay = 0, isVisible = true }) {
+  const [show, setShow] = useState(false)
+  const [hovered, setHovered] = useState(false)
+
+  useEffect(() => {
+    if (isVisible) {
+      const timer = setTimeout(() => setShow(true), delay)
+      return () => clearTimeout(timer)
+    }
+  }, [delay, isVisible])
+
   return (
-    <div className="group bg-white rounded-2xl p-8 border border-slate-200 hover:shadow-2xl hover:shadow-brand-500/10 hover:-translate-y-1 transition-all duration-300">
-      <div className="w-14 h-14 bg-gradient-to-br from-brand-500/10 to-indigo-500/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+    <div
+      className={`group bg-white rounded-2xl p-8 border border-slate-200 hover:shadow-2xl hover:shadow-brand-500/10 hover:-translate-y-2 transition-all duration-500 transform ${
+        show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+      }`}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <div className={`w-14 h-14 bg-gradient-to-br from-brand-500/10 to-indigo-500/10 rounded-2xl flex items-center justify-center mb-6 transition-all duration-500 ${hovered ? 'scale-110 rotate-3' : ''}`}>
         {icon}
       </div>
-      <h3 className="text-xl font-bold text-slate-900 mb-4">{title}</h3>
+      <h3 className="text-xl font-bold text-slate-900 mb-4 group-hover:text-brand-600 transition-colors">{title}</h3>
       <div className="mb-4">
         <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-red-600 uppercase tracking-wider">
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+          <svg className={`w-4 h-4 transition-transform duration-300 ${hovered ? 'scale-110' : ''}`} fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
           </svg>
           {lang === 'es' ? 'El Problema' : 'The Problem'}
@@ -384,15 +415,15 @@ function UseCaseCard({ title, problem, solution, metric, icon, lang }) {
       </div>
       <div className="mb-4">
         <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-600 uppercase tracking-wider">
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+          <svg className={`w-4 h-4 transition-transform duration-300 ${hovered ? 'scale-110' : ''}`} fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
           </svg>
           {lang === 'es' ? 'La Solución' : 'The Solution'}
         </span>
         <p className="text-slate-600 mt-2">{solution}</p>
       </div>
-      <div className="mt-6 pt-4 border-t border-slate-100">
-        <span className="text-3xl font-bold bg-gradient-to-r from-brand-600 to-indigo-600 bg-clip-text text-transparent">
+      <div className={`mt-6 pt-4 border-t border-slate-100 transition-all duration-300 ${hovered ? 'border-brand-200' : ''}`}>
+        <span className={`text-3xl font-bold bg-gradient-to-r from-brand-600 to-indigo-600 bg-clip-text text-transparent transition-all duration-300 ${hovered ? 'scale-105 inline-block' : ''}`}>
           {metric}
         </span>
       </div>
@@ -400,27 +431,58 @@ function UseCaseCard({ title, problem, solution, metric, icon, lang }) {
   )
 }
 
-// Compliance badge component
-function ComplianceBadge({ name, icon }) {
+// Compliance badge component with animation
+function ComplianceBadge({ name, icon, delay = 0, isVisible = true }) {
+  const [show, setShow] = useState(false)
+
+  useEffect(() => {
+    if (isVisible) {
+      const timer = setTimeout(() => setShow(true), delay)
+      return () => clearTimeout(timer)
+    }
+  }, [delay, isVisible])
+
   return (
-    <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 px-5 py-2.5 rounded-full hover:scale-105 transition-transform">
+    <div
+      className={`flex items-center gap-2 bg-emerald-50 border border-emerald-200 px-5 py-2.5 rounded-full hover:scale-110 hover:shadow-lg hover:shadow-emerald-500/20 transition-all duration-300 cursor-default transform ${
+        show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+      }`}
+    >
       {icon}
       <span className="font-semibold text-emerald-800">{name}</span>
     </div>
   )
 }
 
-// Step component for how it works
-function StepCard({ number, title, description, icon }) {
+// Step component for how it works with animation
+function StepCard({ number, title, description, delay = 0, isVisible = true }) {
+  const [show, setShow] = useState(false)
+
+  useEffect(() => {
+    if (isVisible) {
+      const timer = setTimeout(() => setShow(true), delay)
+      return () => clearTimeout(timer)
+    }
+  }, [delay, isVisible])
+
   return (
-    <div className="relative group">
-      <div className="absolute -inset-0.5 bg-gradient-to-r from-brand-500 to-indigo-500 rounded-2xl blur opacity-0 group-hover:opacity-30 transition duration-500" />
-      <div className="relative bg-white rounded-2xl p-8 border border-slate-200">
-        <div className="w-12 h-12 bg-gradient-to-br from-brand-500 to-indigo-500 rounded-xl flex items-center justify-center text-white font-bold text-lg mb-4">
+    <div
+      className={`relative group transition-all duration-700 transform ${
+        show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+      }`}
+    >
+      <div className="absolute -inset-0.5 bg-gradient-to-r from-brand-500 to-indigo-500 rounded-2xl blur opacity-0 group-hover:opacity-40 transition duration-500" />
+      <div className="relative bg-white rounded-2xl p-8 border border-slate-200 group-hover:border-transparent transition-colors">
+        <div className="w-12 h-12 bg-gradient-to-br from-brand-500 to-indigo-500 rounded-xl flex items-center justify-center text-white font-bold text-lg mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
           {number}
         </div>
-        <h3 className="text-xl font-bold text-slate-900 mb-2">{title}</h3>
+        <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:text-brand-600 transition-colors">{title}</h3>
         <p className="text-slate-600">{description}</p>
+
+        {/* Connection line for desktop */}
+        {number < 3 && (
+          <div className="hidden md:block absolute top-1/2 -right-4 w-8 h-0.5 bg-gradient-to-r from-brand-300 to-transparent" />
+        )}
       </div>
     </div>
   )
@@ -430,10 +492,20 @@ export default function LandingFintech() {
   const { i18n } = useTranslation()
   const lang = i18n.language?.startsWith('es') ? 'es' : 'en'
   const [scrolled, setScrolled] = useState(false)
+  const [heroMounted, setHeroMounted] = useState(false)
+
+  // Scroll animation refs for each section
+  const [problemRef, problemVisible] = useScrollAnimation(0.2)
+  const [solutionRef, solutionVisible] = useScrollAnimation(0.2)
+  const [useCasesRef, useCasesVisible] = useScrollAnimation(0.15)
+  const [complianceRef, complianceVisible] = useScrollAnimation(0.2)
+  const [diffRef, diffVisible] = useScrollAnimation(0.2)
+  const [contactRef, contactVisible] = useScrollAnimation(0.2)
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20)
     window.addEventListener('scroll', handleScroll)
+    setHeroMounted(true)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
@@ -785,16 +857,22 @@ export default function LandingFintech() {
                   value={t.hero.stats.detection.value}
                   label={t.hero.stats.detection.label}
                   icon="📈"
+                  delay={600}
+                  isVisible={heroMounted}
                 />
                 <StatCard
                   value={t.hero.stats.default.value}
                   label={t.hero.stats.default.label}
                   icon="📉"
+                  delay={750}
+                  isVisible={heroMounted}
                 />
                 <StatCard
                   value={t.hero.stats.compliance.value}
                   label={t.hero.stats.compliance.label}
                   icon="✓"
+                  delay={900}
+                  isVisible={heroMounted}
                 />
               </div>
             </div>
@@ -821,20 +899,26 @@ export default function LandingFintech() {
       </section>
 
       {/* Problem Section */}
-      <section className="py-24 bg-slate-900">
+      <section ref={problemRef} className="py-24 bg-slate-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div className={`text-center mb-16 transition-all duration-700 ${problemVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
               {t.problem.title}
             </h2>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {t.problem.points.map((point, index) => (
-              <div key={index} className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700 hover:border-red-500/30 transition-colors">
-                <div className="w-14 h-14 bg-red-500/10 rounded-2xl flex items-center justify-center mb-6">
+              <div
+                key={index}
+                className={`bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700 hover:border-red-500/50 hover:bg-slate-800/70 hover:-translate-y-1 transition-all duration-500 group ${
+                  problemVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                }`}
+                style={{ transitionDelay: problemVisible ? `${index * 150}ms` : '0ms' }}
+              >
+                <div className="w-14 h-14 bg-red-500/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-red-500/20 transition-all duration-300">
                   <span className="text-3xl">{point.icon}</span>
                 </div>
-                <h3 className="text-xl font-bold text-white mb-3">{point.title}</h3>
+                <h3 className="text-xl font-bold text-white mb-3 group-hover:text-red-400 transition-colors">{point.title}</h3>
                 <p className="text-slate-400">{point.desc}</p>
               </div>
             ))}
@@ -843,9 +927,9 @@ export default function LandingFintech() {
       </section>
 
       {/* Solution Section */}
-      <section id="how-it-works" className="py-24 bg-slate-950">
+      <section id="how-it-works" ref={solutionRef} className="py-24 bg-slate-950">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div className={`text-center mb-16 transition-all duration-700 ${solutionVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
               {t.solution.title}
             </h2>
@@ -861,6 +945,8 @@ export default function LandingFintech() {
                 number={index + 1}
                 title={step.title}
                 description={step.desc}
+                delay={index * 200}
+                isVisible={solutionVisible}
               />
             ))}
           </div>
@@ -868,9 +954,9 @@ export default function LandingFintech() {
       </section>
 
       {/* Use Cases Section */}
-      <section id="use-cases" className="py-24 bg-white">
+      <section id="use-cases" ref={useCasesRef} className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div className={`text-center mb-16 transition-all duration-700 ${useCasesVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
               {t.useCases.title}
             </h2>
@@ -886,6 +972,8 @@ export default function LandingFintech() {
                 metric={useCase.metric}
                 icon={useCaseIcons[index]}
                 lang={lang}
+                delay={index * 150}
+                isVisible={useCasesVisible}
               />
             ))}
           </div>
@@ -893,9 +981,9 @@ export default function LandingFintech() {
       </section>
 
       {/* Compliance Section */}
-      <section id="compliance" className="py-24 bg-slate-50">
+      <section id="compliance" ref={complianceRef} className="py-24 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
+          <div className={`text-center mb-12 transition-all duration-700 ${complianceVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
               {t.compliance.title}
             </h2>
@@ -914,6 +1002,8 @@ export default function LandingFintech() {
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
                 }
+                delay={index * 100}
+                isVisible={complianceVisible}
               />
             ))}
           </div>
@@ -921,13 +1011,13 @@ export default function LandingFintech() {
       </section>
 
       {/* Differentiators Section */}
-      <section className="py-24 bg-white">
+      <section ref={diffRef} className="py-24 bg-white overflow-hidden">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl md:text-4xl font-bold text-slate-900 text-center mb-12">
+          <h2 className={`text-3xl md:text-4xl font-bold text-slate-900 text-center mb-12 transition-all duration-700 ${diffVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             {t.differentiators.title}
           </h2>
 
-          <div className="bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-xl">
+          <div className={`bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-xl transition-all duration-700 ${diffVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: '200ms' }}>
             <div className="grid grid-cols-5 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200">
               {t.differentiators.headers.map((header, index) => (
                 <div
@@ -941,7 +1031,13 @@ export default function LandingFintech() {
               ))}
             </div>
             {t.differentiators.rows.map((row, rowIndex) => (
-              <div key={rowIndex} className="grid grid-cols-5 border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition">
+              <div
+                key={rowIndex}
+                className={`grid grid-cols-5 border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-all duration-300 ${
+                  diffVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
+                }`}
+                style={{ transitionDelay: diffVisible ? `${300 + rowIndex * 100}ms` : '0ms' }}
+              >
                 <div className="p-5 text-slate-700 font-medium">{row[0]}</div>
                 {row.slice(1).map((value, colIndex) => (
                   <div key={colIndex} className={`p-5 flex justify-center items-center ${colIndex === 0 ? 'bg-brand-50/30' : ''}`}>
@@ -955,13 +1051,13 @@ export default function LandingFintech() {
       </section>
 
       {/* Contact Section */}
-      <section id="contact" className="py-24 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 relative overflow-hidden">
+      <section id="contact" ref={contactRef} className="py-24 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 relative overflow-hidden">
         <div className="absolute inset-0">
-          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-500/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-3xl" />
+          <div className={`absolute top-0 right-0 w-[500px] h-[500px] bg-brand-500/10 rounded-full blur-3xl transition-all duration-1000 ${contactVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}`} />
+          <div className={`absolute bottom-0 left-0 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-3xl transition-all duration-1000 ${contactVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}`} style={{ transitionDelay: '300ms' }} />
         </div>
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
+          <div className={`text-center mb-12 transition-all duration-700 ${contactVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
               {t.cta.title}
             </h2>
@@ -969,7 +1065,9 @@ export default function LandingFintech() {
               {t.cta.subtitle}
             </p>
           </div>
-          <ContactForm lang={lang} />
+          <div className={`transition-all duration-700 ${contactVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: '200ms' }}>
+            <ContactForm lang={lang} />
+          </div>
         </div>
       </section>
 
