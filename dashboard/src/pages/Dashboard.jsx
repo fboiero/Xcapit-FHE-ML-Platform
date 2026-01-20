@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { listConsortiums, isDemoMode } from '../api/client'
@@ -9,8 +9,82 @@ import {
   ShoppingBagIcon,
   ShieldCheckIcon,
   SparklesIcon,
-  ChartBarIcon
+  ChartBarIcon,
+  PlusIcon,
+  UserGroupIcon,
+  CubeIcon
 } from '@heroicons/react/24/outline'
+
+// Skeleton loading component
+function SkeletonCard() {
+  return (
+    <div className="bg-white rounded-2xl border border-slate-200 p-6 animate-pulse">
+      <div className="flex items-start justify-between mb-4">
+        <div className="w-12 h-12 bg-slate-200 rounded-xl"></div>
+        <div className="w-20 h-6 bg-slate-200 rounded-full"></div>
+      </div>
+      <div className="h-5 bg-slate-200 rounded w-3/4 mb-3"></div>
+      <div className="h-4 bg-slate-200 rounded w-full mb-2"></div>
+      <div className="h-4 bg-slate-200 rounded w-2/3 mb-4"></div>
+      <div className="flex gap-4">
+        <div className="h-4 bg-slate-200 rounded w-20"></div>
+        <div className="h-4 bg-slate-200 rounded w-24"></div>
+      </div>
+    </div>
+  )
+}
+
+// Animated counter hook
+function useCounter(end, duration = 1500, startOnMount = true) {
+  const [count, setCount] = useState(0)
+
+  useEffect(() => {
+    if (!startOnMount) return
+    let startTime = null
+    const endValue = parseInt(String(end).replace(/[^0-9]/g, '')) || 0
+
+    const animate = (timestamp) => {
+      if (!startTime) startTime = timestamp
+      const progress = Math.min((timestamp - startTime) / duration, 1)
+      setCount(Math.floor(progress * endValue))
+      if (progress < 1) requestAnimationFrame(animate)
+    }
+    requestAnimationFrame(animate)
+  }, [end, duration, startOnMount])
+
+  return count
+}
+
+// Stat card with animation
+function AnimatedStatCard({ label, value, icon: Icon, delay = 0 }) {
+  const [visible, setVisible] = useState(false)
+  const numericValue = parseInt(String(value).replace(/[^0-9]/g, '')) || 0
+  const suffix = String(value).replace(/[0-9]/g, '')
+  const count = useCounter(numericValue, 1500, visible)
+
+  useEffect(() => {
+    const timer = setTimeout(() => setVisible(true), delay)
+    return () => clearTimeout(timer)
+  }, [delay])
+
+  return (
+    <div
+      className={`bg-white rounded-xl border border-slate-200 p-4 transition-all duration-500 hover:shadow-md hover:border-brand-200 ${
+        visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+      }`}
+    >
+      <div className="flex items-center gap-2 mb-1">
+        {Icon && <Icon className="w-4 h-4 text-brand-500" />}
+        <span className="text-xs text-slate-500 capitalize">
+          {label.replace(/([A-Z])/g, ' $1').trim()}
+        </span>
+      </div>
+      <div className="text-2xl font-bold text-slate-900">
+        {count}{suffix}
+      </div>
+    </div>
+  )
+}
 
 const statusLabels = {
   draft: { label: 'Borrador', color: 'bg-slate-100 text-slate-700' },
@@ -70,8 +144,27 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
+      <div className="pt-16">
+        {/* Skeleton header */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <div className="h-8 bg-slate-200 rounded w-48 mb-2 animate-pulse"></div>
+            <div className="h-4 bg-slate-200 rounded w-64 animate-pulse"></div>
+          </div>
+          <div className="h-10 bg-slate-200 rounded-xl w-36 animate-pulse"></div>
+        </div>
+        {/* Skeleton filter tabs */}
+        <div className="flex gap-2 mb-6">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-10 bg-slate-200 rounded-lg w-24 animate-pulse"></div>
+          ))}
+        </div>
+        {/* Skeleton cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
       </div>
     )
   }
@@ -122,22 +215,20 @@ export default function Dashboard() {
       {/* Demo Stats */}
       {isDemo && scenarioData && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          {Object.entries(scenarioData.stats).slice(0, 4).map(([key, value]) => (
-            <div key={key} className="bg-white rounded-xl border border-slate-200 p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <ChartBarIcon className="w-4 h-4 text-slate-400" />
-                <span className="text-xs text-slate-500 capitalize">
-                  {key.replace(/([A-Z])/g, ' $1').trim()}
-                </span>
-              </div>
-              <div className="text-xl font-bold text-slate-900">{value}</div>
-            </div>
+          {Object.entries(scenarioData.stats).slice(0, 4).map(([key, value], index) => (
+            <AnimatedStatCard
+              key={key}
+              label={key}
+              value={value}
+              icon={ChartBarIcon}
+              delay={index * 100}
+            />
           ))}
         </div>
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">
             {currentLang === 'es' ? 'Mis Consorcios' : 'My Consortiums'}
@@ -148,11 +239,9 @@ export default function Dashboard() {
         </div>
         <Link
           to="/consortiums/new"
-          className="bg-brand-600 text-white px-4 py-2 rounded-xl font-medium hover:bg-brand-700 transition flex items-center gap-2"
+          className="bg-gradient-to-r from-brand-600 to-brand-700 text-white px-5 py-2.5 rounded-xl font-medium hover:from-brand-700 hover:to-brand-800 hover:shadow-lg hover:shadow-brand-500/25 transition-all duration-300 flex items-center gap-2 group"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-          </svg>
+          <PlusIcon className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
           {currentLang === 'es' ? 'Crear Consorcio' : 'Create Consortium'}
         </Link>
       </div>
@@ -209,24 +298,23 @@ export default function Dashboard() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {consortiums.map((consortium) => (
+          {consortiums.map((consortium, index) => (
             <Link
               key={consortium.id}
               to={`/consortiums/${consortium.id}`}
-              className="bg-white rounded-2xl border border-slate-200 p-6 hover:shadow-lg hover:border-brand-200 transition group"
+              className="bg-white rounded-2xl border border-slate-200 p-6 hover:shadow-xl hover:border-brand-300 hover:-translate-y-1 transition-all duration-300 group animate-fade-in"
+              style={{ animationDelay: `${index * 75}ms` }}
             >
               <div className="flex items-start justify-between mb-4">
-                <div className="w-12 h-12 bg-brand-100 rounded-xl flex items-center justify-center">
-                  <svg className="w-6 h-6 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
+                <div className="w-12 h-12 bg-gradient-to-br from-brand-100 to-brand-200 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                  <UserGroupIcon className="w-6 h-6 text-brand-600" />
                 </div>
                 <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusLabels[consortium.status]?.color || 'bg-slate-100'}`}>
                   {statusLabels[consortium.status]?.label || consortium.status}
                 </span>
               </div>
 
-              <h3 className="text-lg font-semibold text-slate-900 mb-2 group-hover:text-brand-600 transition">
+              <h3 className="text-lg font-semibold text-slate-900 mb-2 group-hover:text-brand-600 transition-colors">
                 {consortium.name}
               </h3>
               <p className="text-slate-600 text-sm mb-4 line-clamp-2">
@@ -234,23 +322,40 @@ export default function Dashboard() {
               </p>
 
               <div className="flex items-center gap-4 text-sm text-slate-500">
-                <div className="flex items-center gap-1">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                  </svg>
+                <div className="flex items-center gap-1.5">
+                  <UserGroupIcon className="w-4 h-4" />
                   <span>{consortium.member_count || 1} miembros</span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
+                <div className="flex items-center gap-1.5">
+                  <CubeIcon className="w-4 h-4" />
                   <span>{consortium.model_type}</span>
                 </div>
+              </div>
+
+              {/* Hover indicator */}
+              <div className="mt-4 pt-4 border-t border-slate-100 opacity-0 group-hover:opacity-100 transition-opacity">
+                <span className="text-brand-600 text-sm font-medium flex items-center gap-1">
+                  Ver detalles
+                  <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </span>
               </div>
             </Link>
           ))}
         </div>
       )}
+
+      <style>{`
+        @keyframes fade-in {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+          animation: fade-in 0.5s ease-out forwards;
+          opacity: 0;
+        }
+      `}</style>
     </div>
   )
 }

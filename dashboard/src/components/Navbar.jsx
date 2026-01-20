@@ -126,21 +126,47 @@ export default function Navbar({ onMenuClick }) {
 
             {showMenu && (
               <div
-                className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-200 py-1"
+                className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-200 py-1 animate-dropdown"
                 role="menu"
                 aria-orientation="vertical"
               >
-                <div className="px-4 py-2 border-b border-slate-100">
-                  <p className="text-sm font-medium text-slate-900">{company?.name}</p>
+                <div className="px-4 py-3 border-b border-slate-100">
+                  <p className="text-sm font-semibold text-slate-900">{company?.name}</p>
                   <p className="text-xs text-slate-500">{company?.email}</p>
                 </div>
-                <button
-                  onClick={handleLogout}
-                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 focus:outline-none focus:bg-red-50"
-                  role="menuitem"
-                >
-                  {t('nav.closeSession')}
-                </button>
+                <div className="py-1">
+                  <a
+                    href="/hub"
+                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:bg-slate-50 transition-colors"
+                    role="menuitem"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                    {currentLang === 'es' ? 'Soluciones por industria' : 'Industry Solutions'}
+                  </a>
+                </div>
+                <div className="border-t border-slate-100 pt-1">
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 focus:outline-none focus:bg-red-50 transition-colors"
+                    role="menuitem"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    {t('nav.closeSession')}
+                  </button>
+                </div>
+                <style>{`
+                  @keyframes dropdown {
+                    from { opacity: 0; transform: translateY(-8px) scale(0.95); }
+                    to { opacity: 1; transform: translateY(0) scale(1); }
+                  }
+                  .animate-dropdown {
+                    animation: dropdown 0.2s ease-out;
+                  }
+                `}</style>
               </div>
             )}
           </div>

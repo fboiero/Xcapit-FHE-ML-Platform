@@ -1,10 +1,17 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { XMarkIcon } from '@heroicons/react/24/outline'
+import { XMarkIcon, ArrowRightIcon } from '@heroicons/react/24/outline'
+import { useEffect, useState } from 'react'
 
 export default function Sidebar({ isOpen, onClose }) {
   const { t, i18n } = useTranslation()
+  const location = useLocation()
   const currentLang = i18n.language?.startsWith('es') ? 'es' : 'en'
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const navItems = [
     {
@@ -84,27 +91,37 @@ export default function Sidebar({ isOpen, onClose }) {
       </button>
 
       <nav className="space-y-1 mt-8 md:mt-0" role="navigation">
-        {navItems.map((item) => (
+        {navItems.map((item, index) => (
           <NavLink
             key={item.path}
             to={item.path}
             onClick={handleLinkClick}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-3 rounded-xl transition focus:outline-none focus:ring-2 focus:ring-brand-500 ${
+              `group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-brand-500 ${
                 isActive
-                  ? 'bg-brand-50 text-brand-600'
+                  ? 'bg-gradient-to-r from-brand-50 to-brand-100 text-brand-600 shadow-sm'
                   : item.highlight
-                  ? 'text-purple-600 bg-purple-50 hover:bg-purple-100'
-                  : 'text-slate-600 hover:bg-slate-50'
+                  ? 'text-purple-600 bg-purple-50 hover:bg-purple-100 hover:translate-x-1'
+                  : 'text-slate-600 hover:bg-slate-50 hover:translate-x-1'
               }`
             }
+            style={{
+              opacity: mounted ? 1 : 0,
+              transform: mounted ? 'translateX(0)' : 'translateX(-10px)',
+              transition: `all 0.3s ease ${index * 50}ms`
+            }}
           >
-            {item.icon}
+            <span className="group-hover:scale-110 transition-transform duration-200">
+              {item.icon}
+            </span>
             <span className="font-medium">{item.label}</span>
             {item.highlight && (
-              <span className="ml-auto text-xs bg-purple-600 text-white px-2 py-0.5 rounded-full">
+              <span className="ml-auto text-xs bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-2 py-0.5 rounded-full animate-pulse">
                 {t('common.new')}
               </span>
+            )}
+            {location.pathname === item.path && (
+              <ArrowRightIcon className="w-4 h-4 ml-auto text-brand-500" />
             )}
           </NavLink>
         ))}
@@ -112,16 +129,24 @@ export default function Sidebar({ isOpen, onClose }) {
 
       {/* Help section */}
       <div className="absolute bottom-4 left-4 right-4">
-        <div className="bg-slate-50 rounded-xl p-4">
-          <h4 className="font-medium text-slate-900 mb-1">{t('nav.needHelp')}</h4>
+        <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl p-4 border border-slate-200 hover:border-brand-200 hover:shadow-md transition-all duration-300 group">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-8 h-8 bg-brand-100 rounded-lg flex items-center justify-center group-hover:bg-brand-200 transition-colors">
+              <svg className="w-4 h-4 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h4 className="font-medium text-slate-900">{t('nav.needHelp')}</h4>
+          </div>
           <p className="text-sm text-slate-600 mb-3">
             {t('nav.helpDescription')}
           </p>
           <a
             href="/#colaboracion"
-            className="text-sm text-brand-600 font-medium hover:text-brand-700 focus:outline-none focus:underline"
+            className="inline-flex items-center gap-1 text-sm text-brand-600 font-medium hover:text-brand-700 focus:outline-none focus:underline group-hover:gap-2 transition-all"
           >
             {t('nav.contactUs')}
+            <ArrowRightIcon className="w-3 h-3" />
           </a>
         </div>
       </div>
