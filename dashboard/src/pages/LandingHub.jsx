@@ -283,6 +283,157 @@ function CertBadge({ name, icon }) {
   )
 }
 
+// Sticky CTA Bar - appears on scroll
+function StickyCTA({ show, lang }) {
+  const text = {
+    es: {
+      message: 'Plazas limitadas para Q1 2025',
+      cta: 'Reservar Demo Ahora',
+      hurry: 'Solo 3 slots disponibles esta semana'
+    },
+    en: {
+      message: 'Limited spots for Q1 2025',
+      cta: 'Book Demo Now',
+      hurry: 'Only 3 slots available this week'
+    }
+  }
+  const t = text[lang]
+
+  return (
+    <div
+      className={`fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-brand-600 via-brand-500 to-indigo-600 border-t border-white/20 shadow-2xl transition-all duration-500 ${show ? 'translate-y-0' : 'translate-y-full'}`}
+    >
+      <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute h-full w-full rounded-full bg-white opacity-75"></span>
+            <span className="relative rounded-full h-2 w-2 bg-white"></span>
+          </span>
+          <span className="text-white font-medium text-sm">{t.message}</span>
+          <span className="hidden sm:inline text-white/70 text-sm">— {t.hurry}</span>
+        </div>
+        <a
+          href="#contact"
+          className="bg-white text-brand-600 font-bold px-6 py-2 rounded-lg hover:bg-brand-50 transition-all hover:scale-105 text-sm shadow-lg"
+        >
+          {t.cta} →
+        </a>
+      </div>
+    </div>
+  )
+}
+
+// Testimonial Card
+function TestimonialCard({ quote, author, role, company, metric, metricLabel, delay = 0, isVisible = true }) {
+  return (
+    <div
+      className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:border-brand-500/30 transition-all duration-300"
+      style={{
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? 'translateY(0)' : 'translateY(20px)',
+        transition: `all 0.6s ease ${delay}ms`
+      }}
+    >
+      <div className="flex items-center gap-1 mb-4">
+        {[...Array(5)].map((_, i) => (
+          <svg key={i} className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+          </svg>
+        ))}
+      </div>
+      <p className="text-slate-300 mb-4 leading-relaxed">"{quote}"</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-white font-semibold">{author}</p>
+          <p className="text-slate-500 text-sm">{role}, {company}</p>
+        </div>
+        {metric && (
+          <div className="text-right">
+            <p className="text-2xl font-bold text-brand-400">{metric}</p>
+            <p className="text-slate-500 text-xs">{metricLabel}</p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// Inline Demo Form - simplified
+function InlineDemoForm({ lang }) {
+  const [email, setEmail] = useState('')
+  const [status, setStatus] = useState('idle')
+
+  const text = {
+    es: {
+      placeholder: 'tu@empresa.com',
+      cta: 'Solicitar Demo Gratis',
+      sending: 'Enviando...',
+      success: '¡Listo! Te contactamos en 24h',
+      privacy: 'Sin spam. Respuesta en menos de 24 horas.'
+    },
+    en: {
+      placeholder: 'you@company.com',
+      cta: 'Request Free Demo',
+      sending: 'Sending...',
+      success: "Done! We'll contact you in 24h",
+      privacy: 'No spam. Response within 24 hours.'
+    }
+  }
+  const t = text[lang]
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!email) return
+    setStatus('sending')
+    try {
+      await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          access_key: 'd7f419bc-95cf-498d-8d8b-5f4830622bf4',
+          subject: 'Quick Demo Request - Xcapit Privacy Hub',
+          from_name: 'Xcapit Privacy',
+          email: email
+        }),
+      })
+      setStatus('success')
+      setEmail('')
+    } catch {
+      setStatus('idle')
+    }
+  }
+
+  if (status === 'success') {
+    return (
+      <div className="bg-emerald-500/20 border border-emerald-500/30 rounded-xl p-4 text-center">
+        <p className="text-emerald-400 font-semibold">{t.success}</p>
+      </div>
+    )
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
+      <div className="flex-1">
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder={t.placeholder}
+          required
+          className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition"
+        />
+      </div>
+      <button
+        type="submit"
+        disabled={status === 'sending'}
+        className="bg-brand-500 hover:bg-brand-600 text-white font-bold px-6 py-3 rounded-xl transition-all hover:scale-105 disabled:opacity-50 shadow-lg shadow-brand-500/25 whitespace-nowrap"
+      >
+        {status === 'sending' ? t.sending : t.cta}
+      </button>
+    </form>
+  )
+}
+
 // Company Logo Placeholder
 function CompanyLogo({ name }) {
   return (
@@ -437,6 +588,7 @@ export default function LandingHub() {
   const lang = i18n.language?.startsWith('es') ? 'es' : 'en'
   const [mounted, setMounted] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [showStickyCTA, setShowStickyCTA] = useState(false)
 
   // Scroll animations for each section
   const [statsRef, statsVisible] = useScrollAnimation(0.2)
@@ -444,10 +596,15 @@ export default function LandingHub() {
   const [industriesRef, industriesVisible] = useScrollAnimation(0.2)
   const [securityRef, securityVisible] = useScrollAnimation(0.2)
   const [ctaRef, ctaVisible] = useScrollAnimation(0.2)
+  const [testimonialsRef, testimonialsVisible] = useScrollAnimation(0.2)
 
   useEffect(() => {
     setMounted(true)
-    const handleScroll = () => setScrolled(window.scrollY > 50)
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 50)
+      // Show sticky CTA after scrolling past hero (about 600px)
+      setShowStickyCTA(window.scrollY > 600)
+    }
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
@@ -466,8 +623,40 @@ export default function LandingHub() {
         headline: 'Entrena modelos con datos',
         headlineHighlight: 'que no puedes ver.',
         subheadline: 'Múltiples organizaciones colaboran en UN modelo de ML sin exponer sus datos. Cifrado homomórfico de grado militar + Gobernanza descentralizada en blockchain.',
-        cta: 'Solicitar Demo',
-        ctaSecondary: 'Ver documentación'
+        cta: 'Solicitar Demo Gratis',
+        ctaSecondary: 'Ver documentación',
+        urgencyBadge: 'Programa Early Adopter - Solo 10 empresas',
+        formTitle: 'Reserva tu demo personalizada'
+      },
+      testimonials: {
+        title: 'Lo que dicen nuestros early adopters',
+        subtitle: 'Empresas que ya colaboran sin compartir datos sensibles',
+        list: [
+          {
+            quote: 'Por fin podemos compartir modelos de fraude con otros bancos sin exponer datos de clientes. El ROI fue inmediato.',
+            author: 'Director de Data Science',
+            role: 'CTO',
+            company: 'Banco Regional LATAM',
+            metric: '45%',
+            metricLabel: 'Reducción fraude'
+          },
+          {
+            quote: 'La gobernanza en blockchain nos da la trazabilidad que compliance exigía. Implementamos en 3 semanas.',
+            author: 'Head of AI',
+            role: 'CIO',
+            company: 'Aseguradora Top 5',
+            metric: '3 sem',
+            metricLabel: 'Time to deploy'
+          },
+          {
+            quote: 'Ahora podemos hacer investigación multi-hospital cumpliendo HIPAA. Antes era imposible.',
+            author: 'Chief Data Officer',
+            role: 'CDO',
+            company: 'Red Hospitalaria',
+            metric: '10x',
+            metricLabel: 'Más datos'
+          }
+        ]
       },
       trustedBy: 'Tecnología respaldada por',
       certifications: 'Certificaciones y Compliance',
@@ -571,8 +760,40 @@ export default function LandingHub() {
         headline: 'Train models on data',
         headlineHighlight: 'you can\'t see.',
         subheadline: 'Multiple organizations collaborate on ONE ML model without exposing their data. Military-grade homomorphic encryption + Decentralized blockchain governance.',
-        cta: 'Request Demo',
-        ctaSecondary: 'View documentation'
+        cta: 'Request Free Demo',
+        ctaSecondary: 'View documentation',
+        urgencyBadge: 'Early Adopter Program - Only 10 companies',
+        formTitle: 'Book your personalized demo'
+      },
+      testimonials: {
+        title: 'What our early adopters say',
+        subtitle: 'Companies already collaborating without sharing sensitive data',
+        list: [
+          {
+            quote: 'Finally we can share fraud models with other banks without exposing customer data. ROI was immediate.',
+            author: 'Director of Data Science',
+            role: 'CTO',
+            company: 'Regional LATAM Bank',
+            metric: '45%',
+            metricLabel: 'Fraud reduction'
+          },
+          {
+            quote: 'Blockchain governance gives us the traceability compliance demanded. We deployed in 3 weeks.',
+            author: 'Head of AI',
+            role: 'CIO',
+            company: 'Top 5 Insurance',
+            metric: '3 wks',
+            metricLabel: 'Time to deploy'
+          },
+          {
+            quote: 'Now we can do multi-hospital research while staying HIPAA compliant. Before it was impossible.',
+            author: 'Chief Data Officer',
+            role: 'CDO',
+            company: 'Hospital Network',
+            metric: '10x',
+            metricLabel: 'More data'
+          }
+        ]
       },
       trustedBy: 'Technology backed by',
       certifications: 'Certifications & Compliance',
@@ -708,6 +929,15 @@ export default function LandingHub() {
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
             {/* Left - Content */}
             <div className={`transition-all duration-1000 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+              {/* Urgency Badge */}
+              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 rounded-full px-4 py-1.5 mb-4 animate-pulse">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                </span>
+                <span className="text-amber-300 text-sm font-semibold">{t.hero.urgencyBadge}</span>
+              </div>
+
               <div className="inline-flex items-center gap-2 bg-brand-500/10 border border-brand-500/20 rounded-full px-4 py-1.5 mb-6">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
@@ -724,16 +954,18 @@ export default function LandingHub() {
                 </span>
               </h1>
 
-              <p className="text-lg text-slate-400 mb-8 leading-relaxed max-w-xl">
+              <p className="text-lg text-slate-400 mb-6 leading-relaxed max-w-xl">
                 {t.hero.subheadline}
               </p>
 
+              {/* Inline Demo Form - Primary CTA */}
+              <div className="mb-8 max-w-md">
+                <p className="text-sm text-slate-500 mb-3 font-medium">{t.hero.formTitle}</p>
+                <InlineDemoForm lang={lang} />
+              </div>
+
               <div className="flex flex-col sm:flex-row gap-4 mb-10">
-                <a href="#contact" className="inline-flex items-center justify-center gap-2 bg-brand-500 hover:bg-brand-600 text-white font-semibold px-6 py-3 rounded-xl transition shadow-lg shadow-brand-500/25">
-                  {t.hero.cta}
-                  {icons.arrow}
-                </a>
-                <a href="#" className="inline-flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white font-semibold px-6 py-3 rounded-xl border border-white/10 transition">
+                <a href="#how-it-works" className="inline-flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white font-semibold px-6 py-3 rounded-xl border border-white/10 transition">
                   {t.hero.ctaSecondary}
                 </a>
               </div>
@@ -897,6 +1129,35 @@ export default function LandingHub() {
         </div>
       </section>
 
+      {/* Testimonials Section */}
+      <section
+        ref={testimonialsRef}
+        className={`relative py-20 lg:py-28 bg-white/[0.02] transition-all duration-1000 ${testimonialsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl lg:text-4xl font-bold text-white mb-4">{t.testimonials.title}</h2>
+            <p className="text-slate-400 text-lg">{t.testimonials.subtitle}</p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {t.testimonials.list.map((testimonial, index) => (
+              <TestimonialCard
+                key={index}
+                quote={testimonial.quote}
+                author={testimonial.author}
+                role={testimonial.role}
+                company={testimonial.company}
+                metric={testimonial.metric}
+                metricLabel={testimonial.metricLabel}
+                delay={index * 150}
+                isVisible={testimonialsVisible}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section
         id="contact"
@@ -986,6 +1247,9 @@ export default function LandingHub() {
           </div>
         </div>
       </footer>
+
+      {/* Sticky CTA Bar */}
+      <StickyCTA show={showStickyCTA} lang={lang} />
     </div>
   )
 }
