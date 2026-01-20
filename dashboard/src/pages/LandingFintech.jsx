@@ -1,18 +1,80 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import LanguageSwitcher from '../components/LanguageSwitcher'
 
-// Particle background animation
+// Hook for scroll-triggered animations
+function useScrollAnimation(threshold = 0.1) {
+  const ref = useRef(null)
+  const [isVisible, setIsVisible] = useState(false)
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true)
+          observer.unobserve(entry.target)
+        }
+      },
+      { threshold }
+    )
+
+    if (ref.current) observer.observe(ref.current)
+    return () => observer.disconnect()
+  }, [threshold])
+
+  return [ref, isVisible]
+}
+
+// Animated counter hook
+function useCounter(end, duration = 2000, isVisible = true) {
+  const [count, setCount] = useState(0)
+  const [hasStarted, setHasStarted] = useState(false)
+
+  useEffect(() => {
+    if (!isVisible || hasStarted) return
+    setHasStarted(true)
+    let startTime = null
+    const animate = (timestamp) => {
+      if (!startTime) startTime = timestamp
+      const progress = Math.min((timestamp - startTime) / duration, 1)
+      setCount(Math.floor(progress * end))
+      if (progress < 1) requestAnimationFrame(animate)
+    }
+    requestAnimationFrame(animate)
+  }, [end, duration, isVisible, hasStarted])
+
+  return count
+}
+
+// Particle background animation with floating particles
 function ParticleBackground() {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      <div className="absolute w-2 h-2 bg-brand-400/30 rounded-full animate-pulse" style={{ top: '10%', left: '10%', animationDelay: '0s' }} />
-      <div className="absolute w-3 h-3 bg-indigo-400/20 rounded-full animate-pulse" style={{ top: '20%', right: '20%', animationDelay: '0.5s' }} />
-      <div className="absolute w-2 h-2 bg-cyan-400/30 rounded-full animate-pulse" style={{ top: '60%', left: '5%', animationDelay: '1s' }} />
-      <div className="absolute w-4 h-4 bg-brand-400/20 rounded-full animate-pulse" style={{ top: '80%', right: '15%', animationDelay: '1.5s' }} />
-      <div className="absolute w-2 h-2 bg-indigo-400/30 rounded-full animate-pulse" style={{ top: '40%', left: '80%', animationDelay: '2s' }} />
-      <div className="absolute w-3 h-3 bg-cyan-400/20 rounded-full animate-pulse" style={{ bottom: '20%', left: '30%', animationDelay: '2.5s' }} />
+      {/* Large gradient blurs */}
+      <div className="absolute top-0 -left-40 w-[500px] h-[500px] bg-brand-500/20 rounded-full blur-[150px] animate-pulse" />
+      <div className="absolute bottom-0 -right-40 w-[500px] h-[500px] bg-indigo-500/20 rounded-full blur-[150px] animate-pulse" style={{ animationDelay: '1s' }} />
+
+      {/* Floating particles */}
+      {[...Array(15)].map((_, i) => (
+        <div
+          key={i}
+          className="absolute w-1 h-1 bg-brand-400/40 rounded-full"
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            animation: `float ${3 + Math.random() * 4}s ease-in-out infinite`,
+            animationDelay: `${Math.random() * 2}s`
+          }}
+        />
+      ))}
+
+      <style>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0) translateX(0); opacity: 0.4; }
+          50% { transform: translateY(-20px) translateX(10px); opacity: 0.8; }
+        }
+      `}</style>
     </div>
   )
 }

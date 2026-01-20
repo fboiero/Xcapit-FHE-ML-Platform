@@ -1,15 +1,116 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import LanguageSwitcher from '../components/LanguageSwitcher'
 
-// Animated background
+// Hook for scroll-triggered animations
+function useScrollAnimation(threshold = 0.1) {
+  const ref = useRef(null)
+  const [isVisible, setIsVisible] = useState(false)
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true)
+          observer.unobserve(entry.target)
+        }
+      },
+      { threshold }
+    )
+
+    if (ref.current) {
+      observer.observe(ref.current)
+    }
+
+    return () => observer.disconnect()
+  }, [threshold])
+
+  return [ref, isVisible]
+}
+
+// Animated counter hook
+function useCounter(end, duration = 2000, startOnVisible = false, isVisible = true) {
+  const [count, setCount] = useState(0)
+  const [hasStarted, setHasStarted] = useState(false)
+
+  useEffect(() => {
+    if (startOnVisible && !isVisible) return
+    if (hasStarted) return
+
+    setHasStarted(true)
+    let startTime = null
+    const animate = (timestamp) => {
+      if (!startTime) startTime = timestamp
+      const progress = Math.min((timestamp - startTime) / duration, 1)
+      setCount(Math.floor(progress * end))
+      if (progress < 1) {
+        requestAnimationFrame(animate)
+      }
+    }
+    requestAnimationFrame(animate)
+  }, [end, duration, startOnVisible, isVisible, hasStarted])
+
+  return count
+}
+
+// Typing effect component
+function TypeWriter({ text, speed = 80, delay = 0 }) {
+  const [displayText, setDisplayText] = useState('')
+  const [showCursor, setShowCursor] = useState(true)
+
+  useEffect(() => {
+    let timeout
+    const startTyping = () => {
+      let i = 0
+      const type = () => {
+        if (i < text.length) {
+          setDisplayText(text.slice(0, i + 1))
+          i++
+          timeout = setTimeout(type, speed)
+        } else {
+          setTimeout(() => setShowCursor(false), 1000)
+        }
+      }
+      type()
+    }
+
+    const delayTimeout = setTimeout(startTyping, delay)
+    return () => {
+      clearTimeout(timeout)
+      clearTimeout(delayTimeout)
+    }
+  }, [text, speed, delay])
+
+  return (
+    <span>
+      {displayText}
+      {showCursor && <span className="animate-pulse">|</span>}
+    </span>
+  )
+}
+
+// Animated background with floating particles
 function ParticleBackground() {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
       <div className="absolute top-0 -left-40 w-[500px] h-[500px] bg-brand-500/20 rounded-full blur-[150px] animate-pulse" />
       <div className="absolute bottom-0 -right-40 w-[500px] h-[500px] bg-indigo-500/20 rounded-full blur-[150px] animate-pulse" style={{ animationDelay: '1s' }} />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-purple-500/5 rounded-full blur-[200px]" />
+
+      {/* Floating particles */}
+      {[...Array(20)].map((_, i) => (
+        <div
+          key={i}
+          className="absolute w-1 h-1 bg-brand-400/40 rounded-full"
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            animation: `float ${3 + Math.random() * 4}s ease-in-out infinite`,
+            animationDelay: `${Math.random() * 2}s`
+          }}
+        />
+      ))}
 
       {/* Grid pattern */}
       <svg className="absolute inset-0 w-full h-full opacity-[0.02]" xmlns="http://www.w3.org/2000/svg">
@@ -20,6 +121,13 @@ function ParticleBackground() {
         </defs>
         <rect width="100%" height="100%" fill="url(#grid)" />
       </svg>
+
+      <style>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0) translateX(0); opacity: 0.4; }
+          50% { transform: translateY(-20px) translateX(10px); opacity: 0.8; }
+        }
+      `}</style>
     </div>
   )
 }
@@ -184,29 +292,54 @@ function CompanyLogo({ name }) {
   )
 }
 
-// Industry Card
-function IndustryCard({ icon, title, description, examples, link, color }) {
+// Industry Card with 3D tilt effect
+function IndustryCard({ icon, title, description, examples, link, color, ctaText = 'Ver soluciones' }) {
+  const [transform, setTransform] = useState('')
+  const [glare, setGlare] = useState({ x: 50, y: 50 })
+
+  const handleMouseMove = (e) => {
+    const card = e.currentTarget
+    const rect = card.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    const centerX = rect.width / 2
+    const centerY = rect.height / 2
+    const rotateX = (y - centerY) / 20
+    const rotateY = (centerX - x) / 20
+
+    setTransform(`perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`)
+    setGlare({ x: (x / rect.width) * 100, y: (y / rect.height) * 100 })
+  }
+
+  const handleMouseLeave = () => {
+    setTransform('')
+    setGlare({ x: 50, y: 50 })
+  }
+
   const colorClasses = {
     brand: {
       bg: 'bg-gradient-to-br from-brand-500/10 to-brand-600/5',
       border: 'border-brand-500/20 hover:border-brand-400/50',
       icon: 'bg-gradient-to-br from-brand-500 to-brand-600 text-white shadow-lg shadow-brand-500/30',
       badge: 'bg-brand-500/10 text-brand-300 border-brand-500/20',
-      cta: 'text-brand-400 group-hover:text-brand-300'
+      cta: 'text-brand-400 group-hover:text-brand-300',
+      glare: 'from-brand-400/20'
     },
     emerald: {
       bg: 'bg-gradient-to-br from-emerald-500/10 to-emerald-600/5',
       border: 'border-emerald-500/20 hover:border-emerald-400/50',
       icon: 'bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/30',
       badge: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20',
-      cta: 'text-emerald-400 group-hover:text-emerald-300'
+      cta: 'text-emerald-400 group-hover:text-emerald-300',
+      glare: 'from-emerald-400/20'
     },
     slate: {
       bg: 'bg-gradient-to-br from-slate-400/10 to-slate-500/5',
       border: 'border-slate-400/20 hover:border-slate-300/50',
       icon: 'bg-gradient-to-br from-slate-500 to-slate-600 text-white shadow-lg shadow-slate-500/30',
       badge: 'bg-slate-500/10 text-slate-300 border-slate-500/20',
-      cta: 'text-slate-300 group-hover:text-white'
+      cta: 'text-slate-300 group-hover:text-white',
+      glare: 'from-slate-400/20'
     }
   }
 
@@ -215,27 +348,52 @@ function IndustryCard({ icon, title, description, examples, link, color }) {
   return (
     <Link
       to={link}
-      className={`group relative backdrop-blur-xl rounded-2xl p-6 lg:p-8 border transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl focus:outline-none focus:ring-2 focus:ring-white/20 ${colors.bg} ${colors.border}`}
+      className={`group relative backdrop-blur-xl rounded-2xl p-6 lg:p-8 border transition-all duration-300 hover:shadow-2xl focus:outline-none focus:ring-2 focus:ring-white/20 ${colors.bg} ${colors.border}`}
+      style={{ transform, transformStyle: 'preserve-3d' }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
     >
-      <div className="relative">
-        <div className={`w-14 h-14 rounded-xl flex items-center justify-center mb-5 ${colors.icon}`}>
+      {/* Glare effect */}
+      <div
+        className={`absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none bg-gradient-radial ${colors.glare} to-transparent`}
+        style={{
+          background: `radial-gradient(circle at ${glare.x}% ${glare.y}%, rgba(255,255,255,0.1) 0%, transparent 50%)`
+        }}
+      />
+
+      <div className="relative" style={{ transform: 'translateZ(20px)' }}>
+        <div className={`w-14 h-14 rounded-xl flex items-center justify-center mb-5 transition-transform duration-300 group-hover:scale-110 ${colors.icon}`}>
           {icon}
         </div>
         <h3 className="text-xl font-bold text-white mb-2">{title}</h3>
         <p className="text-slate-400 text-sm mb-5 leading-relaxed">{description}</p>
         <div className="flex flex-wrap gap-2 mb-5">
           {examples.map((example, i) => (
-            <span key={i} className={`px-2.5 py-1 rounded-md text-xs font-medium border ${colors.badge}`}>
+            <span key={i} className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-all duration-300 group-hover:scale-105 ${colors.badge}`}>
               {example}
             </span>
           ))}
         </div>
         <div className={`flex items-center gap-2 text-sm font-semibold ${colors.cta} transition-all duration-300 group-hover:gap-3`}>
-          <span>Ver soluciones</span>
+          <span>{ctaText}</span>
           {icons.arrow}
         </div>
       </div>
     </Link>
+  )
+}
+
+// Animated stat card
+function StatCard({ value, label, suffix = '', isVisible }) {
+  const count = useCounter(parseInt(value), 2000, true, isVisible)
+
+  return (
+    <div className="text-center">
+      <div className="text-4xl lg:text-5xl font-bold text-white mb-2">
+        {count}{suffix}
+      </div>
+      <div className="text-slate-400 text-sm">{label}</div>
+    </div>
   )
 }
 
@@ -259,9 +417,20 @@ export default function LandingHub() {
   const { i18n } = useTranslation()
   const lang = i18n.language?.startsWith('es') ? 'es' : 'en'
   const [mounted, setMounted] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+
+  // Scroll animations for each section
+  const [statsRef, statsVisible] = useScrollAnimation(0.2)
+  const [howItWorksRef, howItWorksVisible] = useScrollAnimation(0.2)
+  const [industriesRef, industriesVisible] = useScrollAnimation(0.2)
+  const [securityRef, securityVisible] = useScrollAnimation(0.2)
+  const [ctaRef, ctaVisible] = useScrollAnimation(0.2)
 
   useEffect(() => {
     setMounted(true)
+    const handleScroll = () => setScrolled(window.scrollY > 50)
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
   const content = {
@@ -283,6 +452,12 @@ export default function LandingHub() {
       },
       trustedBy: 'Tecnología respaldada por',
       certifications: 'Certificaciones y Compliance',
+      stats: {
+        organizations: 'Organizaciones',
+        dataProcessed: 'Datos procesados',
+        accuracy: 'Precisión del modelo',
+        uptime: 'Uptime'
+      },
       howItWorks: {
         title: 'Cómo funciona',
         subtitle: 'Colaboración segura en 3 simples pasos',
@@ -382,6 +557,12 @@ export default function LandingHub() {
       },
       trustedBy: 'Technology backed by',
       certifications: 'Certifications & Compliance',
+      stats: {
+        organizations: 'Organizations',
+        dataProcessed: 'Data processed',
+        accuracy: 'Model accuracy',
+        uptime: 'Uptime'
+      },
       howItWorks: {
         title: 'How it works',
         subtitle: 'Secure collaboration in 3 simple steps',
@@ -472,7 +653,7 @@ export default function LandingHub() {
       <ParticleBackground />
 
       {/* Navigation */}
-      <nav className="relative z-50 w-full border-b border-white/5">
+      <nav className={`fixed top-0 left-0 right-0 z-50 w-full transition-all duration-300 ${scrolled ? 'bg-[#0a0a0f]/80 backdrop-blur-xl border-b border-white/10 shadow-lg' : 'bg-transparent border-b border-white/5'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-8">
@@ -503,7 +684,7 @@ export default function LandingHub() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative pt-16 pb-20 lg:pt-24 lg:pb-32">
+      <section className="relative pt-24 pb-20 lg:pt-32 lg:pb-32">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
             {/* Left - Content */}
@@ -571,8 +752,27 @@ export default function LandingHub() {
         </div>
       </section>
 
+      {/* Stats Section */}
+      <section
+        ref={statsRef}
+        className={`relative py-16 lg:py-20 transition-all duration-1000 ${statsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            <StatCard value="50" suffix="+" label={t.stats.organizations} isVisible={statsVisible} />
+            <StatCard value="10" suffix="M+" label={t.stats.dataProcessed} isVisible={statsVisible} />
+            <StatCard value="99" suffix="%" label={t.stats.accuracy} isVisible={statsVisible} />
+            <StatCard value="99" suffix=".9%" label={t.stats.uptime} isVisible={statsVisible} />
+          </div>
+        </div>
+      </section>
+
       {/* How It Works */}
-      <section id="how-it-works" className="relative py-20 lg:py-28">
+      <section
+        id="how-it-works"
+        ref={howItWorksRef}
+        className={`relative py-20 lg:py-28 transition-all duration-1000 ${howItWorksVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold text-white mb-4">{t.howItWorks.title}</h2>
@@ -605,7 +805,10 @@ export default function LandingHub() {
       </section>
 
       {/* Industries */}
-      <section className="relative py-20 lg:py-28 bg-white/[0.02]">
+      <section
+        ref={industriesRef}
+        className={`relative py-20 lg:py-28 bg-white/[0.02] transition-all duration-1000 ${industriesVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold text-white mb-4">{t.industries.title}</h2>
@@ -639,7 +842,11 @@ export default function LandingHub() {
       </section>
 
       {/* Security Features */}
-      <section id="security" className="relative py-20 lg:py-28">
+      <section
+        id="security"
+        ref={securityRef}
+        className={`relative py-20 lg:py-28 transition-all duration-1000 ${securityVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold text-white mb-4">{t.features.title}</h2>
@@ -660,14 +867,27 @@ export default function LandingHub() {
       </section>
 
       {/* CTA Section */}
-      <section id="contact" className="relative py-20 lg:py-28">
+      <section
+        id="contact"
+        ref={ctaRef}
+        className={`relative py-20 lg:py-28 transition-all duration-1000 ${ctaVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+      >
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="relative bg-gradient-to-br from-brand-500/20 to-indigo-500/20 border border-white/10 rounded-3xl p-8 lg:p-12 text-center overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-brand-500/5 to-indigo-500/5"></div>
+          <div className="relative bg-gradient-to-br from-brand-500/20 to-indigo-500/20 border border-white/10 rounded-3xl p-8 lg:p-12 text-center overflow-hidden group hover:border-brand-500/30 transition-all duration-500">
+            {/* Animated background gradient */}
+            <div className="absolute inset-0 bg-gradient-to-br from-brand-500/5 to-indigo-500/5 group-hover:from-brand-500/10 group-hover:to-indigo-500/10 transition-all duration-500"></div>
+
+            {/* Floating orbs */}
+            <div className="absolute -top-20 -left-20 w-40 h-40 bg-brand-500/20 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700"></div>
+            <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-indigo-500/20 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700"></div>
+
             <div className="relative">
               <h2 className="text-3xl lg:text-4xl font-bold text-white mb-4">{t.cta.title}</h2>
               <p className="text-slate-300 text-lg mb-8 max-w-2xl mx-auto">{t.cta.subtitle}</p>
-              <a href="mailto:consorcios@xcapit.com" className="inline-flex items-center justify-center gap-2 bg-white text-slate-900 font-semibold px-8 py-4 rounded-xl hover:bg-slate-100 transition shadow-xl">
+              <a
+                href="mailto:consorcios@xcapit.com"
+                className="inline-flex items-center justify-center gap-2 bg-white text-slate-900 font-semibold px-8 py-4 rounded-xl hover:bg-slate-100 hover:scale-105 active:scale-95 transition-all duration-300 shadow-xl hover:shadow-2xl hover:shadow-brand-500/20"
+              >
                 {t.cta.button}
                 {icons.arrow}
               </a>
