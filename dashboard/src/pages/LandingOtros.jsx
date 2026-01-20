@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import LanguageSwitcher from '../components/LanguageSwitcher'
+import LandingHeader from '../components/LandingHeader'
 
 // Hook for scroll-triggered animations
 function useScrollAnimation(threshold = 0.1) {
@@ -283,7 +283,6 @@ function StepCard({ number, title, description, delay = 0, isVisible = true, sho
 export default function LandingOtros() {
   const { i18n } = useTranslation()
   const lang = i18n.language?.startsWith('es') ? 'es' : 'en'
-  const [scrolled, setScrolled] = useState(false)
 
   // Scroll animation refs for each section
   const [heroRef, heroVisible] = useScrollAnimation(0.1)
@@ -294,12 +293,6 @@ export default function LandingOtros() {
   const [governanceRef, governanceVisible] = useScrollAnimation(0.2)
   const [complianceRef, complianceVisible] = useScrollAnimation(0.2)
   const [contactRef, contactVisible] = useScrollAnimation(0.2)
-
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20)
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
 
   const content = {
     es: {
@@ -440,29 +433,8 @@ export default function LandingOtros() {
 
   return (
     <div className="min-h-screen bg-slate-950">
-      {/* Navigation */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-slate-900/95 backdrop-blur-md shadow-lg' : 'bg-transparent'}`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link to="/hub" className="flex items-center group">
-              <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl flex items-center justify-center mr-2 group-hover:scale-105 transition-transform">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-              </div>
-              <span className="text-xl font-bold text-white">Xcapit</span>
-              <span className="text-xl font-light text-purple-400 ml-1">Privacy</span>
-            </Link>
-            <div className="hidden md:flex items-center gap-6">
-              <a href="#industries" className="text-slate-300 hover:text-white font-medium transition">{t.nav.industrias}</a>
-              <a href="#how-it-works" className="text-slate-300 hover:text-white font-medium transition">{t.nav.comoFunciona}</a>
-              <a href="#governance" className="text-slate-300 hover:text-white font-medium transition">{t.nav.gobernanza}</a>
-            </div>
-            <div className="flex items-center gap-3">
-              <LanguageSwitcher variant="toggle" />
-              <a href="#contact" className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-5 py-2.5 rounded-lg font-medium hover:from-purple-700 hover:to-indigo-700 transition shadow-lg shadow-purple-500/25">{t.hero.cta}</a>
-            </div>
-          </div>
-        </div>
-      </nav>
+      {/* Unified Navigation */}
+      <LandingHeader ctaText={t.hero.cta} ctaHref="#contact" />
 
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center pt-16 overflow-hidden">

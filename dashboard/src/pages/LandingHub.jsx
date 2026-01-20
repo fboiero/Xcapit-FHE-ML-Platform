@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import LanguageSwitcher from '../components/LanguageSwitcher'
+import LandingHeader from '../components/LandingHeader'
 
 // Hook for scroll-triggered animations
 function useScrollAnimation(threshold = 0.1) {
@@ -587,7 +587,6 @@ export default function LandingHub() {
   const { i18n } = useTranslation()
   const lang = i18n.language?.startsWith('es') ? 'es' : 'en'
   const [mounted, setMounted] = useState(false)
-  const [scrolled, setScrolled] = useState(false)
   const [showStickyCTA, setShowStickyCTA] = useState(false)
 
   // Scroll animations for each section
@@ -601,7 +600,6 @@ export default function LandingHub() {
   useEffect(() => {
     setMounted(true)
     const handleScroll = () => {
-      setScrolled(window.scrollY > 50)
       // Show sticky CTA after scrolling past hero (about 600px)
       setShowStickyCTA(window.scrollY > 600)
     }
@@ -892,36 +890,8 @@ export default function LandingHub() {
     <div className="min-h-screen bg-[#0a0a0f] flex flex-col">
       <ParticleBackground />
 
-      {/* Navigation */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 w-full transition-all duration-300 ${scrolled ? 'bg-[#0a0a0f]/80 backdrop-blur-xl border-b border-white/10 shadow-lg' : 'bg-transparent border-b border-white/5'}`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-8">
-              <Link to="/" className="flex items-center gap-2">
-                <div className="w-9 h-9 bg-gradient-to-br from-brand-500 to-indigo-600 rounded-lg flex items-center justify-center">
-                  {icons.lock}
-                </div>
-                <span className="text-lg font-bold text-white">Xcapit</span>
-                <span className="text-lg font-light text-brand-400">Privacy</span>
-              </Link>
-              <div className="hidden md:flex items-center gap-6">
-                <a href="#how-it-works" className="text-slate-400 hover:text-white text-sm font-medium transition">{t.nav.product}</a>
-                <a href="#security" className="text-slate-400 hover:text-white text-sm font-medium transition">{t.nav.security}</a>
-                <a href="#" className="text-slate-400 hover:text-white text-sm font-medium transition">{t.nav.docs}</a>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <LanguageSwitcher variant="minimal" />
-              <Link to="/login" className="hidden sm:block text-slate-400 hover:text-white text-sm font-medium transition px-3 py-2">
-                {t.nav.login}
-              </Link>
-              <Link to="/register" className="bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold px-4 py-2 rounded-lg transition shadow-lg shadow-brand-500/25">
-                {t.nav.getStarted}
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
+      {/* Unified Navigation */}
+      <LandingHeader ctaText={t.hero.cta} ctaHref="#contact" />
 
       {/* Hero Section */}
       <section className="relative pt-24 pb-20 lg:pt-32 lg:pb-32">
