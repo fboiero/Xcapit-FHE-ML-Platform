@@ -1,8 +1,10 @@
 import { NavLink } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { XMarkIcon } from '@heroicons/react/24/outline'
 
-export default function Sidebar() {
-  const { t } = useTranslation()
+export default function Sidebar({ isOpen, onClose }) {
+  const { t, i18n } = useTranslation()
+  const currentLang = i18n.language?.startsWith('es') ? 'es' : 'en'
 
   const navItems = [
     {
@@ -55,15 +57,40 @@ export default function Sidebar() {
     },
   ]
 
+  // Handle link click on mobile - close sidebar
+  const handleLinkClick = () => {
+    if (window.innerWidth < 768) {
+      onClose()
+    }
+  }
+
   return (
-    <aside className="fixed left-0 top-16 bottom-0 w-64 bg-white border-r border-slate-200 p-4">
-      <nav className="space-y-1">
+    <aside
+      className={`
+        fixed left-0 top-16 bottom-0 w-64 bg-white border-r border-slate-200 p-4
+        transition-transform duration-300 ease-in-out z-40
+        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+        md:translate-x-0
+      `}
+      aria-label={currentLang === 'es' ? 'Menú de navegación' : 'Navigation menu'}
+    >
+      {/* Close button - mobile only */}
+      <button
+        onClick={onClose}
+        className="md:hidden absolute top-4 right-4 p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition focus:outline-none focus:ring-2 focus:ring-brand-500"
+        aria-label={currentLang === 'es' ? 'Cerrar menú' : 'Close menu'}
+      >
+        <XMarkIcon className="w-5 h-5" />
+      </button>
+
+      <nav className="space-y-1 mt-8 md:mt-0" role="navigation">
         {navItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
+            onClick={handleLinkClick}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-3 rounded-xl transition ${
+              `flex items-center gap-3 px-4 py-3 rounded-xl transition focus:outline-none focus:ring-2 focus:ring-brand-500 ${
                 isActive
                   ? 'bg-brand-50 text-brand-600'
                   : item.highlight
@@ -92,7 +119,7 @@ export default function Sidebar() {
           </p>
           <a
             href="/#colaboracion"
-            className="text-sm text-brand-600 font-medium hover:text-brand-700"
+            className="text-sm text-brand-600 font-medium hover:text-brand-700 focus:outline-none focus:underline"
           >
             {t('nav.contactUs')}
           </a>
