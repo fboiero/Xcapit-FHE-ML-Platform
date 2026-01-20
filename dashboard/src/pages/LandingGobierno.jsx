@@ -145,13 +145,25 @@ function HeroIllustration() {
   )
 }
 
-function StatCard({ value, label, icon }) {
+function StatCard({ value, label, icon, delay = 0, isVisible = true }) {
+  const numericValue = parseInt(String(value).replace(/[^0-9]/g, '')) || 0
+  const prefix = value.startsWith('+') ? '+' : value.startsWith('-') ? '-' : ''
+  const suffix = String(value).replace(/[0-9+-]/g, '')
+  const count = useCounter(numericValue, 2000, isVisible)
+
   return (
-    <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:border-slate-400/30 transition-all">
+    <div
+      className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:border-slate-400/30 hover:scale-105 transition-all duration-500"
+      style={{
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? 'translateY(0)' : 'translateY(20px)',
+        transition: `all 0.6s ease ${delay}ms`
+      }}
+    >
       <div className="flex items-center gap-4">
         <div className="w-12 h-12 bg-slate-500/20 rounded-xl flex items-center justify-center text-2xl">{icon}</div>
         <div>
-          <div className="text-3xl font-bold text-white">{value}</div>
+          <div className="text-3xl font-bold text-white">{prefix}{count}{suffix}</div>
           <div className="text-slate-400 text-sm">{label}</div>
         </div>
       </div>
@@ -233,9 +245,16 @@ function ContactForm({ lang }) {
   )
 }
 
-function UseCaseCard({ title, problem, solution, metric, realCase, lang, icon }) {
+function UseCaseCard({ title, problem, solution, metric, realCase, lang, icon, delay = 0, isVisible = true }) {
   return (
-    <div className="group bg-white rounded-2xl p-8 border border-slate-200 hover:shadow-2xl hover:shadow-slate-500/10 hover:-translate-y-1 transition-all duration-300">
+    <div
+      className="group bg-white rounded-2xl p-8 border border-slate-200 hover:shadow-2xl hover:shadow-slate-500/10 hover:-translate-y-1 transition-all duration-300"
+      style={{
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? 'translateY(0)' : 'translateY(30px)',
+        transition: `all 0.6s ease ${delay}ms`
+      }}
+    >
       <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">{icon}</div>
       <h3 className="text-xl font-bold text-slate-900 mb-4">{title}</h3>
       <div className="mb-4">
@@ -265,12 +284,22 @@ function UseCaseCard({ title, problem, solution, metric, realCase, lang, icon })
   )
 }
 
-function StepCard({ number, title, description }) {
+function StepCard({ number, title, description, delay = 0, isVisible = true, showConnector = false }) {
   return (
-    <div className="relative group">
+    <div
+      className="relative group"
+      style={{
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? 'translateY(0)' : 'translateY(30px)',
+        transition: `all 0.6s ease ${delay}ms`
+      }}
+    >
+      {showConnector && (
+        <div className="hidden md:block absolute top-14 -right-4 w-8 h-0.5 bg-gradient-to-r from-slate-500 to-slate-600 z-10" />
+      )}
       <div className="absolute -inset-0.5 bg-gradient-to-r from-slate-500 to-slate-600 rounded-2xl blur opacity-0 group-hover:opacity-30 transition duration-500" />
-      <div className="relative bg-white rounded-2xl p-8 border border-slate-200">
-        <div className="w-12 h-12 bg-gradient-to-br from-slate-600 to-slate-700 rounded-xl flex items-center justify-center text-white font-bold text-lg mb-4">{number}</div>
+      <div className="relative bg-white rounded-2xl p-8 border border-slate-200 h-full">
+        <div className="w-12 h-12 bg-gradient-to-br from-slate-600 to-slate-700 rounded-xl flex items-center justify-center text-white font-bold text-lg mb-4 group-hover:scale-110 transition-transform">{number}</div>
         <h3 className="text-xl font-bold text-slate-900 mb-2">{title}</h3>
         <p className="text-slate-600">{description}</p>
       </div>
@@ -282,6 +311,15 @@ export default function LandingGobierno() {
   const { i18n } = useTranslation()
   const lang = i18n.language?.startsWith('es') ? 'es' : 'en'
   const [scrolled, setScrolled] = useState(false)
+
+  // Scroll animation refs for each section
+  const [heroRef, heroVisible] = useScrollAnimation(0.1)
+  const [problemRef, problemVisible] = useScrollAnimation(0.2)
+  const [solutionRef, solutionVisible] = useScrollAnimation(0.2)
+  const [useCasesRef, useCasesVisible] = useScrollAnimation(0.15)
+  const [pilotRef, pilotVisible] = useScrollAnimation(0.2)
+  const [complianceRef, complianceVisible] = useScrollAnimation(0.2)
+  const [contactRef, contactVisible] = useScrollAnimation(0.2)
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20)
@@ -467,10 +505,10 @@ export default function LandingGobierno() {
                 <a href="#pilot" className="inline-flex items-center justify-center gap-2 bg-white/5 backdrop-blur-sm text-white px-8 py-4 rounded-xl font-semibold hover:bg-white/10 transition text-lg border border-white/10">{t.hero.ctaSecondary}</a>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
-                <StatCard value={t.hero.stats.fraud.value} label={t.hero.stats.fraud.label} icon="📈" />
-                <StatCard value={t.hero.stats.time.value} label={t.hero.stats.time.label} icon="⏱️" />
-                <StatCard value={t.hero.stats.compliance.value} label={t.hero.stats.compliance.label} icon="✓" />
+              <div ref={heroRef} className="grid grid-cols-3 gap-4">
+                <StatCard value={t.hero.stats.fraud.value} label={t.hero.stats.fraud.label} icon="📈" delay={0} isVisible={heroVisible} />
+                <StatCard value={t.hero.stats.time.value} label={t.hero.stats.time.label} icon="⏱️" delay={150} isVisible={heroVisible} />
+                <StatCard value={t.hero.stats.compliance.value} label={t.hero.stats.compliance.label} icon="✓" delay={300} isVisible={heroVisible} />
               </div>
             </div>
             <div className="hidden lg:block"><HeroIllustration /></div>
@@ -491,14 +529,29 @@ export default function LandingGobierno() {
       </section>
 
       {/* Problem Section */}
-      <section className="py-24 bg-slate-900">
+      <section ref={problemRef} className="py-24 bg-slate-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div
+            className="text-center mb-16"
+            style={{
+              opacity: problemVisible ? 1 : 0,
+              transform: problemVisible ? 'translateY(0)' : 'translateY(20px)',
+              transition: 'all 0.6s ease'
+            }}
+          >
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">{t.problem.title}</h2>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {t.problem.points.map((point, index) => (
-              <div key={index} className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700 hover:border-red-500/30 transition-colors">
+              <div
+                key={index}
+                className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700 hover:border-red-500/30 hover:scale-105 transition-all duration-300"
+                style={{
+                  opacity: problemVisible ? 1 : 0,
+                  transform: problemVisible ? 'translateY(0)' : 'translateY(30px)',
+                  transition: `all 0.6s ease ${150 + index * 150}ms`
+                }}
+              >
                 <div className="w-14 h-14 bg-red-500/10 rounded-2xl flex items-center justify-center mb-6"><span className="text-3xl">{point.icon}</span></div>
                 <h3 className="text-xl font-bold text-white mb-3">{point.title}</h3>
                 <p className="text-slate-400">{point.desc}</p>
@@ -509,47 +562,83 @@ export default function LandingGobierno() {
       </section>
 
       {/* Solution Section */}
-      <section id="how-it-works" className="py-24 bg-slate-950">
+      <section ref={solutionRef} id="how-it-works" className="py-24 bg-slate-950">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div
+            className="text-center mb-16"
+            style={{
+              opacity: solutionVisible ? 1 : 0,
+              transform: solutionVisible ? 'translateY(0)' : 'translateY(20px)',
+              transition: 'all 0.6s ease'
+            }}
+          >
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">{t.solution.title}</h2>
             <p className="text-xl text-slate-400 max-w-3xl mx-auto">{t.solution.desc}</p>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {t.solution.steps.map((step, index) => (
-              <StepCard key={index} number={index + 1} title={step.title} description={step.desc} />
+              <StepCard key={index} number={index + 1} title={step.title} description={step.desc} delay={index * 200} isVisible={solutionVisible} showConnector={index < t.solution.steps.length - 1} />
             ))}
           </div>
         </div>
       </section>
 
       {/* Use Cases Section */}
-      <section id="use-cases" className="py-24 bg-white">
+      <section ref={useCasesRef} id="use-cases" className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div
+            className="text-center mb-16"
+            style={{
+              opacity: useCasesVisible ? 1 : 0,
+              transform: useCasesVisible ? 'translateY(0)' : 'translateY(20px)',
+              transition: 'all 0.6s ease'
+            }}
+          >
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">{t.useCases.title}</h2>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {t.useCases.cases.map((useCase, index) => (
-              <UseCaseCard key={index} title={useCase.title} problem={useCase.problem} solution={useCase.solution} metric={useCase.metric} realCase={useCase.realCase} lang={lang} icon={useCaseIcons[index]} />
+              <UseCaseCard key={index} title={useCase.title} problem={useCase.problem} solution={useCase.solution} metric={useCase.metric} realCase={useCase.realCase} lang={lang} icon={useCaseIcons[index]} delay={index * 150} isVisible={useCasesVisible} />
             ))}
           </div>
         </div>
       </section>
 
       {/* Pilot Section */}
-      <section id="pilot" className="py-24 bg-slate-50">
+      <section ref={pilotRef} id="pilot" className="py-24 bg-slate-50">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
+          <div
+            className="text-center mb-12"
+            style={{
+              opacity: pilotVisible ? 1 : 0,
+              transform: pilotVisible ? 'translateY(0)' : 'translateY(20px)',
+              transition: 'all 0.6s ease'
+            }}
+          >
             <span className="inline-block px-4 py-1 bg-amber-100 text-amber-800 rounded-full text-sm font-semibold mb-4">{lang === 'es' ? 'CASO REAL' : 'REAL CASE'}</span>
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">{t.pilot.title}</h2>
             <p className="text-xl text-slate-600">{t.pilot.desc}</p>
           </div>
-          <div className="bg-white rounded-2xl p-8 border border-slate-200 mb-8 shadow-lg">
+          <div
+            className="bg-white rounded-2xl p-8 border border-slate-200 mb-8 shadow-lg"
+            style={{
+              opacity: pilotVisible ? 1 : 0,
+              transform: pilotVisible ? 'translateY(0)' : 'translateY(30px)',
+              transition: 'all 0.6s ease 150ms'
+            }}
+          >
             <h3 className="font-semibold text-slate-900 mb-4">{lang === 'es' ? 'Participantes' : 'Participants'}</h3>
             <div className="space-y-3">
               {t.pilot.participants.map((p, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
+                  style={{
+                    opacity: pilotVisible ? 1 : 0,
+                    transform: pilotVisible ? 'translateX(0)' : 'translateX(-20px)',
+                    transition: `all 0.5s ease ${300 + index * 100}ms`
+                  }}
+                >
                   <div><span className="font-medium text-slate-900">{p.name}</span><span className="text-slate-500 text-sm ml-2">- {p.data}</span></div>
                   <span className="text-sm font-semibold text-slate-700 bg-slate-200 px-3 py-1 rounded-full">{p.power}</span>
                 </div>
@@ -558,7 +647,15 @@ export default function LandingGobierno() {
           </div>
           <div className="grid md:grid-cols-2 gap-4">
             {t.pilot.features.map((feature, index) => (
-              <div key={index} className="flex items-center gap-3 bg-emerald-50 p-4 rounded-xl border border-emerald-200">
+              <div
+                key={index}
+                className="flex items-center gap-3 bg-emerald-50 p-4 rounded-xl border border-emerald-200 hover:scale-105 transition-transform"
+                style={{
+                  opacity: pilotVisible ? 1 : 0,
+                  transform: pilotVisible ? 'translateY(0)' : 'translateY(20px)',
+                  transition: `all 0.5s ease ${500 + index * 100}ms`
+                }}
+              >
                 <svg className="w-5 h-5 text-emerald-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
                 <span className="text-emerald-800 font-medium">{feature}</span>
               </div>
@@ -568,15 +665,30 @@ export default function LandingGobierno() {
       </section>
 
       {/* Compliance Section */}
-      <section className="py-24 bg-white">
+      <section ref={complianceRef} className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
+          <div
+            className="text-center mb-12"
+            style={{
+              opacity: complianceVisible ? 1 : 0,
+              transform: complianceVisible ? 'translateY(0)' : 'translateY(20px)',
+              transition: 'all 0.6s ease'
+            }}
+          >
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">{t.compliance.title}</h2>
             <p className="text-xl text-slate-600 max-w-3xl mx-auto">{t.compliance.desc}</p>
           </div>
           <div className="flex flex-wrap justify-center gap-4">
             {t.compliance.badges.map((badge, index) => (
-              <div key={index} className="flex items-center gap-2 bg-slate-100 border border-slate-200 px-6 py-3 rounded-full hover:scale-105 transition-transform">
+              <div
+                key={index}
+                className="flex items-center gap-2 bg-slate-100 border border-slate-200 px-6 py-3 rounded-full hover:scale-110 transition-all duration-300"
+                style={{
+                  opacity: complianceVisible ? 1 : 0,
+                  transform: complianceVisible ? 'translateY(0) scale(1)' : 'translateY(15px) scale(0.9)',
+                  transition: `all 0.5s ease ${index * 100}ms`
+                }}
+              >
                 <svg className="w-5 h-5 text-slate-700" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
                 <span className="font-semibold text-slate-800">{badge}</span>
               </div>
@@ -586,17 +698,32 @@ export default function LandingGobierno() {
       </section>
 
       {/* Contact Section */}
-      <section id="contact" className="py-24 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 relative overflow-hidden">
+      <section ref={contactRef} id="contact" className="py-24 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 relative overflow-hidden">
         <div className="absolute inset-0">
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-slate-600/10 rounded-full blur-3xl" />
           <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-slate-500/10 rounded-full blur-3xl" />
         </div>
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
+          <div
+            className="text-center mb-12"
+            style={{
+              opacity: contactVisible ? 1 : 0,
+              transform: contactVisible ? 'translateY(0)' : 'translateY(20px)',
+              transition: 'all 0.6s ease'
+            }}
+          >
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">{t.cta.title}</h2>
             <p className="text-xl text-slate-300">{t.cta.subtitle}</p>
           </div>
-          <ContactForm lang={lang} />
+          <div
+            style={{
+              opacity: contactVisible ? 1 : 0,
+              transform: contactVisible ? 'translateY(0)' : 'translateY(30px)',
+              transition: 'all 0.6s ease 200ms'
+            }}
+          >
+            <ContactForm lang={lang} />
+          </div>
         </div>
       </section>
 

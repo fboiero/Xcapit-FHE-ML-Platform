@@ -292,8 +292,8 @@ function CompanyLogo({ name }) {
   )
 }
 
-// Industry Card with 3D tilt effect
-function IndustryCard({ icon, title, description, examples, link, color, ctaText = 'Ver soluciones' }) {
+// Industry Card with 3D tilt effect and scroll animation
+function IndustryCard({ icon, title, description, examples, link, color, ctaText = 'Ver soluciones', delay = 0, isVisible = true }) {
   const [transform, setTransform] = useState('')
   const [glare, setGlare] = useState({ x: 50, y: 50 })
 
@@ -349,7 +349,12 @@ function IndustryCard({ icon, title, description, examples, link, color, ctaText
     <Link
       to={link}
       className={`group relative backdrop-blur-xl rounded-2xl p-6 lg:p-8 border transition-all duration-300 hover:shadow-2xl focus:outline-none focus:ring-2 focus:ring-white/20 ${colors.bg} ${colors.border}`}
-      style={{ transform, transformStyle: 'preserve-3d' }}
+      style={{
+        transform: isVisible ? transform : 'translateY(30px)',
+        transformStyle: 'preserve-3d',
+        opacity: isVisible ? 1 : 0,
+        transition: `opacity 0.6s ease ${delay}ms, transform 0.6s ease ${delay}ms`
+      }}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
@@ -383,12 +388,19 @@ function IndustryCard({ icon, title, description, examples, link, color, ctaText
   )
 }
 
-// Animated stat card
-function StatCard({ value, label, suffix = '', isVisible }) {
+// Animated stat card with staggered animation
+function StatCard({ value, label, suffix = '', isVisible, delay = 0 }) {
   const count = useCounter(parseInt(value), 2000, true, isVisible)
 
   return (
-    <div className="text-center">
+    <div
+      className="text-center"
+      style={{
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? 'translateY(0)' : 'translateY(20px)',
+        transition: `all 0.6s ease ${delay}ms`
+      }}
+    >
       <div className="text-4xl lg:text-5xl font-bold text-white mb-2">
         {count}{suffix}
       </div>
@@ -397,11 +409,18 @@ function StatCard({ value, label, suffix = '', isVisible }) {
   )
 }
 
-// How It Works Step
-function HowItWorksStep({ number, title, description, icon }) {
+// How It Works Step with animation
+function HowItWorksStep({ number, title, description, icon, delay = 0, isVisible = true }) {
   return (
-    <div className="relative flex flex-col items-center text-center">
-      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-500/20 to-indigo-500/20 border border-white/10 flex items-center justify-center mb-4 text-brand-400">
+    <div
+      className="relative flex flex-col items-center text-center group"
+      style={{
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? 'translateY(0)' : 'translateY(30px)',
+        transition: `all 0.6s ease ${delay}ms`
+      }}
+    >
+      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-500/20 to-indigo-500/20 border border-white/10 flex items-center justify-center mb-4 text-brand-400 group-hover:scale-110 transition-transform duration-300">
         {icon}
       </div>
       <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-brand-500 text-white text-xs font-bold flex items-center justify-center">
@@ -759,10 +778,10 @@ export default function LandingHub() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <StatCard value="50" suffix="+" label={t.stats.organizations} isVisible={statsVisible} />
-            <StatCard value="10" suffix="M+" label={t.stats.dataProcessed} isVisible={statsVisible} />
-            <StatCard value="99" suffix="%" label={t.stats.accuracy} isVisible={statsVisible} />
-            <StatCard value="99" suffix=".9%" label={t.stats.uptime} isVisible={statsVisible} />
+            <StatCard value="50" suffix="+" label={t.stats.organizations} isVisible={statsVisible} delay={0} />
+            <StatCard value="10" suffix="M+" label={t.stats.dataProcessed} isVisible={statsVisible} delay={150} />
+            <StatCard value="99" suffix="%" label={t.stats.accuracy} isVisible={statsVisible} delay={300} />
+            <StatCard value="99" suffix=".9%" label={t.stats.uptime} isVisible={statsVisible} delay={450} />
           </div>
         </div>
       </section>
@@ -787,6 +806,8 @@ export default function LandingHub() {
                 title={step.title}
                 description={step.desc}
                 icon={step.icon}
+                delay={index * 200}
+                isVisible={howItWorksVisible}
               />
             ))}
           </div>
@@ -825,6 +846,8 @@ export default function LandingHub() {
                 examples={industry.examples}
                 link={industry.link}
                 color={industry.color}
+                delay={index * 150}
+                isVisible={industriesVisible}
               />
             ))}
           </div>
@@ -854,7 +877,15 @@ export default function LandingHub() {
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {t.features.list.map((feature, index) => (
-              <div key={index} className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6 hover:bg-white/[0.07] hover:border-white/20 transition">
+              <div
+                key={index}
+                className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6 hover:bg-white/[0.07] hover:border-white/20 hover:scale-105 transition-all duration-300"
+                style={{
+                  opacity: securityVisible ? 1 : 0,
+                  transform: securityVisible ? 'translateY(0)' : 'translateY(30px)',
+                  transition: `all 0.5s ease ${index * 100}ms`
+                }}
+              >
                 <div className="w-10 h-10 rounded-lg bg-brand-500/20 flex items-center justify-center mb-4 text-brand-400">
                   {icons.shield}
                 </div>

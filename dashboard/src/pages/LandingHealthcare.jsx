@@ -192,16 +192,28 @@ function HeroIllustration() {
   )
 }
 
-// Stat card component
-function StatCard({ value, label, icon }) {
+// Stat card component with animated counter
+function StatCard({ value, label, icon, delay = 0, isVisible = true }) {
+  const numericValue = parseInt(String(value).replace(/[^0-9]/g, '')) || 0
+  const prefix = value.startsWith('+') ? '+' : value.startsWith('-') ? '-' : ''
+  const suffix = String(value).replace(/[0-9+-]/g, '')
+  const count = useCounter(numericValue, 2000, isVisible)
+
   return (
-    <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:border-emerald-400/30 transition-all duration-300">
+    <div
+      className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:border-emerald-400/30 transition-all duration-500 hover:scale-105"
+      style={{
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? 'translateY(0)' : 'translateY(20px)',
+        transition: `all 0.6s ease ${delay}ms`
+      }}
+    >
       <div className="flex items-center gap-4">
         <div className="w-12 h-12 bg-gradient-to-br from-emerald-500/20 to-teal-500/20 rounded-xl flex items-center justify-center text-2xl">
           {icon}
         </div>
         <div>
-          <div className="text-3xl font-bold text-white">{value}</div>
+          <div className="text-3xl font-bold text-white">{prefix}{count}{suffix}</div>
           <div className="text-slate-400 text-sm">{label}</div>
         </div>
       </div>
@@ -373,10 +385,17 @@ function ContactForm({ lang }) {
   )
 }
 
-// Use Case Card Component
-function UseCaseCard({ title, problem, solution, metric, icon, lang }) {
+// Use Case Card Component with animation support
+function UseCaseCard({ title, problem, solution, metric, icon, lang, delay = 0, isVisible = true }) {
   return (
-    <div className="group bg-white rounded-2xl p-8 border border-slate-200 hover:shadow-2xl hover:shadow-emerald-500/10 hover:-translate-y-1 transition-all duration-300">
+    <div
+      className="group bg-white rounded-2xl p-8 border border-slate-200 hover:shadow-2xl hover:shadow-emerald-500/10 hover:-translate-y-1 transition-all duration-300"
+      style={{
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? 'translateY(0)' : 'translateY(30px)',
+        transition: `all 0.6s ease ${delay}ms`
+      }}
+    >
       <div className="w-14 h-14 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
         {icon}
       </div>
@@ -408,23 +427,41 @@ function UseCaseCard({ title, problem, solution, metric, icon, lang }) {
   )
 }
 
-// Compliance badge component
-function ComplianceBadge({ name, icon }) {
+// Compliance badge component with animation
+function ComplianceBadge({ name, icon, delay = 0, isVisible = true }) {
   return (
-    <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 px-5 py-2.5 rounded-full hover:scale-105 transition-transform">
+    <div
+      className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 px-5 py-2.5 rounded-full hover:scale-110 transition-all duration-300"
+      style={{
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? 'translateY(0) scale(1)' : 'translateY(15px) scale(0.9)',
+        transition: `all 0.5s ease ${delay}ms`
+      }}
+    >
       {icon}
       <span className="font-semibold text-emerald-800">{name}</span>
     </div>
   )
 }
 
-// Step component for how it works
-function StepCard({ number, title, description }) {
+// Step component for how it works with animation
+function StepCard({ number, title, description, delay = 0, isVisible = true, showConnector = false }) {
   return (
-    <div className="relative group">
+    <div
+      className="relative group"
+      style={{
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? 'translateY(0)' : 'translateY(30px)',
+        transition: `all 0.6s ease ${delay}ms`
+      }}
+    >
+      {/* Connection line */}
+      {showConnector && (
+        <div className="hidden md:block absolute top-14 -right-4 w-8 h-0.5 bg-gradient-to-r from-emerald-500 to-teal-500 z-10" />
+      )}
       <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl blur opacity-0 group-hover:opacity-30 transition duration-500" />
-      <div className="relative bg-white rounded-2xl p-8 border border-slate-200">
-        <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center text-white font-bold text-lg mb-4">
+      <div className="relative bg-white rounded-2xl p-8 border border-slate-200 h-full">
+        <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center text-white font-bold text-lg mb-4 group-hover:scale-110 transition-transform">
           {number}
         </div>
         <h3 className="text-xl font-bold text-slate-900 mb-2">{title}</h3>
@@ -434,10 +471,17 @@ function StepCard({ number, title, description }) {
   )
 }
 
-// Differentiator row component
-function DifferentiatorRow({ option, problem, xcapit }) {
+// Differentiator row component with animation
+function DifferentiatorRow({ option, problem, xcapit, delay = 0, isVisible = true }) {
   return (
-    <div className="bg-white rounded-xl p-6 border border-slate-200 hover:shadow-lg transition-shadow">
+    <div
+      className="bg-white rounded-xl p-6 border border-slate-200 hover:shadow-lg hover:border-emerald-200 transition-all duration-300"
+      style={{
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? 'translateX(0)' : 'translateX(-20px)',
+        transition: `all 0.5s ease ${delay}ms`
+      }}
+    >
       <div className="grid md:grid-cols-3 gap-4 items-start">
         <div className="font-semibold text-slate-900">{option}</div>
         <div className="flex items-start gap-2">
@@ -465,6 +509,15 @@ export default function LandingHealthcare() {
   const { i18n } = useTranslation()
   const lang = i18n.language?.startsWith('es') ? 'es' : 'en'
   const [scrolled, setScrolled] = useState(false)
+
+  // Scroll animation refs for each section
+  const [heroRef, heroVisible] = useScrollAnimation(0.1)
+  const [problemRef, problemVisible] = useScrollAnimation(0.2)
+  const [solutionRef, solutionVisible] = useScrollAnimation(0.2)
+  const [useCasesRef, useCasesVisible] = useScrollAnimation(0.15)
+  const [complianceRef, complianceVisible] = useScrollAnimation(0.2)
+  const [diffRef, diffVisible] = useScrollAnimation(0.2)
+  const [contactRef, contactVisible] = useScrollAnimation(0.2)
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20)
@@ -785,21 +838,27 @@ export default function LandingHealthcare() {
               </div>
 
               {/* Stats */}
-              <div className="grid grid-cols-3 gap-4">
+              <div ref={heroRef} className="grid grid-cols-3 gap-4">
                 <StatCard
                   value={t.hero.stats.accuracy.value}
                   label={t.hero.stats.accuracy.label}
                   icon="🎯"
+                  delay={0}
+                  isVisible={heroVisible}
                 />
                 <StatCard
                   value={t.hero.stats.time.value}
                   label={t.hero.stats.time.label}
                   icon="⚡"
+                  delay={150}
+                  isVisible={heroVisible}
                 />
                 <StatCard
                   value={t.hero.stats.compliance.value}
                   label={t.hero.stats.compliance.label}
                   icon="✓"
+                  delay={300}
+                  isVisible={heroVisible}
                 />
               </div>
             </div>
@@ -826,16 +885,31 @@ export default function LandingHealthcare() {
       </section>
 
       {/* Problem Section */}
-      <section className="py-24 bg-slate-900">
+      <section ref={problemRef} className="py-24 bg-slate-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div
+            className="text-center mb-16"
+            style={{
+              opacity: problemVisible ? 1 : 0,
+              transform: problemVisible ? 'translateY(0)' : 'translateY(20px)',
+              transition: 'all 0.6s ease'
+            }}
+          >
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
               {t.problem.title}
             </h2>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {t.problem.points.map((point, index) => (
-              <div key={index} className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700 hover:border-red-500/30 transition-colors">
+              <div
+                key={index}
+                className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700 hover:border-red-500/30 hover:scale-105 transition-all duration-300"
+                style={{
+                  opacity: problemVisible ? 1 : 0,
+                  transform: problemVisible ? 'translateY(0)' : 'translateY(30px)',
+                  transition: `all 0.6s ease ${150 + index * 150}ms`
+                }}
+              >
                 <div className="w-14 h-14 bg-red-500/10 rounded-2xl flex items-center justify-center mb-6">
                   <span className="text-3xl">{point.icon}</span>
                 </div>
@@ -848,9 +922,16 @@ export default function LandingHealthcare() {
       </section>
 
       {/* Solution Section */}
-      <section id="how-it-works" className="py-24 bg-slate-950">
+      <section ref={solutionRef} id="how-it-works" className="py-24 bg-slate-950">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div
+            className="text-center mb-16"
+            style={{
+              opacity: solutionVisible ? 1 : 0,
+              transform: solutionVisible ? 'translateY(0)' : 'translateY(20px)',
+              transition: 'all 0.6s ease'
+            }}
+          >
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
               {t.solution.title}
             </h2>
@@ -866,6 +947,9 @@ export default function LandingHealthcare() {
                 number={index + 1}
                 title={step.title}
                 description={step.desc}
+                delay={index * 200}
+                isVisible={solutionVisible}
+                showConnector={index < t.solution.steps.length - 1}
               />
             ))}
           </div>
@@ -873,9 +957,16 @@ export default function LandingHealthcare() {
       </section>
 
       {/* Use Cases Section */}
-      <section id="use-cases" className="py-24 bg-white">
+      <section ref={useCasesRef} id="use-cases" className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div
+            className="text-center mb-16"
+            style={{
+              opacity: useCasesVisible ? 1 : 0,
+              transform: useCasesVisible ? 'translateY(0)' : 'translateY(20px)',
+              transition: 'all 0.6s ease'
+            }}
+          >
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
               {t.useCases.title}
             </h2>
@@ -891,6 +982,8 @@ export default function LandingHealthcare() {
                 metric={useCase.metric}
                 icon={useCaseIcons[index]}
                 lang={lang}
+                delay={index * 150}
+                isVisible={useCasesVisible}
               />
             ))}
           </div>
@@ -898,9 +991,16 @@ export default function LandingHealthcare() {
       </section>
 
       {/* Compliance Section */}
-      <section id="compliance" className="py-24 bg-slate-50">
+      <section ref={complianceRef} id="compliance" className="py-24 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
+          <div
+            className="text-center mb-12"
+            style={{
+              opacity: complianceVisible ? 1 : 0,
+              transform: complianceVisible ? 'translateY(0)' : 'translateY(20px)',
+              transition: 'all 0.6s ease'
+            }}
+          >
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
               {t.compliance.title}
             </h2>
@@ -919,6 +1019,8 @@ export default function LandingHealthcare() {
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
                 }
+                delay={index * 100}
+                isVisible={complianceVisible}
               />
             ))}
           </div>
@@ -926,9 +1028,16 @@ export default function LandingHealthcare() {
       </section>
 
       {/* Differentiators Section */}
-      <section className="py-24 bg-white">
+      <section ref={diffRef} className="py-24 bg-white">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
+          <div
+            className="text-center mb-12"
+            style={{
+              opacity: diffVisible ? 1 : 0,
+              transform: diffVisible ? 'translateY(0)' : 'translateY(20px)',
+              transition: 'all 0.6s ease'
+            }}
+          >
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
               {t.differentiators.title}
             </h2>
@@ -942,6 +1051,8 @@ export default function LandingHealthcare() {
                 option={item.option}
                 problem={item.problem}
                 xcapit={item.xcapit}
+                delay={index * 100}
+                isVisible={diffVisible}
               />
             ))}
           </div>
@@ -949,13 +1060,20 @@ export default function LandingHealthcare() {
       </section>
 
       {/* Contact Section */}
-      <section id="contact" className="py-24 bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 relative overflow-hidden">
+      <section ref={contactRef} id="contact" className="py-24 bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 relative overflow-hidden">
         <div className="absolute inset-0">
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-3xl" />
           <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-teal-500/10 rounded-full blur-3xl" />
         </div>
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
+          <div
+            className="text-center mb-12"
+            style={{
+              opacity: contactVisible ? 1 : 0,
+              transform: contactVisible ? 'translateY(0)' : 'translateY(20px)',
+              transition: 'all 0.6s ease'
+            }}
+          >
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
               {t.cta.title}
             </h2>
@@ -963,7 +1081,15 @@ export default function LandingHealthcare() {
               {t.cta.subtitle}
             </p>
           </div>
-          <ContactForm lang={lang} />
+          <div
+            style={{
+              opacity: contactVisible ? 1 : 0,
+              transform: contactVisible ? 'translateY(0)' : 'translateY(30px)',
+              transition: 'all 0.6s ease 200ms'
+            }}
+          >
+            <ContactForm lang={lang} />
+          </div>
         </div>
       </section>
 

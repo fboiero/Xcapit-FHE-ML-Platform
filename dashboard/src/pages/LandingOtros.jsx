@@ -137,13 +137,25 @@ function HeroIllustration() {
   )
 }
 
-function StatCard({ value, label, icon }) {
+function StatCard({ value, label, icon, delay = 0, isVisible = true }) {
+  const numericValue = parseInt(String(value).replace(/[^0-9]/g, '')) || 0
+  const prefix = value.startsWith('+') ? '+' : value.startsWith('-') ? '-' : ''
+  const suffix = String(value).replace(/[0-9+-]/g, '')
+  const count = useCounter(numericValue, 2000, isVisible)
+
   return (
-    <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:border-purple-400/30 transition-all">
+    <div
+      className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:border-purple-400/30 hover:scale-105 transition-all duration-500"
+      style={{
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? 'translateY(0)' : 'translateY(20px)',
+        transition: `all 0.6s ease ${delay}ms`
+      }}
+    >
       <div className="flex items-center gap-4">
         <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center text-2xl">{icon}</div>
         <div>
-          <div className="text-3xl font-bold text-white">{value}</div>
+          <div className="text-3xl font-bold text-white">{prefix}{count}{suffix}</div>
           <div className="text-slate-400 text-sm">{label}</div>
         </div>
       </div>
@@ -224,9 +236,16 @@ function ContactForm({ lang }) {
   )
 }
 
-function IndustryCard({ icon, title, problem, solution, metric }) {
+function IndustryCard({ icon, title, problem, solution, metric, delay = 0, isVisible = true }) {
   return (
-    <div className="group bg-white rounded-2xl p-6 border border-slate-200 hover:shadow-2xl hover:shadow-purple-500/10 hover:-translate-y-1 transition-all duration-300">
+    <div
+      className="group bg-white rounded-2xl p-6 border border-slate-200 hover:shadow-2xl hover:shadow-purple-500/10 hover:-translate-y-1 transition-all duration-300"
+      style={{
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? 'translateY(0)' : 'translateY(30px)',
+        transition: `all 0.6s ease ${delay}ms`
+      }}
+    >
       <div className="w-14 h-14 bg-gradient-to-br from-purple-500/10 to-indigo-500/10 rounded-2xl flex items-center justify-center mb-4 text-3xl group-hover:scale-110 transition-transform">{icon}</div>
       <h3 className="text-xl font-bold text-slate-900 mb-3">{title}</h3>
       <p className="text-slate-600 text-sm mb-3">{problem}</p>
@@ -238,12 +257,22 @@ function IndustryCard({ icon, title, problem, solution, metric }) {
   )
 }
 
-function StepCard({ number, title, description }) {
+function StepCard({ number, title, description, delay = 0, isVisible = true, showConnector = false }) {
   return (
-    <div className="relative group">
+    <div
+      className="relative group"
+      style={{
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? 'translateY(0)' : 'translateY(30px)',
+        transition: `all 0.6s ease ${delay}ms`
+      }}
+    >
+      {showConnector && (
+        <div className="hidden md:block absolute top-14 -right-4 w-8 h-0.5 bg-gradient-to-r from-purple-500 to-indigo-500 z-10" />
+      )}
       <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-2xl blur opacity-0 group-hover:opacity-30 transition duration-500" />
-      <div className="relative bg-white rounded-2xl p-8 border border-slate-200">
-        <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-lg mb-4">{number}</div>
+      <div className="relative bg-white rounded-2xl p-8 border border-slate-200 h-full">
+        <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-lg mb-4 group-hover:scale-110 transition-transform">{number}</div>
         <h3 className="text-xl font-bold text-slate-900 mb-2">{title}</h3>
         <p className="text-slate-600">{description}</p>
       </div>
@@ -255,6 +284,16 @@ export default function LandingOtros() {
   const { i18n } = useTranslation()
   const lang = i18n.language?.startsWith('es') ? 'es' : 'en'
   const [scrolled, setScrolled] = useState(false)
+
+  // Scroll animation refs for each section
+  const [heroRef, heroVisible] = useScrollAnimation(0.1)
+  const [problemRef, problemVisible] = useScrollAnimation(0.2)
+  const [solutionRef, solutionVisible] = useScrollAnimation(0.2)
+  const [industriesRef, industriesVisible] = useScrollAnimation(0.15)
+  const [consortiumRef, consortiumVisible] = useScrollAnimation(0.2)
+  const [governanceRef, governanceVisible] = useScrollAnimation(0.2)
+  const [complianceRef, complianceVisible] = useScrollAnimation(0.2)
+  const [contactRef, contactVisible] = useScrollAnimation(0.2)
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20)
@@ -457,10 +496,10 @@ export default function LandingOtros() {
                 <a href="#how-it-works" className="inline-flex items-center justify-center gap-2 bg-white/5 backdrop-blur-sm text-white px-8 py-4 rounded-xl font-semibold hover:bg-white/10 transition text-lg border border-white/10">{t.hero.ctaSecondary}</a>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
-                <StatCard value={t.hero.stats.accuracy.value} label={t.hero.stats.accuracy.label} icon="📈" />
-                <StatCard value={t.hero.stats.privacy.value} label={t.hero.stats.privacy.label} icon="🔒" />
-                <StatCard value={t.hero.stats.trade.value} label={t.hero.stats.trade.label} icon="✓" />
+              <div ref={heroRef} className="grid grid-cols-3 gap-4">
+                <StatCard value={t.hero.stats.accuracy.value} label={t.hero.stats.accuracy.label} icon="📈" delay={0} isVisible={heroVisible} />
+                <StatCard value={t.hero.stats.privacy.value} label={t.hero.stats.privacy.label} icon="🔒" delay={150} isVisible={heroVisible} />
+                <StatCard value={t.hero.stats.trade.value} label={t.hero.stats.trade.label} icon="✓" delay={300} isVisible={heroVisible} />
               </div>
             </div>
             <div className="hidden lg:block"><HeroIllustration /></div>
@@ -481,14 +520,29 @@ export default function LandingOtros() {
       </section>
 
       {/* Problem Section */}
-      <section className="py-24 bg-slate-900">
+      <section ref={problemRef} className="py-24 bg-slate-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div
+            className="text-center mb-16"
+            style={{
+              opacity: problemVisible ? 1 : 0,
+              transform: problemVisible ? 'translateY(0)' : 'translateY(20px)',
+              transition: 'all 0.6s ease'
+            }}
+          >
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">{t.problem.title}</h2>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {t.problem.points.map((point, index) => (
-              <div key={index} className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700 hover:border-red-500/30 transition-colors">
+              <div
+                key={index}
+                className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700 hover:border-red-500/30 hover:scale-105 transition-all duration-300"
+                style={{
+                  opacity: problemVisible ? 1 : 0,
+                  transform: problemVisible ? 'translateY(0)' : 'translateY(30px)',
+                  transition: `all 0.6s ease ${150 + index * 150}ms`
+                }}
+              >
                 <div className="w-14 h-14 bg-red-500/10 rounded-2xl flex items-center justify-center mb-6"><span className="text-3xl">{point.icon}</span></div>
                 <h3 className="text-xl font-bold text-white mb-3">{point.title}</h3>
                 <p className="text-slate-400">{point.desc}</p>
@@ -499,41 +553,70 @@ export default function LandingOtros() {
       </section>
 
       {/* Solution Section */}
-      <section id="how-it-works" className="py-24 bg-slate-950">
+      <section ref={solutionRef} id="how-it-works" className="py-24 bg-slate-950">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div
+            className="text-center mb-16"
+            style={{
+              opacity: solutionVisible ? 1 : 0,
+              transform: solutionVisible ? 'translateY(0)' : 'translateY(20px)',
+              transition: 'all 0.6s ease'
+            }}
+          >
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">{t.solution.title}</h2>
             <p className="text-xl text-slate-400 max-w-3xl mx-auto">{t.solution.desc}</p>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {t.solution.steps.map((step, index) => (
-              <StepCard key={index} number={index + 1} title={step.title} description={step.desc} />
+              <StepCard key={index} number={index + 1} title={step.title} description={step.desc} delay={index * 200} isVisible={solutionVisible} showConnector={index < t.solution.steps.length - 1} />
             ))}
           </div>
         </div>
       </section>
 
       {/* Industries Section */}
-      <section id="industries" className="py-24 bg-white">
+      <section ref={industriesRef} id="industries" className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div
+            className="text-center mb-16"
+            style={{
+              opacity: industriesVisible ? 1 : 0,
+              transform: industriesVisible ? 'translateY(0)' : 'translateY(20px)',
+              transition: 'all 0.6s ease'
+            }}
+          >
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">{t.industries.title}</h2>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {t.industries.cases.map((industry, index) => (
-              <IndustryCard key={index} icon={industry.icon} title={industry.title} problem={industry.problem} solution={industry.solution} metric={industry.metric} />
+              <IndustryCard key={index} icon={industry.icon} title={industry.title} problem={industry.problem} solution={industry.solution} metric={industry.metric} delay={index * 100} isVisible={industriesVisible} />
             ))}
           </div>
         </div>
       </section>
 
       {/* Consortium Steps */}
-      <section className="py-24 bg-slate-50">
+      <section ref={consortiumRef} className="py-24 bg-slate-50">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl md:text-4xl font-bold text-slate-900 text-center mb-12">{t.consortium.title}</h2>
+          <h2
+            className="text-3xl md:text-4xl font-bold text-slate-900 text-center mb-12"
+            style={{
+              opacity: consortiumVisible ? 1 : 0,
+              transform: consortiumVisible ? 'translateY(0)' : 'translateY(20px)',
+              transition: 'all 0.6s ease'
+            }}
+          >{t.consortium.title}</h2>
           <div className="space-y-6">
             {t.consortium.steps.map((step, index) => (
-              <div key={index} className="flex items-start gap-4 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+              <div
+                key={index}
+                className="flex items-start gap-4 bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-lg hover:border-purple-200 transition-all"
+                style={{
+                  opacity: consortiumVisible ? 1 : 0,
+                  transform: consortiumVisible ? 'translateX(0)' : 'translateX(-20px)',
+                  transition: `all 0.5s ease ${index * 100}ms`
+                }}
+              >
                 <div className="w-10 h-10 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold flex-shrink-0">{index + 1}</div>
                 <div>
                   <h3 className="font-semibold text-slate-900 mb-1">{step.title}</h3>
@@ -546,12 +629,27 @@ export default function LandingOtros() {
       </section>
 
       {/* Governance Section */}
-      <section id="governance" className="py-24 bg-white">
+      <section ref={governanceRef} id="governance" className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl md:text-4xl font-bold text-slate-900 text-center mb-12">{t.governance.title}</h2>
+          <h2
+            className="text-3xl md:text-4xl font-bold text-slate-900 text-center mb-12"
+            style={{
+              opacity: governanceVisible ? 1 : 0,
+              transform: governanceVisible ? 'translateY(0)' : 'translateY(20px)',
+              transition: 'all 0.6s ease'
+            }}
+          >{t.governance.title}</h2>
           <div className="grid md:grid-cols-4 gap-6">
             {t.governance.features.map((feature, index) => (
-              <div key={index} className="bg-slate-50 p-6 rounded-xl border border-slate-200 text-center">
+              <div
+                key={index}
+                className="bg-slate-50 p-6 rounded-xl border border-slate-200 text-center hover:shadow-lg hover:scale-105 transition-all duration-300"
+                style={{
+                  opacity: governanceVisible ? 1 : 0,
+                  transform: governanceVisible ? 'translateY(0)' : 'translateY(30px)',
+                  transition: `all 0.5s ease ${index * 100}ms`
+                }}
+              >
                 <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-4">
                   <span className="text-2xl">{index === 0 ? '⛓️' : index === 1 ? '🗳️' : index === 2 ? '🔍' : '🔐'}</span>
                 </div>
@@ -564,15 +662,30 @@ export default function LandingOtros() {
       </section>
 
       {/* Compliance Section */}
-      <section className="py-24 bg-slate-50">
+      <section ref={complianceRef} className="py-24 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
+          <div
+            className="text-center mb-12"
+            style={{
+              opacity: complianceVisible ? 1 : 0,
+              transform: complianceVisible ? 'translateY(0)' : 'translateY(20px)',
+              transition: 'all 0.6s ease'
+            }}
+          >
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">{t.compliance.title}</h2>
             <p className="text-xl text-slate-600 max-w-3xl mx-auto">{t.compliance.desc}</p>
           </div>
           <div className="flex flex-wrap justify-center gap-4">
             {t.compliance.badges.map((badge, index) => (
-              <div key={index} className="flex items-center gap-2 bg-purple-50 border border-purple-200 px-6 py-3 rounded-full hover:scale-105 transition-transform">
+              <div
+                key={index}
+                className="flex items-center gap-2 bg-purple-50 border border-purple-200 px-6 py-3 rounded-full hover:scale-110 transition-all duration-300"
+                style={{
+                  opacity: complianceVisible ? 1 : 0,
+                  transform: complianceVisible ? 'translateY(0) scale(1)' : 'translateY(15px) scale(0.9)',
+                  transition: `all 0.5s ease ${index * 100}ms`
+                }}
+              >
                 <svg className="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
                 <span className="font-semibold text-purple-800">{badge}</span>
               </div>
@@ -582,17 +695,32 @@ export default function LandingOtros() {
       </section>
 
       {/* Contact Section */}
-      <section id="contact" className="py-24 bg-gradient-to-br from-slate-950 via-purple-950/30 to-indigo-950 relative overflow-hidden">
+      <section ref={contactRef} id="contact" className="py-24 bg-gradient-to-br from-slate-950 via-purple-950/30 to-indigo-950 relative overflow-hidden">
         <div className="absolute inset-0">
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-3xl" />
           <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-3xl" />
         </div>
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
+          <div
+            className="text-center mb-12"
+            style={{
+              opacity: contactVisible ? 1 : 0,
+              transform: contactVisible ? 'translateY(0)' : 'translateY(20px)',
+              transition: 'all 0.6s ease'
+            }}
+          >
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">{t.cta.title}</h2>
             <p className="text-xl text-slate-300">{t.cta.subtitle}</p>
           </div>
-          <ContactForm lang={lang} />
+          <div
+            style={{
+              opacity: contactVisible ? 1 : 0,
+              transform: contactVisible ? 'translateY(0)' : 'translateY(30px)',
+              transition: 'all 0.6s ease 200ms'
+            }}
+          >
+            <ContactForm lang={lang} />
+          </div>
         </div>
       </section>
 
