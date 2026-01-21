@@ -289,7 +289,7 @@ function ContactForm() {
 
 export default function Landing() {
   const { t, i18n } = useTranslation()
-  const currentLang = i18n.language?.startsWith('es') ? 'es' : 'en'
+  const currentLang = i18n.language?.startsWith('es') ? 'es' : i18n.language?.startsWith('de') ? 'de' : 'en'
   const [openFAQ, setOpenFAQ] = useState(0)
   const [scrolled, setScrolled] = useState(false)
 
@@ -300,10 +300,10 @@ export default function Landing() {
   }, [])
 
   const stats = [
-    { value: 566, suffix: '+', label: currentLang === 'es' ? 'Tests Pasando' : 'Tests Passing' },
-    { value: 100, suffix: '%', label: currentLang === 'es' ? 'Privacidad de Datos' : 'Data Privacy' },
-    { value: 5, suffix: '', label: currentLang === 'es' ? 'Modelos ML' : 'ML Models' },
-    { value: 128, suffix: '-bit', label: currentLang === 'es' ? 'Encriptación' : 'Encryption' },
+    { value: 566, suffix: '+', label: currentLang === 'es' ? 'Tests Pasando' : currentLang === 'de' ? 'Bestandene Tests' : 'Tests Passing' },
+    { value: 100, suffix: '%', label: currentLang === 'es' ? 'Privacidad de Datos' : currentLang === 'de' ? 'Datenschutz' : 'Data Privacy' },
+    { value: 5, suffix: '', label: currentLang === 'es' ? 'Modelos ML' : currentLang === 'de' ? 'ML-Modelle' : 'ML Models' },
+    { value: 128, suffix: '-bit', label: currentLang === 'es' ? 'Encriptación' : currentLang === 'de' ? 'Verschlüsselung' : 'Encryption' },
   ]
 
   const features = [
@@ -343,9 +343,11 @@ export default function Landing() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
         </svg>
       ),
-      title: currentLang === 'es' ? 'Compliance Automático' : 'Auto Compliance',
+      title: currentLang === 'es' ? 'Compliance Automático' : currentLang === 'de' ? 'Auto-Compliance' : 'Auto Compliance',
       description: currentLang === 'es'
         ? 'GDPR, HIPAA, SOC2 y PCI-DSS verificados automáticamente con reportes en tiempo real.'
+        : currentLang === 'de'
+        ? 'DSGVO, HIPAA, SOC2 und PCI-DSS automatisch verifiziert mit Echtzeit-Berichten.'
         : 'GDPR, HIPAA, SOC2, and PCI-DSS automatically verified with real-time reports.',
       gradient: 'from-blue-500 to-cyan-500'
     },
@@ -355,9 +357,11 @@ export default function Landing() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
         </svg>
       ),
-      title: currentLang === 'es' ? 'Gobernanza Blockchain' : 'Blockchain Governance',
+      title: currentLang === 'es' ? 'Gobernanza Blockchain' : currentLang === 'de' ? 'Blockchain-Governance' : 'Blockchain Governance',
       description: currentLang === 'es'
         ? 'Votación descentralizada, pruebas de contribución y distribución justa de ingresos en Arbitrum.'
+        : currentLang === 'de'
+        ? 'Dezentrale Abstimmung, Beitragsnachweise und faire Einnahmenverteilung auf Arbitrum.'
         : 'Decentralized voting, contribution proofs, and fair revenue distribution on Arbitrum.',
       gradient: 'from-rose-500 to-pink-500'
     },
@@ -367,9 +371,11 @@ export default function Landing() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
         </svg>
       ),
-      title: currentLang === 'es' ? 'Inferencia Federada' : 'Federated Inference',
+      title: currentLang === 'es' ? 'Inferencia Federada' : currentLang === 'de' ? 'Föderierte Inferenz' : 'Federated Inference',
       description: currentLang === 'es'
         ? 'Predicciones en el edge sin mover datos. Los modelos van a los datos, no al revés.'
+        : currentLang === 'de'
+        ? 'Edge-Vorhersagen ohne Datentransfer. Die Modelle kommen zu den Daten, nicht umgekehrt.'
         : 'Edge predictions without moving data. Models go to data, not the other way around.',
       gradient: 'from-violet-500 to-purple-500'
     },
@@ -378,58 +384,78 @@ export default function Landing() {
   const useCases = [
     {
       icon: '🏦',
-      title: currentLang === 'es' ? 'Servicios Financieros' : 'Financial Services',
+      title: currentLang === 'es' ? 'Servicios Financieros' : currentLang === 'de' ? 'Finanzdienstleistungen' : 'Financial Services',
       description: currentLang === 'es'
         ? 'Detección de fraude colaborativa entre bancos sin compartir datos de clientes.'
+        : currentLang === 'de'
+        ? 'Kollaborative Betrugserkennung zwischen Banken ohne Weitergabe von Kundendaten.'
         : 'Collaborative fraud detection across banks without sharing customer data.',
       examples: currentLang === 'es'
         ? ['Scoring crediticio multi-banco', 'Detección de lavado de dinero', 'Prevención de fraude']
+        : currentLang === 'de'
+        ? ['Multi-Bank-Kreditbewertung', 'Geldwäsche-Erkennung', 'Betrugsprävention']
         : ['Multi-bank credit scoring', 'AML detection', 'Fraud prevention'],
-      color: 'blue'
+      color: 'blue',
+      link: '/fintech'
     },
     {
       icon: '🏥',
-      title: currentLang === 'es' ? 'Salud' : 'Healthcare',
+      title: currentLang === 'es' ? 'Salud' : currentLang === 'de' ? 'Gesundheitswesen' : 'Healthcare',
       description: currentLang === 'es'
         ? 'Investigación médica colaborativa cumpliendo HIPAA sin exponer datos de pacientes.'
+        : currentLang === 'de'
+        ? 'Kollaborative medizinische Forschung HIPAA-konform ohne Offenlegung von Patientendaten.'
         : 'Collaborative medical research compliant with HIPAA without exposing patient data.',
       examples: currentLang === 'es'
         ? ['Predicción de riesgo de enfermedades', 'Descubrimiento de medicamentos', 'Estudios clínicos']
+        : currentLang === 'de'
+        ? ['Krankheitsrisiko-Vorhersage', 'Medikamentenentdeckung', 'Klinische Studien']
         : ['Disease risk prediction', 'Drug discovery', 'Clinical trials'],
-      color: 'emerald'
+      color: 'emerald',
+      link: '/healthcare'
     },
     {
       icon: '🛡️',
-      title: currentLang === 'es' ? 'Seguros' : 'Insurance',
+      title: currentLang === 'es' ? 'Seguros' : currentLang === 'de' ? 'Versicherungen' : 'Insurance',
       description: currentLang === 'es'
         ? 'Modelos actuariales compartidos que mejoran la precisión sin revelar portafolios.'
+        : currentLang === 'de'
+        ? 'Geteilte aktuarielle Modelle für bessere Genauigkeit ohne Portfolio-Offenlegung.'
         : 'Shared actuarial models improving accuracy without revealing portfolios.',
       examples: currentLang === 'es'
         ? ['Pricing dinámico', 'Detección de fraude de siniestros', 'Análisis de riesgo']
+        : currentLang === 'de'
+        ? ['Dynamische Preisgestaltung', 'Schadensbetrug-Erkennung', 'Risikoanalyse']
         : ['Dynamic pricing', 'Claims fraud detection', 'Risk analysis'],
-      color: 'amber'
+      color: 'amber',
+      link: '/industrias'
     },
     {
       icon: '🏛️',
-      title: currentLang === 'es' ? 'Gobierno' : 'Government',
+      title: currentLang === 'es' ? 'Gobierno' : currentLang === 'de' ? 'Regierung' : 'Government',
       description: currentLang === 'es'
         ? 'Análisis de datos sensibles entre agencias manteniendo privacidad ciudadana.'
+        : currentLang === 'de'
+        ? 'Behördenübergreifende Analyse sensibler Daten unter Wahrung des Bürgerdatenschutzes.'
         : 'Cross-agency sensitive data analysis while maintaining citizen privacy.',
       examples: currentLang === 'es'
         ? ['Detección de fraude fiscal', 'Análisis de seguridad', 'Políticas públicas']
+        : currentLang === 'de'
+        ? ['Steuerbetrug-Erkennung', 'Sicherheitsanalyse', 'Öffentliche Politik']
         : ['Tax fraud detection', 'Security analysis', 'Public policy'],
-      color: 'slate'
+      color: 'slate',
+      link: '/gobierno'
     },
   ]
 
   const comparison = [
-    { feature: currentLang === 'es' ? 'ML sobre datos encriptados' : 'ML on encrypted data', xcapit: true, traditional: false, mpc: 'partial' },
-    { feature: currentLang === 'es' ? 'Gobernanza blockchain' : 'Blockchain governance', xcapit: true, traditional: false, mpc: false },
-    { feature: currentLang === 'es' ? 'Marketplace de modelos' : 'Model marketplace', xcapit: true, traditional: false, mpc: false },
-    { feature: currentLang === 'es' ? 'Compliance automático' : 'Auto compliance', xcapit: true, traditional: 'partial', mpc: false },
-    { feature: currentLang === 'es' ? 'Sin confianza en terceros' : 'Zero trust third party', xcapit: true, traditional: false, mpc: true },
-    { feature: currentLang === 'es' ? 'Explicabilidad del modelo' : 'Model explainability', xcapit: true, traditional: true, mpc: false },
-    { feature: currentLang === 'es' ? 'Inferencia federada' : 'Federated inference', xcapit: true, traditional: false, mpc: 'partial' },
+    { feature: currentLang === 'es' ? 'ML sobre datos encriptados' : currentLang === 'de' ? 'ML auf verschlüsselten Daten' : 'ML on encrypted data', xcapit: true, traditional: false, mpc: 'partial' },
+    { feature: currentLang === 'es' ? 'Gobernanza blockchain' : currentLang === 'de' ? 'Blockchain-Governance' : 'Blockchain governance', xcapit: true, traditional: false, mpc: false },
+    { feature: currentLang === 'es' ? 'Marketplace de modelos' : currentLang === 'de' ? 'Modell-Marktplatz' : 'Model marketplace', xcapit: true, traditional: false, mpc: false },
+    { feature: currentLang === 'es' ? 'Compliance automático' : currentLang === 'de' ? 'Auto-Compliance' : 'Auto compliance', xcapit: true, traditional: 'partial', mpc: false },
+    { feature: currentLang === 'es' ? 'Sin confianza en terceros' : currentLang === 'de' ? 'Zero-Trust Drittparteien' : 'Zero trust third party', xcapit: true, traditional: false, mpc: true },
+    { feature: currentLang === 'es' ? 'Explicabilidad del modelo' : currentLang === 'de' ? 'Modell-Erklärbarkeit' : 'Model explainability', xcapit: true, traditional: true, mpc: false },
+    { feature: currentLang === 'es' ? 'Inferencia federada' : currentLang === 'de' ? 'Föderierte Inferenz' : 'Federated inference', xcapit: true, traditional: false, mpc: 'partial' },
     { feature: 'Open Source', xcapit: true, traditional: 'partial', mpc: 'partial' },
   ]
 
@@ -437,25 +463,31 @@ export default function Landing() {
     {
       quote: currentLang === 'es'
         ? "La plataforma nos permitió colaborar con competidores en detección de fraude sin comprometer datos de clientes. Revolucionario."
+        : currentLang === 'de'
+        ? "Die Plattform ermöglichte uns die Zusammenarbeit mit Wettbewerbern bei der Betrugserkennung ohne Kompromittierung von Kundendaten. Revolutionär."
         : "The platform allowed us to collaborate with competitors on fraud detection without compromising customer data. Revolutionary.",
       author: "CTO, Financial Services",
-      company: currentLang === 'es' ? "Banco Regional" : "Regional Bank",
+      company: currentLang === 'es' ? "Banco Regional" : currentLang === 'de' ? "Regionalbank" : "Regional Bank",
       avatar: "👤"
     },
     {
       quote: currentLang === 'es'
         ? "Finalmente podemos hacer investigación multi-hospital cumpliendo HIPAA. Los resultados son tan precisos como con datos en claro."
+        : currentLang === 'de'
+        ? "Endlich können wir Multi-Krankenhaus-Forschung HIPAA-konform durchführen. Die Ergebnisse sind genauso präzise wie mit Klartextdaten."
         : "We can finally do multi-hospital research while complying with HIPAA. Results are as accurate as with plaintext data.",
       author: "Chief Data Officer",
-      company: currentLang === 'es' ? "Red de Hospitales" : "Hospital Network",
+      company: currentLang === 'es' ? "Red de Hospitales" : currentLang === 'de' ? "Krankenhausnetzwerk" : "Hospital Network",
       avatar: "👤"
     },
     {
       quote: currentLang === 'es'
         ? "La gobernanza descentralizada resolvió nuestros problemas de confianza. Cada participante tiene control total sobre sus contribuciones."
+        : currentLang === 'de'
+        ? "Die dezentrale Governance löste unsere Vertrauensprobleme. Jeder Teilnehmer hat volle Kontrolle über seine Beiträge."
         : "Decentralized governance solved our trust issues. Every participant has full control over their contributions.",
       author: "VP of Data",
-      company: currentLang === 'es' ? "Aseguradora Global" : "Global Insurance Co.",
+      company: currentLang === 'es' ? "Aseguradora Global" : currentLang === 'de' ? "Globale Versicherung AG" : "Global Insurance Co.",
       avatar: "👤"
     },
   ]
@@ -464,49 +496,73 @@ export default function Landing() {
     {
       question: currentLang === 'es'
         ? "¿Qué tan seguro es el cifrado homomórfico?"
+        : currentLang === 'de'
+        ? "Wie sicher ist homomorphe Verschlüsselung?"
         : "How secure is homomorphic encryption?",
       answer: currentLang === 'es'
         ? "Usamos CKKS con 128-bit de seguridad, el mismo nivel usado por instituciones financieras y gobiernos. Los datos nunca se descifran durante el procesamiento - las operaciones matemáticas se realizan directamente sobre los datos encriptados."
+        : currentLang === 'de'
+        ? "Wir verwenden CKKS mit 128-Bit-Sicherheit, das gleiche Niveau wie Finanzinstitute und Regierungen. Daten werden während der Verarbeitung nie entschlüsselt - mathematische Operationen werden direkt auf verschlüsselten Daten ausgeführt."
         : "We use CKKS with 128-bit security, the same level used by financial institutions and governments. Data is never decrypted during processing - mathematical operations are performed directly on encrypted data."
     },
     {
       question: currentLang === 'es'
         ? "¿Cuál es el impacto en performance?"
+        : currentLang === 'de'
+        ? "Wie wirkt sich das auf die Leistung aus?"
         : "What's the performance impact?",
       answer: currentLang === 'es'
         ? "FHE es más lento que computación en claro (típicamente 10-100x), pero usamos batch processing y optimizaciones que hacen viable el uso en producción. Para casos donde la privacidad es crítica, el trade-off es aceptable."
+        : currentLang === 'de'
+        ? "FHE ist langsamer als Klartextberechnung (typischerweise 10-100x), aber wir nutzen Batch-Processing und Optimierungen für produktionstauglichen Einsatz. Für datenschutzkritische Fälle ist der Trade-off akzeptabel."
         : "FHE is slower than plaintext computation (typically 10-100x), but we use batch processing and optimizations that make production use viable. For cases where privacy is critical, the trade-off is acceptable."
     },
     {
       question: currentLang === 'es'
         ? "¿Qué algoritmos de ML soportan?"
+        : currentLang === 'de'
+        ? "Welche ML-Algorithmen werden unterstützt?"
         : "Which ML algorithms do you support?",
       answer: currentLang === 'es'
         ? "Actualmente: Regresión Lineal, Regresión Logística, Árboles de Decisión, KMeans y Ensemble de modelos. Estamos trabajando en soporte para redes neuronales básicas."
+        : currentLang === 'de'
+        ? "Aktuell: Lineare Regression, Logistische Regression, Entscheidungsbäume, KMeans und Modell-Ensembles. Wir arbeiten an der Unterstützung für grundlegende neuronale Netze."
         : "Currently: Linear Regression, Logistic Regression, Decision Trees, KMeans, and Model Ensembles. We're working on basic neural network support."
     },
     {
       question: currentLang === 'es'
         ? "¿Cómo funciona la gobernanza blockchain?"
+        : currentLang === 'de'
+        ? "Wie funktioniert die Blockchain-Governance?"
         : "How does blockchain governance work?",
       answer: currentLang === 'es'
         ? "Desplegamos smart contracts en Arbitrum que registran contribuciones, votos y distribución de ingresos. Todo es auditable y transparente. Los participantes votan propuestas y el sistema ejecuta automáticamente las decisiones."
+        : currentLang === 'de'
+        ? "Wir deployen Smart Contracts auf Arbitrum, die Beiträge, Abstimmungen und Einnahmenverteilung aufzeichnen. Alles ist auditierbar und transparent. Teilnehmer stimmen über Vorschläge ab und das System führt Entscheidungen automatisch aus."
         : "We deploy smart contracts on Arbitrum that record contributions, votes, and revenue distribution. Everything is auditable and transparent. Participants vote on proposals and the system automatically executes decisions."
     },
     {
       question: currentLang === 'es'
         ? "¿Cumple con GDPR/HIPAA?"
+        : currentLang === 'de'
+        ? "Ist es DSGVO/HIPAA-konform?"
         : "Is it GDPR/HIPAA compliant?",
       answer: currentLang === 'es'
         ? "Sí. Como los datos nunca se descifran, no hay exposición de información personal. Nuestro dashboard de compliance verifica automáticamente requisitos regulatorios y genera reportes de auditoría."
+        : currentLang === 'de'
+        ? "Ja. Da Daten nie entschlüsselt werden, gibt es keine Offenlegung persönlicher Informationen. Unser Compliance-Dashboard verifiziert automatisch regulatorische Anforderungen und erstellt Auditberichte."
         : "Yes. Since data is never decrypted, there's no exposure of personal information. Our compliance dashboard automatically verifies regulatory requirements and generates audit reports."
     },
     {
       question: currentLang === 'es'
         ? "¿Puedo probarlo antes de comprar?"
+        : currentLang === 'de'
+        ? "Kann ich es vor dem Kauf testen?"
         : "Can I try before buying?",
       answer: currentLang === 'es'
         ? "Absolutamente. Tenemos un Sandbox gratuito con datos sintéticos donde puedes probar toda la funcionalidad. También ofrecemos POCs personalizados para empresas."
+        : currentLang === 'de'
+        ? "Absolut. Wir haben eine kostenlose Sandbox mit synthetischen Daten, wo Sie alle Funktionen testen können. Wir bieten auch maßgeschneiderte POCs für Unternehmen an."
         : "Absolutely. We have a free Sandbox with synthetic data where you can test all functionality. We also offer custom POCs for enterprises."
     },
   ]
@@ -545,13 +601,13 @@ export default function Landing() {
             </div>
             <div className="hidden md:flex items-center gap-6">
               <a href="#features" className={`font-medium transition-colors ${scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-white'}`}>
-                {currentLang === 'es' ? 'Características' : 'Features'}
+                {currentLang === 'es' ? 'Características' : currentLang === 'de' ? 'Funktionen' : 'Features'}
               </a>
               <a href="#use-cases" className={`font-medium transition-colors ${scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-white'}`}>
-                {currentLang === 'es' ? 'Casos de Uso' : 'Use Cases'}
+                {currentLang === 'es' ? 'Casos de Uso' : currentLang === 'de' ? 'Anwendungsfälle' : 'Use Cases'}
               </a>
               <a href="#pricing" className={`font-medium transition-colors ${scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-white'}`}>
-                {currentLang === 'es' ? 'Precios' : 'Pricing'}
+                {currentLang === 'es' ? 'Precios' : currentLang === 'de' ? 'Preise' : 'Pricing'}
               </a>
               <Link to="/demos" className={`font-medium transition-colors ${scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-white'}`}>
                 Demos
@@ -599,7 +655,7 @@ export default function Landing() {
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
                 </span>
                 <span className="text-white/90 text-sm font-medium">
-                  {currentLang === 'es' ? 'Plataforma v1.0 - Producción Lista' : 'Platform v1.0 - Production Ready'}
+                  {currentLang === 'es' ? 'Plataforma v1.0 - Producción Lista' : currentLang === 'de' ? 'Plattform v1.0 - Produktionsbereit' : 'Platform v1.0 - Production Ready'}
                 </span>
               </div>
 
@@ -607,13 +663,15 @@ export default function Landing() {
                 {currentLang === 'es' ? 'Machine Learning' : 'Machine Learning'}
                 <br />
                 <span className="bg-gradient-to-r from-brand-400 to-indigo-400 bg-clip-text text-transparent">
-                  {currentLang === 'es' ? 'Sin Ver Tus Datos' : 'Without Seeing Your Data'}
+                  {currentLang === 'es' ? 'Sin Ver Tus Datos' : currentLang === 'de' ? 'Ohne Ihre Daten zu Sehen' : 'Without Seeing Your Data'}
                 </span>
               </h1>
 
               <p className="text-lg lg:text-xl text-slate-300 mb-8 max-w-xl leading-relaxed">
                 {currentLang === 'es'
                   ? 'Entrena modelos colaborativos entre empresas con cifrado homomórfico. Los datos nunca se descifran. Gobernanza transparente en blockchain.'
+                  : currentLang === 'de'
+                  ? 'Trainieren Sie kollaborative Modelle zwischen Unternehmen mit homomorpher Verschlüsselung. Daten werden nie entschlüsselt. Transparente Blockchain-Governance.'
                   : 'Train collaborative models across companies with homomorphic encryption. Data is never decrypted. Transparent blockchain governance.'}
               </p>
 
@@ -625,7 +683,7 @@ export default function Landing() {
                   <svg className="w-6 h-6 text-brand-600" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M8 5v14l11-7z"/>
                   </svg>
-                  {currentLang === 'es' ? 'Ver Demo' : 'Watch Demo'}
+                  {currentLang === 'es' ? 'Ver Demo' : currentLang === 'de' ? 'Demo ansehen' : 'Watch Demo'}
                   <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
@@ -634,7 +692,7 @@ export default function Landing() {
                   to="/register"
                   className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-500 to-indigo-500 text-white px-8 py-4 rounded-xl font-semibold hover:from-brand-600 hover:to-indigo-600 transition text-lg border border-white/20"
                 >
-                  {currentLang === 'es' ? 'Empezar Gratis' : 'Start Free'}
+                  {currentLang === 'es' ? 'Empezar Gratis' : currentLang === 'de' ? 'Kostenlos starten' : 'Start Free'}
                 </Link>
               </div>
 
@@ -672,7 +730,7 @@ export default function Landing() {
                         LIVE
                       </span>
                       <span className="text-white/80">
-                        {currentLang === 'es' ? 'Demo en vivo del consorcio' : 'Live consortium demo'}
+                        {currentLang === 'es' ? 'Demo en vivo del consorcio' : currentLang === 'de' ? 'Live-Konsortium-Demo' : 'Live consortium demo'}
                       </span>
                     </div>
                   </div>
@@ -688,7 +746,7 @@ export default function Landing() {
                     </div>
                     <div>
                       <div className="text-2xl font-bold text-slate-900">100%</div>
-                      <div className="text-sm text-slate-600">{currentLang === 'es' ? 'Datos Privados' : 'Data Private'}</div>
+                      <div className="text-sm text-slate-600">{currentLang === 'es' ? 'Datos Privados' : currentLang === 'de' ? 'Daten Privat' : 'Data Private'}</div>
                     </div>
                   </div>
                 </div>
@@ -702,7 +760,7 @@ export default function Landing() {
                     </div>
                     <div>
                       <div className="text-2xl font-bold text-slate-900">FHE</div>
-                      <div className="text-sm text-slate-600">{currentLang === 'es' ? 'Encriptación' : 'Encryption'}</div>
+                      <div className="text-sm text-slate-600">{currentLang === 'es' ? 'Encriptación' : currentLang === 'de' ? 'Verschlüsselung' : 'Encryption'}</div>
                     </div>
                   </div>
                 </div>
@@ -725,7 +783,7 @@ export default function Landing() {
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div className="text-center md:text-left">
               <p className="text-sm text-slate-500 mb-2 uppercase tracking-wider">
-                {currentLang === 'es' ? 'Respaldado por' : 'Backed by'}
+                {currentLang === 'es' ? 'Respaldado por' : currentLang === 'de' ? 'Unterstützt von' : 'Backed by'}
               </p>
               <div className="flex items-center justify-center md:justify-start gap-4">
                 <a href="https://quarkid.org" target="_blank" rel="noopener noreferrer" className="group">
@@ -733,14 +791,14 @@ export default function Landing() {
                     QuarkID
                   </div>
                   <div className="text-sm text-slate-500">
-                    {currentLang === 'es' ? '3.6M+ usuarios' : '3.6M+ users'}
+                    {currentLang === 'es' ? '3.6M+ usuarios' : currentLang === 'de' ? '3.6M+ Nutzer' : '3.6M+ users'}
                   </div>
                 </a>
               </div>
             </div>
             <div className="text-center md:text-right">
               <p className="text-sm text-slate-500 mb-4 uppercase tracking-wider">
-                {currentLang === 'es' ? 'Tecnologías' : 'Technologies'}
+                {currentLang === 'es' ? 'Tecnologías' : currentLang === 'de' ? 'Technologien' : 'Technologies'}
               </p>
               <div className="flex flex-wrap justify-center md:justify-end items-center gap-6">
                 {techStack.map((tech, index) => (
@@ -762,14 +820,16 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <span className="inline-block px-4 py-1 bg-brand-100 text-brand-700 rounded-full text-sm font-medium mb-4">
-              {currentLang === 'es' ? 'Características' : 'Features'}
+              {currentLang === 'es' ? 'Características' : currentLang === 'de' ? 'Funktionen' : 'Features'}
             </span>
             <h2 className="text-4xl font-bold text-slate-900 mb-4">
-              {currentLang === 'es' ? 'Todo lo que necesitas para ML privado' : 'Everything you need for private ML'}
+              {currentLang === 'es' ? 'Todo lo que necesitas para ML privado' : currentLang === 'de' ? 'Alles für privates ML' : 'Everything you need for private ML'}
             </h2>
             <p className="text-xl text-slate-600 max-w-2xl mx-auto">
               {currentLang === 'es'
                 ? 'Una plataforma completa para colaboración en machine learning preservando la privacidad.'
+                : currentLang === 'de'
+                ? 'Eine vollständige Plattform für datenschutzerhaltende ML-Zusammenarbeit.'
                 : 'A complete platform for privacy-preserving machine learning collaboration.'}
             </p>
           </div>
@@ -797,40 +857,49 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <span className="inline-block px-4 py-1 bg-emerald-100 text-emerald-700 rounded-full text-sm font-medium mb-4">
-              {currentLang === 'es' ? 'Casos de Uso' : 'Use Cases'}
+              {currentLang === 'es' ? 'Casos de Uso' : currentLang === 'de' ? 'Anwendungsfälle' : 'Use Cases'}
             </span>
             <h2 className="text-4xl font-bold text-slate-900 mb-4">
-              {currentLang === 'es' ? 'Industrias que transformamos' : 'Industries we transform'}
+              {currentLang === 'es' ? 'Industrias que transformamos' : currentLang === 'de' ? 'Branchen, die wir transformieren' : 'Industries we transform'}
             </h2>
             <p className="text-xl text-slate-600 max-w-2xl mx-auto">
               {currentLang === 'es'
                 ? 'Soluciones adaptadas para los desafíos de privacidad de datos más críticos.'
+                : currentLang === 'de'
+                ? 'Lösungen für die kritischsten Datenschutz-Herausforderungen.'
                 : 'Solutions tailored for the most critical data privacy challenges.'}
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8">
             {useCases.map((useCase, index) => (
-              <div
+              <Link
                 key={index}
-                className={`bg-white rounded-2xl p-8 border-l-4 ${
-                  useCase.color === 'blue' ? 'border-blue-500' :
-                  useCase.color === 'emerald' ? 'border-emerald-500' :
-                  useCase.color === 'amber' ? 'border-amber-500' :
-                  'border-slate-500'
-                } hover:shadow-xl transition-shadow`}
+                to={useCase.link}
+                className={`group bg-white rounded-2xl p-8 border-l-4 ${
+                  useCase.color === 'blue' ? 'border-blue-500 hover:border-blue-600' :
+                  useCase.color === 'emerald' ? 'border-emerald-500 hover:border-emerald-600' :
+                  useCase.color === 'amber' ? 'border-amber-500 hover:border-amber-600' :
+                  'border-slate-500 hover:border-slate-600'
+                } hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer`}
               >
-                <div className="text-4xl mb-4">{useCase.icon}</div>
-                <h3 className="text-2xl font-semibold text-slate-900 mb-3">{useCase.title}</h3>
+                <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">{useCase.icon}</div>
+                <h3 className="text-2xl font-semibold text-slate-900 mb-3 group-hover:text-brand-600 transition-colors">{useCase.title}</h3>
                 <p className="text-slate-600 mb-6">{useCase.description}</p>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 mb-4">
                   {useCase.examples.map((example, i) => (
                     <span key={i} className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-sm">
                       {example}
                     </span>
                   ))}
                 </div>
-              </div>
+                <span className="inline-flex items-center gap-2 text-brand-600 font-semibold group-hover:gap-3 transition-all">
+                  {currentLang === 'es' ? 'Ver soluciones' : currentLang === 'de' ? 'Lösungen ansehen' : 'View solutions'}
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </span>
+              </Link>
             ))}
           </div>
         </div>
@@ -841,14 +910,16 @@ export default function Landing() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <span className="inline-block px-4 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium mb-4">
-              {currentLang === 'es' ? 'Comparativa' : 'Comparison'}
+              {currentLang === 'es' ? 'Comparativa' : currentLang === 'de' ? 'Vergleich' : 'Comparison'}
             </span>
             <h2 className="text-4xl font-bold text-slate-900 mb-4">
-              {currentLang === 'es' ? '¿Por qué Xcapit Privacy?' : 'Why Xcapit Privacy?'}
+              {currentLang === 'es' ? '¿Por qué Xcapit Privacy?' : currentLang === 'de' ? 'Warum Xcapit Privacy?' : 'Why Xcapit Privacy?'}
             </h2>
             <p className="text-xl text-slate-600 max-w-2xl mx-auto">
               {currentLang === 'es'
                 ? 'Combinamos lo mejor del cifrado homomórfico con gobernanza blockchain.'
+                : currentLang === 'de'
+                ? 'Wir kombinieren das Beste aus homomorpher Verschlüsselung mit Blockchain-Governance.'
                 : 'We combine the best of homomorphic encryption with blockchain governance.'}
             </p>
           </div>
@@ -856,11 +927,11 @@ export default function Landing() {
           <div className="bg-slate-50 rounded-2xl overflow-hidden border border-slate-200">
             <div className="grid grid-cols-4 bg-slate-100 border-b border-slate-200">
               <div className="p-4 font-semibold text-slate-900">
-                {currentLang === 'es' ? 'Característica' : 'Feature'}
+                {currentLang === 'es' ? 'Característica' : currentLang === 'de' ? 'Funktion' : 'Feature'}
               </div>
               <div className="p-4 text-center font-semibold text-brand-600">Xcapit</div>
               <div className="p-4 text-center font-semibold text-slate-600">
-                {currentLang === 'es' ? 'ML Tradicional' : 'Traditional ML'}
+                {currentLang === 'es' ? 'ML Tradicional' : currentLang === 'de' ? 'Traditionelles ML' : 'Traditional ML'}
               </div>
               <div className="p-4 text-center font-semibold text-slate-600">MPC</div>
             </div>
@@ -923,10 +994,10 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <span className="inline-block px-4 py-1 bg-brand-500/20 text-brand-400 rounded-full text-sm font-medium mb-4">
-              {currentLang === 'es' ? 'Testimonios' : 'Testimonials'}
+              {currentLang === 'es' ? 'Testimonios' : currentLang === 'de' ? 'Referenzen' : 'Testimonials'}
             </span>
             <h2 className="text-4xl font-bold text-white mb-4">
-              {currentLang === 'es' ? 'Lo que dicen nuestros usuarios' : 'What our users say'}
+              {currentLang === 'es' ? 'Lo que dicen nuestros usuarios' : currentLang === 'de' ? 'Was unsere Nutzer sagen' : 'What our users say'}
             </h2>
           </div>
 
@@ -961,14 +1032,16 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <span className="inline-block px-4 py-1 bg-amber-100 text-amber-700 rounded-full text-sm font-medium mb-4">
-              {currentLang === 'es' ? 'Precios' : 'Pricing'}
+              {currentLang === 'es' ? 'Precios' : currentLang === 'de' ? 'Preise' : 'Pricing'}
             </span>
             <h2 className="text-4xl font-bold text-slate-900 mb-4">
-              {currentLang === 'es' ? 'Plan simple, valor extraordinario' : 'Simple plan, extraordinary value'}
+              {currentLang === 'es' ? 'Plan simple, valor extraordinario' : currentLang === 'de' ? 'Einfacher Plan, außergewöhnlicher Wert' : 'Simple plan, extraordinary value'}
             </h2>
             <p className="text-xl text-slate-600 max-w-2xl mx-auto">
               {currentLang === 'es'
                 ? 'Comienza gratis, escala según tus necesidades.'
+                : currentLang === 'de'
+                ? 'Starten Sie kostenlos, skalieren Sie nach Bedarf.'
                 : 'Start free, scale as you need.'}
             </p>
           </div>
@@ -978,17 +1051,17 @@ export default function Landing() {
             <div className="bg-white rounded-2xl p-8 border-2 border-slate-200 hover:border-slate-300 transition">
               <div className="text-lg font-semibold text-slate-900 mb-2">Sandbox</div>
               <div className="flex items-baseline gap-1 mb-4">
-                <span className="text-4xl font-bold text-slate-900">{currentLang === 'es' ? 'Gratis' : 'Free'}</span>
+                <span className="text-4xl font-bold text-slate-900">{currentLang === 'es' ? 'Gratis' : currentLang === 'de' ? 'Kostenlos' : 'Free'}</span>
               </div>
               <p className="text-slate-600 mb-6">
-                {currentLang === 'es' ? 'Perfecto para probar y aprender.' : 'Perfect to test and learn.'}
+                {currentLang === 'es' ? 'Perfecto para probar y aprender.' : currentLang === 'de' ? 'Perfekt zum Testen und Lernen.' : 'Perfect to test and learn.'}
               </p>
               <ul className="space-y-3 mb-8">
                 {[
-                  currentLang === 'es' ? 'Datos sintéticos' : 'Synthetic data',
-                  currentLang === 'es' ? 'Todos los modelos ML' : 'All ML models',
-                  currentLang === 'es' ? '1 consorcio de prueba' : '1 test consortium',
-                  currentLang === 'es' ? 'Dashboard completo' : 'Full dashboard',
+                  currentLang === 'es' ? 'Datos sintéticos' : currentLang === 'de' ? 'Synthetische Daten' : 'Synthetic data',
+                  currentLang === 'es' ? 'Todos los modelos ML' : currentLang === 'de' ? 'Alle ML-Modelle' : 'All ML models',
+                  currentLang === 'es' ? '1 consorcio de prueba' : currentLang === 'de' ? '1 Test-Konsortium' : '1 test consortium',
+                  currentLang === 'es' ? 'Dashboard completo' : currentLang === 'de' ? 'Vollständiges Dashboard' : 'Full dashboard',
                 ].map((feature, i) => (
                   <li key={i} className="flex items-center gap-2 text-slate-600">
                     <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
@@ -999,30 +1072,30 @@ export default function Landing() {
                 ))}
               </ul>
               <Link to="/register" className="block w-full text-center bg-slate-100 text-slate-700 py-3 rounded-xl font-semibold hover:bg-slate-200 transition">
-                {currentLang === 'es' ? 'Empezar Gratis' : 'Start Free'}
+                {currentLang === 'es' ? 'Empezar Gratis' : currentLang === 'de' ? 'Kostenlos starten' : 'Start Free'}
               </Link>
             </div>
 
             {/* Pro Tier */}
             <div className="bg-gradient-to-br from-brand-600 to-indigo-600 rounded-2xl p-8 text-white relative transform md:scale-105 shadow-xl">
               <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-amber-400 text-amber-900 rounded-full text-sm font-bold">
-                {currentLang === 'es' ? 'MÁS POPULAR' : 'MOST POPULAR'}
+                {currentLang === 'es' ? 'MÁS POPULAR' : currentLang === 'de' ? 'BELIEBTESTE' : 'MOST POPULAR'}
               </div>
               <div className="text-lg font-semibold mb-2">Pro</div>
               <div className="flex items-baseline gap-1 mb-4">
                 <span className="text-4xl font-bold">$999</span>
-                <span className="text-brand-200">/{currentLang === 'es' ? 'mes' : 'month'}</span>
+                <span className="text-brand-200">/{currentLang === 'es' ? 'mes' : currentLang === 'de' ? 'Monat' : 'month'}</span>
               </div>
               <p className="text-brand-100 mb-6">
-                {currentLang === 'es' ? 'Para equipos que necesitan colaboración real.' : 'For teams that need real collaboration.'}
+                {currentLang === 'es' ? 'Para equipos que necesitan colaboración real.' : currentLang === 'de' ? 'Für Teams, die echte Zusammenarbeit brauchen.' : 'For teams that need real collaboration.'}
               </p>
               <ul className="space-y-3 mb-8">
                 {[
-                  currentLang === 'es' ? 'Datos reales encriptados' : 'Real encrypted data',
-                  currentLang === 'es' ? '5 consorcios activos' : '5 active consortiums',
-                  currentLang === 'es' ? 'Gobernanza blockchain' : 'Blockchain governance',
-                  currentLang === 'es' ? 'Dashboard de compliance' : 'Compliance dashboard',
-                  currentLang === 'es' ? 'Soporte prioritario' : 'Priority support',
+                  currentLang === 'es' ? 'Datos reales encriptados' : currentLang === 'de' ? 'Echte verschlüsselte Daten' : 'Real encrypted data',
+                  currentLang === 'es' ? '5 consorcios activos' : currentLang === 'de' ? '5 aktive Konsortien' : '5 active consortiums',
+                  currentLang === 'es' ? 'Gobernanza blockchain' : currentLang === 'de' ? 'Blockchain-Governance' : 'Blockchain governance',
+                  currentLang === 'es' ? 'Dashboard de compliance' : currentLang === 'de' ? 'Compliance-Dashboard' : 'Compliance dashboard',
+                  currentLang === 'es' ? 'Soporte prioritario' : currentLang === 'de' ? 'Prioritätssupport' : 'Priority support',
                 ].map((feature, i) => (
                   <li key={i} className="flex items-center gap-2">
                     <svg className="w-5 h-5 text-brand-200" fill="currentColor" viewBox="0 0 20 20">
@@ -1033,7 +1106,7 @@ export default function Landing() {
                 ))}
               </ul>
               <Link to="/register" className="block w-full text-center bg-white text-brand-600 py-3 rounded-xl font-semibold hover:bg-brand-50 transition">
-                {currentLang === 'es' ? 'Comenzar Ahora' : 'Get Started'}
+                {currentLang === 'es' ? 'Comenzar Ahora' : currentLang === 'de' ? 'Jetzt starten' : 'Get Started'}
               </Link>
             </div>
 
@@ -1041,18 +1114,18 @@ export default function Landing() {
             <div className="bg-white rounded-2xl p-8 border-2 border-slate-200 hover:border-slate-300 transition">
               <div className="text-lg font-semibold text-slate-900 mb-2">Enterprise</div>
               <div className="flex items-baseline gap-1 mb-4">
-                <span className="text-4xl font-bold text-slate-900">{currentLang === 'es' ? 'Custom' : 'Custom'}</span>
+                <span className="text-4xl font-bold text-slate-900">{currentLang === 'es' ? 'Custom' : currentLang === 'de' ? 'Individuell' : 'Custom'}</span>
               </div>
               <p className="text-slate-600 mb-6">
-                {currentLang === 'es' ? 'Soluciones a medida para grandes organizaciones.' : 'Custom solutions for large organizations.'}
+                {currentLang === 'es' ? 'Soluciones a medida para grandes organizaciones.' : currentLang === 'de' ? 'Maßgeschneiderte Lösungen für große Organisationen.' : 'Custom solutions for large organizations.'}
               </p>
               <ul className="space-y-3 mb-8">
                 {[
-                  currentLang === 'es' ? 'Consorcios ilimitados' : 'Unlimited consortiums',
-                  currentLang === 'es' ? 'Despliegue on-premise' : 'On-premise deployment',
-                  currentLang === 'es' ? 'SLA garantizado' : 'Guaranteed SLA',
-                  currentLang === 'es' ? 'Integración personalizada' : 'Custom integration',
-                  currentLang === 'es' ? 'Account manager dedicado' : 'Dedicated account manager',
+                  currentLang === 'es' ? 'Consorcios ilimitados' : currentLang === 'de' ? 'Unbegrenzte Konsortien' : 'Unlimited consortiums',
+                  currentLang === 'es' ? 'Despliegue on-premise' : currentLang === 'de' ? 'On-Premise-Bereitstellung' : 'On-premise deployment',
+                  currentLang === 'es' ? 'SLA garantizado' : currentLang === 'de' ? 'Garantiertes SLA' : 'Guaranteed SLA',
+                  currentLang === 'es' ? 'Integración personalizada' : currentLang === 'de' ? 'Individuelle Integration' : 'Custom integration',
+                  currentLang === 'es' ? 'Account manager dedicado' : currentLang === 'de' ? 'Dedizierter Account Manager' : 'Dedicated account manager',
                 ].map((feature, i) => (
                   <li key={i} className="flex items-center gap-2 text-slate-600">
                     <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
@@ -1063,7 +1136,7 @@ export default function Landing() {
                 ))}
               </ul>
               <a href="#contact" className="block w-full text-center bg-slate-900 text-white py-3 rounded-xl font-semibold hover:bg-slate-800 transition">
-                {currentLang === 'es' ? 'Contactar Ventas' : 'Contact Sales'}
+                {currentLang === 'es' ? 'Contactar Ventas' : currentLang === 'de' ? 'Vertrieb kontaktieren' : 'Contact Sales'}
               </a>
             </div>
           </div>
@@ -1078,7 +1151,7 @@ export default function Landing() {
               FAQ
             </span>
             <h2 className="text-4xl font-bold text-slate-900 mb-4">
-              {currentLang === 'es' ? 'Preguntas Frecuentes' : 'Frequently Asked Questions'}
+              {currentLang === 'es' ? 'Preguntas Frecuentes' : currentLang === 'de' ? 'Häufig gestellte Fragen' : 'Frequently Asked Questions'}
             </h2>
           </div>
 
@@ -1101,7 +1174,7 @@ export default function Landing() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <span className="inline-block px-4 py-1 bg-brand-100 text-brand-700 rounded-full text-sm font-medium mb-4">
-              {currentLang === 'es' ? 'Contacto' : 'Contact'}
+              {currentLang === 'es' ? 'Contacto' : currentLang === 'de' ? 'Kontakt' : 'Contact'}
             </span>
             <h2 className="text-4xl font-bold text-slate-900 mb-4">{t('landing.contact.title')}</h2>
             <p className="text-xl text-slate-600">{t('landing.contact.subtitle')}</p>
@@ -1119,11 +1192,15 @@ export default function Landing() {
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
             {currentLang === 'es'
               ? '¿Listo para revolucionar tu ML?'
+              : currentLang === 'de'
+              ? 'Bereit, Ihr ML zu revolutionieren?'
               : 'Ready to revolutionize your ML?'}
           </h2>
           <p className="text-xl text-slate-300 mb-10 max-w-2xl mx-auto">
             {currentLang === 'es'
               ? 'Únete a las empresas que ya colaboran de forma segura con sus datos más sensibles.'
+              : currentLang === 'de'
+              ? 'Schließen Sie sich Unternehmen an, die bereits sicher mit ihren sensibelsten Daten zusammenarbeiten.'
               : 'Join companies already collaborating securely with their most sensitive data.'}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -1131,7 +1208,7 @@ export default function Landing() {
               to="/register"
               className="inline-flex items-center justify-center bg-white text-slate-900 px-8 py-4 rounded-xl font-semibold hover:bg-slate-100 transition text-lg shadow-2xl"
             >
-              {currentLang === 'es' ? 'Crear Cuenta Gratis' : 'Create Free Account'}
+              {currentLang === 'es' ? 'Crear Cuenta Gratis' : currentLang === 'de' ? 'Kostenloses Konto erstellen' : 'Create Free Account'}
               <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
               </svg>
@@ -1143,7 +1220,7 @@ export default function Landing() {
               <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M8 5v14l11-7z"/>
               </svg>
-              {currentLang === 'es' ? 'Ver Demos' : 'Watch Demos'}
+              {currentLang === 'es' ? 'Ver Demos' : currentLang === 'de' ? 'Demos ansehen' : 'Watch Demos'}
             </Link>
           </div>
         </div>
@@ -1166,20 +1243,22 @@ export default function Landing() {
               <p className="text-slate-400 max-w-md">
                 {currentLang === 'es'
                   ? 'Plataforma de machine learning colaborativo con cifrado homomórfico y gobernanza blockchain.'
+                  : currentLang === 'de'
+                  ? 'Kollaborative Machine-Learning-Plattform mit homomorpher Verschlüsselung und Blockchain-Governance.'
                   : 'Collaborative machine learning platform with homomorphic encryption and blockchain governance.'}
               </p>
             </div>
             <div>
-              <h4 className="text-white font-semibold mb-4">{currentLang === 'es' ? 'Producto' : 'Product'}</h4>
+              <h4 className="text-white font-semibold mb-4">{currentLang === 'es' ? 'Producto' : currentLang === 'de' ? 'Produkt' : 'Product'}</h4>
               <ul className="space-y-2">
                 <li><Link to="/demos" className="text-slate-400 hover:text-white transition">Demos</Link></li>
-                <li><a href="#features" className="text-slate-400 hover:text-white transition">{currentLang === 'es' ? 'Características' : 'Features'}</a></li>
-                <li><a href="#pricing" className="text-slate-400 hover:text-white transition">{currentLang === 'es' ? 'Precios' : 'Pricing'}</a></li>
-                <li><Link to="/register" className="text-slate-400 hover:text-white transition">{currentLang === 'es' ? 'Registrarse' : 'Sign Up'}</Link></li>
+                <li><a href="#features" className="text-slate-400 hover:text-white transition">{currentLang === 'es' ? 'Características' : currentLang === 'de' ? 'Funktionen' : 'Features'}</a></li>
+                <li><a href="#pricing" className="text-slate-400 hover:text-white transition">{currentLang === 'es' ? 'Precios' : currentLang === 'de' ? 'Preise' : 'Pricing'}</a></li>
+                <li><Link to="/register" className="text-slate-400 hover:text-white transition">{currentLang === 'es' ? 'Registrarse' : currentLang === 'de' ? 'Registrieren' : 'Sign Up'}</Link></li>
               </ul>
             </div>
             <div>
-              <h4 className="text-white font-semibold mb-4">{currentLang === 'es' ? 'Contacto' : 'Contact'}</h4>
+              <h4 className="text-white font-semibold mb-4">{currentLang === 'es' ? 'Contacto' : currentLang === 'de' ? 'Kontakt' : 'Contact'}</h4>
               <ul className="space-y-2">
                 <li><a href="mailto:consorcios@xcapit.com" className="text-slate-400 hover:text-white transition">consorcios@xcapit.com</a></li>
                 <li><a href="https://github.com/xcapit" className="text-slate-400 hover:text-white transition">GitHub</a></li>
@@ -1189,11 +1268,11 @@ export default function Landing() {
           </div>
           <div className="pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-slate-500 text-sm">
-              © 2025 Xcapit Privacy. {currentLang === 'es' ? 'Todos los derechos reservados.' : 'All rights reserved.'}
+              © 2025 Xcapit Privacy. {currentLang === 'es' ? 'Todos los derechos reservados.' : currentLang === 'de' ? 'Alle Rechte vorbehalten.' : 'All rights reserved.'}
             </p>
             <div className="flex items-center gap-6">
-              <a href="#" className="text-slate-500 hover:text-slate-300 text-sm">{currentLang === 'es' ? 'Privacidad' : 'Privacy'}</a>
-              <a href="#" className="text-slate-500 hover:text-slate-300 text-sm">{currentLang === 'es' ? 'Términos' : 'Terms'}</a>
+              <a href="#" className="text-slate-500 hover:text-slate-300 text-sm">{currentLang === 'es' ? 'Privacidad' : currentLang === 'de' ? 'Datenschutz' : 'Privacy'}</a>
+              <a href="#" className="text-slate-500 hover:text-slate-300 text-sm">{currentLang === 'es' ? 'Términos' : currentLang === 'de' ? 'AGB' : 'Terms'}</a>
             </div>
           </div>
         </div>

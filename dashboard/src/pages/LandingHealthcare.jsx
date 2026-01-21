@@ -265,6 +265,22 @@ function ContactForm({ lang }) {
       success: 'Message sent. We\'ll contact you soon.',
       error: 'Error sending. Please try again.',
       also: 'You can also contact us at'
+    },
+    de: {
+      title: 'Healthcare-Demo buchen',
+      subtitle: 'Wir zeigen Ihnen, wie es mit einem echten kollaborativen Diagnosefall funktioniert.',
+      name: 'Vollständiger Name',
+      email: 'Firmen-E-Mail',
+      company: 'Organisation',
+      phone: 'Telefon',
+      position: 'Position',
+      useCase: 'Interessanter Anwendungsfall',
+      useCases: ['Kollaborative Diagnose', 'Drug Discovery', 'Klinische Studien', 'Sonstiges'],
+      submit: 'Demo buchen',
+      sending: 'Wird gesendet...',
+      success: 'Nachricht gesendet. Wir melden uns bald.',
+      error: 'Fehler beim Senden. Bitte erneut versuchen.',
+      also: 'Sie können uns auch kontaktieren unter'
     }
   }
 
@@ -507,7 +523,7 @@ function DifferentiatorRow({ option, problem, xcapit, delay = 0, isVisible = tru
 
 export default function LandingHealthcare() {
   const { i18n } = useTranslation()
-  const lang = i18n.language?.startsWith('es') ? 'es' : 'en'
+  const lang = i18n.language?.startsWith('es') ? 'es' : i18n.language?.startsWith('de') ? 'de' : 'en'
 
   // Scroll animation refs for each section
   const [heroRef, heroVisible] = useScrollAnimation(0.1)
@@ -731,6 +747,114 @@ export default function LandingHealthcare() {
         links: {
           industries: 'Other industries',
           docs: 'Documentation',
+          github: 'GitHub'
+        }
+      }
+    },
+    de: {
+      nav: {
+        casosUso: 'Anwendungsfälle',
+        comoFunciona: 'So funktioniert\'s',
+        compliance: 'Compliance',
+        demo: 'Demo'
+      },
+      hero: {
+        badge: 'Healthcare & Life Sciences',
+        headline: 'Kollaborative medizinische Forschung',
+        highlight: 'ohne einen einzigen Patienten preiszugeben.',
+        subheadline: 'Krankenhäuser und Pharmaunternehmen können Diagnosemodelle mit Daten von Millionen Patienten trainieren. Ohne HIPAA zu verletzen. Ohne Akten zu teilen. Mit homomorpher Verschlüsselung.',
+        cta: 'Demo buchen',
+        ctaSecondary: 'So funktioniert\'s',
+        stats: {
+          accuracy: { value: '+35%', label: 'Diagnosegenauigkeit' },
+          time: { value: '-40%', label: 'Discovery-Zeit' },
+          compliance: { value: '100%', label: 'HIPAA-konform' }
+        }
+      },
+      trustedBy: {
+        title: 'Technologie validiert von führenden Institutionen',
+        partners: ['Microsoft SEAL', 'OpenFHE', 'HElib', 'PALISADE']
+      },
+      problem: {
+        title: 'Die besten Diagnosen erfordern Daten, die Sie nie haben werden',
+        points: [
+          {
+            title: 'Das Datenschutz-Dilemma',
+            desc: 'Jedes Krankenhaus hat einzigartige Patientendaten. Ein Modell trainiert mit Daten von 100 Krankenhäusern wäre 10x präziser. Aber HIPAA und medizinische Ethik machen Teilen unmöglich.',
+            icon: '🔒'
+          },
+          {
+            title: 'Seltene Krankheiten = unzureichende Daten',
+            desc: 'Bei seltenen Krankheiten hat kein einzelnes Krankenhaus genug Fälle für zuverlässige Modelle. Die Fälle existieren, verstreut über tausende Institutionen.',
+            icon: '🧬'
+          },
+          {
+            title: 'Langsame und teure Medikamentenentwicklung',
+            desc: 'Die Entwicklung eines Medikaments dauert 10+ Jahre und $2B. Die meiste Zeit geht für ausreichende klinische Daten verloren.',
+            icon: '💊'
+          }
+        ]
+      },
+      solution: {
+        title: 'Medizinische Zusammenarbeit ohne Patienten preiszugeben',
+        desc: 'Mit homomorpher Verschlüsselung verlassen Patientendaten nie das Krankenhaus. Nur verschlüsselte Versionen für gemeinsames Modelltraining. Niemand kann Akten rekonstruieren.',
+        steps: [
+          { title: 'Verschlüsselung im Krankenhaus', desc: 'Patientendaten werden lokal verschlüsselt. Akten verlassen nie das Haus.' },
+          { title: 'Föderiertes Training', desc: 'Modell trainiert auf verschlüsselten Daten mehrerer Krankenhäuser.' },
+          { title: 'Bessere Diagnosen', desc: 'Jedes Krankenhaus erhält ein besseres Modell ohne Daten preiszugeben.' }
+        ]
+      },
+      useCases: {
+        title: 'Anwendungsfälle',
+        subtitle: 'Spezifische Lösungen für den Gesundheitssektor',
+        cases: [
+          {
+            title: 'KI-unterstützte Diagnose',
+            problem: 'Ihr Krankenhaus hat 1.000 Fälle einer Erkrankung gesehen. Andere haben 100.000. Das Modell mit diesen Daten wäre dramatisch besser.',
+            solution: 'Trainieren Sie Diagnosemodelle mit Daten eines gesamten Krankenhausnetzwerks ohne identifizierbare Patienten.',
+            metric: '+35% Genauigkeit'
+          },
+          {
+            title: 'Beschleunigte Medikamentenentdeckung',
+            problem: 'Kandidaten für neue Medikamente zu identifizieren erfordert Analyse von tausenden Patientenreaktionen. Diese Daten sind isoliert.',
+            solution: 'Wirksamkeits- und Nebenwirkungsanalyse auf verschlüsselten klinischen Daten mehrerer Studien.',
+            metric: '-40% Zeit'
+          },
+          {
+            title: 'Multi-Center Klinische Studien',
+            problem: 'Eine Multi-Center-Studie erfordert, dass jedes Krankenhaus Patientendaten mit dem Sponsor teilt. Das erzeugt Reibung und rechtliche Risiken.',
+            solution: 'Jedes Zentrum behält seine Daten lokal. Analyse läuft auf verschlüsselten Daten. Der Sponsor sieht nie Rohdaten.',
+            metric: '-60% Reibung'
+          }
+        ]
+      },
+      compliance: {
+        title: 'HIPAA ohne Kompromisse. Medizinische Ethik intakt.',
+        desc: 'Homomorphe Verschlüsselung eliminiert die ethische Debatte über Patientendaten-Sharing. Sie teilen keine Daten - Sie teilen verschlüsselte Versionen, die niemand entschlüsseln kann.',
+        badges: ['HIPAA', 'DSGVO', '21 CFR Part 11', 'IRB Ready', 'ANVISA']
+      },
+      differentiators: {
+        title: 'Warum nicht andere Lösungen?',
+        subtitle: 'Vergleich mit traditionellen Alternativen',
+        items: [
+          { option: 'Data Clean Rooms', problem: 'Daten zentralisieren noch bei Dritten', xcapit: 'Daten verlassen nie das Krankenhaus' },
+          { option: 'Traditionelles Federated Learning', problem: 'Modell reist, Informationen können extrahiert werden', xcapit: 'Nur verschlüsselte Daten reisen' },
+          { option: 'Anonymisierung', problem: 'Re-Identifikation möglich mit genomischen Daten', xcapit: 'Unmöglich, Originaldaten zu rekonstruieren' },
+          { option: 'Synthetische Daten', problem: 'Verliert wichtige Muster bei seltenen Krankheiten', xcapit: 'Bewahrt alle Muster' }
+        ]
+      },
+      cta: {
+        title: 'Bereit für medizinische Forschung ohne Datenschutzbarrieren?',
+        subtitle: 'Buchen Sie eine Demo mit unserem Healthcare-Spezialisten-Team.'
+      },
+      footer: {
+        product: 'Produkt',
+        resources: 'Ressourcen',
+        contact: 'Kontakt',
+        rights: '© 2025 Xcapit Privacy. Alle Rechte vorbehalten.',
+        links: {
+          industries: 'Andere Branchen',
+          docs: 'Dokumentation',
           github: 'GitHub'
         }
       }

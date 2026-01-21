@@ -3,7 +3,8 @@ import { useTranslation } from 'react-i18next'
 
 const languages = [
   { code: 'en', name: 'English', flag: 'US' },
-  { code: 'es', name: 'Espanol', flag: 'ES' }
+  { code: 'es', name: 'Español', flag: 'ES' },
+  { code: 'de', name: 'Deutsch', flag: 'DE' }
 ]
 
 // Simple flag component using emoji flags
@@ -25,6 +26,13 @@ const Flag = ({ code }) => {
       <svg className="w-5 h-5" viewBox="0 0 512 512">
         <rect width="512" height="512" fill="#c60b1e"/>
         <rect y="128" width="512" height="256" fill="#ffc400"/>
+      </svg>
+    ),
+    DE: (
+      <svg className="w-5 h-5" viewBox="0 0 512 512">
+        <rect width="512" height="170.7" fill="#000"/>
+        <rect y="170.7" width="512" height="170.7" fill="#dd0000"/>
+        <rect y="341.3" width="512" height="170.7" fill="#ffcc00"/>
       </svg>
     )
   }

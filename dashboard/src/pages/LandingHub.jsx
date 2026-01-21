@@ -585,7 +585,7 @@ function HowItWorksStep({ number, title, description, icon, delay = 0, isVisible
 
 export default function LandingHub() {
   const { i18n } = useTranslation()
-  const lang = i18n.language?.startsWith('es') ? 'es' : 'en'
+  const lang = i18n.language?.startsWith('es') ? 'es' : i18n.language?.startsWith('de') ? 'de' : 'en'
   const [mounted, setMounted] = useState(false)
   const [showStickyCTA, setShowStickyCTA] = useState(false)
 
@@ -880,6 +880,143 @@ export default function LandingHub() {
         },
         copyright: '© 2025 Xcapit Privacy. All rights reserved.',
         builtBy: 'Built by the'
+      }
+    },
+    de: {
+      nav: {
+        product: 'Produkt',
+        security: 'Sicherheit',
+        docs: 'Dokumentation',
+        login: 'Anmelden',
+        getStarted: 'Kostenlos starten'
+      },
+      hero: {
+        badge: 'Privacy-First ML-Plattform',
+        headline: 'Trainieren Sie Modelle mit Daten,',
+        headlineHighlight: 'die Sie nicht sehen können.',
+        subheadline: 'Mehrere Organisationen arbeiten an EINEM ML-Modell zusammen, ohne ihre Daten preiszugeben. Militärische homomorphe Verschlüsselung + Dezentrale Blockchain-Governance.',
+        cta: 'Kostenlose Demo anfordern',
+        ctaSecondary: 'Dokumentation ansehen',
+        urgencyBadge: 'Early Adopter Programm - Nur 10 Unternehmen',
+        formTitle: 'Buchen Sie Ihre persönliche Demo'
+      },
+      testimonials: {
+        title: 'Was unsere Early Adopters sagen',
+        subtitle: 'Unternehmen, die bereits ohne Datenaustausch zusammenarbeiten',
+        list: [
+          {
+            quote: 'Endlich können wir Betrugsmodelle mit anderen Banken teilen, ohne Kundendaten preiszugeben. Der ROI war sofort da.',
+            author: 'Leiter Data Science',
+            role: 'CTO',
+            company: 'Regionale LATAM Bank',
+            metric: '45%',
+            metricLabel: 'Betrugsreduzierung'
+          },
+          {
+            quote: 'Die Blockchain-Governance gibt uns die Rückverfolgbarkeit, die Compliance forderte. Wir haben in 3 Wochen implementiert.',
+            author: 'Head of AI',
+            role: 'CIO',
+            company: 'Top 5 Versicherung',
+            metric: '3 Wo',
+            metricLabel: 'Zeit bis Deployment'
+          },
+          {
+            quote: 'Jetzt können wir Multi-Krankenhaus-Forschung HIPAA-konform durchführen. Vorher war das unmöglich.',
+            author: 'Chief Data Officer',
+            role: 'CDO',
+            company: 'Krankenhausnetzwerk',
+            metric: '10x',
+            metricLabel: 'Mehr Daten'
+          }
+        ]
+      },
+      trustedBy: 'Technologie unterstützt von',
+      certifications: 'Zertifizierungen & Compliance',
+      stats: {
+        organizations: 'Organisationen',
+        dataProcessed: 'Verarbeitete Daten',
+        accuracy: 'Modellgenauigkeit',
+        uptime: 'Verfügbarkeit'
+      },
+      howItWorks: {
+        title: 'So funktioniert es',
+        subtitle: 'Sichere Zusammenarbeit in 3 einfachen Schritten',
+        steps: [
+          { title: 'Lokale Verschlüsselung', desc: 'Ihre Daten werden in Ihrer Infrastruktur verschlüsselt. Der private Schlüssel verlässt sie nie.', icon: icons.lock },
+          { title: 'Verschlüsseltes Training', desc: 'Das Modell trainiert auf verschlüsselten Daten. Niemand kann die Originaldaten sehen.', icon: icons.eye },
+          { title: 'Private Ergebnisse', desc: 'Nur Sie können Ihre Vorhersagen mit Ihrem privaten Schlüssel entschlüsseln.', icon: icons.shield }
+        ]
+      },
+      industries: {
+        title: 'Lösungen nach Branche',
+        subtitle: 'Spezifische Anwendungsfälle für Ihren Sektor',
+        list: [
+          {
+            icon: icons.finance,
+            title: 'Finanzen & Banken',
+            description: 'Kollaborative Betrugserkennung, institutionsübergreifendes Credit Scoring und KYC/AML ohne Kundendaten preiszugeben.',
+            examples: ['Betrug', 'Credit Scoring', 'KYC-AML'],
+            link: '/fintech',
+            color: 'brand'
+          },
+          {
+            icon: icons.healthcare,
+            title: 'Gesundheitswesen',
+            description: 'Multi-Krankenhaus medizinische Forschung und KI-Diagnose HIPAA-konform ohne Patientendaten preiszugeben.',
+            examples: ['KI-Diagnose', 'Medikamentenentdeckung', 'Studien'],
+            link: '/healthcare',
+            color: 'emerald'
+          },
+          {
+            icon: icons.government,
+            title: 'Regierung',
+            description: 'Behördenübergreifende Zusammenarbeit für Steuerbetrug und datengesteuerte Politik.',
+            examples: ['Steuerbetrug', 'Politik', 'Einheitliches Portal'],
+            link: '/gobierno',
+            color: 'slate'
+          }
+        ]
+      },
+      otherIndustries: {
+        text: 'Andere Branche?',
+        subtext: 'Einzelhandel, Versicherungen, Telekommunikation, Logistik und mehr',
+        link: 'Alle erkunden'
+      },
+      features: {
+        title: 'Unternehmensgrade Sicherheit',
+        list: [
+          { title: 'CKKS 128-bit Verschlüsselung', desc: 'Modernste homomorphe Verschlüsselung' },
+          { title: 'Zero Knowledge', desc: 'Niemand sieht Ihre Daten, nicht einmal wir' },
+          { title: 'Blockchain Audit', desc: 'Unveränderliche Aufzeichnung auf Arbitrum L2' },
+          { title: 'Open Source', desc: 'Überprüfbarer und auditierbarer Code' }
+        ]
+      },
+      cta: {
+        title: 'Bereit zur Zusammenarbeit ohne zu teilen?',
+        subtitle: 'Schließen Sie sich Organisationen an, die bereits Modelle auf verschlüsselten Daten trainieren.',
+        button: 'Demo anfordern',
+        note: 'Keine Verpflichtung. Personalisierte 30-minütige Demo.'
+      },
+      footer: {
+        product: 'Produkt',
+        resources: 'Ressourcen',
+        company: 'Unternehmen',
+        legal: 'Rechtliches',
+        items: {
+          features: 'Funktionen',
+          security: 'Sicherheit',
+          pricing: 'Preise',
+          docs: 'Dokumentation',
+          api: 'API-Referenz',
+          github: 'GitHub',
+          about: 'Über uns',
+          blog: 'Blog',
+          contact: 'Kontakt',
+          privacy: 'Datenschutz',
+          terms: 'AGB'
+        },
+        copyright: '© 2025 Xcapit Privacy. Alle Rechte vorbehalten.',
+        builtBy: 'Entwickelt vom'
       }
     }
   }

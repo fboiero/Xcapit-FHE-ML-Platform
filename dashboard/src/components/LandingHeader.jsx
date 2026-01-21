@@ -5,7 +5,7 @@ import LanguageSwitcher from './LanguageSwitcher'
 
 export default function LandingHeader({ ctaText, ctaHref = '#contact' }) {
   const { i18n } = useTranslation()
-  const lang = i18n.language?.startsWith('es') ? 'es' : 'en'
+  const lang = i18n.language?.startsWith('es') ? 'es' : i18n.language?.startsWith('de') ? 'de' : 'en'
   const location = useLocation()
   const [scrolled, setScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -45,6 +45,21 @@ export default function LandingHeader({ ctaText, ctaHref = '#contact' }) {
         { name: 'Healthcare', path: '/healthcare', icon: '🏥' },
         { name: 'Government', path: '/gobierno', icon: '🏛️' },
         { name: 'Other Industries', path: '/industrias', icon: '🏭' },
+      ]
+    },
+    de: {
+      product: 'Produkt',
+      industries: 'Branchen',
+      docs: 'Docs',
+      login: 'Anmelden',
+      getStarted: 'Kostenlos starten',
+      defaultCta: 'Demo anfordern',
+      verticals: [
+        { name: 'Hauptseite', path: '/', icon: '🏠' },
+        { name: 'Fintech & Banken', path: '/fintech', icon: '🏦' },
+        { name: 'Gesundheitswesen', path: '/healthcare', icon: '🏥' },
+        { name: 'Regierung', path: '/gobierno', icon: '🏛️' },
+        { name: 'Andere Branchen', path: '/industrias', icon: '🏭' },
       ]
     }
   }

@@ -282,7 +282,7 @@ function StepCard({ number, title, description, delay = 0, isVisible = true, sho
 
 export default function LandingOtros() {
   const { i18n } = useTranslation()
-  const lang = i18n.language?.startsWith('es') ? 'es' : 'en'
+  const lang = i18n.language?.startsWith('es') ? 'es' : i18n.language?.startsWith('de') ? 'de' : 'en'
 
   // Scroll animation refs for each section
   const [heroRef, heroVisible] = useScrollAnimation(0.1)
@@ -426,6 +426,62 @@ export default function LandingOtros() {
       },
       cta: { title: 'Ready for models trained on industry-wide data?', subtitle: 'Tell us your use case and we\'ll show you how.' },
       footer: { product: 'Product', contact: 'Contact', rights: '© 2025 Xcapit Privacy. All rights reserved.', links: { industries: 'Other industries', github: 'GitHub' } }
+    },
+    de: {
+      nav: { casosUso: 'Anwendungsfälle', comoFunciona: 'So funktioniert\'s', contacto: 'Kontakt', demo: 'Demo' },
+      hero: {
+        badge: 'Mehrere Branchen',
+        headline: 'Kollaboratives ML für Ihre Branche',
+        highlight: 'Daten nie geteilt. Modell dramatisch verbessert.',
+        subheadline: 'Von Einzelhandel bis Energie. Von Telekommunikation bis Logistik. Wenn Ihr Problem ist, dass Wettbewerber oder Partner Daten haben, die Ihr Modell verbessern würden, haben wir die Lösung.',
+        cta: 'Demo buchen',
+        ctaSecondary: 'So funktioniert\'s',
+        stats: { accuracy: { value: '+50%', label: 'Modellverbesserung' }, privacy: { value: '100%', label: 'Datenschutz' }, compliance: { value: '100%', label: 'Compliance' } }
+      },
+      trustedBy: { title: 'Technologie führender Unternehmen', partners: ['Microsoft SEAL', 'TenSEAL', 'OpenFHE', 'HElib'] },
+      problem: {
+        title: 'Das beste Modell benötigt Daten, die Sie nie haben werden',
+        points: [
+          { title: 'Das universelle Silo', desc: 'Jedes Unternehmen hat einzigartige Daten. Ein Modell mit Daten der gesamten Branche wäre überlegen. Aber niemand wird diese Daten teilen.', icon: '🔒' },
+          { title: 'Wettbewerb verhindert Zusammenarbeit', desc: 'Die Unternehmen, deren Daten Ihr Modell am meisten verbessern würden, sind Ihre direkten Wettbewerber.', icon: '🤝' },
+          { title: 'Regulierung erschwert alles', desc: 'Selbst mit guten Absichten verhindern DSGVO und interne Richtlinien Zusammenarbeit.', icon: '⚖️' }
+        ]
+      },
+      solution: {
+        title: 'Zusammenarbeit mit Wettbewerbern ohne zu vertrauen',
+        desc: 'Mit homomorpher Verschlüsselung können Sie kollaborative Modelle mit direkten Wettbewerbern trainieren, ohne dass einer dem anderen etwas verrät.',
+        steps: [
+          { title: 'Lokale Verschlüsselung', desc: 'Ihre Daten verlassen nie Ihre Server unverschlüsselt.' },
+          { title: 'Verschlüsseltes Training', desc: 'Das Modell lernt aus verschlüsselten Daten mehrerer Unternehmen.' },
+          { title: 'Überlegene Ergebnisse', desc: 'Alle erhalten ein besseres Modell. Niemand sieht Daten der anderen.' }
+        ]
+      },
+      useCases: {
+        title: 'Branchenbeispiele',
+        subtitle: 'Wo kollaboratives ML disruptiv sein kann',
+        cases: [
+          { title: 'Einzelhandel', problem: 'Nachfrageprognose erfordert Daten, die nur Lieferanten und sogar Wettbewerber haben.', solution: 'Kollaborative Nachfragemodelle zwischen Einzelhändlern. Bestandsoptimierung, die bisher unmöglich war.', metric: '-35% Lager' },
+          { title: 'Telekommunikation', problem: 'Churn-Vorhersage ist begrenzt, wenn Sie nicht wissen, was der Wettbewerb bietet.', solution: 'Branchenweite Churn-Modelle. Frühzeitiges Erkennen von Abwanderungsrisiko.', metric: '+40% Retention' },
+          { title: 'Energie', problem: 'Verbrauchsoptimierung erfordert Daten von Verbrauchern, Erzeugern und Verteilern.', solution: 'Energievorhersagemodelle mit verschlüsselten Daten der gesamten Kette.', metric: '-25% Verlust' },
+          { title: 'Logistik', problem: 'Routenoptimierung mit nur eigenen Daten ignoriert Muster im gesamten Netzwerk.', solution: 'Routenoptimierung mit verschlüsselten Daten mehrerer Betreiber.', metric: '-20% Kosten' }
+        ]
+      },
+      compliance: {
+        title: 'Compliance in jeder Branche',
+        desc: 'Da Daten nie entschlüsselt werden, gibt es keine Offenlegung vertraulicher Informationen. Erfüllt DSGVO, LGPD und branchenspezifische Vorschriften.',
+        badges: ['DSGVO', 'LGPD', 'SOC2', 'Branchenspezifisch']
+      },
+      governance: {
+        title: 'Transparente Governance unter Wettbewerbern',
+        features: [
+          { title: 'Blockchain', desc: 'Alle Entscheidungen aufgezeichnet' },
+          { title: 'Abstimmung', desc: 'Proportionales Stimmrecht' },
+          { title: 'Transparenz', desc: 'Jeder Teilnehmer kann auditieren' },
+          { title: 'Neutralität', desc: 'Niemand kann Daten anderer sehen' }
+        ]
+      },
+      cta: { title: 'Bereit für Modelle, trainiert mit branchenweiten Daten?', subtitle: 'Erzählen Sie uns Ihren Anwendungsfall und wir zeigen Ihnen wie.' },
+      footer: { product: 'Produkt', contact: 'Kontakt', rights: '© 2025 Xcapit Privacy. Alle Rechte vorbehalten.', links: { industries: 'Andere Branchen', github: 'GitHub' } }
     }
   }
 

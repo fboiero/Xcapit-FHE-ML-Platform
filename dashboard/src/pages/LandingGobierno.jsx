@@ -309,7 +309,7 @@ function StepCard({ number, title, description, delay = 0, isVisible = true, sho
 
 export default function LandingGobierno() {
   const { i18n } = useTranslation()
-  const lang = i18n.language?.startsWith('es') ? 'es' : 'en'
+  const lang = i18n.language?.startsWith('es') ? 'es' : i18n.language?.startsWith('de') ? 'de' : 'en'
 
   // Scroll animation refs for each section
   const [heroRef, heroVisible] = useScrollAnimation(0.1)
@@ -430,6 +430,63 @@ export default function LandingGobierno() {
       },
       cta: { title: 'Ready for cross-agency collaboration without breaking silos?', subtitle: 'Book a demo with our public sector team.' },
       footer: { product: 'Product', contact: 'Contact', rights: '© 2025 Xcapit Privacy. All rights reserved.', links: { industries: 'Other industries', github: 'GitHub' } }
+    },
+    de: {
+      nav: { casosUso: 'Anwendungsfälle', comoFunciona: 'So funktioniert\'s', compliance: 'Compliance', demo: 'Demo' },
+      hero: {
+        badge: 'Öffentlicher Sektor',
+        headline: 'Behördenübergreifende Analyse',
+        highlight: 'ohne Datensouveränität aufzugeben.',
+        subheadline: 'Analysieren Sie Steuerdaten, Sozialleistungen und Identität gemeinsam. Ohne Datenexport zwischen Behörden. Mit kryptografischer Garantie.',
+        cta: 'Demo buchen',
+        ctaSecondary: 'So funktioniert\'s',
+        stats: { fraud: { value: '+45%', label: 'Betrugserkennung' }, efficiency: { value: '-60%', label: 'Analysezeit' }, compliance: { value: '100%', label: 'Compliance' } }
+      },
+      trustedBy: { title: 'Technologie führender Institutionen', partners: ['Microsoft SEAL', 'OpenFHE', 'HElib', 'PALISADE'] },
+      problem: {
+        title: 'Kritische Daten isoliert in Behördensilos',
+        points: [
+          { title: 'Die Silo-Barriere', desc: 'Jede Behörde hat einzigartige Daten. Queranalyse würde Betrug aufdecken, aber rechtliche und politische Barrieren machen es unmöglich.', icon: '🏛️' },
+          { title: 'Betrug operiert behördenübergreifend', desc: 'Wer Sozialleistungen in einer Behörde betrügt, hat wahrscheinlich Anomalien in einer anderen. Aber diese Verbindung sehen Sie nie.', icon: '🔍' },
+          { title: 'Politisch unmöglich', desc: 'Selbst mit legaler Möglichkeit ist das Teilen sensibler Daten zwischen Behörden verschiedener Parteien politisch undurchführbar.', icon: '⚖️' }
+        ]
+      },
+      solution: {
+        title: 'Behördenzusammenarbeit ohne Vertrauensabhängigkeit',
+        desc: 'Mit homomorpher Verschlüsselung können behördenübergreifende Analysen durchgeführt werden, ohne dass eine Behörde der anderen ihre Daten zeigt. Kein Vertrauen erforderlich - nur Mathematik.',
+        steps: [
+          { title: 'Verschlüsselung in der Behörde', desc: 'Jede Behörde verschlüsselt mit eigenem Schlüssel. Niemand kann ohne Erlaubnis darauf zugreifen.' },
+          { title: 'Verschlüsselte Analyse', desc: 'Modelle werden auf verschlüsselten Daten mehrerer Behörden trainiert.' },
+          { title: 'Geteilte Erkenntnisse', desc: 'Jede Behörde erhält für ihre Fälle relevante Ergebnisse. Ohne Rohdaten zu sehen.' }
+        ]
+      },
+      useCases: {
+        title: 'Anwendungsfälle',
+        subtitle: 'Spezifische Lösungen für den öffentlichen Sektor',
+        cases: [
+          { title: 'Steuerbetrug-Erkennung', problem: 'Steuerbetrug erfordert oft Querverweise mit Sozialdaten, Eigentum, Fahrzeugen. Diese Daten sind verstreut.', solution: 'Analyse über verschlüsselte Daten mehrerer Behörden. Erkennt Inkonsistenzen, die bisher unmöglich zu finden waren.', metric: '+45% Erkennung' },
+          { title: 'Optimierung von Sozialprogrammen', problem: 'Programme ohne vollständige Sicht auf die Lage der Begünstigten auszuführen führt zu Doppelleistungen oder Lücken.', solution: 'Analyse der Auswirkungen sozialer Programme mit verschlüsselten Daten von Gesundheit, Bildung, Arbeit.', metric: '+30% Effizienz' },
+          { title: 'Sichere digitale Identität', problem: 'Identitätssysteme erfordern Querverweise mehrerer Behörden. Traditionelle Integration schafft Datenschutzrisiken.', solution: 'Identitätsverifizierung über verschlüsselte Datenbanken ohne Zentralisierung.', metric: '-80% Betrug' }
+        ]
+      },
+      compliance: {
+        title: 'Regulatorische Compliance ohne rechtliche Ausnahmen',
+        desc: 'Sie brauchen keine Sondergenehmigungen. Homomorphe Verschlüsselung ermöglicht Zusammenarbeit ohne Datenübertragung.',
+        badges: ['Habeas Data', 'Informationsfreiheit', 'LGPD/DSGVO', 'Steuergeheimnis']
+      },
+      pilot: {
+        title: 'Praxisfall: Córdoba Regierungspilot',
+        desc: 'Aktive Implementierung mit 4 Behörden zur Steuerbetrug-Erkennung:',
+        participants: [
+          { name: 'DGR (Generaldirektion Steuern)', power: '35%', data: 'Steuerdaten' },
+          { name: 'Ministerium für Soziale Entwicklung', power: '30%', data: 'Sozialleistungen' },
+          { name: 'CIDI (Digitaler Bürger)', power: '25%', data: 'Identität und Verifizierung' },
+          { name: 'Stadt Córdoba', power: '10%', data: 'Lokale Register' }
+        ],
+        features: ['Governance-Dashboard mit Abstimmung', 'Blockchain-Beitragsregister', 'Automatische Compliance-Verifizierung', 'Inkonsistenz-Erkennungsmodell']
+      },
+      cta: { title: 'Bereit für behördenübergreifende Zusammenarbeit ohne Silos aufzubrechen?', subtitle: 'Buchen Sie eine Demo mit unserem Team für den öffentlichen Sektor.' },
+      footer: { product: 'Produkt', contact: 'Kontakt', rights: '© 2025 Xcapit Privacy. Alle Rechte vorbehalten.', links: { industries: 'Andere Branchen', github: 'GitHub' } }
     }
   }
 

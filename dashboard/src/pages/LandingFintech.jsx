@@ -260,6 +260,22 @@ function ContactForm({ lang }) {
       success: 'Message sent. We\'ll contact you soon.',
       error: 'Error sending. Please try again.',
       also: 'You can also contact us at'
+    },
+    de: {
+      title: '30-minütige Demo buchen',
+      subtitle: 'Wir zeigen Ihnen, wie es mit einem echten Fall aus Ihrer Branche funktioniert.',
+      name: 'Vollständiger Name',
+      email: 'Firmen-E-Mail',
+      company: 'Unternehmen',
+      phone: 'Telefon',
+      position: 'Position',
+      useCase: 'Interessanter Anwendungsfall',
+      useCases: ['Betrugserkennung', 'Kreditscoring', 'KYC/AML', 'Sonstiges'],
+      submit: 'Demo buchen',
+      sending: 'Wird gesendet...',
+      success: 'Nachricht gesendet. Wir melden uns bald.',
+      error: 'Fehler beim Senden. Bitte erneut versuchen.',
+      also: 'Sie können uns auch kontaktieren unter'
     }
   }
 
@@ -490,7 +506,7 @@ function StepCard({ number, title, description, delay = 0, isVisible = true }) {
 
 export default function LandingFintech() {
   const { i18n } = useTranslation()
-  const lang = i18n.language?.startsWith('es') ? 'es' : 'en'
+  const lang = i18n.language?.startsWith('es') ? 'es' : i18n.language?.startsWith('de') ? 'de' : 'en'
   const [heroMounted, setHeroMounted] = useState(false)
 
   // Scroll animation refs for each section
@@ -720,6 +736,115 @@ export default function LandingFintech() {
         links: {
           industries: 'Other industries',
           docs: 'Documentation',
+          github: 'GitHub'
+        }
+      }
+    },
+    de: {
+      nav: {
+        casosUso: 'Anwendungsfälle',
+        comoFunciona: 'So funktioniert\'s',
+        seguridad: 'Sicherheit',
+        demo: 'Demo'
+      },
+      hero: {
+        badge: 'Fintech & Banken',
+        headline: 'Betrugsmodelle, trainiert mit branchenweiten Daten.',
+        highlight: 'Ohne einen einzigen Datensatz zu teilen.',
+        subheadline: 'Betrüger kennen Muster aller Banken. Jetzt können Sie das auch. Mit homomorpher Verschlüsselung trainieren mehrere Institutionen EIN gemeinsames Modell, ohne die Daten der anderen zu sehen.',
+        cta: 'Demo buchen',
+        ctaSecondary: 'So funktioniert\'s',
+        stats: {
+          detection: { value: '+40%', label: 'Betrugserkennung' },
+          default: { value: '-25%', label: 'Ausfallrate' },
+          compliance: { value: '100%', label: 'Compliance' }
+        }
+      },
+      trustedBy: {
+        title: 'Technologie führender Branchenführer',
+        partners: ['Microsoft SEAL', 'TenSEAL', 'OpenFHE', 'HElib']
+      },
+      problem: {
+        title: 'Ihr Modell kennt nur den Betrug, den Sie bereits erlebt haben',
+        points: [
+          {
+            title: 'Das Silo-Problem',
+            desc: 'Jede Bank trainiert ihr Betrugsmodell mit eigenen Daten. Betrüger kennen Muster der gesamten Branche. Sie kennen nur Ihre.',
+            icon: '🔒'
+          },
+          {
+            title: 'Regulierung verhindert Zusammenarbeit',
+            desc: 'Sie möchten Muster mit anderen Banken teilen, aber PCI-DSS, DSGVO und Bankgeheimnis machen es unmöglich. Oder dachten Sie.',
+            icon: '⚖️'
+          },
+          {
+            title: 'Neukunden = unbekanntes Risiko',
+            desc: 'Ohne Historie bei Ihrer Institution ist jeder Neukunde ein Glücksspiel. Aber dieser Kunde hat Jahre von Verhalten anderswo, das Sie nie sehen werden.',
+            icon: '❓'
+          }
+        ]
+      },
+      solution: {
+        title: 'Zusammenarbeiten ohne zu teilen',
+        desc: 'Mit homomorpher Verschlüsselung verlassen Ihre Daten nie Ihre Infrastruktur. Sie senden nur verschlüsselte Versionen für gemeinsames Modelltraining. Niemand kann Ihre Daten entschlüsseln - nicht einmal wir.',
+        steps: [
+          { title: 'Lokal verschlüsseln', desc: 'Ihr privater Schlüssel verlässt nie Ihre Infrastruktur' },
+          { title: 'Auf Verschlüsseltem trainieren', desc: 'Server berechnet ohne jemals zu entschlüsseln' },
+          { title: 'Ihre Ergebnisse entschlüsseln', desc: 'Nur Sie können Ihre Vorhersagen sehen' }
+        ]
+      },
+      useCases: {
+        title: 'Anwendungsfälle',
+        subtitle: 'Spezifische Lösungen für den Finanzsektor',
+        cases: [
+          {
+            title: 'Kollaborative Betrugserkennung',
+            problem: 'Ihr Modell erkennt Betrug, den Sie bereits erlebt haben. Neue Angriffsvektoren anderer Banken? Die lernen Sie kennen, wenn sie Sie treffen.',
+            solution: 'Modell trainiert mit Betrugsmustern mehrerer Institutionen. Erkennt Angriffe, bevor sie Ihre Bank erreichen.',
+            metric: '+40% Erkennung'
+          },
+          {
+            title: 'Gemeinsames Kreditscoring',
+            problem: 'Ein Kunde ohne Historie bei Ihrer Bank ist eine Blackbox. Genehmigung ist riskant. Ablehnung verliert Geschäft.',
+            solution: 'Score basierend auf institutionsübergreifendem Kreditverhalten, ohne dass eine Institution Kundendaten preisgibt.',
+            metric: '-25% Ausfall'
+          },
+          {
+            title: 'Kollaboratives KYC/AML',
+            problem: 'Jede Bank macht KYC isoliert. Ein bei einer Bank abgelehnter Kunde eröffnet bei einer anderen ein Konto. Geldwäschenetzwerke operieren institutionsübergreifend.',
+            solution: 'Erkennung verdächtiger Muster und Geldwäschenetzwerke, die institutionsübergreifend operieren.',
+            metric: 'Unsichtbare Netzwerke erkannt'
+          }
+        ]
+      },
+      compliance: {
+        title: 'Regulatorische Compliance garantiert',
+        desc: 'Da Daten nie entschlüsselt werden, gibt es keine Offenlegung persönlicher Informationen. Zusammenarbeit erfolgt 100% auf verschlüsselten Daten.',
+        badges: ['PCI-DSS', 'DSGVO', 'SOC2 Type II', 'LGPD', 'Bankgeheimnis']
+      },
+      differentiators: {
+        title: 'Warum Xcapit statt Alternativen?',
+        headers: ['Funktion', 'Xcapit', 'Data Clean Rooms', 'Federated Learning', 'MPC'],
+        rows: [
+          ['Daten nie entschlüsselt', true, false, false, 'partial'],
+          ['ML auf Verschlüsseltem', true, false, false, false],
+          ['Blockchain-Audit', true, false, false, false],
+          ['Keine trusted third party', true, false, true, true],
+          ['Auto-Compliance', true, 'partial', false, false]
+        ]
+      },
+      cta: {
+        title: 'Bereit, mit Daten zu trainieren, die Sie nicht sehen können?',
+        subtitle: 'Buchen Sie eine 30-minütige Demo. Wir zeigen Ihnen, wie es mit einem echten Fall aus Ihrer Branche funktioniert.'
+      },
+      footer: {
+        product: 'Produkt',
+        resources: 'Ressourcen',
+        contact: 'Kontakt',
+        rights: '© 2025 Xcapit Privacy. Alle Rechte vorbehalten.',
+        links: {
+          industries: 'Andere Branchen',
+          docs: 'Dokumentation',
           github: 'GitHub'
         }
       }
