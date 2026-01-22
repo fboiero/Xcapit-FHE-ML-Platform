@@ -260,7 +260,7 @@ SIMPLE_JWT = {
 
 CORS_ALLOWED_ORIGINS = os.environ.get(
     "CORS_ALLOWED_ORIGINS",
-    "https://appfhe.xcapit.com,https://privacy.xcapit.com,http://localhost:5173",
+    "https://xcapit-privacy.vercel.app,https://appfhe.xcapit.com,https://privacy.xcapit.com,http://localhost:5173,http://localhost:3000",
 ).split(",")
 
 CORS_ALLOW_CREDENTIALS = True

@@ -19,145 +19,154 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
-    profiles:
-      - production
-      - postgres
 
-  # ============ API Service (SQLite - Demo) ============
-  api:
+  # ============ Redis (Cache & Celery) ============
+  redis:
+    image: redis:7-alpine
+    container_name: xcapit-fhe-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ============ Django API (Development - SQLite) ============
+  django-dev:
     build:
-      context: .
-      target: production
-    image: xcapit-fhe-ml:latest
-    container_name: xcapit-fhe-api
+      context: ./backend_django
+      target: development
+    image: xcapit-fhe-django:dev
+    container_name: xcapit-fhe-django-dev
     ports:
       - "8000:8000"
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=info
+      - DJANGO_SETTINGS_MODULE=config.settings_test
+      - DJANGO_DEBUG=True
+      - CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173,https://xcapit-privacy.vercel.app
+    volumes:
+      - ./backend_django:/app
+      - django_static:/app/staticfiles
+    command: python manage.py runserver 0.0.0.0:8000
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v2/health/"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 10s
     restart: unless-stopped
-    volumes:
-      - model_data:/app/data
+    profiles:
+      - dev
+      - django-dev
 
-  # ============ API Service (PostgreSQL - Production) ============
-  api-production:
+  # ============ Django API (Production - PostgreSQL) ============
+  django:
     build:
-      context: .
+      context: ./backend_django
       target: production
-    image: xcapit-fhe-ml:latest
-    container_name: xcapit-fhe-api-prod
+    image: xcapit-fhe-django:latest
+    container_name: xcapit-fhe-django
     ports:
       - "8000:8000"
     environment:
       - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=info
+      - DJANGO_SETTINGS_MODULE=config.settings
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-change-me-in-production}
+      - DJANGO_DEBUG=False
       - DATABASE_URL=postgresql://xcapit:xcapit_fhe_secret@postgres:5432/fheml
+      - REDIS_URL=redis://redis:6379/0
+      - CORS_ALLOWED_ORIGINS=https://xcapit-privacy.vercel.app,https://app.xcapit.io
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v2/health/"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 15s
     restart: unless-stopped
+
+  # ============ Django Tests ============
+  django-test:
+    build:
+      context: ./backend_django
+      target: development
+    image: xcapit-fhe-django:dev
+    container_name: xcapit-fhe-django-test
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DJANGO_SETTINGS_MODULE=config.settings_test
     volumes:
-      - model_data:/app/data
+      - ./backend_django:/app
+    command: pytest tests/ -v --tb=short
+    profiles:
+      - test
+
+  # ============ Celery Worker (Async Tasks) ============
+  celery:
+    build:
+      context: ./backend_django
+      target: production
+    image: xcapit-fhe-django:latest
+    container_name: xcapit-fhe-celery
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DJANGO_SETTINGS_MODULE=config.settings
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-change-me-in-production}
+      - DATABASE_URL=postgresql://xcapit:xcapit_fhe_secret@postgres:5432/fheml
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: celery -A config worker -l info
+    restart: unless-stopped
     profiles:
       - production
+      - celery
 
-  # ============ API with FHE Support ============
-  api-fhe:
+  # ============ Legacy FastAPI (keeping for backwards compatibility) ============
+  api-legacy:
     build:
       context: .
-      target: fhe
-    image: xcapit-fhe-ml:fhe
-    container_name: xcapit-fhe-api-full
+      dockerfile: Dockerfile
+      target: production
+    image: xcapit-fhe-ml:latest
+    container_name: xcapit-fhe-api-legacy
     ports:
       - "8001:8000"
     environment:
       - PYTHONUNBUFFERED=1
       - LOG_LEVEL=info
-      - FHE_ENABLED=true
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 30s
+      start_period: 10s
     restart: unless-stopped
     volumes:
       - model_data:/app/data
-      - fhe_keys:/app/keys
     profiles:
-      - fhe
-
-  # ============ Development Service ============
-  dev:
-    build:
-      context: .
-      target: development
-    image: xcapit-fhe-ml:dev
-    container_name: xcapit-fhe-dev
-    ports:
-      - "8000:8000"
-      - "8888:8888"
-    environment:
-      - PYTHONUNBUFFERED=1
-      - LOG_LEVEL=debug
-    volumes:
-      - .:/app
-      - model_data:/app/data
-    command: uvicorn sdk.api.server:app --host 0.0.0.0 --port 8000 --reload
-    profiles:
-      - dev
-
-  # ============ Jupyter Notebook ============
-  jupyter:
-    build:
-      context: .
-      target: development
-    image: xcapit-fhe-ml:dev
-    container_name: xcapit-fhe-jupyter
-    ports:
-      - "8888:8888"
-    environment:
-      - PYTHONUNBUFFERED=1
-    volumes:
-      - .:/app
-      - notebooks:/app/notebooks
-    command: jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token=''
-    profiles:
-      - jupyter
-
-  # ============ Test Runner ============
-  test:
-    build:
-      context: .
-      target: development
-    image: xcapit-fhe-ml:dev
-    container_name: xcapit-fhe-test
-    volumes:
-      - .:/app
-    command: pytest tests/ -v --cov=sdk --cov-report=term-missing
-    profiles:
-      - test
+      - legacy
 
 volumes:
-  model_data:
-    driver: local
-  fhe_keys:
-    driver: local
-  notebooks:
-    driver: local
   postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  django_static:
+    driver: local
+  model_data:
     driver: local
 
 networks:

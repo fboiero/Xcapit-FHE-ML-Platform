@@ -14,18 +14,18 @@ os.environ.setdefault("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,testserver")
 # Now import base settings
 from .settings import *  # noqa: F401,F403
 
-# Override database for testing - use SQLite for speed
+# Override database for development - use SQLite file
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": ":memory:",
+        "NAME": BASE_DIR / "db.sqlite3",
     }
 }
 
-# Override cache for testing - use local memory
+# Override cache for testing - use dummy cache
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "BACKEND": "django.core.cache.backends.dummy.DummyCache",
     }
 }
 
@@ -36,6 +36,14 @@ REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"] = {}
 
 # Disable axes in tests
 AXES_ENABLED = False
+
+# Silence system checks for development/testing
+SILENCED_SYSTEM_CHECKS = [
+    "django_ratelimit.E003",  # Cache backend warning
+    "django_ratelimit.W001",  # Cache backend not officially supported
+    "axes.W003",  # AxesStandaloneBackend warning
+    "axes.W004",  # Deprecated setting warning
+]
 
 # Weaker password validation for testing
 AUTH_PASSWORD_VALIDATORS = [
