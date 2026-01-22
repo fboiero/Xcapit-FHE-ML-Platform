@@ -9,9 +9,9 @@ from . import views
 
 router = DefaultRouter()
 router.register(r"templates", views.SandboxTemplateViewSet, basename="sandbox-template")
-router.register(r"", views.SandboxViewSet, basename="sandbox")
 router.register(r"datasets", views.SyntheticDatasetViewSet, basename="synthetic-dataset")
 router.register(r"experiments", views.ExperimentViewSet, basename="experiment")
+router.register(r"sandboxes", views.SandboxViewSet, basename="sandbox")
 
 urlpatterns = [
     path("", include(router.urls)),
