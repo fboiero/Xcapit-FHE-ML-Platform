@@ -1,8 +1,8 @@
 # Xcapit FHE-ML Platform - Django Backend
-# Django 5.1 LTS (supported until April 2026)
+# Django 5.2 LTS (supported until April 2028)
 
 # Core Framework
-Django>=5.1,<5.2
+Django>=5.2,<5.3
 djangorestframework>=3.15.0
 drf-nested-routers>=0.94.0
 django-cors-headers>=4.4.0
