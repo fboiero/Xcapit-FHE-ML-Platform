@@ -1,0 +1,57 @@
+# Xcapit FHE-ML Platform - Django Backend
+# Django LTS 4.2 (supported until April 2026)
+
+# Core Framework
+Django==4.2.9
+djangorestframework==3.14.0
+django-cors-headers==4.3.1
+
+# Database
+psycopg2-binary==2.9.9
+dj-database-url==2.1.0
+
+# Authentication & Security
+djangorestframework-simplejwt==5.3.1
+django-ratelimit==4.1.0
+django-csp==3.8
+django-axes==6.2.0  # Brute-force protection
+
+# Redis (Rate limiting, caching, Celery)
+redis==5.0.1
+django-redis==5.4.0
+hiredis==2.3.2
+
+# Async Tasks (optional)
+celery==5.3.4
+
+# FHE and ML (from existing project)
+tenseal==0.3.14
+numpy>=1.21.0,<2.0.0
+scikit-learn>=1.0.0
+
+# Blockchain (Arbitrum)
+web3==6.14.0
+
+# API Documentation
+drf-spectacular==0.27.0
+
+# Utilities
+python-dotenv==1.0.0
+gunicorn==21.2.0
+uvicorn==0.25.0
+
+# Monitoring
+sentry-sdk==1.39.1
+django-health-check==3.17.0
+
+# Testing
+pytest==7.4.4
+pytest-django==4.7.0
+pytest-cov==4.1.0
+factory-boy==3.3.0
+
+# Development
+black==23.12.1
+ruff==0.1.9
+mypy==1.8.0
+django-stubs==4.2.7
