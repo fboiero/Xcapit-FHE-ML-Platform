@@ -2,6 +2,14 @@ import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import LandingHeader from '../components/LandingHeader'
+import {
+  CostOfInactionCard,
+  TestimonialSection,
+  CaseStudyCard,
+  TechnologyComparison,
+  EncryptionDemo,
+  ImplementationTimeline
+} from '../components/landing'
 
 // Hook for scroll-triggered animations
 function useScrollAnimation(threshold = 0.1) {
@@ -587,6 +595,14 @@ export default function LandingGobierno() {
               </div>
             ))}
           </div>
+
+          {/* Cost of Inaction */}
+          <div className="mt-16">
+            <CostOfInactionCard
+              industry="gobierno"
+              theme="slate"
+            />
+          </div>
         </div>
       </section>
 
@@ -610,6 +626,11 @@ export default function LandingGobierno() {
             ))}
           </div>
         </div>
+      </section>
+
+      {/* Interactive Encryption Demo */}
+      <section className="bg-slate-900">
+        <EncryptionDemo theme="slate" />
       </section>
 
       {/* Use Cases Section */}
@@ -724,6 +745,50 @@ export default function LandingGobierno() {
             ))}
           </div>
         </div>
+      </section>
+
+      {/* Technology Comparison Section */}
+      <section className="bg-slate-950">
+        <TechnologyComparison theme="slate" />
+      </section>
+
+      {/* Implementation Timeline */}
+      <section className="bg-slate-900">
+        <ImplementationTimeline industry="gobierno" theme="slate" />
+      </section>
+
+      {/* Case Study - Córdoba */}
+      <section className="bg-slate-950 py-20 px-4">
+        <div className="max-w-5xl mx-auto">
+          <CaseStudyCard
+            title={lang === 'es' ? 'Caso de Éxito: Gobierno de Córdoba' : lang === 'de' ? 'Erfolgsfall: Regierung von Córdoba' : 'Success Case: Córdoba Government'}
+            organization={lang === 'es' ? 'Gobierno de la Provincia de Córdoba, Argentina' : lang === 'de' ? 'Regierung der Provinz Córdoba, Argentinien' : 'Government of Córdoba Province, Argentina'}
+            challenge={lang === 'es' ? 'Detectar fraude fiscal que cruzaba múltiples agencias sin violar la privacidad de los contribuyentes.' : lang === 'de' ? 'Steuerbetrug erkennen, der mehrere Behörden betraf, ohne die Privatsphäre der Steuerzahler zu verletzen.' : 'Detect tax fraud crossing multiple agencies without violating taxpayer privacy.'}
+            solution={lang === 'es' ? 'Implementación de FHE para análisis colaborativo entre AFIP, Rentas y Catastro manteniendo datos cifrados.' : lang === 'de' ? 'FHE-Implementierung für kollaborative Analyse zwischen AFIP, Rentas und Kataster bei verschlüsselten Daten.' : 'FHE implementation for collaborative analysis between AFIP, Revenue, and Cadastre keeping data encrypted.'}
+            results={[
+              { value: '35%', label: lang === 'es' ? 'Más detección' : lang === 'de' ? 'Mehr Erkennung' : 'More detection' },
+              { value: '0', label: lang === 'es' ? 'Datos expuestos' : lang === 'de' ? 'Daten exponiert' : 'Data exposed' },
+              { value: '3', label: lang === 'es' ? 'Agencias conectadas' : lang === 'de' ? 'Verbundene Behörden' : 'Agencies connected' },
+              { value: '100%', label: 'Compliance' }
+            ]}
+            quote={lang === 'es' ? 'Por primera vez pudimos detectar patrones de evasión que operaban entre agencias, sin comprometer la privacidad de ningún ciudadano.' : lang === 'de' ? 'Zum ersten Mal konnten wir Steuerhinterziehungsmuster erkennen, die zwischen Behörden operierten, ohne die Privatsphäre eines Bürgers zu gefährden.' : 'For the first time we could detect evasion patterns operating across agencies, without compromising any citizen\'s privacy.'}
+            quotePerson="Dr. Martín Rodríguez"
+            quoteRole={lang === 'es' ? 'Director de Tecnología, Gobierno de Córdoba' : lang === 'de' ? 'Technologiedirektor, Regierung von Córdoba' : 'Technology Director, Córdoba Government'}
+            timeline={lang === 'es' ? '8 semanas desde kickoff hasta producción' : lang === 'de' ? '8 Wochen von Kickoff bis Produktion' : '8 weeks from kickoff to production'}
+            theme="slate"
+          />
+        </div>
+      </section>
+
+      {/* Testimonials & Early Adopter */}
+      <section className="bg-slate-900">
+        <TestimonialSection
+          theme="slate"
+          showEarlyAdopter={true}
+          onEarlyAdopterApply={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
+          title={lang === 'es' ? 'Únete a los innovadores' : lang === 'de' ? 'Schließen Sie sich den Innovatoren an' : 'Join the innovators'}
+          subtitle={lang === 'es' ? 'Gobiernos líderes ya están transformando su enfoque de privacidad de datos' : lang === 'de' ? 'Führende Regierungen transformieren bereits ihren Datenschutzansatz' : 'Leading governments are already transforming their data privacy approach'}
+        />
       </section>
 
       {/* Contact Section */}

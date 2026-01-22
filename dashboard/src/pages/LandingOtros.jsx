@@ -2,6 +2,13 @@ import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import LandingHeader from '../components/LandingHeader'
+import {
+  CostOfInactionCard,
+  TestimonialSection,
+  TechnologyComparison,
+  EncryptionDemo,
+  ImplementationTimeline
+} from '../components/landing'
 
 // Hook for scroll-triggered animations
 function useScrollAnimation(threshold = 0.1) {
@@ -577,6 +584,14 @@ export default function LandingOtros() {
               </div>
             ))}
           </div>
+
+          {/* Cost of Inaction */}
+          <div className="mt-16">
+            <CostOfInactionCard
+              industry="otros"
+              theme="purple"
+            />
+          </div>
         </div>
       </section>
 
@@ -600,6 +615,11 @@ export default function LandingOtros() {
             ))}
           </div>
         </div>
+      </section>
+
+      {/* Interactive Encryption Demo */}
+      <section className="bg-slate-900">
+        <EncryptionDemo theme="purple" />
       </section>
 
       {/* Industries Section */}
@@ -720,6 +740,27 @@ export default function LandingOtros() {
             ))}
           </div>
         </div>
+      </section>
+
+      {/* Technology Comparison Section */}
+      <section className="bg-slate-950">
+        <TechnologyComparison theme="purple" />
+      </section>
+
+      {/* Implementation Timeline */}
+      <section className="bg-slate-900">
+        <ImplementationTimeline industry="otros" theme="purple" />
+      </section>
+
+      {/* Testimonials & Early Adopter */}
+      <section className="bg-slate-950">
+        <TestimonialSection
+          theme="purple"
+          showEarlyAdopter={true}
+          onEarlyAdopterApply={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
+          title={lang === 'es' ? 'Únete a los innovadores' : lang === 'de' ? 'Schließen Sie sich den Innovatoren an' : 'Join the innovators'}
+          subtitle={lang === 'es' ? 'Empresas líderes ya están transformando su enfoque de privacidad de datos' : lang === 'de' ? 'Führende Unternehmen transformieren bereits ihren Datenschutzansatz' : 'Leading companies are already transforming their data privacy approach'}
+        />
       </section>
 
       {/* Contact Section */}

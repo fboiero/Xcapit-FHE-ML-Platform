@@ -2,6 +2,13 @@ import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import LandingHeader from '../components/LandingHeader'
+import {
+  CostOfInactionCard,
+  TestimonialSection,
+  TechnologyComparison,
+  EncryptionDemo,
+  ImplementationTimeline
+} from '../components/landing'
 
 // Hook for scroll-triggered animations
 function useScrollAnimation(threshold = 0.1) {
@@ -1008,6 +1015,14 @@ export default function LandingHealthcare() {
               </div>
             ))}
           </div>
+
+          {/* Cost of Inaction */}
+          <div className="mt-16">
+            <CostOfInactionCard
+              industry="healthcare"
+              theme="emerald"
+            />
+          </div>
         </div>
       </section>
 
@@ -1044,6 +1059,11 @@ export default function LandingHealthcare() {
             ))}
           </div>
         </div>
+      </section>
+
+      {/* Interactive Encryption Demo */}
+      <section className="bg-slate-900">
+        <EncryptionDemo theme="emerald" />
       </section>
 
       {/* Use Cases Section */}
@@ -1117,36 +1137,25 @@ export default function LandingHealthcare() {
         </div>
       </section>
 
-      {/* Differentiators Section */}
-      <section ref={diffRef} className="py-24 bg-white">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div
-            className="text-center mb-12"
-            style={{
-              opacity: diffVisible ? 1 : 0,
-              transform: diffVisible ? 'translateY(0)' : 'translateY(20px)',
-              transition: 'all 0.6s ease'
-            }}
-          >
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
-              {t.differentiators.title}
-            </h2>
-            <p className="text-xl text-slate-600">{t.differentiators.subtitle}</p>
-          </div>
+      {/* Technology Comparison Section */}
+      <section ref={diffRef} className="bg-slate-950">
+        <TechnologyComparison theme="emerald" />
+      </section>
 
-          <div className="space-y-4">
-            {t.differentiators.items.map((item, index) => (
-              <DifferentiatorRow
-                key={index}
-                option={item.option}
-                problem={item.problem}
-                xcapit={item.xcapit}
-                delay={index * 100}
-                isVisible={diffVisible}
-              />
-            ))}
-          </div>
-        </div>
+      {/* Implementation Timeline */}
+      <section className="bg-slate-900">
+        <ImplementationTimeline industry="healthcare" theme="emerald" />
+      </section>
+
+      {/* Testimonials & Early Adopter */}
+      <section className="bg-slate-950">
+        <TestimonialSection
+          theme="emerald"
+          showEarlyAdopter={true}
+          onEarlyAdopterApply={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
+          title={lang === 'es' ? 'Únete a los innovadores' : lang === 'de' ? 'Schließen Sie sich den Innovatoren an' : 'Join the innovators'}
+          subtitle={lang === 'es' ? 'Instituciones de salud líderes ya están transformando su enfoque de privacidad de datos' : lang === 'de' ? 'Führende Gesundheitseinrichtungen transformieren bereits ihren Datenschutzansatz' : 'Leading healthcare institutions are already transforming their data privacy approach'}
+        />
       </section>
 
       {/* Contact Section */}

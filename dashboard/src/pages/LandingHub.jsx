@@ -2,6 +2,11 @@ import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import LandingHeader from '../components/LandingHeader'
+import {
+  TechnologyComparison,
+  EncryptionDemo,
+  EarlyAdopterCard
+} from '../components/landing'
 
 // Hook for scroll-triggered animations
 function useScrollAnimation(threshold = 0.1) {
@@ -1164,6 +1169,11 @@ export default function LandingHub() {
         </div>
       </section>
 
+      {/* Interactive Encryption Demo */}
+      <section className="bg-slate-900">
+        <EncryptionDemo theme="blue" />
+      </section>
+
       {/* Industries */}
       <section
         ref={industriesRef}
@@ -1262,6 +1272,21 @@ export default function LandingHub() {
               />
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Technology Comparison Section */}
+      <section className="bg-slate-950">
+        <TechnologyComparison theme="blue" />
+      </section>
+
+      {/* Early Adopter Program */}
+      <section className="bg-slate-900 py-20 px-4">
+        <div className="max-w-5xl mx-auto">
+          <EarlyAdopterCard
+            theme="blue"
+            onApply={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
+          />
         </div>
       </section>
 

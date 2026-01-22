@@ -2,6 +2,15 @@ import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import LandingHeader from '../components/LandingHeader'
+import {
+  CostOfInactionCard,
+  TestimonialSection,
+  EarlyAdopterCard,
+  TechnologyComparison,
+  EncryptionDemo,
+  ImplementationTimeline,
+  CalendlyBooking
+} from '../components/landing'
 
 // Hook for scroll-triggered animations
 function useScrollAnimation(threshold = 0.1) {
@@ -1017,6 +1026,14 @@ export default function LandingFintech() {
               </div>
             ))}
           </div>
+
+          {/* Cost of Inaction */}
+          <div className="mt-16">
+            <CostOfInactionCard
+              industry="fintech"
+              theme="blue"
+            />
+          </div>
         </div>
       </section>
 
@@ -1045,6 +1062,11 @@ export default function LandingFintech() {
             ))}
           </div>
         </div>
+      </section>
+
+      {/* Interactive Encryption Demo */}
+      <section className="bg-slate-900">
+        <EncryptionDemo theme="blue" />
       </section>
 
       {/* Use Cases Section */}
@@ -1104,44 +1126,25 @@ export default function LandingFintech() {
         </div>
       </section>
 
-      {/* Differentiators Section */}
-      <section ref={diffRef} className="py-24 bg-white overflow-hidden">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className={`text-3xl md:text-4xl font-bold text-slate-900 text-center mb-12 transition-all duration-700 ${diffVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            {t.differentiators.title}
-          </h2>
+      {/* Technology Comparison Section */}
+      <section ref={diffRef} className="bg-slate-950">
+        <TechnologyComparison theme="blue" />
+      </section>
 
-          <div className={`bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-xl transition-all duration-700 ${diffVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: '200ms' }}>
-            <div className="grid grid-cols-5 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200">
-              {t.differentiators.headers.map((header, index) => (
-                <div
-                  key={index}
-                  className={`p-5 font-semibold ${index === 0 ? 'text-left' : 'text-center'} ${
-                    index === 1 ? 'text-brand-600 bg-brand-50/50' : 'text-slate-600'
-                  }`}
-                >
-                  {header}
-                </div>
-              ))}
-            </div>
-            {t.differentiators.rows.map((row, rowIndex) => (
-              <div
-                key={rowIndex}
-                className={`grid grid-cols-5 border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-all duration-300 ${
-                  diffVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
-                }`}
-                style={{ transitionDelay: diffVisible ? `${300 + rowIndex * 100}ms` : '0ms' }}
-              >
-                <div className="p-5 text-slate-700 font-medium">{row[0]}</div>
-                {row.slice(1).map((value, colIndex) => (
-                  <div key={colIndex} className={`p-5 flex justify-center items-center ${colIndex === 0 ? 'bg-brand-50/30' : ''}`}>
-                    {renderCheckmark(value)}
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* Implementation Timeline */}
+      <section className="bg-slate-900">
+        <ImplementationTimeline industry="fintech" theme="blue" />
+      </section>
+
+      {/* Testimonials & Early Adopter */}
+      <section className="bg-slate-950">
+        <TestimonialSection
+          theme="blue"
+          showEarlyAdopter={true}
+          onEarlyAdopterApply={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
+          title={lang === 'es' ? 'Únete a los innovadores' : lang === 'de' ? 'Schließen Sie sich den Innovatoren an' : 'Join the innovators'}
+          subtitle={lang === 'es' ? 'Instituciones financieras líderes ya están transformando su enfoque de privacidad de datos' : lang === 'de' ? 'Führende Finanzinstitute transformieren bereits ihren Datenschutzansatz' : 'Leading financial institutions are already transforming their data privacy approach'}
+        />
       </section>
 
       {/* Contact Section */}
