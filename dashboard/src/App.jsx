@@ -2,12 +2,6 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { isAuthenticated } from './api/client'
 import { DemoProvider } from './context/DemoContext'
 import Layout from './components/Layout'
-import Landing from './pages/Landing'
-import LandingHub from './pages/LandingHub'
-import LandingFintech from './pages/LandingFintech'
-import LandingHealthcare from './pages/LandingHealthcare'
-import LandingGobierno from './pages/LandingGobierno'
-import LandingOtros from './pages/LandingOtros'
 import Register from './pages/Register'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
@@ -50,16 +44,10 @@ function App() {
   return (
     <DemoProvider>
       <Routes>
-        {/* Public routes */}
+        {/* Redirect to login or dashboard */}
         <Route path="/" element={
-          <PublicRoute><Landing /></PublicRoute>
+          isAuthenticated() ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />
         } />
-        {/* New landing pages - industry verticals */}
-        <Route path="/hub" element={<LandingHub />} />
-        <Route path="/fintech" element={<LandingFintech />} />
-        <Route path="/healthcare" element={<LandingHealthcare />} />
-        <Route path="/gobierno" element={<LandingGobierno />} />
-        <Route path="/industrias" element={<LandingOtros />} />
         <Route path="/register" element={
           <PublicRoute><Register /></PublicRoute>
         } />
