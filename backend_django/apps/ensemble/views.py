@@ -62,9 +62,51 @@ class EnsembleViewSet(viewsets.ModelViewSet):
             extra_data={"name": ensemble.name, "type": ensemble.ensemble_type},
         )
 
+    @action(detail=True, methods=["get", "post"], url_path="models", url_name="models")
+    def models(self, request, pk=None):
+        """List or add models to the ensemble."""
+        ensemble = self.get_object()
+
+        if request.method == "GET":
+            ensemble_models = EnsembleModel.objects.filter(ensemble=ensemble)
+            return Response(EnsembleModelSerializer(ensemble_models, many=True).data)
+
+        # POST - add a model
+        model_id = request.data.get("model")
+        weight = request.data.get("weight", 1.0)
+
+        # Check if model exists and is accessible
+        model = get_object_or_404(MLModel, id=model_id)
+
+        # Check if model is already in ensemble
+        if EnsembleModel.objects.filter(ensemble=ensemble, model=model).exists():
+            return Response(
+                {"detail": "Model already in ensemble."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        ensemble_model = EnsembleModel.objects.create(
+            ensemble=ensemble,
+            model=model,
+            weight=weight,
+        )
+
+        AuditLog.log(
+            request,
+            action="model_added_to_ensemble",
+            resource_type="ensemble",
+            resource_id=ensemble.id,
+            extra_data={"model_id": str(model_id)},
+        )
+
+        return Response(
+            EnsembleModelSerializer(ensemble_model).data,
+            status=status.HTTP_201_CREATED,
+        )
+
     @action(detail=True, methods=["post"])
     def add_model(self, request, pk=None):
-        """Add a model to the ensemble."""
+        """Add a model to the ensemble (legacy endpoint)."""
         ensemble = self.get_object()
         serializer = AddModelSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

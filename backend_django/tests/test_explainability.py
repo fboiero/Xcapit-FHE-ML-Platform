@@ -193,7 +193,8 @@ class TestExplanationRequestEndpoints:
         response = auth_client.post(url, data, format="json")
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert response.data["status"] == "pending"
+        # Request is processed synchronously, so status is completed
+        assert response.data["status"] == "completed"
 
     def test_get_request_detail(self, auth_client, explanation_request):
         """Test getting request detail."""

@@ -48,11 +48,19 @@ class ExplanationRequestCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ExplanationRequest
         fields = [
+            "id",
             "consortium",
             "model",
             "explanation_type",
             "input_data",
             "prediction_id",
+            "status",
+            "explanation",
+        ]
+        read_only_fields = [
+            "id",
+            "status",
+            "explanation",
         ]
 
     def create(self, validated_data):

@@ -8,7 +8,7 @@ from rest_framework.routers import DefaultRouter
 from .views import EnsemblePredictionViewSet, EnsembleViewSet
 
 router = DefaultRouter()
-router.register(r"", EnsembleViewSet, basename="ensemble")
+router.register(r"ensembles", EnsembleViewSet, basename="ensemble")
 router.register(r"predictions", EnsemblePredictionViewSet, basename="ensemble-prediction")
 
 urlpatterns = [

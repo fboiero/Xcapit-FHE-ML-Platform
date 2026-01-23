@@ -58,6 +58,7 @@ class QualityAssessmentCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = QualityAssessment
         fields = [
+            "id",
             "consortium",
             "contribution",
             "record_count",
@@ -68,6 +69,21 @@ class QualityAssessmentCreateSerializer(serializers.ModelSerializer):
             "schema_violations",
             "format_violations",
             "range_violations",
+            "completeness_score",
+            "consistency_score",
+            "accuracy_score",
+            "timeliness_score",
+            "overall_score",
+            "status",
+        ]
+        read_only_fields = [
+            "id",
+            "completeness_score",
+            "consistency_score",
+            "accuracy_score",
+            "timeliness_score",
+            "overall_score",
+            "status",
         ]
 
     def create(self, validated_data):

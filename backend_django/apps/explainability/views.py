@@ -173,14 +173,16 @@ class FeatureImportanceViewSet(viewsets.ReadOnlyModelViewSet):
     """
 
     serializer_class = FeatureImportanceSerializer
-    permission_classes = [IsAuthenticated, IsConsortiumMember]
+    permission_classes = [IsAuthenticated, IsCompanyMember]
 
     def get_queryset(self):
-        """Filter by consortium."""
-        consortium_id = self.kwargs.get("consortium_pk")
-        return FeatureImportance.objects.filter(
-            consortium_id=consortium_id
-        ).order_by("importance_rank")
+        """Filter by consortium (query param or nested route)."""
+        consortium_id = self.kwargs.get("consortium_pk") or self.request.query_params.get("consortium")
+        if consortium_id:
+            return FeatureImportance.objects.filter(
+                consortium_id=consortium_id
+            ).order_by("importance_rank")
+        return FeatureImportance.objects.all().order_by("importance_rank")
 
     @action(detail=False, methods=["get"])
     def top(self, request, consortium_pk=None):
@@ -196,12 +198,15 @@ class ModelInsightViewSet(viewsets.ModelViewSet):
     """
 
     serializer_class = ModelInsightSerializer
-    permission_classes = [IsAuthenticated, IsConsortiumMember]
+    permission_classes = [IsAuthenticated, IsCompanyMember]
 
     def get_queryset(self):
-        """Filter by consortium."""
-        consortium_id = self.kwargs.get("consortium_pk")
-        queryset = ModelInsight.objects.filter(consortium_id=consortium_id)
+        """Filter by consortium (query param or nested route)."""
+        consortium_id = self.kwargs.get("consortium_pk") or self.request.query_params.get("consortium")
+        if consortium_id:
+            queryset = ModelInsight.objects.filter(consortium_id=consortium_id)
+        else:
+            queryset = ModelInsight.objects.all()
 
         # Filter active only by default
         if self.request.query_params.get("include_inactive") != "true":
