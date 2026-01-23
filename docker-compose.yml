@@ -48,17 +48,18 @@ services:
       - PYTHONUNBUFFERED=1
       - DJANGO_SETTINGS_MODULE=config.settings_test
       - DJANGO_DEBUG=True
+      - RUN_MIGRATIONS=true
       - CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173,https://xcapit-privacy.vercel.app
     volumes:
       - ./backend_django:/app
       - django_static:/app/staticfiles
     command: python manage.py runserver 0.0.0.0:8000
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v2/health/"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 15s
     restart: unless-stopped
     profiles:
       - dev
@@ -78,20 +79,22 @@ services:
       - DJANGO_SETTINGS_MODULE=config.settings
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-change-me-in-production}
       - DJANGO_DEBUG=False
+      - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,apifhe.xcapit.com
       - DATABASE_URL=postgresql://xcapit:xcapit_fhe_secret@postgres:5432/fheml
       - REDIS_URL=redis://redis:6379/0
-      - CORS_ALLOWED_ORIGINS=https://xcapit-privacy.vercel.app,https://app.xcapit.io
+      - RUN_MIGRATIONS=true
+      - CORS_ALLOWED_ORIGINS=https://xcapit-privacy.vercel.app,https://app.xcapit.io,https://apifhe.xcapit.com
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v2/health/"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 15s
+      start_period: 30s
     restart: unless-stopped
 
   # ============ Django Tests ============

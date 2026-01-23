@@ -1,7 +1,8 @@
 """
 Django settings for Xcapit FHE-ML Platform.
 
-Django LTS 4.2 - Security-hardened configuration.
+Django 5.2 LTS - Security-hardened configuration.
+Supported until April 2028.
 """
 
 import os
@@ -88,6 +89,11 @@ INSTALLED_APPS = [
     "apps.sandbox",
     "apps.federated",
     "apps.models",
+    # New Apps (Phase 1 Migration)
+    "apps.data_quality",
+    "apps.competitive_insights",
+    "apps.ensemble",
+    "apps.explainability",
 ]
 
 MIDDLEWARE = [
@@ -398,7 +404,16 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+# Django 5.x uses STORAGES instead of STATICFILES_STORAGE
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 # =============================================================================
 # FHE CONFIGURATION

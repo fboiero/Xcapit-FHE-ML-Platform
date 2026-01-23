@@ -42,6 +42,14 @@ urlpatterns = [
                 path("sandbox/", include("apps.sandbox.urls")),
                 # Federated
                 path("federated/", include("apps.federated.urls")),
+                # Data Quality (New)
+                path("data-quality/", include("apps.data_quality.urls")),
+                # Competitive Insights (New)
+                path("competitive/", include("apps.competitive_insights.urls")),
+                # Ensemble (New)
+                path("ensemble/", include("apps.ensemble.urls")),
+                # Explainability (New)
+                path("explainability/", include("apps.explainability.urls")),
             ]
         ),
     ),

@@ -1,8 +1,9 @@
 # Xcapit FHE-ML Platform - Django Backend
 # Multi-stage build for optimized production image
+# Django 5.2 LTS - Supported until April 2028
 
 # ============ Build Stage ============
-FROM python:3.11-slim as builder
+FROM python:3.12-slim as builder
 
 WORKDIR /build
 
@@ -24,7 +25,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # ============ Production Stage ============
-FROM python:3.11-slim as production
+FROM python:3.12-slim as production
 
 WORKDIR /app
 
@@ -50,18 +51,28 @@ RUN mkdir -p /app/staticfiles && chown django:django /app/staticfiles
 
 USER django
 
-# Collect static files
-RUN python manage.py collectstatic --noinput 2>/dev/null || true
+# Copy and setup entrypoint script
+COPY --chown=django:django docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
+
+# Install netcat for database wait script
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends netcat-openbsd \
+    && rm -rf /var/lib/apt/lists/*
+USER django
 
 # Expose API port
 EXPOSE 8000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/api/v2/health/ || exit 1
+# Health check (uses django-health-check at /health/)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:8000/health/ || exit 1
+
+# Entrypoint handles migrations and startup
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
 
 # Default command: run with gunicorn
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "4", "--threads", "2"]
+CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "4", "--threads", "2", "--access-logfile", "-", "--error-logfile", "-"]
 
 # ============ Development Stage ============
 FROM production as development
