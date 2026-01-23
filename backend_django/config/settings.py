@@ -85,6 +85,7 @@ INSTALLED_APPS = [
     "django_ratelimit",
     "axes",  # Brute-force protection
     "drf_spectacular",  # API documentation
+    "django_filters",  # Filtering support
     "health_check",
     "health_check.db",
     "health_check.cache",
@@ -250,6 +251,15 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "EXCEPTION_HANDLER": "apps.core.exceptions.custom_exception_handler",
+    # Pagination
+    "DEFAULT_PAGINATION_CLASS": "apps.core.pagination.StandardPagination",
+    "PAGE_SIZE": 50,
+    # Filtering
+    "DEFAULT_FILTER_BACKENDS": [
+        "django_filters.rest_framework.DjangoFilterBackend",
+        "rest_framework.filters.SearchFilter",
+        "rest_framework.filters.OrderingFilter",
+    ],
 }
 
 # =============================================================================

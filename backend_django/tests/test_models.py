@@ -280,6 +280,6 @@ class TestPredictionLogEndpoints:
         response = auth_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        for log in response.data:
+        for log in response.data.get("results", response.data):
             # Model field might be a UUID or string representation
             assert str(log["model"]) == str(ml_model.id)

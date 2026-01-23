@@ -51,7 +51,7 @@ class TestSandboxTemplateEndpoints:
         response = auth_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        for template in response.data:
+        for template in response.data.get("results", response.data):
             assert template["industry"] == "fintech"
 
     def test_get_template(self, auth_client):
@@ -533,7 +533,7 @@ class TestExperimentEndpoints:
         response = auth_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        for exp in response.data:
+        for exp in response.data.get("results", response.data):
             assert str(exp["sandbox"]) == str(sandbox1.id)
 
     def test_filter_experiments_by_status(self, auth_client, company):
@@ -561,7 +561,8 @@ class TestExperimentEndpoints:
         response = auth_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        assert all(exp["status"] == "pending" for exp in response.data)
+        results = response.data.get("results", response.data) if isinstance(response.data, dict) else response.data
+        assert all(exp["status"] == "pending" for exp in results)
 
     def test_get_experiment(self, auth_client, company):
         """Test getting a single experiment."""

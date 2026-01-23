@@ -159,7 +159,7 @@ class TestBenchmarkEndpoints:
         response = auth_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        for benchmark in response.data:
+        for benchmark in response.data.get("results", response.data):
             assert benchmark["industry"] == "finance"
 
 
@@ -232,5 +232,5 @@ class TestDataIsolation:
         response = auth_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        for metric in response.data:
+        for metric in response.data.get("results", response.data):
             assert metric.get("company") != str(other_company.id)

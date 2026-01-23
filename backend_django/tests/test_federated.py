@@ -334,7 +334,7 @@ class TestInferenceRequestEndpoints:
         response = auth_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        for req in response.data:
+        for req in response.data.get("results", response.data):
             # UUID comparison - endpoint can be UUID or string
             assert str(req["endpoint"]) == str(endpoint1.id)
 
@@ -363,7 +363,7 @@ class TestInferenceRequestEndpoints:
         response = auth_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        for req in response.data:
+        for req in response.data.get("results", response.data):
             assert req["status"] == "completed"
 
     def test_get_request_result(self, auth_client, consortium, company):
@@ -698,7 +698,8 @@ class TestEdgeNodeEndpoints:
         response = auth_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        for node in response.data:
+        results = response.data.get("results", response.data) if isinstance(response.data, dict) else response.data
+        for node in results:
             assert node["status"] == "online"
 
 

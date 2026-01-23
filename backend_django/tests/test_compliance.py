@@ -62,7 +62,7 @@ class TestComplianceFrameworkEndpoints:
         response = auth_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        for fw in response.data:
+        for fw in response.data.get("results", response.data):
             assert fw["region"] == "EU"
 
     def test_filter_frameworks_by_industry(self, auth_client):
@@ -85,7 +85,7 @@ class TestComplianceFrameworkEndpoints:
         response = auth_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        for fw in response.data:
+        for fw in response.data.get("results", response.data):
             assert fw["industry"] in ["healthcare", ""]
 
     def test_get_framework(self, auth_client):
@@ -297,7 +297,7 @@ class TestComplianceCheckEndpoints:
         response = auth_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        for check in response.data:
+        for check in response.data.get("results", response.data):
             assert check["framework"] == "framework_1"
 
     def test_filter_checks_by_status(self, auth_client, consortium, company):
@@ -333,7 +333,7 @@ class TestComplianceCheckEndpoints:
         response = auth_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        for check in response.data:
+        for check in response.data.get("results", response.data):
             assert check["status"] == "passed"
 
 
@@ -482,7 +482,7 @@ class TestComplianceReportEndpoints:
         response = auth_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        for report in response.data:
+        for report in response.data.get("results", response.data):
             assert report["framework"] == "framework_1"
 
 
@@ -577,7 +577,7 @@ class TestAttestationEndpoints:
         response = auth_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        for att in response.data:
+        for att in response.data.get("results", response.data):
             assert att["revoked"] is False
 
     def test_revoke_attestation(self, auth_client, consortium, company):

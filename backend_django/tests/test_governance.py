@@ -101,7 +101,8 @@ class TestProposalEndpoints:
         response = auth_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.data) == 0
+        results = response.data.get("results", response.data) if isinstance(response.data, dict) else response.data
+        assert len(results) == 0
 
     def test_proposal_votes_endpoint(self, auth_client, consortium, company):
         """Test getting votes for a proposal."""
@@ -550,7 +551,7 @@ class TestAuditEventEndpoints:
         response = auth_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        for event in response.data:
+        for event in response.data.get("results", response.data):
             assert event["event_type"] == "member_joined"
 
     def test_verify_audit_trail(self, auth_client, consortium, company):

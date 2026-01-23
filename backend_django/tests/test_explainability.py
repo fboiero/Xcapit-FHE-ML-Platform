@@ -268,5 +268,5 @@ class TestDataIsolation:
         response = auth_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        for req in response.data:
+        for req in response.data.get("results", response.data):
             assert req.get("requester") != str(other_company.id)

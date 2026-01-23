@@ -5,13 +5,20 @@ Provides endpoints for user management, company management,
 API keys, and system health.
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
 from django.contrib.auth import get_user_model
+from django.db.models import QuerySet
 from django.utils import timezone
 from django_ratelimit.decorators import ratelimit
 from rest_framework import status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.serializers import Serializer
 from rest_framework.views import APIView
 
 from .models import APIKey, AuditLog, Company
@@ -30,6 +37,9 @@ from .serializers import (
     UserUpdateSerializer,
 )
 
+if TYPE_CHECKING:
+    from .models import User as UserModel
+
 User = get_user_model()
 
 
@@ -42,7 +52,7 @@ class HealthCheckView(APIView):
 
     permission_classes = [AllowAny]
 
-    def get(self, request):
+    def get(self, request: Request) -> Response:
         """Return health status."""
         data = {
             "status": "healthy",
@@ -55,7 +65,7 @@ class HealthCheckView(APIView):
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
-def ratelimited_error(request, exception=None):
+def ratelimited_error(request: Request, exception: Exception | None = None) -> Response:
     """Custom view for rate limit exceeded responses."""
     return Response(
         {
@@ -79,21 +89,21 @@ class CompanyViewSet(viewsets.ModelViewSet):
     serializer_class = CompanySerializer
     permission_classes = [IsAuthenticated, IsCompanyMember]
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Company]:
         """Filter to user's company only."""
         user = self.request.user
         if user.company:
             return Company.objects.filter(id=user.company.id)
         return Company.objects.none()
 
-    def get_serializer_class(self):
+    def get_serializer_class(self) -> type[Serializer]:
         """Use different serializer for create."""
         if self.action == "create":
             return CompanyCreateSerializer
         return CompanySerializer
 
     @action(detail=False, methods=["get"])
-    def me(self, request):
+    def me(self, request: Request) -> Response:
         """Get current user's company."""
         company = request.user.company
         if not company:
@@ -116,14 +126,14 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet:
         """Filter to users in the same company."""
         user = self.request.user
         if user.company:
             return User.objects.filter(company=user.company)
         return User.objects.filter(id=user.id)
 
-    def get_serializer_class(self):
+    def get_serializer_class(self) -> type[Serializer]:
         """Use different serializers for different actions."""
         if self.action == "create":
             return UserCreateSerializer
@@ -132,7 +142,7 @@ class UserViewSet(viewsets.ModelViewSet):
         return UserSerializer
 
     @action(detail=False, methods=["get", "patch"])
-    def me(self, request):
+    def me(self, request: Request) -> Response:
         """Get or update current user's profile."""
         user = request.user
 
@@ -153,7 +163,7 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     @action(detail=False, methods=["post"])
-    def change_password(self, request):
+    def change_password(self, request: Request) -> Response:
         """Change current user's password."""
         serializer = ChangePasswordSerializer(
             data=request.data,
@@ -186,20 +196,20 @@ class APIKeyViewSet(viewsets.ModelViewSet):
     serializer_class = APIKeySerializer
     permission_classes = [IsAuthenticated, IsCompanyMember]
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[APIKey]:
         """Filter to company's API keys."""
         user = self.request.user
         if user.company:
             return APIKey.objects.filter(company=user.company)
         return APIKey.objects.none()
 
-    def get_serializer_class(self):
+    def get_serializer_class(self) -> type[Serializer]:
         """Use different serializers for create and response."""
         if self.action == "create":
             return APIKeyCreateSerializer
         return APIKeySerializer
 
-    def create(self, request, *args, **kwargs):
+    def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """Create new API key and return with raw key (once)."""
         serializer = APIKeyCreateSerializer(
             data=request.data,
@@ -222,7 +232,7 @@ class APIKeyViewSet(viewsets.ModelViewSet):
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=["post"])
-    def revoke(self, request, pk=None):
+    def revoke(self, request: Request, pk: str | None = None) -> Response:
         """Revoke an API key."""
         api_key = self.get_object()
         api_key.is_active = False
@@ -240,7 +250,7 @@ class APIKeyViewSet(viewsets.ModelViewSet):
         return Response({"detail": "API key revoked successfully."})
 
     @action(detail=True, methods=["post"])
-    def regenerate(self, request, pk=None):
+    def regenerate(self, request: Request, pk: str | None = None) -> Response:
         """Regenerate an API key (creates new key, deactivates old)."""
         old_key = self.get_object()
 
@@ -283,7 +293,7 @@ class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = AuditLogSerializer
     permission_classes = [IsAuthenticated, IsCompanyMember]
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[AuditLog]:
         """Filter to company's audit logs."""
         user = self.request.user
         if user.company:

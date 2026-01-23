@@ -114,7 +114,7 @@ class TestMarketplaceModelEndpoints:
 
         assert response.status_code == status.HTTP_200_OK
         # Inactive models are not returned
-        model_names = [m["name"] for m in response.data]
+        model_names = [m["name"] for m in response.data.get("results", response.data)]
         assert "Active Model" in model_names
         assert "Inactive Model" not in model_names
 
@@ -156,7 +156,8 @@ class TestMarketplaceModelEndpoints:
         response = auth_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        for model in response.data:
+        results = response.data.get("results", response.data) if isinstance(response.data, dict) else response.data
+        for model in results:
             assert model["is_featured"] is True
 
     def test_get_popular_models(self, auth_client):

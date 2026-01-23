@@ -47,7 +47,8 @@ class TestCompanyEndpoints:
         response = auth_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        company_ids = [c["id"] for c in response.data]
+        results = response.data.get("results", response.data)
+        company_ids = [c["id"] for c in results]
         assert str(company.id) in company_ids
         assert str(other_company.id) not in company_ids
 
@@ -94,7 +95,8 @@ class TestUserEndpoints:
         response = auth_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        emails = [u["email"] for u in response.data]
+        results = response.data.get("results", response.data)
+        emails = [u["email"] for u in results]
         assert user.email in emails
         assert other_user.email not in emails
 
@@ -164,7 +166,8 @@ class TestAuditLogEndpoints:
         response = auth_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.data) >= 1
+        results = response.data.get("results", response.data)
+        assert len(results) >= 1
 
     def test_filter_audit_logs_by_action(self, auth_client, company, user):
         """Test filtering audit logs by action."""
@@ -187,7 +190,8 @@ class TestAuditLogEndpoints:
         response = auth_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        for log in response.data:
+        results = response.data.get("results", response.data)
+        for log in results:
             assert log["action"] == "specific_action"
 
     def test_audit_logs_read_only(self, auth_client, company, user):
@@ -244,5 +248,6 @@ class TestIsolation:
         response = auth_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        for log in response.data:
+        results = response.data.get("results", response.data)
+        for log in results:
             assert log.get("company") != str(other_company.id)

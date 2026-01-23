@@ -258,5 +258,5 @@ class TestDataIsolation:
         response = auth_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        for assessment in response.data:
+        for assessment in response.data.get("results", response.data):
             assert assessment.get("company") != str(other_company.id)
