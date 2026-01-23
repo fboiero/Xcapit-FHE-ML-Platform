@@ -65,3 +65,6 @@ PASSWORD_HASHERS = [
 
 # Disable logging during tests
 LOGGING = {}
+
+# Disable cache health check since we use DummyCache
+INSTALLED_APPS = [app for app in INSTALLED_APPS if app != "health_check.cache"]
