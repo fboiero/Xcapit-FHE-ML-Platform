@@ -22,7 +22,7 @@ venv/
 env/
 ENV/
 .pytest_cache/
-.coverage
+.coverage*
 htmlcov/
 .ipynb_checkpoints
 *.log
