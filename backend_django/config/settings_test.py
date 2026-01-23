@@ -65,6 +65,3 @@ PASSWORD_HASHERS = [
 
 # Disable logging during tests
 LOGGING = {}
-
-# Add rest_framework.authtoken for token blacklisting in tests
-INSTALLED_APPS.append("rest_framework_simplejwt.token_blacklist")

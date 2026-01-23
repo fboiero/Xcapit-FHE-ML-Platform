@@ -58,6 +58,13 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 # X-Frame-Options
 X_FRAME_OPTIONS = "DENY"
 
+# Referrer Policy
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+
+# Content-Security-Policy (via middleware or nginx recommended for complex rules)
+# Basic CSP headers for API-only backend
+SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin"
+
 # =============================================================================
 # APPLICATION DEFINITION
 # =============================================================================
@@ -73,6 +80,7 @@ INSTALLED_APPS = [
     # Third-party
     "rest_framework",
     "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",  # JWT token revocation
     "corsheaders",
     "django_ratelimit",
     "axes",  # Brute-force protection
@@ -248,6 +256,9 @@ REST_FRAMEWORK = {
 # JWT SETTINGS
 # =============================================================================
 
+# Use separate JWT signing key if provided, otherwise fall back to SECRET_KEY
+JWT_SIGNING_KEY = os.environ.get("JWT_SIGNING_KEY", SECRET_KEY)
+
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
@@ -255,9 +266,11 @@ SIMPLE_JWT = {
     "BLACKLIST_AFTER_ROTATION": True,
     "UPDATE_LAST_LOGIN": True,
     "ALGORITHM": "HS256",
-    "SIGNING_KEY": SECRET_KEY,
+    "SIGNING_KEY": JWT_SIGNING_KEY,
     "AUTH_HEADER_TYPES": ("Bearer",),
     "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
+    "TOKEN_OBTAIN_SERIALIZER": "rest_framework_simplejwt.serializers.TokenObtainPairSerializer",
+    "TOKEN_BLACKLIST_ENABLED": True,
 }
 
 # =============================================================================
