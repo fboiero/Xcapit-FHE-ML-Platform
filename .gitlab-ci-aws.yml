@@ -1,0 +1,66 @@
+# GitLab CI/CD for AWS ECS Deployment
+# Add this to your .gitlab-ci.yml or use as reference
+
+stages:
+  - test
+  - build
+  - deploy
+
+variables:
+  DOCKER_TLS_CERTDIR: "/certs"
+  ECR_REPO_NAME: xcapit-fhe-api
+  ECS_CLUSTER_NAME: xcapit-cluster
+  ECS_SERVICE_NAME: xcapit-fhe-api-service
+
+# ============ Test Stage ============
+test:
+  stage: test
+  image: python:3.11-slim
+  before_script:
+    - pip install -e ".[dev]"
+  script:
+    - pytest tests/ -v --cov=sdk
+  only:
+    - main
+    - merge_requests
+
+# ============ Build Stage ============
+build:
+  stage: build
+  image: docker:24
+  services:
+    - docker:24-dind
+  before_script:
+    - apk add --no-cache aws-cli
+    - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+  script:
+    - export IMAGE_TAG=$CI_COMMIT_SHORT_SHA
+    - export ECR_REPO_URL=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO_NAME
+    - docker build -t $ECR_REPO_URL:$IMAGE_TAG -t $ECR_REPO_URL:latest --target production .
+    - docker push $ECR_REPO_URL:$IMAGE_TAG
+    - docker push $ECR_REPO_URL:latest
+  only:
+    - main
+
+# ============ Deploy Stage ============
+deploy:
+  stage: deploy
+  image: amazon/aws-cli:latest
+  script:
+    - |
+      aws ecs update-service \
+        --cluster $ECS_CLUSTER_NAME \
+        --service $ECS_SERVICE_NAME \
+        --force-new-deployment \
+        --region $AWS_REGION
+    - |
+      aws ecs wait services-stable \
+        --cluster $ECS_CLUSTER_NAME \
+        --services $ECS_SERVICE_NAME \
+        --region $AWS_REGION
+  environment:
+    name: production
+    url: https://apifhe.xcapit.com
+  only:
+    - main
+  when: manual  # Require manual trigger for production deploy
