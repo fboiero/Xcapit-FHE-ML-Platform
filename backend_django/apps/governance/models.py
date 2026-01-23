@@ -133,6 +133,7 @@ class Vote(models.Model):
     class Meta:
         verbose_name = "vote"
         verbose_name_plural = "votes"
+        ordering = ["-voted_at"]
         unique_together = ["proposal", "voter"]
         indexes = [
             models.Index(fields=["proposal"]),

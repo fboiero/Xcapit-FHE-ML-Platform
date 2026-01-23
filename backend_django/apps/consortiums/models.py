@@ -145,6 +145,7 @@ class ConsortiumMember(models.Model):
     class Meta:
         verbose_name = "consortium member"
         verbose_name_plural = "consortium members"
+        ordering = ["-joined_at"]
         unique_together = ["consortium", "company"]
         indexes = [
             models.Index(fields=["consortium", "status"]),
@@ -266,6 +267,7 @@ class ConsortiumInvitation(models.Model):
     class Meta:
         verbose_name = "consortium invitation"
         verbose_name_plural = "consortium invitations"
+        ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["invitee_email"]),
             models.Index(fields=["status"]),

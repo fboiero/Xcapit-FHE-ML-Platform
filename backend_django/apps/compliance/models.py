@@ -35,6 +35,7 @@ class ComplianceFramework(models.Model):
     class Meta:
         verbose_name = "compliance framework"
         verbose_name_plural = "compliance frameworks"
+        ordering = ["name"]
 
     def __str__(self):
         return f"{self.name} v{self.version}"
@@ -74,6 +75,7 @@ class ConsortiumCompliance(models.Model):
     class Meta:
         verbose_name = "consortium compliance"
         verbose_name_plural = "consortium compliance settings"
+        ordering = ["-last_check_at"]
 
     def __str__(self):
         return f"Compliance for {self.consortium.name}"

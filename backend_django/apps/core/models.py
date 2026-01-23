@@ -77,6 +77,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     class Meta:
         verbose_name = "user"
         verbose_name_plural = "users"
+        ordering = ["-date_joined"]
         indexes = [
             models.Index(fields=["email"]),
             models.Index(fields=["company"]),
@@ -121,6 +122,7 @@ class Company(models.Model):
     class Meta:
         verbose_name = "company"
         verbose_name_plural = "companies"
+        ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["email"]),
             models.Index(fields=["is_active"]),
@@ -172,6 +174,7 @@ class APIKey(models.Model):
     class Meta:
         verbose_name = "API key"
         verbose_name_plural = "API keys"
+        ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["key_hash"]),
             models.Index(fields=["company"]),

@@ -61,6 +61,7 @@ class IndustryBenchmark(models.Model):
     class Meta:
         verbose_name = "industry benchmark"
         verbose_name_plural = "industry benchmarks"
+        ordering = ["-period_start"]
         indexes = [
             models.Index(fields=["industry"]),
             models.Index(fields=["metric_name"]),
@@ -127,6 +128,7 @@ class CompanyMetric(models.Model):
     class Meta:
         verbose_name = "company metric"
         verbose_name_plural = "company metrics"
+        ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["company"]),
             models.Index(fields=["metric_name"]),

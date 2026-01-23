@@ -33,6 +33,7 @@ class SandboxTemplate(models.Model):
     class Meta:
         verbose_name = "sandbox template"
         verbose_name_plural = "sandbox templates"
+        ordering = ["name"]
 
     def __str__(self):
         return self.name

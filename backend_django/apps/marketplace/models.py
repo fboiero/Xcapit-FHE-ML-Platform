@@ -177,6 +177,7 @@ class Deployment(models.Model):
     class Meta:
         verbose_name = "deployment"
         verbose_name_plural = "deployments"
+        ordering = ["-deployed_at"]
         unique_together = ["marketplace_model", "consortium"]
         indexes = [
             models.Index(fields=["consortium"]),
