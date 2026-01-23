@@ -439,6 +439,22 @@ STORAGES = {
 }
 
 # =============================================================================
+# OPENBAO / VAULT CONFIGURATION
+# =============================================================================
+
+# Enable vault-based secret management
+VAULT_ENABLED = os.environ.get("VAULT_ENABLED", "false").lower() == "true"
+VAULT_ADDR = os.environ.get("VAULT_ADDR") or os.environ.get("BAO_ADDR", "")
+VAULT_TOKEN = os.environ.get("VAULT_TOKEN") or os.environ.get("BAO_TOKEN", "")
+VAULT_MOUNT_POINT = os.environ.get("VAULT_MOUNT_POINT", "xcapit")
+
+# Log vault status
+if VAULT_ENABLED and VAULT_ADDR:
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"Vault integration enabled: {VAULT_ADDR}")
+
+# =============================================================================
 # FHE CONFIGURATION
 # =============================================================================
 

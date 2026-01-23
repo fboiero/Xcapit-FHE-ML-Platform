@@ -6,12 +6,13 @@ version: '3.8'
 #
 # Usage:
 #   Development:  docker compose --profile dev up
-#   Production:   docker compose up django
+#   Production:   docker compose --profile production up
 #   Tests:        docker compose --profile test up django-test
+#   Vault only:   docker compose --profile vault up
 #
 # Security Notes:
-#   - PostgreSQL and Redis are NOT exposed to host in production
-#   - Use .env file for secrets (never commit to git)
+#   - PostgreSQL, Redis, and OpenBao are NOT exposed to host in production
+#   - Use OpenBao for secret management in production
 #   - Generate secrets with: openssl rand -hex 32
 # =============================================================================
 
@@ -35,6 +36,8 @@ services:
     restart: unless-stopped
     networks:
       - backend
+    profiles:
+      - production
 
   # ============ PostgreSQL (Development - with exposed port) ============
   postgres-dev:
@@ -66,6 +69,8 @@ services:
     restart: unless-stopped
     networks:
       - backend
+    profiles:
+      - production
 
   # ============ Redis (Development - with exposed port) ============
   redis-dev:
@@ -147,6 +152,8 @@ services:
     restart: unless-stopped
     networks:
       - backend
+    profiles:
+      - production
     # Security: Read-only filesystem with specific writable paths
     read_only: true
     tmpfs:
@@ -232,12 +239,74 @@ services:
     tmpfs:
       - /tmp
 
+  # ============ OpenBao (Secret Management - Production) ============
+  openbao:
+    image: quay.io/openbao/openbao:2.1.0
+    container_name: xcapit-fhe-openbao
+    cap_add:
+      - IPC_LOCK
+    environment:
+      - BAO_ADDR=http://127.0.0.1:8200
+      - BAO_API_ADDR=http://openbao:8200
+    volumes:
+      - openbao_data:/openbao/data
+      - ./deploy/openbao/config-prod.hcl:/openbao/config/config.hcl:ro
+      - openbao_tls:/openbao/tls:ro
+    command: server
+    healthcheck:
+      test: ["CMD", "bao", "status", "-tls-skip-verify"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - backend
+    profiles:
+      - production
+
+  # ============ OpenBao (Development - with exposed port & UI) ============
+  openbao-dev:
+    image: quay.io/openbao/openbao:2.1.0
+    container_name: xcapit-fhe-openbao-dev
+    cap_add:
+      - IPC_LOCK
+    ports:
+      - "8200:8200"
+    environment:
+      - BAO_ADDR=http://127.0.0.1:8200
+      - BAO_API_ADDR=http://openbao-dev:8200
+      - BAO_DEV_ROOT_TOKEN_ID=dev-root-token
+      - BAO_DEV_LISTEN_ADDRESS=0.0.0.0:8200
+    volumes:
+      - openbao_data_dev:/openbao/data
+    # Dev mode: no config file needed, auto-unsealed with in-memory storage
+    command: server -dev
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8200/v1/sys/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+    networks:
+      - backend
+    profiles:
+      - dev
+      - vault
+
 volumes:
   postgres_data:
     driver: local
   redis_data:
     driver: local
   django_static:
+    driver: local
+  openbao_data:
+    driver: local
+  openbao_data_dev:
+    driver: local
+  openbao_tls:
     driver: local
 
 networks:
