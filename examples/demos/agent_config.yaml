@@ -1,0 +1,366 @@
+# Xcapit FHE-ML Platform - Configuracion para Agentes de IA
+#
+# Este archivo define la estructura de interaccion para LLMs y agentes
+# que necesiten probar la plataforma de forma programatica.
+
+version: "1.0"
+platform: "Xcapit FHE-ML"
+description: "Privacy-preserving ML platform using Fully Homomorphic Encryption"
+
+# ============================================================================
+# ENDPOINTS
+# ============================================================================
+endpoints:
+  production:
+    api_base: "https://apifhe.xcapit.com"
+    frontend: "https://xcapit-privacy.vercel.app"
+    docs: "https://apifhe.xcapit.com/api/v2/docs/"
+
+  development:
+    api_base: "http://localhost:8000"
+    frontend: "http://localhost:5173"
+
+  blockchain:
+    network: "arbitrum_sepolia"
+    chain_id: 421614
+    rpc: "https://sepolia-rollup.arbitrum.io/rpc"
+    contracts:
+      governance: "0xda52326d106A91A1F22A0c41Be2dc1F531C01F11"
+      model_registry: "0x1296cCeF7803Bff51FB690afCFc586E7012417b8"
+      computation_verifier: "0xa5f04E0aefe55173C91b949Aa2385f0228dd2921"
+
+# ============================================================================
+# AUTENTICACION
+# ============================================================================
+authentication:
+  demo_credentials:
+    api_key: "demo_xcapit_2024_public_access"
+    email: "demo@xcapit.com"
+
+  api_key_format: "fheml_{random_32_chars}"
+
+  headers:
+    api_key: "Authorization: ApiKey {api_key}"
+    jwt: "Authorization: Bearer {access_token}"
+
+# ============================================================================
+# VERTICALES SOPORTADAS
+# ============================================================================
+verticals:
+  fintech:
+    name: "Financial Services"
+    color: "indigo"
+    use_cases:
+      - fraud_detection
+      - credit_scoring
+      - aml_compliance
+    dataset_types:
+      - transactions
+      - applications
+      - customers
+    compliance:
+      - PCI-DSS
+      - SOX
+      - BCRA
+
+  healthcare:
+    name: "Healthcare"
+    color: "rose"
+    use_cases:
+      - disease_prediction
+      - readmission_risk
+      - clinical_research
+    dataset_types:
+      - patients
+      - lab_results
+      - diagnoses
+    compliance:
+      - HIPAA
+      - GDPR
+      - Ley_25326
+
+  insurance:
+    name: "Insurance"
+    color: "emerald"
+    use_cases:
+      - claims_fraud
+      - risk_assessment
+      - pricing
+    dataset_types:
+      - claims
+      - policies
+      - customers
+    compliance:
+      - SSN
+      - IAIS
+
+  government:
+    name: "Government"
+    color: "slate"
+    use_cases:
+      - resource_allocation
+      - service_optimization
+      - population_segmentation
+    dataset_types:
+      - citizens
+      - services
+      - resources
+    compliance:
+      - Ley_25326
+      - ISO_27001
+      - NIST
+
+  retail:
+    name: "Retail"
+    color: "purple"
+    use_cases:
+      - churn_prediction
+      - customer_segmentation
+      - demand_forecasting
+    dataset_types:
+      - customers
+      - transactions
+      - products
+    compliance:
+      - GDPR
+      - CCPA
+
+# ============================================================================
+# FLUJOS DE TRABAJO
+# ============================================================================
+workflows:
+  onboarding:
+    name: "Client Onboarding"
+    steps:
+      - action: register
+        endpoint: "POST /api/v2/auth/register/"
+        params:
+          company_name: "{company_name}"
+          email: "{email}"
+        returns: [user_id, company_id, api_key, tokens]
+        notes: "API key only shown once - save securely"
+
+      - action: login
+        endpoint: "POST /api/v2/auth/token/"
+        params:
+          email: "{email}"
+          password: "{password}"
+        returns: [access, refresh]
+
+      - action: verify
+        endpoint: "GET /api/v2/auth/me/"
+        headers: ["Authorization: Bearer {access_token}"]
+        returns: [user, company]
+
+  sandbox_testing:
+    name: "Sandbox Testing Flow"
+    steps:
+      - action: create_sandbox
+        endpoint: "POST /api/v2/sandbox/sandboxes/"
+        params:
+          name: "{sandbox_name}"
+          industry: "{vertical}"
+        returns: [id, expires_at]
+
+      - action: generate_data
+        endpoint: "POST /api/v2/sandbox/datasets/generate/"
+        params:
+          sandbox_id: "{sandbox_id}"
+          dataset_type: "transactions"
+          record_count: 1000
+        returns: [id, data_preview, statistics]
+
+      - action: create_experiment
+        endpoint: "POST /api/v2/sandbox/experiments/"
+        params:
+          sandbox_id: "{sandbox_id}"
+          name: "Test Experiment"
+          experiment_type: "training"
+          config:
+            model_type: "logistic_regression"
+            epochs: 10
+        returns: [id, status]
+
+      - action: run_experiment
+        endpoint: "POST /api/v2/sandbox/experiments/{id}/run/"
+        returns: [status, results]
+
+  consortium_creation:
+    name: "Create Consortium"
+    steps:
+      - action: create_consortium
+        endpoint: "POST /api/v2/consortiums/"
+        params:
+          name: "{consortium_name}"
+          description: "{description}"
+          industry: "{vertical}"
+        returns: [id, invite_code]
+
+      - action: invite_members
+        endpoint: "POST /api/v2/consortiums/{id}/invite/"
+        params:
+          email: "{member_email}"
+          role: "member"
+        returns: [invitation_id]
+
+      - action: upload_data
+        endpoint: "POST /api/v2/consortiums/{id}/data/"
+        params:
+          file: "{encrypted_file}"
+          metadata: {}
+        returns: [contribution_id, data_hash]
+
+# ============================================================================
+# MODELOS FHE SOPORTADOS
+# ============================================================================
+models:
+  classification:
+    - name: "LogisticRegression"
+      class: "sdk.models.LogisticRegression"
+      supports_fhe: true
+      params: [max_iter, learning_rate, regularization]
+
+    - name: "DecisionTree"
+      class: "sdk.models.DecisionTreeClassifier"
+      supports_fhe: true
+      params: [max_depth, min_samples_split]
+
+  regression:
+    - name: "LinearRegression"
+      class: "sdk.models.LinearRegression"
+      supports_fhe: true
+      params: [fit_intercept, regularization]
+
+    - name: "DecisionTreeRegressor"
+      class: "sdk.models.DecisionTreeRegressor"
+      supports_fhe: true
+      params: [max_depth, min_samples_split]
+
+  clustering:
+    - name: "KMeans"
+      class: "sdk.models.KMeans"
+      supports_fhe: true
+      params: [n_clusters, max_iter, tol]
+
+# ============================================================================
+# ENCRIPTACION FHE
+# ============================================================================
+encryption:
+  scheme: "CKKS"
+  description: "Cheon-Kim-Kim-Song scheme for approximate arithmetic"
+
+  security_levels:
+    - bits: 128
+      poly_modulus_degree: 8192
+      recommended: true
+    - bits: 192
+      poly_modulus_degree: 16384
+    - bits: 256
+      poly_modulus_degree: 32768
+
+  operations_supported:
+    - addition
+    - subtraction
+    - multiplication
+    - rotation
+    - rescaling
+
+  limitations:
+    - "Division not natively supported"
+    - "Comparison operators limited"
+    - "Ciphertext ~100x larger than plaintext"
+    - "Operations ~10-100x slower than plaintext"
+
+# ============================================================================
+# TESTING
+# ============================================================================
+testing:
+  notebooks:
+    fintech:
+      path: "examples/demos/01_fintech_fraud_detection.ipynb"
+      description: "Fraud detection consortium demo"
+      runtime_estimate: "2-3 minutes"
+
+    healthcare:
+      path: "examples/demos/02_healthcare_patient_risk.ipynb"
+      description: "Diabetes risk prediction demo"
+      runtime_estimate: "2-3 minutes"
+
+    government:
+      path: "examples/demos/03_government_resource_allocation.ipynb"
+      description: "Resource allocation optimization demo"
+      runtime_estimate: "3-4 minutes"
+
+  datasets:
+    generator: "examples/demos/test_datasets.py"
+    available:
+      - fintech_fraud_transactions
+      - fintech_credit_scoring
+      - healthcare_diabetes_risk
+      - healthcare_readmission
+      - insurance_claims_fraud
+      - government_service_demand
+      - retail_customer_churn
+
+  api_tests:
+    - name: "Health Check"
+      method: GET
+      endpoint: "/api/v2/health/"
+      expected_status: 200
+
+    - name: "Auth Demo"
+      method: GET
+      endpoint: "/api/v2/auth/me/"
+      headers: ["X-API-Key: demo_xcapit_2024_public_access"]
+      expected_status: 200
+
+# ============================================================================
+# PROMPTS PARA AGENTES
+# ============================================================================
+agent_prompts:
+  exploration:
+    prompt: |
+      Explora la plataforma Xcapit FHE-ML siguiendo estos pasos:
+      1. Lee la documentacion en /docs/ONBOARDING_PASO_A_PASO.md
+      2. Ejecuta el notebook de demo para {vertical}
+      3. Reporta las metricas obtenidas (accuracy, AUC, etc.)
+      4. Identifica areas de mejora
+
+  testing:
+    prompt: |
+      Ejecuta pruebas de la plataforma:
+      1. Genera un dataset sintetico usando test_datasets.py
+      2. Crea un sandbox via API
+      3. Sube el dataset al sandbox
+      4. Ejecuta un experimento de {experiment_type}
+      5. Verifica los resultados
+
+  integration:
+    prompt: |
+      Integra un nuevo cliente con la plataforma:
+      1. Registra la empresa via POST /api/v2/auth/register/
+      2. Guarda el API key de forma segura
+      3. Crea un sandbox de pruebas
+      4. Genera datos sinteticos del vertical {vertical}
+      5. Entrena un modelo de {use_case}
+      6. Documenta el proceso y resultados
+
+# ============================================================================
+# ERRORES COMUNES
+# ============================================================================
+common_errors:
+  - code: "auth_failed"
+    message: "Invalid API key or token expired"
+    solution: "Verify API key or refresh JWT token"
+
+  - code: "sandbox_expired"
+    message: "Sandbox has expired"
+    solution: "Create new sandbox or extend existing one (max 30 days)"
+
+  - code: "rate_limited"
+    message: "Too many requests"
+    solution: "Wait and retry, or upgrade rate limit"
+
+  - code: "encryption_error"
+    message: "FHE operation failed"
+    solution: "Check data format and encryption parameters"
