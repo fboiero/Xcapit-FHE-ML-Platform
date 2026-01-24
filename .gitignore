@@ -43,3 +43,8 @@ node_modules/
 data/*.csv
 data/*.npy
 .env
+
+# Foundry (Solidity)
+contracts/cache/
+contracts/out/
+contracts/foundry.lock

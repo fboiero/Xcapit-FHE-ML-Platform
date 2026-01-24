@@ -1,0 +1,83 @@
+# =============================================================================
+# Xcapit FHE-ML Platform - Foundry Configuration
+# =============================================================================
+# Smart contracts for consortium governance, model registry, and verification
+# Target network: Arbitrum One / Arbitrum Sepolia
+# =============================================================================
+
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+test = "test"
+script = "script"
+
+# Solidity compiler settings
+solc = "0.8.20"
+optimizer = true
+optimizer_runs = 200
+via_ir = true
+
+# EVM version for Arbitrum
+evm_version = "cancun"
+
+# Remappings
+remappings = [
+    "@openzeppelin/=lib/openzeppelin-contracts/",
+    "forge-std/=lib/forge-std/src/",
+]
+
+# Formatter
+[fmt]
+line_length = 100
+tab_width = 4
+bracket_spacing = true
+int_types = "long"
+multiline_func_header = "params_first"
+quote_style = "double"
+number_underscore = "thousands"
+
+# Testing
+[fuzz]
+runs = 256
+max_test_rejects = 65536
+seed = "0x3e8"
+
+[invariant]
+runs = 256
+depth = 15
+fail_on_revert = false
+
+# Gas reporting
+[profile.default.gas_report]
+enabled = true
+
+# Documentation
+[doc]
+out = "docs"
+title = "Xcapit FHE-ML Contracts"
+
+# =============================================================================
+# Network Configurations
+# =============================================================================
+
+[rpc_endpoints]
+localhost = "http://127.0.0.1:8545"
+arbitrum = "${ARBITRUM_RPC_URL}"
+arbitrum_sepolia = "${ARBITRUM_SEPOLIA_RPC_URL}"
+
+[etherscan]
+arbitrum = { key = "${ARBISCAN_API_KEY}", url = "https://api.arbiscan.io/api" }
+arbitrum_sepolia = { key = "${ARBISCAN_API_KEY}", url = "https://api-sepolia.arbiscan.io/api" }
+
+# =============================================================================
+# Deployment Profiles
+# =============================================================================
+
+[profile.production]
+optimizer_runs = 1000
+via_ir = true
+
+[profile.ci]
+fuzz = { runs = 100 }
+invariant = { runs = 100 }

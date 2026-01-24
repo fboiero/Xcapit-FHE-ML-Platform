@@ -103,6 +103,8 @@ INSTALLED_APPS = [
     "apps.competitive_insights",
     "apps.ensemble",
     "apps.explainability",
+    # Blockchain Services
+    "apps.blockchain",
 ]
 
 MIDDLEWARE = [
