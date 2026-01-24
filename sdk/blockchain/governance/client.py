@@ -335,17 +335,41 @@ class GovernanceClient:
         data = Web3.to_bytes(hexstr=Web3.to_checksum_address(member_to_remove))
         return self.create_proposal(consortium_id, ProposalType.REMOVE_MEMBER, data)
 
-    def vote(self, proposal_id: bytes, support: bool) -> str:
-        """Cast a vote on a proposal.
+    def compute_vote_commitment(
+        self,
+        proposal_id: bytes,
+        support: bool,
+        salt: bytes,
+    ) -> bytes:
+        """Compute vote commitment hash for commit-reveal voting.
 
         Args:
             proposal_id: Proposal ID.
             support: True for yes, False for no.
+            salt: Random 32 bytes for hiding the vote.
+
+        Returns:
+            Commitment hash (bytes32).
+        """
+        return self.contract.functions.computeVoteCommitment(
+            proposal_id, support, salt
+        ).call()
+
+    def commit_vote(self, proposal_id: bytes, commitment: bytes) -> str:
+        """Commit a vote during the commit phase.
+
+        The commitment should be computed using compute_vote_commitment().
+
+        Args:
+            proposal_id: Proposal ID.
+            commitment: Hash of (proposal_id, support, salt).
 
         Returns:
             Transaction hash.
         """
-        tx = self.contract.functions.vote(proposal_id, support).build_transaction(
+        tx = self.contract.functions.commitVote(
+            proposal_id, commitment
+        ).build_transaction(
             {
                 "from": self.connector.address,
                 "nonce": self.connector.get_nonce(),
@@ -359,6 +383,107 @@ class GovernanceClient:
         tx_hash = self.connector.web3.eth.send_raw_transaction(signed.raw_transaction)
         self.connector.web3.eth.wait_for_transaction_receipt(tx_hash)
         return tx_hash.hex()
+
+    def reveal_vote(
+        self,
+        proposal_id: bytes,
+        support: bool,
+        salt: bytes,
+    ) -> str:
+        """Reveal a committed vote during the reveal phase.
+
+        Args:
+            proposal_id: Proposal ID.
+            support: The actual vote (must match commitment).
+            salt: The salt used when computing the commitment.
+
+        Returns:
+            Transaction hash.
+        """
+        tx = self.contract.functions.revealVote(
+            proposal_id, support, salt
+        ).build_transaction(
+            {
+                "from": self.connector.address,
+                "nonce": self.connector.get_nonce(),
+                "gas": 200000,
+                "gasPrice": self.connector.get_gas_price(),
+                "chainId": self.connector.config.chain_id,
+            }
+        )
+
+        signed = self.connector.account.sign_transaction(tx)
+        tx_hash = self.connector.web3.eth.send_raw_transaction(signed.raw_transaction)
+        self.connector.web3.eth.wait_for_transaction_receipt(tx_hash)
+        return tx_hash.hex()
+
+    def get_proposal_phase(self, proposal_id: bytes) -> dict:
+        """Get the current phase of a proposal.
+
+        Returns:
+            Dict with is_commit_phase, is_reveal_phase, is_ended,
+            commit_deadline, reveal_deadline.
+        """
+        result = self.contract.functions.getProposalPhase(proposal_id).call()
+        return {
+            "is_commit_phase": result[0],
+            "is_reveal_phase": result[1],
+            "is_ended": result[2],
+            "commit_deadline": datetime.fromtimestamp(result[3]) if result[3] > 0 else None,
+            "reveal_deadline": datetime.fromtimestamp(result[4]) if result[4] > 0 else None,
+        }
+
+    def vote(
+        self,
+        proposal_id: bytes,
+        support: bool,
+        salt: Optional[bytes] = None,
+        wait_for_reveal: bool = True,
+    ) -> dict:
+        """High-level vote method that handles commit-reveal automatically.
+
+        This is a convenience method. For more control, use commit_vote()
+        and reveal_vote() separately.
+
+        Args:
+            proposal_id: Proposal ID.
+            support: True for yes, False for no.
+            salt: Optional salt (generated if not provided).
+            wait_for_reveal: If True, waits for reveal phase and reveals.
+
+        Returns:
+            Dict with commit_tx, reveal_tx (if waited), salt.
+        """
+        import secrets
+
+        if salt is None:
+            salt = secrets.token_bytes(32)
+
+        # Compute commitment
+        commitment = self.compute_vote_commitment(proposal_id, support, salt)
+
+        # Commit the vote
+        commit_tx = self.commit_vote(proposal_id, commitment)
+
+        result = {
+            "commit_tx": commit_tx,
+            "salt": salt.hex() if isinstance(salt, bytes) else salt,
+            "support": support,
+        }
+
+        if wait_for_reveal:
+            # Wait for reveal phase
+            import time
+            phase = self.get_proposal_phase(proposal_id)
+            while phase["is_commit_phase"]:
+                time.sleep(10)
+                phase = self.get_proposal_phase(proposal_id)
+
+            if phase["is_reveal_phase"]:
+                reveal_tx = self.reveal_vote(proposal_id, support, salt)
+                result["reveal_tx"] = reveal_tx
+
+        return result
 
     def execute_proposal(self, proposal_id: bytes) -> tuple[str, bool]:
         """Execute a proposal after voting ends.

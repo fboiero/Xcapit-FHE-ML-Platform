@@ -153,7 +153,7 @@ contract ComputationVerifierV2 is Ownable2Step, Pausable, ReentrancyGuard {
         unchecked { ++_computationCounter; }
 
         computationId = keccak256(
-            abi.encodePacked(
+            abi.encode(
                 modelId,
                 inputHash,
                 outputHash,
@@ -180,10 +180,10 @@ contract ComputationVerifierV2 is Ownable2Step, Pausable, ReentrancyGuard {
         executorComputations[msg.sender].push(computationId);
 
         // Index for O(1) verification
-        bytes32 inputKey = keccak256(abi.encodePacked(modelId, inputHash));
+        bytes32 inputKey = keccak256(abi.encode(modelId, inputHash));
         outputIndex[inputKey] = outputHash;
 
-        bytes32 fullKey = keccak256(abi.encodePacked(modelId, inputHash, outputHash));
+        bytes32 fullKey = keccak256(abi.encode(modelId, inputHash, outputHash));
         computationIndex[fullKey] = computationId;
 
         emit ComputationRegistered(
@@ -219,7 +219,7 @@ contract ComputationVerifierV2 is Ownable2Step, Pausable, ReentrancyGuard {
         bytes32 merkleRoot = _computeMerkleRoot(inputHashes, outputHashes);
 
         batchId = keccak256(
-            abi.encodePacked(
+            abi.encode(
                 modelId,
                 merkleRoot,
                 msg.sender,
@@ -237,10 +237,10 @@ contract ComputationVerifierV2 is Ownable2Step, Pausable, ReentrancyGuard {
 
         // Index each computation for O(1) lookup
         for (uint256 i = 0; i < inputHashes.length;) {
-            bytes32 inputKey = keccak256(abi.encodePacked(modelId, inputHashes[i]));
+            bytes32 inputKey = keccak256(abi.encode(modelId, inputHashes[i]));
             outputIndex[inputKey] = outputHashes[i];
 
-            bytes32 fullKey = keccak256(abi.encodePacked(modelId, inputHashes[i], outputHashes[i]));
+            bytes32 fullKey = keccak256(abi.encode(modelId, inputHashes[i], outputHashes[i]));
             computationIndex[fullKey] = batchId;
 
             unchecked { ++i; }
@@ -320,11 +320,11 @@ contract ComputationVerifierV2 is Ownable2Step, Pausable, ReentrancyGuard {
         bytes32 inputHash,
         bytes32 outputHash
     ) external view returns (bool valid, bytes32 computationId) {
-        bytes32 inputKey = keccak256(abi.encodePacked(modelId, inputHash));
+        bytes32 inputKey = keccak256(abi.encode(modelId, inputHash));
         bytes32 storedOutput = outputIndex[inputKey];
 
         if (storedOutput == outputHash && storedOutput != bytes32(0)) {
-            bytes32 fullKey = keccak256(abi.encodePacked(modelId, inputHash, outputHash));
+            bytes32 fullKey = keccak256(abi.encode(modelId, inputHash, outputHash));
             return (true, computationIndex[fullKey]);
         }
 
@@ -338,7 +338,7 @@ contract ComputationVerifierV2 is Ownable2Step, Pausable, ReentrancyGuard {
         bytes32 modelId,
         bytes32 inputHash
     ) external view returns (bytes32) {
-        bytes32 inputKey = keccak256(abi.encodePacked(modelId, inputHash));
+        bytes32 inputKey = keccak256(abi.encode(modelId, inputHash));
         return outputIndex[inputKey];
     }
 
@@ -395,7 +395,7 @@ contract ComputationVerifierV2 is Ownable2Step, Pausable, ReentrancyGuard {
         bytes32[] memory leaves = new bytes32[](inputHashes.length);
 
         for (uint256 i = 0; i < inputHashes.length;) {
-            leaves[i] = keccak256(abi.encodePacked(inputHashes[i], outputHashes[i]));
+            leaves[i] = keccak256(abi.encode(inputHashes[i], outputHashes[i]));
             unchecked { ++i; }
         }
 
@@ -414,7 +414,7 @@ contract ComputationVerifierV2 is Ownable2Step, Pausable, ReentrancyGuard {
                 uint256 right = left + 1;
 
                 if (right < n) {
-                    leaves[i] = keccak256(abi.encodePacked(leaves[left], leaves[right]));
+                    leaves[i] = keccak256(abi.encode(leaves[left], leaves[right]));
                 } else {
                     leaves[i] = leaves[left];
                 }

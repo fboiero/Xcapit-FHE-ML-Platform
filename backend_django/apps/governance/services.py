@@ -10,10 +10,9 @@ import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
+from apps.core.services.base import BaseService, ServiceContext, ServiceResult
 from django.db import transaction
 from django.utils import timezone
-
-from apps.core.services.base import BaseService, ServiceContext, ServiceResult
 
 if TYPE_CHECKING:
     from django.http import HttpRequest
@@ -288,9 +287,8 @@ class ProposalExecutionService(BaseService):
         """Execute DISTRIBUTE_REWARDS proposal."""
         from decimal import Decimal
 
-        from django.db.models import Sum
-
         from apps.consortiums.models import ContributionProof
+        from django.db.models import Sum
 
         from .models import RewardDistribution
 
@@ -393,7 +391,7 @@ class ProposalExecutionService(BaseService):
         return ExecutionResult(
             success=True,
             message=f"Updated {len(updates_applied)} configuration fields",
-            data={"updates": updates_applied},
+            data={"updates": updates_applied, "previous_config": old_config},
         )
 
     def _execute_dissolve(self, proposal: Proposal) -> ExecutionResult:

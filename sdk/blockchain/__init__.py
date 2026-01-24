@@ -11,6 +11,14 @@ from .connector import (
     Network,
     NetworkConfig,
 )
+from .contracts import (
+    ARBITRUM_ONE_CONTRACTS,
+    ARBITRUM_SEPOLIA_CONTRACTS,
+    ContractAddresses,
+    get_contracts,
+    get_explorer_url,
+    is_testnet,
+)
 from .governance import (
     AuditEvent,
     AuditEventType,
@@ -36,6 +44,13 @@ __all__ = [
     "Network",
     "NetworkConfig",
     "NETWORK_CONFIGS",
+    # Contracts
+    "ContractAddresses",
+    "ARBITRUM_SEPOLIA_CONTRACTS",
+    "ARBITRUM_ONE_CONTRACTS",
+    "get_contracts",
+    "is_testnet",
+    "get_explorer_url",
     # Registry
     "ModelRegistryClient",
     "ModelInfo",

@@ -9,13 +9,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
+from apps.core.services.base import BaseService, ServiceResult
 from django.db import transaction
 from django.db.models import Avg, Count, Sum
 
-from apps.core.services.base import BaseService, ServiceResult
-
 if TYPE_CHECKING:
-    from uuid import UUID
 
     from apps.consortiums.models import Consortium
 
@@ -61,17 +59,6 @@ class ConsortiumService(BaseService):
         contributions = ContributionProof.objects.filter(
             consortium=consortium,
             status=ContributionProof.Status.VERIFIED,
-        )
-
-        # Aggregate member stats
-        member_stats = members.aggregate(
-            total=Count("id"),
-            active=Count("id", filter=members.model.objects.filter(
-                status=ConsortiumMember.Status.ACTIVE
-            ).query),
-            pending=Count("id", filter=members.model.objects.filter(
-                status=ConsortiumMember.Status.PENDING
-            ).query),
         )
 
         # Aggregate contribution stats

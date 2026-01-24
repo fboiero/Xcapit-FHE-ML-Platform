@@ -15,9 +15,8 @@ from typing import TYPE_CHECKING, Any, Generic, TypeVar
 from django.db import models, transaction
 
 if TYPE_CHECKING:
-    from django.http import HttpRequest
-
     from apps.core.models import Company, User
+    from django.http import HttpRequest
 
 
 T = TypeVar("T", bound=models.Model)

@@ -12,7 +12,6 @@ from typing import TYPE_CHECKING, Any
 from django.contrib.auth import get_user_model
 from django.db.models import QuerySet
 from django.utils import timezone
-from django_ratelimit.decorators import ratelimit
 from rest_framework import status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -22,7 +21,7 @@ from rest_framework.serializers import Serializer
 from rest_framework.views import APIView
 
 from .models import APIKey, AuditLog, Company
-from .permissions import IsCompanyMember, IsResourceOwner
+from .permissions import IsCompanyMember
 from .serializers import (
     APIKeyCreateSerializer,
     APIKeyResponseSerializer,
@@ -38,7 +37,7 @@ from .serializers import (
 )
 
 if TYPE_CHECKING:
-    from .models import User as UserModel
+    pass
 
 User = get_user_model()
 

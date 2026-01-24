@@ -1,4 +1,7 @@
-"""Tests for governance client module."""
+"""Tests for governance client module.
+
+Requires: pip install -e ".[dev]" to install tenseal and other dependencies.
+"""
 
 from datetime import datetime
 from unittest.mock import MagicMock, patch
@@ -510,34 +513,72 @@ class TestGovernanceClientVoting:
 
         assert result == b"proposal_id"
 
-    def test_vote_yes(self, connected_client):
-        """Test voting yes on a proposal."""
+    def test_commit_vote(self, connected_client):
+        """Test committing a vote during commit phase."""
         mock_tx_builder = MagicMock()
         mock_tx_builder.build_transaction.return_value = {}
-        connected_client._contract.functions.vote.return_value = mock_tx_builder
+        connected_client._contract.functions.commitVote.return_value = mock_tx_builder
 
         connected_client._mock_connector.web3.eth.send_raw_transaction.return_value = b"0x" + b"a" * 64
         connected_client._mock_connector.web3.eth.wait_for_transaction_receipt.return_value = {}
 
-        result = connected_client.vote(b"proposal_id", support=True)
+        commitment = b"0x" + b"c" * 32
+        result = connected_client.commit_vote(b"proposal_id", commitment)
 
         assert result is not None
-        connected_client._contract.functions.vote.assert_called_once_with(
-            b"proposal_id", True
+        connected_client._contract.functions.commitVote.assert_called_once_with(
+            b"proposal_id", commitment
         )
 
-    def test_vote_no(self, connected_client):
-        """Test voting no on a proposal."""
+    def test_reveal_vote(self, connected_client):
+        """Test revealing a vote during reveal phase."""
         mock_tx_builder = MagicMock()
         mock_tx_builder.build_transaction.return_value = {}
-        connected_client._contract.functions.vote.return_value = mock_tx_builder
+        connected_client._contract.functions.revealVote.return_value = mock_tx_builder
 
         connected_client._mock_connector.web3.eth.send_raw_transaction.return_value = b"0x" + b"b" * 64
         connected_client._mock_connector.web3.eth.wait_for_transaction_receipt.return_value = {}
 
-        result = connected_client.vote(b"proposal_id", support=False)
+        salt = b"0x" + b"s" * 32
+        result = connected_client.reveal_vote(b"proposal_id", support=True, salt=salt)
 
         assert result is not None
+        connected_client._contract.functions.revealVote.assert_called_once_with(
+            b"proposal_id", True, salt
+        )
+
+    def test_compute_vote_commitment(self, connected_client):
+        """Test computing vote commitment hash."""
+        expected_hash = b"0x" + b"h" * 32
+        connected_client._contract.functions.computeVoteCommitment.return_value.call.return_value = expected_hash
+
+        salt = b"0x" + b"s" * 32
+        result = connected_client.compute_vote_commitment(b"proposal_id", True, salt)
+
+        assert result == expected_hash
+        connected_client._contract.functions.computeVoteCommitment.assert_called_once_with(
+            b"proposal_id", True, salt
+        )
+
+    def test_get_proposal_phase(self, connected_client):
+        """Test getting proposal phase."""
+        import time
+        current_time = int(time.time())
+        connected_client._contract.functions.getProposalPhase.return_value.call.return_value = (
+            True,  # is_commit_phase
+            False,  # is_reveal_phase
+            False,  # is_ended
+            current_time + 3600,  # commit_deadline
+            current_time + 7200,  # reveal_deadline
+        )
+
+        result = connected_client.get_proposal_phase(b"proposal_id")
+
+        assert result["is_commit_phase"] is True
+        assert result["is_reveal_phase"] is False
+        assert result["is_ended"] is False
+        assert result["commit_deadline"] is not None
+        assert result["reveal_deadline"] is not None
 
     def test_execute_proposal_passed(self, connected_client):
         """Test executing a passed proposal."""

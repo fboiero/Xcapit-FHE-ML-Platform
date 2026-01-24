@@ -485,6 +485,55 @@ CELERY_TASK_ROUTES = {
 }
 
 # =============================================================================
+# BLOCKCHAIN CONFIGURATION
+# =============================================================================
+
+# Environment: "testnet" (sandbox) or "mainnet" (production)
+BLOCKCHAIN_ENV = os.environ.get("BLOCKCHAIN_ENV", "testnet")
+
+# RPC URLs
+ARBITRUM_SEPOLIA_RPC_URL = os.environ.get(
+    "ARBITRUM_SEPOLIA_RPC_URL",
+    "https://sepolia-rollup.arbitrum.io/rpc",
+)
+ARBITRUM_ONE_RPC_URL = os.environ.get(
+    "ARBITRUM_ONE_RPC_URL",
+    "https://arb1.arbitrum.io/rpc",
+)
+
+# Contract Addresses - Testnet (Sandbox)
+TESTNET_CONTRACTS = {
+    "network": "arbitrum-sepolia",
+    "chain_id": 421614,
+    "rpc_url": ARBITRUM_SEPOLIA_RPC_URL,
+    "explorer": "https://sepolia.arbiscan.io",
+    "governance": "0xda52326d106A91A1F22A0c41Be2dc1F531C01F11",
+    "model_registry": "0x1296cCeF7803Bff51FB690afCFc586E7012417b8",
+    "computation_verifier": "0xa5f04E0aefe55173C91b949Aa2385f0228dd2921",
+}
+
+# Contract Addresses - Mainnet (Production)
+MAINNET_CONTRACTS = {
+    "network": "arbitrum-one",
+    "chain_id": 42161,
+    "rpc_url": ARBITRUM_ONE_RPC_URL,
+    "explorer": "https://arbiscan.io",
+    "governance": os.environ.get("MAINNET_GOVERNANCE_ADDRESS", ""),
+    "model_registry": os.environ.get("MAINNET_MODEL_REGISTRY_ADDRESS", ""),
+    "computation_verifier": os.environ.get("MAINNET_COMPUTATION_VERIFIER_ADDRESS", ""),
+}
+
+# Active blockchain config based on environment
+BLOCKCHAIN_CONFIG = TESTNET_CONTRACTS if BLOCKCHAIN_ENV == "testnet" else MAINNET_CONTRACTS
+
+# Validate mainnet contracts are set in production
+if not DEBUG and BLOCKCHAIN_ENV == "mainnet":
+    if not MAINNET_CONTRACTS["governance"]:
+        raise ValueError(
+            "MAINNET_GOVERNANCE_ADDRESS is required when BLOCKCHAIN_ENV=mainnet"
+        )
+
+# =============================================================================
 # DEFAULT PRIMARY KEY
 # =============================================================================
 

@@ -9,10 +9,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
-from django.db import transaction
-from django.db.models import Avg, Count
-
 from apps.core.services.base import BaseService, ServiceResult
+from django.db import transaction
+from django.db.models import Avg
 
 if TYPE_CHECKING:
     from apps.data_quality.models import QualityAssessment
@@ -172,8 +171,8 @@ class QualityAssessmentService(BaseService):
         - Data 30-90 days old: 50-69 (linear decay)
         - Data older than 90 days: 0-49 (linear decay, min 0)
         """
+
         from django.utils import timezone
-        from datetime import timedelta
 
         if not assessment.contribution:
             # No contribution linked - check assessment creation time
@@ -220,10 +219,9 @@ class QualityAssessmentService(BaseService):
         Returns:
             ServiceResult with updated assessment
         """
-        from django.utils import timezone
-
         from apps.core.services import AuditService
         from apps.data_quality.models import QualityAssessment as QAModel
+        from django.utils import timezone
 
         # Calculate scores
         result = self.calculate_scores(assessment)

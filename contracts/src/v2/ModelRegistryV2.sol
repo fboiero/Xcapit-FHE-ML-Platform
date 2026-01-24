@@ -218,7 +218,7 @@ contract ModelRegistryV2 is Ownable2Step, Pausable, ReentrancyGuard {
         }
 
         modelId = keccak256(
-            abi.encodePacked(
+            abi.encode(
                 msg.sender,
                 modelType,
                 modelVersion,
@@ -291,7 +291,7 @@ contract ModelRegistryV2 is Ownable2Step, Pausable, ReentrancyGuard {
         returns (bytes32 runId)
     {
         runId = keccak256(
-            abi.encodePacked(modelId, datasetHash, block.timestamp, trainingRuns[modelId].length)
+            abi.encode(modelId, datasetHash, block.timestamp, trainingRuns[modelId].length)
         );
 
         trainingRuns[modelId].push(TrainingRun({
@@ -338,7 +338,7 @@ contract ModelRegistryV2 is Ownable2Step, Pausable, ReentrancyGuard {
         models[modelId].updatedAt = block.timestamp;
 
         bytes32 runId = keccak256(
-            abi.encodePacked(modelId, run.datasetHash, run.startTime, runIndex)
+            abi.encode(modelId, run.datasetHash, run.startTime, runIndex)
         );
 
         emit TrainingCompleted(modelId, runId, totalEpochs, finalWeightsHash);
@@ -408,7 +408,7 @@ contract ModelRegistryV2 is Ownable2Step, Pausable, ReentrancyGuard {
     // ============ View Functions ============
 
     function getModel(bytes32 modelId) external view returns (
-        address owner,
+        address modelOwner,
         string memory modelType,
         string memory version,
         bytes32 weightsHash,

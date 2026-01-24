@@ -81,3 +81,6 @@ via_ir = true
 [profile.ci]
 fuzz = { runs = 100 }
 invariant = { runs = 100 }
+
+# File system permissions for deployment
+fs_permissions = [{ access = "read-write", path = "./" }]

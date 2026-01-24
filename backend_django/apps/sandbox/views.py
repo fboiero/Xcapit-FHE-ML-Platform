@@ -7,14 +7,12 @@ Provides endpoints for sandbox environments, synthetic data, and experiments.
 import random
 from datetime import timedelta
 
-from django.utils import timezone
+from apps.core.models import AuditLog
+from apps.core.permissions import IsCompanyMember
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-
-from apps.core.models import AuditLog
-from apps.core.permissions import IsCompanyMember, IsResourceOwner
 
 from .models import Experiment, Sandbox, SandboxTemplate, SyntheticDataset
 from .serializers import (

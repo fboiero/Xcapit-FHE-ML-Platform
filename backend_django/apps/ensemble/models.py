@@ -7,7 +7,6 @@ Handles multi-model ensemble creation, aggregation, and predictions.
 import uuid
 
 from django.db import models
-from django.utils import timezone
 
 
 class Ensemble(models.Model):

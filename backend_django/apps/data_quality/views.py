@@ -2,21 +2,19 @@
 Data quality views for Xcapit FHE-ML Platform.
 """
 
-from django.db.models import Avg, Count, Q
+from apps.core.models import AuditLog
+from apps.core.permissions import IsCompanyMember, IsConsortiumMember
+from django.db.models import Avg, Count
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-
-from apps.core.models import AuditLog
-from apps.core.permissions import IsCompanyMember, IsConsortiumMember
 
 from .models import QualityAlert, QualityAssessment, QualityRule
 from .serializers import (
     QualityAlertSerializer,
     QualityAssessmentCreateSerializer,
     QualityAssessmentSerializer,
-    QualityDashboardSerializer,
     QualityRuleSerializer,
 )
 

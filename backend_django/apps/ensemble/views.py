@@ -5,15 +5,14 @@ Ensemble views for Xcapit FHE-ML Platform.
 import hashlib
 import time
 
+from apps.core.models import AuditLog
+from apps.core.permissions import IsCompanyMember
+from apps.models.models import MLModel
 from django.shortcuts import get_object_or_404
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-
-from apps.core.models import AuditLog
-from apps.core.permissions import IsCompanyMember
-from apps.models.models import MLModel
 
 from .models import Ensemble, EnsembleEvaluation, EnsembleModel, EnsemblePrediction
 from .serializers import (

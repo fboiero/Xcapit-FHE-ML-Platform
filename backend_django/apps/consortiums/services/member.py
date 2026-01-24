@@ -8,13 +8,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from apps.core.services.base import BaseService, ServiceResult
 from django.db import transaction
 
-from apps.core.services.base import BaseService, ServiceResult
-
 if TYPE_CHECKING:
-    from apps.consortiums.models import Consortium, ConsortiumMember
-    from apps.core.models import Company
+    from apps.consortiums.models import ConsortiumMember
 
 
 class MemberService(BaseService):

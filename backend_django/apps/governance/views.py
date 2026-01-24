@@ -4,16 +4,14 @@ Governance views for Xcapit FHE-ML Platform.
 Provides endpoints for proposals, voting, audit trail, and rewards.
 """
 
+from apps.consortiums.models import ConsortiumMember, ContributionProof
+from apps.core.permissions import IsConsortiumMember, IsConsortiumOwner
 from django.db.models import Sum
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-
-from apps.consortiums.models import ConsortiumMember, ContributionProof
-from apps.core.models import AuditLog
-from apps.core.permissions import IsConsortiumAdmin, IsConsortiumMember, IsConsortiumOwner
 
 from .models import AuditEvent, Proposal, RewardDistribution, Vote
 from .serializers import (

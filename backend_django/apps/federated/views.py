@@ -6,16 +6,14 @@ Provides endpoints for inference endpoints, requests, and edge nodes.
 
 import base64
 import time
-import uuid
 
+from apps.core.models import AuditLog
+from apps.core.permissions import IsCompanyMember, IsConsortiumMember
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-
-from apps.core.models import AuditLog
-from apps.core.permissions import IsCompanyMember, IsConsortiumMember
 
 from .models import EdgeNode, FederatedModel, InferenceEndpoint, InferenceRequest, InferenceResult
 from .serializers import (

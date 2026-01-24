@@ -4,15 +4,13 @@ Explainability views for Xcapit FHE-ML Platform.
 
 import random
 
+from apps.core.models import AuditLog
+from apps.core.permissions import IsCompanyMember
 from django.db.models import Count
-from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-
-from apps.core.models import AuditLog
-from apps.core.permissions import IsCompanyMember, IsConsortiumMember
 
 from .models import ExplanationRequest, FeatureImportance, ModelInsight
 from .serializers import (

@@ -58,11 +58,50 @@ GOVERNANCE_ABI = [
         "stateMutability": "nonpayable",
         "type": "function",
     },
+    # Commit-Reveal Voting
     {
-        "inputs": [{"name": "proposalId", "type": "bytes32"}, {"name": "support", "type": "bool"}],
-        "name": "vote",
+        "inputs": [
+            {"name": "proposalId", "type": "bytes32"},
+            {"name": "support", "type": "bool"},
+            {"name": "salt", "type": "bytes32"},
+        ],
+        "name": "computeVoteCommitment",
+        "outputs": [{"name": "", "type": "bytes32"}],
+        "stateMutability": "pure",
+        "type": "function",
+    },
+    {
+        "inputs": [
+            {"name": "proposalId", "type": "bytes32"},
+            {"name": "commitHash", "type": "bytes32"},
+        ],
+        "name": "commitVote",
         "outputs": [],
         "stateMutability": "nonpayable",
+        "type": "function",
+    },
+    {
+        "inputs": [
+            {"name": "proposalId", "type": "bytes32"},
+            {"name": "support", "type": "bool"},
+            {"name": "salt", "type": "bytes32"},
+        ],
+        "name": "revealVote",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function",
+    },
+    {
+        "inputs": [{"name": "proposalId", "type": "bytes32"}],
+        "name": "getProposalPhase",
+        "outputs": [
+            {"name": "isCommitPhase", "type": "bool"},
+            {"name": "isRevealPhase", "type": "bool"},
+            {"name": "isEnded", "type": "bool"},
+            {"name": "commitDeadline", "type": "uint256"},
+            {"name": "revealDeadline", "type": "uint256"},
+        ],
+        "stateMutability": "view",
         "type": "function",
     },
     {
@@ -207,10 +246,20 @@ GOVERNANCE_ABI = [
         "inputs": [
             {"indexed": True, "name": "proposalId", "type": "bytes32"},
             {"indexed": True, "name": "voter", "type": "address"},
+            {"indexed": False, "name": "commitment", "type": "bytes32"},
+        ],
+        "name": "VoteCommitted",
+        "type": "event",
+    },
+    {
+        "anonymous": False,
+        "inputs": [
+            {"indexed": True, "name": "proposalId", "type": "bytes32"},
+            {"indexed": True, "name": "voter", "type": "address"},
             {"indexed": False, "name": "vote", "type": "bool"},
             {"indexed": False, "name": "weight", "type": "uint256"},
         ],
-        "name": "VoteCast",
+        "name": "VoteRevealed",
         "type": "event",
     },
 ]

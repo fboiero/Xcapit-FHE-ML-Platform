@@ -183,9 +183,9 @@ contract ConsortiumGovernanceV2Test is Test {
         governance.withdrawRewards(consortiumId);
     }
 
-    // ============ Voting Tests ============
+    // ============ Voting Tests (Commit-Reveal) ============
 
-    function test_CreateAndVoteOnProposal() public {
+    function test_CommitRevealVoting() public {
         governance.addMember(consortiumId, member1);
 
         // Make contributions so votes have weight
@@ -200,34 +200,115 @@ contract ConsortiumGovernanceV2Test is Test {
             abi.encode(bytes32(uint256(999)))
         );
 
-        // Vote
-        governance.vote(proposalId, true);
-        vm.prank(member1);
-        governance.vote(proposalId, true);
+        // Generate salts for commit-reveal
+        bytes32 salt1 = keccak256("salt1");
+        bytes32 salt2 = keccak256("salt2");
 
-        // Fast forward past voting period
-        vm.warp(block.timestamp + 2 hours);
+        // Commit phase - votes are hidden
+        bytes32 commit1 = governance.computeVoteCommitment(proposalId, true, salt1);
+        bytes32 commit2 = governance.computeVoteCommitment(proposalId, true, salt2);
+
+        governance.commitVote(proposalId, commit1);
+        vm.prank(member1);
+        governance.commitVote(proposalId, commit2);
+
+        // Fast forward past commit phase (60% of 1 hour = 36 minutes)
+        vm.warp(block.timestamp + 40 minutes);
+
+        // Reveal phase
+        governance.revealVote(proposalId, true, salt1);
+        vm.prank(member1);
+        governance.revealVote(proposalId, true, salt2);
+
+        // Fast forward past reveal phase
+        vm.warp(block.timestamp + 30 minutes);
 
         // Execute
         governance.executeProposal(proposalId);
 
-        // Verify proposal passed - check executed flag via direct struct access
-        (,,,, ConsortiumGovernanceV2.ProposalStatus status,,,,,,, bool executed) = governance.proposals(proposalId);
+        // Verify proposal passed
+        (,,,, ConsortiumGovernanceV2.ProposalStatus status,,,,,,,, bool executed) = governance.proposals(proposalId);
         assertEq(uint256(status), uint256(ConsortiumGovernanceV2.ProposalStatus.Passed));
         assertTrue(executed);
     }
 
-    function test_RevertWhen_VotingTwice() public {
+    function test_RevertWhen_CommittingTwice() public {
         bytes32 proposalId = governance.createProposal(
             consortiumId,
             ConsortiumGovernanceV2.ProposalType.UpdateConfig,
             abi.encode(bytes32(0))
         );
 
-        governance.vote(proposalId, true);
+        bytes32 salt = keccak256("salt");
+        bytes32 commit = governance.computeVoteCommitment(proposalId, true, salt);
+
+        governance.commitVote(proposalId, commit);
 
         vm.expectRevert(abi.encodeWithSelector(ConsortiumGovernanceV2.AlreadyVoted.selector, address(this)));
-        governance.vote(proposalId, false);
+        governance.commitVote(proposalId, commit);
+    }
+
+    function test_RevertWhen_InvalidReveal() public {
+        bytes32 proposalId = governance.createProposal(
+            consortiumId,
+            ConsortiumGovernanceV2.ProposalType.UpdateConfig,
+            abi.encode(bytes32(0))
+        );
+
+        bytes32 salt = keccak256("salt");
+        bytes32 commit = governance.computeVoteCommitment(proposalId, true, salt);
+
+        governance.commitVote(proposalId, commit);
+
+        // Fast forward past commit phase
+        vm.warp(block.timestamp + 40 minutes);
+
+        // Try to reveal with wrong vote
+        vm.expectRevert(abi.encodeWithSelector(ConsortiumGovernanceV2.InvalidReveal.selector, proposalId));
+        governance.revealVote(proposalId, false, salt); // voted true, revealing false
+    }
+
+    function test_RevertWhen_RevealingWithoutCommit() public {
+        bytes32 proposalId = governance.createProposal(
+            consortiumId,
+            ConsortiumGovernanceV2.ProposalType.UpdateConfig,
+            abi.encode(bytes32(0))
+        );
+
+        // Fast forward past commit phase
+        vm.warp(block.timestamp + 40 minutes);
+
+        // Try to reveal without committing
+        vm.expectRevert(abi.encodeWithSelector(ConsortiumGovernanceV2.NotCommitted.selector, proposalId, address(this)));
+        governance.revealVote(proposalId, true, bytes32(0));
+    }
+
+    function test_GetProposalPhase() public {
+        bytes32 proposalId = governance.createProposal(
+            consortiumId,
+            ConsortiumGovernanceV2.ProposalType.UpdateConfig,
+            abi.encode(bytes32(0))
+        );
+
+        // Initial state - commit phase
+        (bool isCommit, bool isReveal, bool isEnded,,) = governance.getProposalPhase(proposalId);
+        assertTrue(isCommit);
+        assertFalse(isReveal);
+        assertFalse(isEnded);
+
+        // After commit deadline - reveal phase
+        vm.warp(block.timestamp + 40 minutes);
+        (isCommit, isReveal, isEnded,,) = governance.getProposalPhase(proposalId);
+        assertFalse(isCommit);
+        assertTrue(isReveal);
+        assertFalse(isEnded);
+
+        // After reveal deadline - ended
+        vm.warp(block.timestamp + 30 minutes);
+        (isCommit, isReveal, isEnded,,) = governance.getProposalPhase(proposalId);
+        assertFalse(isCommit);
+        assertFalse(isReveal);
+        assertTrue(isEnded);
     }
 
     // ============ Pause Tests ============

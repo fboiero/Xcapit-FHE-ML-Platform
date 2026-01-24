@@ -80,8 +80,8 @@ contract DeployScript is Script {
             )
         );
 
-        vm.writeFile("deployments.json", output);
-        console.log("Addresses written to deployments.json");
+        // Note: Addresses logged above - save manually or use broadcast artifacts
+        console.log("Deployment complete! Save addresses from logs above.");
     }
 }
 

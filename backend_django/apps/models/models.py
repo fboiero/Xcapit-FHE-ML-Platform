@@ -5,7 +5,6 @@ Handles model storage, training runs, and prediction logging.
 Note: Uses JSON instead of pickle for secure serialization.
 """
 
-import json
 import uuid
 
 from django.db import models

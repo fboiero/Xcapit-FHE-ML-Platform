@@ -25,7 +25,8 @@ contract ConsortiumGovernanceV2 is Ownable2Step, Pausable, ReentrancyGuard {
     uint256 public constant MIN_VOTING_DURATION = 1 hours;
     uint256 public constant MAX_VOTING_DURATION = 30 days;
     uint256 public constant WEIGHT_PRECISION = 10000;
-    string public constant VERSION = "2.0.0";
+    string public constant VERSION = "2.1.0";
+    uint256 public constant COMMIT_PHASE_PERCENTAGE = 60; // 60% commit, 40% reveal
 
     // ============ Custom Errors ============
 
@@ -51,6 +52,13 @@ contract ConsortiumGovernanceV2 is Ownable2Step, Pausable, ReentrancyGuard {
     error TransferFailed();
     error ZeroAddress();
     error ZeroAmount();
+    // Commit-Reveal errors
+    error CommitPhaseEnded(bytes32 proposalId);
+    error CommitPhaseNotEnded(bytes32 proposalId);
+    error RevealPhaseEnded(bytes32 proposalId);
+    error InvalidReveal(bytes32 proposalId);
+    error NotCommitted(bytes32 proposalId, address voter);
+    error AlreadyRevealed(address voter);
 
     // ============ Enums ============
 
@@ -105,7 +113,8 @@ contract ConsortiumGovernanceV2 is Ownable2Step, Pausable, ReentrancyGuard {
         ProposalStatus status;
         bytes data;
         uint256 createdAt;
-        uint256 expiresAt;
+        uint256 commitDeadline;  // End of commit phase
+        uint256 revealDeadline;  // End of reveal phase (was expiresAt)
         uint256 yesVotes;
         uint256 noVotes;
         uint256 totalVoters;
@@ -134,6 +143,9 @@ contract ConsortiumGovernanceV2 is Ownable2Step, Pausable, ReentrancyGuard {
     mapping(bytes32 => bytes32[]) public consortiumProposals;
     mapping(bytes32 => mapping(address => bool)) public hasVoted;
     mapping(bytes32 => mapping(address => bool)) public votes;
+    // Commit-Reveal: vote commitments and reveal tracking
+    mapping(bytes32 => mapping(address => bytes32)) public voteCommitments;
+    mapping(bytes32 => mapping(address => bool)) public hasRevealed;
     mapping(bytes32 => AuditEvent[]) public auditTrail;
     mapping(bytes32 => bytes32) public lastEventHash;
 
@@ -153,7 +165,8 @@ contract ConsortiumGovernanceV2 is Ownable2Step, Pausable, ReentrancyGuard {
     event MemberStatusChanged(bytes32 indexed consortiumId, address indexed member, MemberStatus oldStatus, MemberStatus newStatus);
     event ContributionRecorded(bytes32 indexed consortiumId, bytes32 indexed contributionId, address indexed contributor, uint256 recordCount);
     event ProposalCreated(bytes32 indexed consortiumId, bytes32 indexed proposalId, ProposalType proposalType, address indexed proposer);
-    event VoteCast(bytes32 indexed proposalId, address indexed voter, bool vote, uint256 weight);
+    event VoteCommitted(bytes32 indexed proposalId, address indexed voter, bytes32 commitment);
+    event VoteRevealed(bytes32 indexed proposalId, address indexed voter, bool vote, uint256 weight);
     event ProposalExecuted(bytes32 indexed proposalId, bool passed);
     event AuditEventRecorded(bytes32 indexed consortiumId, bytes32 indexed eventId, AuditEventType eventType);
     event RewardsAllocated(bytes32 indexed consortiumId, uint256 totalAmount, uint256 memberCount);
@@ -212,7 +225,7 @@ contract ConsortiumGovernanceV2 is Ownable2Step, Pausable, ReentrancyGuard {
         unchecked { ++_consortiumCounter; }
 
         consortiumId = keccak256(
-            abi.encodePacked(msg.sender, name, block.timestamp, _consortiumCounter)
+            abi.encode(msg.sender, name, block.timestamp, _consortiumCounter)
         );
 
         consortiums[consortiumId] = Consortium({
@@ -314,7 +327,7 @@ contract ConsortiumGovernanceV2 is Ownable2Step, Pausable, ReentrancyGuard {
         unchecked { ++_contributionCounter; }
 
         contributionId = keccak256(
-            abi.encodePacked(consortiumId, msg.sender, block.timestamp, _contributionCounter)
+            abi.encode(consortiumId, msg.sender, block.timestamp, _contributionCounter)
         );
 
         contributions[contributionId] = Contribution({
@@ -370,10 +383,13 @@ contract ConsortiumGovernanceV2 is Ownable2Step, Pausable, ReentrancyGuard {
         unchecked { ++_proposalCounter; }
 
         proposalId = keccak256(
-            abi.encodePacked(consortiumId, msg.sender, block.timestamp, _proposalCounter)
+            abi.encode(consortiumId, msg.sender, block.timestamp, _proposalCounter)
         );
 
-        uint256 expiresAt = block.timestamp + consortiums[consortiumId].votingDuration;
+        uint256 votingDuration = consortiums[consortiumId].votingDuration;
+        uint256 commitDuration = (votingDuration * COMMIT_PHASE_PERCENTAGE) / 100;
+        uint256 commitDeadline = block.timestamp + commitDuration;
+        uint256 revealDeadline = block.timestamp + votingDuration;
 
         proposals[proposalId] = Proposal({
             id: proposalId,
@@ -383,7 +399,8 @@ contract ConsortiumGovernanceV2 is Ownable2Step, Pausable, ReentrancyGuard {
             status: ProposalStatus.Active,
             data: data,
             createdAt: block.timestamp,
-            expiresAt: expiresAt,
+            commitDeadline: commitDeadline,
+            revealDeadline: revealDeadline,
             yesVotes: 0,
             noVotes: 0,
             totalVoters: consortiums[consortiumId].memberCount,
@@ -404,16 +421,53 @@ contract ConsortiumGovernanceV2 is Ownable2Step, Pausable, ReentrancyGuard {
         return proposalId;
     }
 
-    function vote(bytes32 proposalId, bool support) external whenNotPaused nonReentrant {
+    /**
+     * @dev Commit a vote hash during the commit phase.
+     * @param proposalId The proposal to vote on
+     * @param commitHash Hash of (proposalId, support, salt) - computed off-chain
+     * @notice Use: keccak256(abi.encodePacked(proposalId, support, salt))
+     */
+    function commitVote(bytes32 proposalId, bytes32 commitHash) external whenNotPaused nonReentrant {
         Proposal storage p = proposals[proposalId];
         if (p.createdAt == 0) revert ProposalNotFound(proposalId);
         if (p.status != ProposalStatus.Active) revert VotingClosed(proposalId);
-        if (block.timestamp >= p.expiresAt) revert VotingClosed(proposalId);
-        if (hasVoted[proposalId][msg.sender]) revert AlreadyVoted(msg.sender);
+        if (block.timestamp >= p.commitDeadline) revert CommitPhaseEnded(proposalId);
+        if (voteCommitments[proposalId][msg.sender] != bytes32(0)) revert AlreadyVoted(msg.sender);
         if (members[p.consortiumId][msg.sender].status != MemberStatus.Active) {
             revert NotActiveMember(msg.sender);
         }
 
+        voteCommitments[proposalId][msg.sender] = commitHash;
+
+        emit VoteCommitted(proposalId, msg.sender, commitHash);
+    }
+
+    /**
+     * @dev Reveal a committed vote during the reveal phase.
+     * @param proposalId The proposal
+     * @param support The actual vote (true = yes, false = no)
+     * @param salt The salt used when computing the commit hash
+     */
+    function revealVote(
+        bytes32 proposalId,
+        bool support,
+        bytes32 salt
+    ) external whenNotPaused nonReentrant {
+        Proposal storage p = proposals[proposalId];
+        if (p.createdAt == 0) revert ProposalNotFound(proposalId);
+        if (p.status != ProposalStatus.Active) revert VotingClosed(proposalId);
+        if (block.timestamp < p.commitDeadline) revert CommitPhaseNotEnded(proposalId);
+        if (block.timestamp >= p.revealDeadline) revert RevealPhaseEnded(proposalId);
+
+        bytes32 commitment = voteCommitments[proposalId][msg.sender];
+        if (commitment == bytes32(0)) revert NotCommitted(proposalId, msg.sender);
+        if (hasRevealed[proposalId][msg.sender]) revert AlreadyRevealed(msg.sender);
+
+        // Verify the reveal matches the commitment
+        bytes32 expectedHash = keccak256(abi.encodePacked(proposalId, support, salt));
+        if (commitment != expectedHash) revert InvalidReveal(proposalId);
+
+        hasRevealed[proposalId][msg.sender] = true;
         hasVoted[proposalId][msg.sender] = true;
         votes[proposalId][msg.sender] = support;
 
@@ -434,14 +488,14 @@ contract ConsortiumGovernanceV2 is Ownable2Step, Pausable, ReentrancyGuard {
             abi.encode(support, weight)
         );
 
-        emit VoteCast(proposalId, msg.sender, support, weight);
+        emit VoteRevealed(proposalId, msg.sender, support, weight);
     }
 
     function executeProposal(bytes32 proposalId) external whenNotPaused nonReentrant {
         Proposal storage p = proposals[proposalId];
         if (p.createdAt == 0) revert ProposalNotFound(proposalId);
         if (p.status != ProposalStatus.Active) revert AlreadyExecuted(proposalId);
-        if (block.timestamp < p.expiresAt) revert VotingNotEnded(proposalId);
+        if (block.timestamp < p.revealDeadline) revert VotingNotEnded(proposalId);
         if (p.executed) revert AlreadyExecuted(proposalId);
 
         uint256 totalVotes = p.yesVotes + p.noVotes;
@@ -486,13 +540,15 @@ contract ConsortiumGovernanceV2 is Ownable2Step, Pausable, ReentrancyGuard {
     {
         if (msg.value == 0) revert ZeroAmount();
 
+        // Cache msg.value to avoid reading it in loop (gas optimization)
+        uint256 totalReward = msg.value;
         address[] storage memberAddrs = memberList[consortiumId];
         uint256 allocated = 0;
 
         for (uint256 i = 0; i < memberAddrs.length;) {
             Member storage m = members[consortiumId][memberAddrs[i]];
             if (m.status == MemberStatus.Active && m.contributionWeight > 0) {
-                uint256 share = (msg.value * m.contributionWeight) / WEIGHT_PRECISION;
+                uint256 share = (totalReward * m.contributionWeight) / WEIGHT_PRECISION;
                 if (share > 0) {
                     pendingWithdrawals[consortiumId][m.addr] += share;
                     allocated += share;
@@ -503,22 +559,23 @@ contract ConsortiumGovernanceV2 is Ownable2Step, Pausable, ReentrancyGuard {
 
         totalPendingWithdrawals[consortiumId] += allocated;
 
-        // Return any remainder to sender
-        if (msg.value > allocated) {
-            uint256 remainder = msg.value - allocated;
-            (bool success, ) = payable(msg.sender).call{value: remainder}("");
-            if (!success) revert TransferFailed();
-        }
-
+        // Record audit event before external call (CEI pattern)
         _recordAuditEvent(
             consortiumId,
             AuditEventType.RewardsDistributed,
             msg.sender,
-            keccak256(abi.encodePacked(consortiumId, msg.value, block.timestamp)),
-            abi.encode(msg.value, allocated)
+            keccak256(abi.encode(consortiumId, totalReward, block.timestamp)),
+            abi.encode(totalReward, allocated)
         );
 
         emit RewardsAllocated(consortiumId, allocated, memberAddrs.length);
+
+        // Return any remainder to sender (external call last)
+        if (totalReward > allocated) {
+            uint256 remainder = totalReward - allocated;
+            (bool success, ) = payable(msg.sender).call{value: remainder}("");
+            if (!success) revert TransferFailed();
+        }
     }
 
     /**
@@ -612,7 +669,7 @@ contract ConsortiumGovernanceV2 is Ownable2Step, Pausable, ReentrancyGuard {
         unchecked { ++_eventCounter; }
 
         bytes32 eventId = keccak256(
-            abi.encodePacked(consortiumId, eventType, block.timestamp, _eventCounter)
+            abi.encode(consortiumId, eventType, block.timestamp, _eventCounter)
         );
 
         bytes32 previousHash = lastEventHash[consortiumId];
@@ -629,7 +686,7 @@ contract ConsortiumGovernanceV2 is Ownable2Step, Pausable, ReentrancyGuard {
         }));
 
         lastEventHash[consortiumId] = keccak256(
-            abi.encodePacked(eventId, previousHash, block.timestamp)
+            abi.encode(eventId, previousHash, block.timestamp)
         );
 
         emit AuditEventRecorded(consortiumId, eventId, eventType);
@@ -637,9 +694,44 @@ contract ConsortiumGovernanceV2 is Ownable2Step, Pausable, ReentrancyGuard {
 
     // ============ View Functions ============
 
+    /**
+     * @dev Helper to compute vote commitment hash off-chain.
+     * @param proposalId The proposal ID
+     * @param support The vote (true = yes, false = no)
+     * @param salt Random bytes32 to hide the vote
+     * @return The commitment hash to use in commitVote()
+     */
+    function computeVoteCommitment(
+        bytes32 proposalId,
+        bool support,
+        bytes32 salt
+    ) external pure returns (bytes32) {
+        return keccak256(abi.encodePacked(proposalId, support, salt));
+    }
+
+    /**
+     * @dev Get proposal phase information.
+     */
+    function getProposalPhase(bytes32 proposalId) external view returns (
+        bool isCommitPhase,
+        bool isRevealPhase,
+        bool isEnded,
+        uint256 commitDeadline,
+        uint256 revealDeadline
+    ) {
+        Proposal storage p = proposals[proposalId];
+        uint256 currentTime = block.timestamp;
+
+        isCommitPhase = currentTime < p.commitDeadline;
+        isRevealPhase = currentTime >= p.commitDeadline && currentTime < p.revealDeadline;
+        isEnded = currentTime >= p.revealDeadline;
+        commitDeadline = p.commitDeadline;
+        revealDeadline = p.revealDeadline;
+    }
+
     function getConsortium(bytes32 consortiumId) external view returns (
         string memory name,
-        address owner,
+        address consortiumOwner,
         ConsortiumStatus status,
         uint256 memberCount,
         uint256 totalContributions,
@@ -683,7 +775,7 @@ contract ConsortiumGovernanceV2 is Ownable2Step, Pausable, ReentrancyGuard {
                 return false;
             }
             computedHash = keccak256(
-                abi.encodePacked(events[i].id, computedHash, events[i].timestamp)
+                abi.encode(events[i].id, computedHash, events[i].timestamp)
             );
             unchecked { ++i; }
         }

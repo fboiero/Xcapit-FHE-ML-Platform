@@ -15,7 +15,6 @@ Secret Paths:
 import logging
 import os
 from dataclasses import dataclass
-from functools import lru_cache
 from typing import Optional
 
 from apps.core.secrets import secrets

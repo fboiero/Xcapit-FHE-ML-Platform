@@ -124,8 +124,9 @@ def cleanup_old_reports(days: int = 90) -> dict:
     Returns:
         Dict with cleanup results
     """
-    from django.utils import timezone
     from datetime import timedelta
+
+    from django.utils import timezone
 
     from .models import CompetitiveReport
 

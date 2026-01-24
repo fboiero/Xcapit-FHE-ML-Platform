@@ -13,17 +13,12 @@ import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
-
-from django.conf import settings
+from typing import Optional
 
 from .secrets import (
     BlockchainWallet,
-    blockchain_secrets,
     get_consortium_signer_wallet,
-    get_deployer_wallet,
     get_rpc_url,
-    get_verifier_wallet,
 )
 
 logger = logging.getLogger(__name__)
