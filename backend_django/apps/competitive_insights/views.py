@@ -176,7 +176,7 @@ class CompetitiveReportViewSet(viewsets.ModelViewSet):
         return CompetitiveReportSerializer
 
     def perform_create(self, serializer):
-        """Create report and start generation."""
+        """Create report and start async generation."""
         report = serializer.save()
 
         # Log event
@@ -187,7 +187,10 @@ class CompetitiveReportViewSet(viewsets.ModelViewSet):
             resource_id=report.id,
         )
 
-        # TODO: Trigger async report generation
+        # Trigger async report generation
+        from .tasks import generate_competitive_report
+
+        generate_competitive_report.delay(str(report.id))
 
     @action(detail=True, methods=["post"])
     def generate(self, request, pk=None):

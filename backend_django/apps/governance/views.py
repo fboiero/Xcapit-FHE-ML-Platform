@@ -99,16 +99,27 @@ class ProposalViewSet(viewsets.ModelViewSet):
         if passed is None:
             proposal.status = Proposal.Status.REJECTED
             message = "No votes cast."
+            proposal.executed_at = timezone.now()
+            proposal.save()
         elif passed:
             proposal.status = Proposal.Status.PASSED
-            message = "Proposal passed."
-            # TODO: Execute proposal action based on type
+            proposal.save(update_fields=["status"])
+
+            # Execute proposal action based on type
+            from .services import ProposalExecutionService
+
+            execution_service = ProposalExecutionService(request=request)
+            result = execution_service.execute(proposal)
+
+            if result.success:
+                message = f"Proposal passed and executed: {result.data.message}"
+            else:
+                message = f"Proposal passed but execution failed: {result.error}"
         else:
             proposal.status = Proposal.Status.REJECTED
             message = "Proposal rejected."
-
-        proposal.executed_at = timezone.now()
-        proposal.save()
+            proposal.executed_at = timezone.now()
+            proposal.save()
 
         # Create audit event
         AuditEvent.objects.create(

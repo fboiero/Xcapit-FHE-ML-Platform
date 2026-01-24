@@ -159,13 +159,50 @@ class QualityAssessmentService(BaseService):
 
     def _calculate_timeliness(self, assessment: QualityAssessment) -> float:
         """
-        Calculate timeliness score.
+        Calculate timeliness score based on data freshness.
 
-        For now, returns 100 as we don't track data freshness.
-        Could be enhanced with timestamp analysis.
+        Evaluates how recent the data contribution is relative to:
+        1. The contribution's creation time vs assessment time
+        2. The expected update frequency for the data type
+
+        Scoring:
+        - Data less than 1 day old: 100
+        - Data 1-7 days old: 90-99 (linear decay)
+        - Data 7-30 days old: 70-89 (linear decay)
+        - Data 30-90 days old: 50-69 (linear decay)
+        - Data older than 90 days: 0-49 (linear decay, min 0)
         """
-        # TODO: Implement actual timeliness calculation based on data timestamps
-        return 100.0
+        from django.utils import timezone
+        from datetime import timedelta
+
+        if not assessment.contribution:
+            # No contribution linked - check assessment creation time
+            contribution_time = assessment.created_at
+        else:
+            contribution_time = assessment.contribution.created_at
+
+        now = timezone.now()
+        age = now - contribution_time
+
+        # Calculate days since data was contributed
+        days_old = age.total_seconds() / (24 * 60 * 60)
+
+        if days_old < 1:
+            # Fresh data: 100
+            return 100.0
+        elif days_old < 7:
+            # 1-7 days: 90-99 (linear decay)
+            return 100.0 - (days_old - 1) * (10 / 6)
+        elif days_old < 30:
+            # 7-30 days: 70-89 (linear decay)
+            return 90.0 - (days_old - 7) * (20 / 23)
+        elif days_old < 90:
+            # 30-90 days: 50-69 (linear decay)
+            return 70.0 - (days_old - 30) * (20 / 60)
+        else:
+            # 90+ days: 0-49 (linear decay, min 0)
+            score = 50.0 - (days_old - 90) * (50 / 90)
+            return max(0.0, score)
 
     @transaction.atomic
     def run_assessment(

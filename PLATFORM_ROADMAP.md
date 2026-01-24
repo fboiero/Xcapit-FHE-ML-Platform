@@ -44,15 +44,15 @@ Q1 2026          Q2 2026          Q3 2026          Q4 2026          Q1 2027
 
 ### Entregables
 
-| Prioridad | Tarea | Archivos Clave |
-|-----------|-------|----------------|
-| P0 | Async report generation (Celery) | `apps/competitive_insights/views.py:190` |
-| P0 | Timeliness calculation | `apps/data_quality/services/assessment.py:167` |
-| P0 | Proposal execution dispatcher | `apps/governance/views.py:105` |
-| P0 | Deploy contratos a Arbitrum Sepolia | `contracts/script/Deploy.s.sol` |
-| P1 | Eliminar `sdk/api/` (FastAPI legacy) | `sdk/api/` directory |
-| P1 | Tests coverage 88% → 95% | `backend_django/tests/` |
-| P2 | Actualizar documentación API | `docs/api-reference.md` |
+| Prioridad | Tarea | Estado | Archivos Clave |
+|-----------|-------|--------|----------------|
+| P0 | Async report generation (Celery) | DONE | `apps/competitive_insights/tasks.py` |
+| P0 | Timeliness calculation | DONE | `apps/data_quality/services/assessment.py` |
+| P0 | Proposal execution dispatcher | DONE | `apps/governance/services.py` |
+| P0 | Deploy contratos a Arbitrum Sepolia | Pending | `contracts/script/Deploy.s.sol` |
+| P1 | Eliminar `sdk/api/` (FastAPI legacy) | Pending | `sdk/api/` directory |
+| P1 | Tests coverage 79% → 95% | In Progress | `backend_django/tests/` |
+| P2 | Actualizar documentación API | Pending | `docs/api-reference.md` |
 
 ### Métricas de Éxito
 - Test coverage: 95%+

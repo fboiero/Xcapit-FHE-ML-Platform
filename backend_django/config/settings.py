@@ -465,6 +465,26 @@ if FHE_SECURITY_LEVEL not in [128, 192, 256]:
     raise ValueError("FHE_SECURITY_LEVEL must be 128, 192, or 256")
 
 # =============================================================================
+# CELERY CONFIGURATION
+# =============================================================================
+
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", REDIS_URL)
+CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND", REDIS_URL)
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes max per task
+CELERY_RESULT_EXPIRES = 60 * 60 * 24  # Results expire after 24 hours
+
+# Task routing
+CELERY_TASK_ROUTES = {
+    "apps.competitive_insights.tasks.*": {"queue": "reports"},
+    "apps.governance.tasks.*": {"queue": "governance"},
+}
+
+# =============================================================================
 # DEFAULT PRIMARY KEY
 # =============================================================================
 
