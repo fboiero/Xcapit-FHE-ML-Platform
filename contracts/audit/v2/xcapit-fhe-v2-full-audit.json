@@ -1,0 +1,542 @@
+{
+  "version": "4.3.7",
+  "timestamp": "2026-01-24T23:30:18.788356",
+  "execution_time": 46.433452,
+  "profile": "thorough",
+  "path": "/contracts",
+  "contracts_analyzed": 3,
+  "contracts_failed": 0,
+  "aggregated_summary": {
+    "CRITICAL": 0,
+    "HIGH": 0,
+    "MEDIUM": 0,
+    "LOW": 3,
+    "INFO": 12
+  },
+  "total_findings": 15,
+  "contracts": [
+    {
+      "contract": "/contracts/ModelRegistryV2.sol",
+      "results": [
+        {
+          "tool": "slither",
+          "contract": "/contracts/ModelRegistryV2.sol",
+          "status": "success",
+          "findings": [
+            {
+              "id": "slither-missing-zero-check-0",
+              "type": "missing-zero-check",
+              "severity": "Low",
+              "confidence": 0.75,
+              "location": {
+                "file": "lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol",
+                "line": 43,
+                "function": "newOwner"
+              },
+              "message": "Ownable2Step.transferOwnership(address).newOwner (lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol#43) lacks a zero-check on :",
+              "description": "[Ownable2Step.transferOwnership(address).newOwner](../tmp/miesc_slither_7atq9ri2/lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol#L43) lacks a zero-check on :\n\t\t- [_pendingOwner = newOwner](../tmp/miesc_slither_7atq9ri2/lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol#L44)\n",
+              "recommendation": "Review and fix the vulnerability",
+              "swc_id": null,
+              "cwe_id": null,
+              "owasp_category": null
+            },
+            {
+              "id": "slither-assembly-1",
+              "type": "assembly",
+              "severity": "Info",
+              "confidence": 0.9,
+              "location": {
+                "file": "lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol",
+                "line": 66,
+                "function": "getAddressSlot"
+              },
+              "message": "StorageSlot.getAddressSlot(bytes32) (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#66-70) uses assembly",
+              "description": "[StorageSlot.getAddressSlot(bytes32)](../tmp/miesc_slither_7atq9ri2/lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L66-L70) uses assembly\n\t- [INLINE ASM](../tmp/miesc_slither_7atq9ri2/lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L67-L69)\n",
+              "recommendation": "Review and fix the vulnerability",
+              "swc_id": null,
+              "cwe_id": null,
+              "owasp_category": null
+            },
+            {
+              "id": "slither-assembly-2",
+              "type": "assembly",
+              "severity": "Info",
+              "confidence": 0.9,
+              "location": {
+                "file": "lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol",
+                "line": 102,
+                "function": "getInt256Slot"
+              },
+              "message": "StorageSlot.getInt256Slot(bytes32) (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#102-106) uses assembly",
+              "description": "[StorageSlot.getInt256Slot(bytes32)](../tmp/miesc_slither_7atq9ri2/lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L102-L106) uses assembly\n\t- [INLINE ASM](../tmp/miesc_slither_7atq9ri2/lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L103-L105)\n",
+              "recommendation": "Review and fix the vulnerability",
+              "swc_id": null,
+              "cwe_id": null,
+              "owasp_category": null
+            },
+            {
+              "id": "slither-assembly-3",
+              "type": "assembly",
+              "severity": "Info",
+              "confidence": 0.9,
+              "location": {
+                "file": "lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol",
+                "line": 129,
+                "function": "getBytesSlot"
+              },
+              "message": "StorageSlot.getBytesSlot(bytes32) (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#129-133) uses assembly",
+              "description": "[StorageSlot.getBytesSlot(bytes32)](../tmp/miesc_slither_7atq9ri2/lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L129-L133) uses assembly\n\t- [INLINE ASM](../tmp/miesc_slither_7atq9ri2/lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L130-L132)\n",
+              "recommendation": "Review and fix the vulnerability",
+              "swc_id": null,
+              "cwe_id": null,
+              "owasp_category": null
+            },
+            {
+              "id": "slither-assembly-4",
+              "type": "assembly",
+              "severity": "Info",
+              "confidence": 0.9,
+              "location": {
+                "file": "lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol",
+                "line": 120,
+                "function": "getStringSlot"
+              },
+              "message": "StorageSlot.getStringSlot(string) (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#120-124) uses assembly",
+              "description": "[StorageSlot.getStringSlot(string)](../tmp/miesc_slither_7atq9ri2/lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L120-L124) uses assembly\n\t- [INLINE ASM](../tmp/miesc_slither_7atq9ri2/lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L121-L123)\n",
+              "recommendation": "Review and fix the vulnerability",
+              "swc_id": null,
+              "cwe_id": null,
+              "owasp_category": null
+            }
+          ],
+          "execution_time": 24.53559947013855,
+          "timestamp": "2026-01-24T23:29:58.045029",
+          "metadata": {
+            "contract_analyzed": "/contracts/ModelRegistryV2.sol",
+            "output_file": "/tmp/slither_output.json",
+            "raw_findings_count": 15,
+            "normalized_findings_count": 5,
+            "slither_version": true,
+            "excluded_detectors": []
+          },
+          "error": null
+        },
+        {
+          "tool": "aderyn",
+          "contract": "/contracts/ModelRegistryV2.sol",
+          "status": "error",
+          "findings": [],
+          "execution_time": 9.133808851242065,
+          "timestamp": "2026-01-24T23:30:07.216837",
+          "metadata": {
+            "exit_code": 101,
+            "stderr": "\nthread 'main' (1277) panicked at /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cyfrin-foundry-config-0.2.1/src/lib.rs:535:55:\nfailed to extract foundry config:\nfoundry config error: Unknown evm version: osaka for setting `evm_version`\n\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n"
+          },
+          "error": "Aderyn analysis failed (exit code 101)"
+        },
+        {
+          "tool": "solhint",
+          "contract": "/contracts/ModelRegistryV2.sol",
+          "status": "success",
+          "findings": [],
+          "execution_time": 0.83,
+          "timestamp": "2026-01-24T23:30:08.282847",
+          "metadata": {},
+          "error": null
+        },
+        {
+          "tool": "mythril",
+          "contract": "/contracts/ModelRegistryV2.sol",
+          "status": "success",
+          "findings": [],
+          "execution_time": 6.471108675003052,
+          "timestamp": "2026-01-24T23:30:17.683204",
+          "metadata": {
+            "contract_analyzed": "/contracts/ModelRegistryV2.sol",
+            "raw_findings_count": 0,
+            "normalized_findings_count": 0,
+            "execution_timeout": 300,
+            "max_depth": 22,
+            "solver_timeout": 100000
+          },
+          "error": null
+        },
+        {
+          "tool": "echidna",
+          "contract": "/contracts/ModelRegistryV2.sol",
+          "status": "not_available",
+          "findings": [],
+          "execution_time": 0.003722,
+          "timestamp": "2026-01-24T23:30:17.686997",
+          "error": "Tool echidna not available: not_installed"
+        },
+        {
+          "tool": "medusa",
+          "contract": "/contracts/ModelRegistryV2.sol",
+          "status": "not_available",
+          "findings": [],
+          "execution_time": 0.000902,
+          "timestamp": "2026-01-24T23:30:17.687960",
+          "error": "Tool medusa not available: not_installed"
+        }
+      ],
+      "summary": {
+        "CRITICAL": 0,
+        "HIGH": 0,
+        "MEDIUM": 0,
+        "LOW": 1,
+        "INFO": 4
+      },
+      "total_findings": 5
+    },
+    {
+      "contract": "/contracts/ConsortiumGovernanceV2.sol",
+      "results": [
+        {
+          "tool": "slither",
+          "contract": "/contracts/ConsortiumGovernanceV2.sol",
+          "status": "success",
+          "findings": [
+            {
+              "id": "slither-missing-zero-check-0",
+              "type": "missing-zero-check",
+              "severity": "Low",
+              "confidence": 0.75,
+              "location": {
+                "file": "lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol",
+                "line": 43,
+                "function": "newOwner"
+              },
+              "message": "Ownable2Step.transferOwnership(address).newOwner (lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol#43) lacks a zero-check on :",
+              "description": "[Ownable2Step.transferOwnership(address).newOwner](../tmp/miesc_slither_7atq9ri2/lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol#L43) lacks a zero-check on :\n\t\t- [_pendingOwner = newOwner](../tmp/miesc_slither_7atq9ri2/lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol#L44)\n",
+              "recommendation": "Review and fix the vulnerability",
+              "swc_id": null,
+              "cwe_id": null,
+              "owasp_category": null
+            },
+            {
+              "id": "slither-assembly-1",
+              "type": "assembly",
+              "severity": "Info",
+              "confidence": 0.9,
+              "location": {
+                "file": "lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol",
+                "line": 66,
+                "function": "getAddressSlot"
+              },
+              "message": "StorageSlot.getAddressSlot(bytes32) (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#66-70) uses assembly",
+              "description": "[StorageSlot.getAddressSlot(bytes32)](../tmp/miesc_slither_7atq9ri2/lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L66-L70) uses assembly\n\t- [INLINE ASM](../tmp/miesc_slither_7atq9ri2/lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L67-L69)\n",
+              "recommendation": "Review and fix the vulnerability",
+              "swc_id": null,
+              "cwe_id": null,
+              "owasp_category": null
+            },
+            {
+              "id": "slither-assembly-2",
+              "type": "assembly",
+              "severity": "Info",
+              "confidence": 0.9,
+              "location": {
+                "file": "lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol",
+                "line": 102,
+                "function": "getInt256Slot"
+              },
+              "message": "StorageSlot.getInt256Slot(bytes32) (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#102-106) uses assembly",
+              "description": "[StorageSlot.getInt256Slot(bytes32)](../tmp/miesc_slither_7atq9ri2/lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L102-L106) uses assembly\n\t- [INLINE ASM](../tmp/miesc_slither_7atq9ri2/lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L103-L105)\n",
+              "recommendation": "Review and fix the vulnerability",
+              "swc_id": null,
+              "cwe_id": null,
+              "owasp_category": null
+            },
+            {
+              "id": "slither-assembly-3",
+              "type": "assembly",
+              "severity": "Info",
+              "confidence": 0.9,
+              "location": {
+                "file": "lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol",
+                "line": 129,
+                "function": "getBytesSlot"
+              },
+              "message": "StorageSlot.getBytesSlot(bytes32) (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#129-133) uses assembly",
+              "description": "[StorageSlot.getBytesSlot(bytes32)](../tmp/miesc_slither_7atq9ri2/lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L129-L133) uses assembly\n\t- [INLINE ASM](../tmp/miesc_slither_7atq9ri2/lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L130-L132)\n",
+              "recommendation": "Review and fix the vulnerability",
+              "swc_id": null,
+              "cwe_id": null,
+              "owasp_category": null
+            },
+            {
+              "id": "slither-assembly-4",
+              "type": "assembly",
+              "severity": "Info",
+              "confidence": 0.9,
+              "location": {
+                "file": "lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol",
+                "line": 120,
+                "function": "getStringSlot"
+              },
+              "message": "StorageSlot.getStringSlot(string) (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#120-124) uses assembly",
+              "description": "[StorageSlot.getStringSlot(string)](../tmp/miesc_slither_7atq9ri2/lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L120-L124) uses assembly\n\t- [INLINE ASM](../tmp/miesc_slither_7atq9ri2/lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L121-L123)\n",
+              "recommendation": "Review and fix the vulnerability",
+              "swc_id": null,
+              "cwe_id": null,
+              "owasp_category": null
+            }
+          ],
+          "execution_time": 23.99014949798584,
+          "timestamp": "2026-01-24T23:29:57.537687",
+          "metadata": {
+            "contract_analyzed": "/contracts/ConsortiumGovernanceV2.sol",
+            "output_file": "/tmp/slither_output.json",
+            "raw_findings_count": 15,
+            "normalized_findings_count": 5,
+            "slither_version": true,
+            "excluded_detectors": []
+          },
+          "error": null
+        },
+        {
+          "tool": "aderyn",
+          "contract": "/contracts/ConsortiumGovernanceV2.sol",
+          "status": "error",
+          "findings": [],
+          "execution_time": 8.862685441970825,
+          "timestamp": "2026-01-24T23:30:06.467734",
+          "metadata": {
+            "exit_code": 101,
+            "stderr": "\nthread 'main' (1218) panicked at /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cyfrin-foundry-config-0.2.1/src/lib.rs:535:55:\nfailed to extract foundry config:\nfoundry config error: Unknown evm version: osaka for setting `evm_version`\n\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n"
+          },
+          "error": "Aderyn analysis failed (exit code 101)"
+        },
+        {
+          "tool": "solhint",
+          "contract": "/contracts/ConsortiumGovernanceV2.sol",
+          "status": "success",
+          "findings": [],
+          "execution_time": 0.82,
+          "timestamp": "2026-01-24T23:30:07.621802",
+          "metadata": {},
+          "error": null
+        },
+        {
+          "tool": "mythril",
+          "contract": "/contracts/ConsortiumGovernanceV2.sol",
+          "status": "success",
+          "findings": [],
+          "execution_time": 6.47843861579895,
+          "timestamp": "2026-01-24T23:30:17.694881",
+          "metadata": {
+            "contract_analyzed": "/contracts/ConsortiumGovernanceV2.sol",
+            "raw_findings_count": 0,
+            "normalized_findings_count": 0,
+            "execution_timeout": 300,
+            "max_depth": 22,
+            "solver_timeout": 100000
+          },
+          "error": null
+        },
+        {
+          "tool": "echidna",
+          "contract": "/contracts/ConsortiumGovernanceV2.sol",
+          "status": "not_available",
+          "findings": [],
+          "execution_time": 0.000638,
+          "timestamp": "2026-01-24T23:30:17.695528",
+          "error": "Tool echidna not available: not_installed"
+        },
+        {
+          "tool": "medusa",
+          "contract": "/contracts/ConsortiumGovernanceV2.sol",
+          "status": "not_available",
+          "findings": [],
+          "execution_time": 0.000712,
+          "timestamp": "2026-01-24T23:30:17.696248",
+          "error": "Tool medusa not available: not_installed"
+        }
+      ],
+      "summary": {
+        "CRITICAL": 0,
+        "HIGH": 0,
+        "MEDIUM": 0,
+        "LOW": 1,
+        "INFO": 4
+      },
+      "total_findings": 5
+    },
+    {
+      "contract": "/contracts/ComputationVerifierV2.sol",
+      "results": [
+        {
+          "tool": "slither",
+          "contract": "/contracts/ComputationVerifierV2.sol",
+          "status": "success",
+          "findings": [
+            {
+              "id": "slither-missing-zero-check-0",
+              "type": "missing-zero-check",
+              "severity": "Low",
+              "confidence": 0.75,
+              "location": {
+                "file": "lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol",
+                "line": 43,
+                "function": "newOwner"
+              },
+              "message": "Ownable2Step.transferOwnership(address).newOwner (lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol#43) lacks a zero-check on :",
+              "description": "[Ownable2Step.transferOwnership(address).newOwner](../tmp/miesc_slither_7atq9ri2/lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol#L43) lacks a zero-check on :\n\t\t- [_pendingOwner = newOwner](../tmp/miesc_slither_7atq9ri2/lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol#L44)\n",
+              "recommendation": "Review and fix the vulnerability",
+              "swc_id": null,
+              "cwe_id": null,
+              "owasp_category": null
+            },
+            {
+              "id": "slither-assembly-1",
+              "type": "assembly",
+              "severity": "Info",
+              "confidence": 0.9,
+              "location": {
+                "file": "lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol",
+                "line": 66,
+                "function": "getAddressSlot"
+              },
+              "message": "StorageSlot.getAddressSlot(bytes32) (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#66-70) uses assembly",
+              "description": "[StorageSlot.getAddressSlot(bytes32)](../tmp/miesc_slither_7atq9ri2/lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L66-L70) uses assembly\n\t- [INLINE ASM](../tmp/miesc_slither_7atq9ri2/lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L67-L69)\n",
+              "recommendation": "Review and fix the vulnerability",
+              "swc_id": null,
+              "cwe_id": null,
+              "owasp_category": null
+            },
+            {
+              "id": "slither-assembly-2",
+              "type": "assembly",
+              "severity": "Info",
+              "confidence": 0.9,
+              "location": {
+                "file": "lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol",
+                "line": 102,
+                "function": "getInt256Slot"
+              },
+              "message": "StorageSlot.getInt256Slot(bytes32) (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#102-106) uses assembly",
+              "description": "[StorageSlot.getInt256Slot(bytes32)](../tmp/miesc_slither_7atq9ri2/lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L102-L106) uses assembly\n\t- [INLINE ASM](../tmp/miesc_slither_7atq9ri2/lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L103-L105)\n",
+              "recommendation": "Review and fix the vulnerability",
+              "swc_id": null,
+              "cwe_id": null,
+              "owasp_category": null
+            },
+            {
+              "id": "slither-assembly-3",
+              "type": "assembly",
+              "severity": "Info",
+              "confidence": 0.9,
+              "location": {
+                "file": "lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol",
+                "line": 129,
+                "function": "getBytesSlot"
+              },
+              "message": "StorageSlot.getBytesSlot(bytes32) (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#129-133) uses assembly",
+              "description": "[StorageSlot.getBytesSlot(bytes32)](../tmp/miesc_slither_7atq9ri2/lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L129-L133) uses assembly\n\t- [INLINE ASM](../tmp/miesc_slither_7atq9ri2/lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L130-L132)\n",
+              "recommendation": "Review and fix the vulnerability",
+              "swc_id": null,
+              "cwe_id": null,
+              "owasp_category": null
+            },
+            {
+              "id": "slither-assembly-4",
+              "type": "assembly",
+              "severity": "Info",
+              "confidence": 0.9,
+              "location": {
+                "file": "lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol",
+                "line": 120,
+                "function": "getStringSlot"
+              },
+              "message": "StorageSlot.getStringSlot(string) (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#120-124) uses assembly",
+              "description": "[StorageSlot.getStringSlot(string)](../tmp/miesc_slither_7atq9ri2/lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L120-L124) uses assembly\n\t- [INLINE ASM](../tmp/miesc_slither_7atq9ri2/lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L121-L123)\n",
+              "recommendation": "Review and fix the vulnerability",
+              "swc_id": null,
+              "cwe_id": null,
+              "owasp_category": null
+            }
+          ],
+          "execution_time": 21.597183227539062,
+          "timestamp": "2026-01-24T23:29:55.145006",
+          "metadata": {
+            "contract_analyzed": "/contracts/ComputationVerifierV2.sol",
+            "output_file": "/tmp/slither_output.json",
+            "raw_findings_count": 15,
+            "normalized_findings_count": 5,
+            "slither_version": true,
+            "excluded_detectors": []
+          },
+          "error": null
+        },
+        {
+          "tool": "aderyn",
+          "contract": "/contracts/ComputationVerifierV2.sol",
+          "status": "error",
+          "findings": [],
+          "execution_time": 9.36034631729126,
+          "timestamp": "2026-01-24T23:30:04.589304",
+          "metadata": {
+            "exit_code": 101,
+            "stderr": "\nthread 'main' (1106) panicked at /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cyfrin-foundry-config-0.2.1/src/lib.rs:535:55:\nfailed to extract foundry config:\nfoundry config error: Unknown evm version: osaka for setting `evm_version`\n\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n"
+          },
+          "error": "Aderyn analysis failed (exit code 101)"
+        },
+        {
+          "tool": "solhint",
+          "contract": "/contracts/ComputationVerifierV2.sol",
+          "status": "success",
+          "findings": [],
+          "execution_time": 2.11,
+          "timestamp": "2026-01-24T23:30:07.200466",
+          "metadata": {},
+          "error": null
+        },
+        {
+          "tool": "mythril",
+          "contract": "/contracts/ComputationVerifierV2.sol",
+          "status": "success",
+          "findings": [],
+          "execution_time": 7.568088531494141,
+          "timestamp": "2026-01-24T23:30:18.781877",
+          "metadata": {
+            "contract_analyzed": "/contracts/ComputationVerifierV2.sol",
+            "raw_findings_count": 0,
+            "normalized_findings_count": 0,
+            "execution_timeout": 300,
+            "max_depth": 22,
+            "solver_timeout": 100000
+          },
+          "error": null
+        },
+        {
+          "tool": "echidna",
+          "contract": "/contracts/ComputationVerifierV2.sol",
+          "status": "not_available",
+          "findings": [],
+          "execution_time": 0.001323,
+          "timestamp": "2026-01-24T23:30:18.783217",
+          "error": "Tool echidna not available: not_installed"
+        },
+        {
+          "tool": "medusa",
+          "contract": "/contracts/ComputationVerifierV2.sol",
+          "status": "not_available",
+          "findings": [],
+          "execution_time": 0.000446,
+          "timestamp": "2026-01-24T23:30:18.783671",
+          "error": "Tool medusa not available: not_installed"
+        }
+      ],
+      "summary": {
+        "CRITICAL": 0,
+        "HIGH": 0,
+        "MEDIUM": 0,
+        "LOW": 1,
+        "INFO": 4
+      },
+      "total_findings": 5
+    }
+  ],
+  "failed": []
+}

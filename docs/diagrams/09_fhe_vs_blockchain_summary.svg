@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1000" height="700" viewBox="0 0 1000 700" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="fheGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#10b981"/>
+      <stop offset="100%" style="stop-color:#059669"/>
+    </linearGradient>
+    <linearGradient id="bcGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#f59e0b"/>
+      <stop offset="100%" style="stop-color:#d97706"/>
+    </linearGradient>
+    <filter id="shadow">
+      <feDropShadow dx="2" dy="3" stdDeviation="3" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1000" height="700" fill="#0f172a"/>
+
+  <!-- Title -->
+  <text x="500" y="40" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="26" font-weight="bold">FHE vs Blockchain: Guía Rápida</text>
+  <text x="500" y="65" text-anchor="middle" fill="#94a3b8" font-family="Arial, sans-serif" font-size="14">Cuándo usar cada tecnología en la plataforma</text>
+
+  <!-- FHE Section -->
+  <rect x="50" y="100" width="420" height="550" rx="16" fill="url(#fheGrad)" filter="url(#shadow)"/>
+  <text x="260" y="140" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="22" font-weight="bold">🔐 FHE</text>
+  <text x="260" y="165" text-anchor="middle" fill="#d1fae5" font-family="Arial, sans-serif" font-size="14">Fully Homomorphic Encryption</text>
+
+  <!-- FHE Purpose -->
+  <rect x="70" y="185" width="380" height="60" rx="8" fill="rgba(0,0,0,0.3)"/>
+  <text x="260" y="210" text-anchor="middle" fill="#ecfdf5" font-family="Arial, sans-serif" font-size="14" font-weight="bold">PROPÓSITO</text>
+  <text x="260" y="232" text-anchor="middle" fill="#a7f3d0" font-family="Arial, sans-serif" font-size="12">Proteger la PRIVACIDAD de los DATOS</text>
+
+  <!-- FHE When to use -->
+  <rect x="70" y="260" width="380" height="150" rx="8" fill="rgba(0,0,0,0.3)"/>
+  <text x="260" y="285" text-anchor="middle" fill="#ecfdf5" font-family="Arial, sans-serif" font-size="14" font-weight="bold">CUÁNDO SE USA</text>
+
+  <text x="90" y="315" fill="#a7f3d0" font-family="Arial, sans-serif" font-size="12">✅ Al encriptar datos del banco</text>
+  <text x="90" y="340" fill="#a7f3d0" font-family="Arial, sans-serif" font-size="12">✅ Durante entrenamiento del modelo ML</text>
+  <text x="90" y="365" fill="#a7f3d0" font-family="Arial, sans-serif" font-size="12">✅ Al hacer predicciones</text>
+  <text x="90" y="390" fill="#a7f3d0" font-family="Arial, sans-serif" font-size="12">✅ Al enviar datos entre sistemas</text>
+
+  <!-- FHE What it protects -->
+  <rect x="70" y="425" width="380" height="100" rx="8" fill="rgba(0,0,0,0.3)"/>
+  <text x="260" y="450" text-anchor="middle" fill="#ecfdf5" font-family="Arial, sans-serif" font-size="14" font-weight="bold">QUÉ PROTEGE</text>
+
+  <text x="90" y="480" fill="#a7f3d0" font-family="Arial, sans-serif" font-size="12">• Montos de transacciones ($523.45 → 🔒)</text>
+  <text x="90" y="505" fill="#a7f3d0" font-family="Arial, sans-serif" font-size="12">• Datos personales (nombre, ubicación → 🔒)</text>
+
+  <!-- FHE Key point -->
+  <rect x="70" y="540" width="380" height="90" rx="8" fill="rgba(239, 68, 68, 0.2)" stroke="#ef4444"/>
+  <text x="260" y="570" text-anchor="middle" fill="#fca5a5" font-family="Arial, sans-serif" font-size="14" font-weight="bold">💡 CONCEPTO CLAVE</text>
+  <text x="260" y="595" text-anchor="middle" fill="#fecaca" font-family="Arial, sans-serif" font-size="11">Permite hacer ML sobre datos cifrados</text>
+  <text x="260" y="615" text-anchor="middle" fill="#fecaca" font-family="Arial, sans-serif" font-size="11">SIN que el servidor vea los datos reales</text>
+
+  <!-- Blockchain Section -->
+  <rect x="530" y="100" width="420" height="550" rx="16" fill="url(#bcGrad)" filter="url(#shadow)"/>
+  <text x="740" y="140" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="22" font-weight="bold">⛓️ BLOCKCHAIN</text>
+  <text x="740" y="165" text-anchor="middle" fill="#fef3c7" font-family="Arial, sans-serif" font-size="14">Arbitrum (Layer 2 Ethereum)</text>
+
+  <!-- Blockchain Purpose -->
+  <rect x="550" y="185" width="380" height="60" rx="8" fill="rgba(0,0,0,0.3)"/>
+  <text x="740" y="210" text-anchor="middle" fill="#fef3c7" font-family="Arial, sans-serif" font-size="14" font-weight="bold">PROPÓSITO</text>
+  <text x="740" y="232" text-anchor="middle" fill="#fde68a" font-family="Arial, sans-serif" font-size="12">Garantizar TRANSPARENCIA del PROCESO</text>
+
+  <!-- Blockchain When to use -->
+  <rect x="550" y="260" width="380" height="150" rx="8" fill="rgba(0,0,0,0.3)"/>
+  <text x="740" y="285" text-anchor="middle" fill="#fef3c7" font-family="Arial, sans-serif" font-size="14" font-weight="bold">CUÁNDO SE USA</text>
+
+  <text x="570" y="315" fill="#fde68a" font-family="Arial, sans-serif" font-size="12">✅ Al registrar un modelo entrenado</text>
+  <text x="570" y="340" fill="#fde68a" font-family="Arial, sans-serif" font-size="12">✅ Al votar sobre propuestas del consorcio</text>
+  <text x="570" y="365" fill="#fde68a" font-family="Arial, sans-serif" font-size="12">✅ Al añadir/remover miembros</text>
+  <text x="570" y="390" fill="#fde68a" font-family="Arial, sans-serif" font-size="12">✅ Al verificar integridad de cómputos</text>
+
+  <!-- Blockchain What it stores -->
+  <rect x="550" y="425" width="380" height="100" rx="8" fill="rgba(0,0,0,0.3)"/>
+  <text x="740" y="450" text-anchor="middle" fill="#fef3c7" font-family="Arial, sans-serif" font-size="14" font-weight="bold">QUÉ GUARDA</text>
+
+  <text x="570" y="480" fill="#fde68a" font-family="Arial, sans-serif" font-size="12">• Hashes de modelos (no el modelo)</text>
+  <text x="570" y="505" fill="#fde68a" font-family="Arial, sans-serif" font-size="12">• Métricas públicas, votos, decisiones</text>
+
+  <!-- Blockchain Key point -->
+  <rect x="550" y="540" width="380" height="90" rx="8" fill="rgba(239, 68, 68, 0.2)" stroke="#ef4444"/>
+  <text x="740" y="570" text-anchor="middle" fill="#fca5a5" font-family="Arial, sans-serif" font-size="14" font-weight="bold">💡 CONCEPTO CLAVE</text>
+  <text x="740" y="595" text-anchor="middle" fill="#fecaca" font-family="Arial, sans-serif" font-size="11">NO guarda datos sensibles</text>
+  <text x="740" y="615" text-anchor="middle" fill="#fecaca" font-family="Arial, sans-serif" font-size="11">Solo PRUEBAS de que el proceso fue correcto</text>
+
+  <!-- Bottom summary -->
+  <rect x="50" y="665" width="900" height="25" rx="6" fill="rgba(99, 102, 241, 0.2)" stroke="#6366f1"/>
+  <text x="500" y="683" text-anchor="middle" fill="#a5b4fc" font-family="Arial, sans-serif" font-size="12" font-weight="bold">RESUMEN: FHE = Privacidad de DATOS | Blockchain = Transparencia de PROCESO | Ambas tecnologías se complementan</text>
+</svg>

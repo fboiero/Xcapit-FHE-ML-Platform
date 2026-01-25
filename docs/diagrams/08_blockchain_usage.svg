@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1100" height="850" viewBox="0 0 1100 850" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bcGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#f59e0b"/>
+      <stop offset="100%" style="stop-color:#d97706"/>
+    </linearGradient>
+    <linearGradient id="contractGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1"/>
+      <stop offset="100%" style="stop-color:#4f46e5"/>
+    </linearGradient>
+    <linearGradient id="goodGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#10b981"/>
+      <stop offset="100%" style="stop-color:#059669"/>
+    </linearGradient>
+    <linearGradient id="badGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ef4444"/>
+      <stop offset="100%" style="stop-color:#dc2626"/>
+    </linearGradient>
+    <filter id="shadow">
+      <feDropShadow dx="2" dy="3" stdDeviation="3" flood-opacity="0.25"/>
+    </filter>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#64748b"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1100" height="850" fill="#0f172a"/>
+
+  <!-- Title -->
+  <text x="550" y="35" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="24" font-weight="bold">¿Para Qué Usamos Blockchain?</text>
+  <text x="550" y="60" text-anchor="middle" fill="#94a3b8" font-family="Arial, sans-serif" font-size="14">Blockchain NO guarda datos - Solo registra PRUEBAS y GOBERNANZA</text>
+
+  <!-- Main question boxes -->
+  <rect x="50" y="90" width="480" height="60" rx="12" fill="url(#badGrad)" filter="url(#shadow)"/>
+  <text x="290" y="120" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="14" font-weight="bold">❌ LO QUE BLOCKCHAIN NO HACE</text>
+  <text x="290" y="140" text-anchor="middle" fill="#fecaca" font-family="Arial, sans-serif" font-size="11">No guarda transacciones bancarias, datos personales, ni información sensible</text>
+
+  <rect x="570" y="90" width="480" height="60" rx="12" fill="url(#goodGrad)" filter="url(#shadow)"/>
+  <text x="810" y="120" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="14" font-weight="bold">✅ LO QUE BLOCKCHAIN SÍ HACE</text>
+  <text x="810" y="140" text-anchor="middle" fill="#d1fae5" font-family="Arial, sans-serif" font-size="11">Registra hashes, métricas, votos y decisiones del consorcio</text>
+
+  <!-- THE 3 SMART CONTRACTS -->
+  <text x="550" y="190" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="18" font-weight="bold">Los 3 Smart Contracts y Su Propósito</text>
+
+  <!-- Contract 1: ModelRegistry -->
+  <rect x="50" y="220" width="330" height="280" rx="12" fill="url(#contractGrad)" filter="url(#shadow)"/>
+  <text x="215" y="250" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="16" font-weight="bold">📋 ModelRegistry.sol</text>
+  <text x="215" y="275" text-anchor="middle" fill="#c7d2fe" font-family="Arial, sans-serif" font-size="12">Registro de modelos ML</text>
+
+  <rect x="70" y="290" width="290" height="195" rx="8" fill="rgba(0,0,0,0.3)"/>
+  <text x="215" y="315" text-anchor="middle" fill="#e0e7ff" font-family="Arial, sans-serif" font-size="12" font-weight="bold">¿Qué guarda?</text>
+
+  <text x="90" y="340" fill="#a5b4fc" font-family="Arial, sans-serif" font-size="11">• modelHash: SHA-256 del modelo</text>
+  <text x="90" y="360" fill="#86efac" font-family="Arial, sans-serif" font-size="9">  → Prueba de integridad</text>
+
+  <text x="90" y="385" fill="#a5b4fc" font-family="Arial, sans-serif" font-size="11">• accuracy: 94.5%</text>
+  <text x="90" y="405" fill="#86efac" font-family="Arial, sans-serif" font-size="9">  → Métrica pública verificable</text>
+
+  <text x="90" y="430" fill="#a5b4fc" font-family="Arial, sans-serif" font-size="11">• timestamp: 2024-01-15 14:30</text>
+  <text x="90" y="450" fill="#86efac" font-family="Arial, sans-serif" font-size="9">  → Auditoría temporal</text>
+
+  <text x="90" y="475" fill="#a5b4fc" font-family="Arial, sans-serif" font-size="11">• version: "v2.1.0"</text>
+  <text x="90" y="495" fill="#86efac" font-family="Arial, sans-serif" font-size="9">  → Trazabilidad de versiones</text>
+
+  <!-- Contract 2: ConsortiumGovernance -->
+  <rect x="400" y="220" width="330" height="280" rx="12" fill="url(#contractGrad)" filter="url(#shadow)"/>
+  <text x="565" y="250" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="16" font-weight="bold">🏛️ ConsortiumGovernance.sol</text>
+  <text x="565" y="275" text-anchor="middle" fill="#c7d2fe" font-family="Arial, sans-serif" font-size="12">Gobernanza del consorcio</text>
+
+  <rect x="420" y="290" width="290" height="195" rx="8" fill="rgba(0,0,0,0.3)"/>
+  <text x="565" y="315" text-anchor="middle" fill="#e0e7ff" font-family="Arial, sans-serif" font-size="12" font-weight="bold">¿Qué guarda?</text>
+
+  <text x="440" y="340" fill="#a5b4fc" font-family="Arial, sans-serif" font-size="11">• members: [Bank A, Bank B, Bank C]</text>
+  <text x="440" y="360" fill="#86efac" font-family="Arial, sans-serif" font-size="9">  → Lista de participantes autorizados</text>
+
+  <text x="440" y="385" fill="#a5b4fc" font-family="Arial, sans-serif" font-size="11">• proposals: [{id, description}]</text>
+  <text x="440" y="405" fill="#86efac" font-family="Arial, sans-serif" font-size="9">  → Propuestas de cambios</text>
+
+  <text x="440" y="430" fill="#a5b4fc" font-family="Arial, sans-serif" font-size="11">• votes: {commit, reveal}</text>
+  <text x="440" y="450" fill="#86efac" font-family="Arial, sans-serif" font-size="9">  → Sistema commit-reveal</text>
+
+  <text x="440" y="475" fill="#a5b4fc" font-family="Arial, sans-serif" font-size="11">• executedActions: [...]</text>
+  <text x="440" y="495" fill="#86efac" font-family="Arial, sans-serif" font-size="9">  → Historial de decisiones</text>
+
+  <!-- Contract 3: ComputationVerifier -->
+  <rect x="750" y="220" width="300" height="280" rx="12" fill="url(#contractGrad)" filter="url(#shadow)"/>
+  <text x="900" y="250" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="16" font-weight="bold">🔍 ComputationVerifier.sol</text>
+  <text x="900" y="275" text-anchor="middle" fill="#c7d2fe" font-family="Arial, sans-serif" font-size="12">Verificación de cómputos</text>
+
+  <rect x="770" y="290" width="260" height="195" rx="8" fill="rgba(0,0,0,0.3)"/>
+  <text x="900" y="315" text-anchor="middle" fill="#e0e7ff" font-family="Arial, sans-serif" font-size="12" font-weight="bold">¿Qué guarda?</text>
+
+  <text x="790" y="340" fill="#a5b4fc" font-family="Arial, sans-serif" font-size="11">• inputHash: hash de datos</text>
+  <text x="790" y="360" fill="#86efac" font-family="Arial, sans-serif" font-size="9">  → Sin revelar el contenido</text>
+
+  <text x="790" y="385" fill="#a5b4fc" font-family="Arial, sans-serif" font-size="11">• outputHash: hash resultado</text>
+  <text x="790" y="405" fill="#86efac" font-family="Arial, sans-serif" font-size="9">  → Verificable pero privado</text>
+
+  <text x="790" y="430" fill="#a5b4fc" font-family="Arial, sans-serif" font-size="11">• computeProof: zkProof</text>
+  <text x="790" y="450" fill="#86efac" font-family="Arial, sans-serif" font-size="9">  → Prueba de ejecución correcta</text>
+
+  <text x="790" y="475" fill="#a5b4fc" font-family="Arial, sans-serif" font-size="11">• operator: 0x123...</text>
+  <text x="790" y="495" fill="#86efac" font-family="Arial, sans-serif" font-size="9">  → Quién ejecutó el cómputo</text>
+
+  <!-- WHY BLOCKCHAIN section -->
+  <rect x="50" y="520" width="1000" height="130" rx="12" fill="url(#bcGrad)" filter="url(#shadow)"/>
+  <text x="550" y="550" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="18" font-weight="bold">¿POR QUÉ NECESITAMOS BLOCKCHAIN?</text>
+
+  <!-- 4 reasons -->
+  <rect x="70" y="570" width="220" height="65" rx="6" fill="rgba(0,0,0,0.3)"/>
+  <text x="180" y="590" text-anchor="middle" fill="#fef3c7" font-family="Arial, sans-serif" font-size="12" font-weight="bold">1. INMUTABILIDAD</text>
+  <text x="180" y="610" text-anchor="middle" fill="#fde68a" font-family="Arial, sans-serif" font-size="10">Nadie puede alterar el</text>
+  <text x="180" y="625" text-anchor="middle" fill="#fde68a" font-family="Arial, sans-serif" font-size="10">historial de modelos</text>
+
+  <rect x="310" y="570" width="220" height="65" rx="6" fill="rgba(0,0,0,0.3)"/>
+  <text x="420" y="590" text-anchor="middle" fill="#fef3c7" font-family="Arial, sans-serif" font-size="12" font-weight="bold">2. TRANSPARENCIA</text>
+  <text x="420" y="610" text-anchor="middle" fill="#fde68a" font-family="Arial, sans-serif" font-size="10">Todos los bancos ven</text>
+  <text x="420" y="625" text-anchor="middle" fill="#fde68a" font-family="Arial, sans-serif" font-size="10">las mismas métricas</text>
+
+  <rect x="550" y="570" width="220" height="65" rx="6" fill="rgba(0,0,0,0.3)"/>
+  <text x="660" y="590" text-anchor="middle" fill="#fef3c7" font-family="Arial, sans-serif" font-size="12" font-weight="bold">3. DESCENTRALIZACIÓN</text>
+  <text x="660" y="610" text-anchor="middle" fill="#fde68a" font-family="Arial, sans-serif" font-size="10">Ningún banco controla</text>
+  <text x="660" y="625" text-anchor="middle" fill="#fde68a" font-family="Arial, sans-serif" font-size="10">unilateralmente</text>
+
+  <rect x="790" y="570" width="220" height="65" rx="6" fill="rgba(0,0,0,0.3)"/>
+  <text x="900" y="590" text-anchor="middle" fill="#fef3c7" font-family="Arial, sans-serif" font-size="12" font-weight="bold">4. AUDITABILIDAD</text>
+  <text x="900" y="610" text-anchor="middle" fill="#fde68a" font-family="Arial, sans-serif" font-size="10">Reguladores pueden</text>
+  <text x="900" y="625" text-anchor="middle" fill="#fde68a" font-family="Arial, sans-serif" font-size="10">verificar el proceso</text>
+
+  <!-- Example use case -->
+  <rect x="50" y="670" width="1000" height="160" rx="12" fill="rgba(99, 102, 241, 0.1)" stroke="#6366f1" stroke-width="2"/>
+  <text x="550" y="700" text-anchor="middle" fill="#a5b4fc" font-family="Arial, sans-serif" font-size="16" font-weight="bold">📋 Ejemplo: Añadir un Nuevo Banco al Consorcio</text>
+
+  <!-- Timeline of governance -->
+  <line x1="100" y1="740" x2="1000" y2="740" stroke="#475569" stroke-width="2"/>
+
+  <!-- Step 1 -->
+  <circle cx="150" cy="740" r="12" fill="#3b82f6"/>
+  <text x="150" y="744" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="10" font-weight="bold">1</text>
+  <text x="150" y="770" text-anchor="middle" fill="#93c5fd" font-family="Arial, sans-serif" font-size="9" font-weight="bold">Propuesta</text>
+  <text x="150" y="785" text-anchor="middle" fill="#bfdbfe" font-family="Arial, sans-serif" font-size="8">Bank A propone</text>
+  <text x="150" y="798" text-anchor="middle" fill="#bfdbfe" font-family="Arial, sans-serif" font-size="8">añadir Bank D</text>
+
+  <!-- Arrow -->
+  <path d="M175 740 L265 740" stroke="#f59e0b" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+  <text x="220" y="730" text-anchor="middle" fill="#fde68a" font-family="Arial, sans-serif" font-size="8">Blockchain TX</text>
+
+  <!-- Step 2 -->
+  <circle cx="300" cy="740" r="12" fill="#f59e0b"/>
+  <text x="300" y="744" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="10" font-weight="bold">2</text>
+  <text x="300" y="770" text-anchor="middle" fill="#fde68a" font-family="Arial, sans-serif" font-size="9" font-weight="bold">Commit</text>
+  <text x="300" y="785" text-anchor="middle" fill="#fef3c7" font-family="Arial, sans-serif" font-size="8">Cada banco envía</text>
+  <text x="300" y="798" text-anchor="middle" fill="#fef3c7" font-family="Arial, sans-serif" font-size="8">hash(voto+salt)</text>
+
+  <!-- Arrow -->
+  <path d="M325 740 L415 740" stroke="#f59e0b" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+  <text x="370" y="730" text-anchor="middle" fill="#fde68a" font-family="Arial, sans-serif" font-size="8">24h deadline</text>
+
+  <!-- Step 3 -->
+  <circle cx="450" cy="740" r="12" fill="#f59e0b"/>
+  <text x="450" y="744" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="10" font-weight="bold">3</text>
+  <text x="450" y="770" text-anchor="middle" fill="#fde68a" font-family="Arial, sans-serif" font-size="9" font-weight="bold">Reveal</text>
+  <text x="450" y="785" text-anchor="middle" fill="#fef3c7" font-family="Arial, sans-serif" font-size="8">Cada banco revela</text>
+  <text x="450" y="798" text-anchor="middle" fill="#fef3c7" font-family="Arial, sans-serif" font-size="8">voto real + salt</text>
+
+  <!-- Arrow -->
+  <path d="M475 740 L565 740" stroke="#f59e0b" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+  <text x="520" y="730" text-anchor="middle" fill="#fde68a" font-family="Arial, sans-serif" font-size="8">Verificar hash</text>
+
+  <!-- Step 4 -->
+  <circle cx="600" cy="740" r="12" fill="#6366f1"/>
+  <text x="600" y="744" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="10" font-weight="bold">4</text>
+  <text x="600" y="770" text-anchor="middle" fill="#a5b4fc" font-family="Arial, sans-serif" font-size="9" font-weight="bold">Conteo</text>
+  <text x="600" y="785" text-anchor="middle" fill="#c7d2fe" font-family="Arial, sans-serif" font-size="8">YES: 2, NO: 1</text>
+  <text x="600" y="798" text-anchor="middle" fill="#c7d2fe" font-family="Arial, sans-serif" font-size="8">Quorum: 66%</text>
+
+  <!-- Arrow -->
+  <path d="M625 740 L715 740" stroke="#f59e0b" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+  <text x="670" y="730" text-anchor="middle" fill="#fde68a" font-family="Arial, sans-serif" font-size="8">> 51%</text>
+
+  <!-- Step 5 -->
+  <circle cx="750" cy="740" r="12" fill="#10b981"/>
+  <text x="750" y="744" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="10" font-weight="bold">5</text>
+  <text x="750" y="770" text-anchor="middle" fill="#86efac" font-family="Arial, sans-serif" font-size="9" font-weight="bold">Ejecutar</text>
+  <text x="750" y="785" text-anchor="middle" fill="#d1fae5" font-family="Arial, sans-serif" font-size="8">Bank D añadido</text>
+  <text x="750" y="798" text-anchor="middle" fill="#d1fae5" font-family="Arial, sans-serif" font-size="8">automáticamente</text>
+
+  <!-- Arrow -->
+  <path d="M775 740 L865 740" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+
+  <!-- Step 6 -->
+  <circle cx="900" cy="740" r="12" fill="#10b981"/>
+  <text x="900" y="744" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="10" font-weight="bold">6</text>
+  <text x="900" y="770" text-anchor="middle" fill="#86efac" font-family="Arial, sans-serif" font-size="9" font-weight="bold">Auditado</text>
+  <text x="900" y="785" text-anchor="middle" fill="#d1fae5" font-family="Arial, sans-serif" font-size="8">Todo el proceso</text>
+  <text x="900" y="798" text-anchor="middle" fill="#d1fae5" font-family="Arial, sans-serif" font-size="8">queda en cadena</text>
+
+  <!-- Final note -->
+  <rect x="50" y="830" width="1000" height="15" rx="4" fill="rgba(245, 158, 11, 0.2)"/>
+  <text x="550" y="842" text-anchor="middle" fill="#f59e0b" font-family="Arial, sans-serif" font-size="11" font-weight="bold">💡 NOTA: Los votos usan commit-reveal para evitar que un banco copie el voto de otro (front-running)</text>
+</svg>

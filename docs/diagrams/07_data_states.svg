@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1100" height="750" viewBox="0 0 1100 750" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="dangerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ef4444"/>
+      <stop offset="100%" style="stop-color:#dc2626"/>
+    </linearGradient>
+    <linearGradient id="safeGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#10b981"/>
+      <stop offset="100%" style="stop-color:#059669"/>
+    </linearGradient>
+    <linearGradient id="processGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1"/>
+      <stop offset="100%" style="stop-color:#4f46e5"/>
+    </linearGradient>
+    <filter id="shadow">
+      <feDropShadow dx="2" dy="3" stdDeviation="3" flood-opacity="0.25"/>
+    </filter>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#64748b"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1100" height="750" fill="#0f172a"/>
+
+  <!-- Title -->
+  <text x="550" y="35" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="24" font-weight="bold">Estados del Dato: De Texto Plano a Cifrado</text>
+  <text x="550" y="60" text-anchor="middle" fill="#94a3b8" font-family="Arial, sans-serif" font-size="14">Visualización de la transformación de datos en cada etapa</text>
+
+  <!-- Zone labels -->
+  <rect x="50" y="90" width="300" height="30" rx="6" fill="rgba(239, 68, 68, 0.2)" stroke="#ef4444"/>
+  <text x="200" y="110" text-anchor="middle" fill="#fca5a5" font-family="Arial, sans-serif" font-size="12" font-weight="bold">🔓 ZONA INSEGURA (dentro del banco)</text>
+
+  <rect x="400" y="90" width="650" height="30" rx="6" fill="rgba(16, 185, 129, 0.2)" stroke="#10b981"/>
+  <text x="725" y="110" text-anchor="middle" fill="#86efac" font-family="Arial, sans-serif" font-size="12" font-weight="bold">🔒 ZONA SEGURA (fuera del banco - todo cifrado)</text>
+
+  <!-- STATE 1: Raw Data -->
+  <rect x="50" y="140" width="280" height="180" rx="12" fill="url(#dangerGrad)" filter="url(#shadow)"/>
+  <text x="190" y="170" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="16" font-weight="bold">ESTADO 1: Datos Crudos</text>
+  <text x="190" y="190" text-anchor="middle" fill="#fecaca" font-family="Arial, sans-serif" font-size="11">⚠️ VULNERABLE - Texto plano legible</text>
+
+  <rect x="70" y="205" width="240" height="100" rx="6" fill="rgba(0,0,0,0.3)"/>
+  <text x="190" y="225" text-anchor="middle" fill="#fef2f2" font-family="Arial, sans-serif" font-size="11" font-weight="bold">Transacción #12345</text>
+  <text x="90" y="250" fill="#fef2f2" font-family="Courier, monospace" font-size="11">monto: $523.45</text>
+  <text x="90" y="270" fill="#fef2f2" font-family="Courier, monospace" font-size="11">comercio: "Amazon"</text>
+  <text x="90" y="290" fill="#fef2f2" font-family="Courier, monospace" font-size="11">ubicacion: "Buenos Aires"</text>
+
+  <!-- Warning box -->
+  <rect x="70" y="310" width="240" height="25" rx="4" fill="rgba(0,0,0,0.4)"/>
+  <text x="190" y="327" text-anchor="middle" fill="#fca5a5" font-family="Arial, sans-serif" font-size="10">❌ Si alguien accede, ve TODO</text>
+
+  <!-- Arrow 1->2 -->
+  <path d="M330 230 L395 230" stroke="#10b981" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
+  <rect x="340" y="210" width="50" height="40" rx="6" fill="url(#safeGrad)"/>
+  <text x="365" y="235" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="10" font-weight="bold">FHE</text>
+
+  <!-- STATE 2: Encrypted -->
+  <rect x="410" y="140" width="280" height="180" rx="12" fill="url(#safeGrad)" filter="url(#shadow)"/>
+  <text x="550" y="170" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="16" font-weight="bold">ESTADO 2: Datos Cifrados</text>
+  <text x="550" y="190" text-anchor="middle" fill="#d1fae5" font-family="Arial, sans-serif" font-size="11">✅ PROTEGIDO - Ciphertext ilegible</text>
+
+  <rect x="430" y="205" width="240" height="100" rx="6" fill="rgba(0,0,0,0.3)"/>
+  <text x="550" y="225" text-anchor="middle" fill="#ecfdf5" font-family="Arial, sans-serif" font-size="11" font-weight="bold">Ciphertext Vector</text>
+  <text x="450" y="250" fill="#a7f3d0" font-family="Courier, monospace" font-size="9">[0x7a3f8c2de91b4a7f...</text>
+  <text x="450" y="270" fill="#a7f3d0" font-family="Courier, monospace" font-size="9"> 0x2c8d5e7b1f3a9c6d...</text>
+  <text x="450" y="290" fill="#a7f3d0" font-family="Courier, monospace" font-size="9"> ...4096 coefficients]</text>
+
+  <!-- Success box -->
+  <rect x="430" y="310" width="240" height="25" rx="4" fill="rgba(0,0,0,0.4)"/>
+  <text x="550" y="327" text-anchor="middle" fill="#86efac" font-family="Arial, sans-serif" font-size="10">✅ Si alguien accede, ve RUIDO</text>
+
+  <!-- Arrow 2->3 -->
+  <path d="M690 230 L755 230" stroke="#64748b" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
+  <text x="722" y="220" text-anchor="middle" fill="#94a3b8" font-family="Arial, sans-serif" font-size="9">HTTPS</text>
+
+  <!-- STATE 3: On Server -->
+  <rect x="770" y="140" width="280" height="180" rx="12" fill="url(#safeGrad)" filter="url(#shadow)"/>
+  <text x="910" y="170" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="16" font-weight="bold">ESTADO 3: En Servidor</text>
+  <text x="910" y="190" text-anchor="middle" fill="#d1fae5" font-family="Arial, sans-serif" font-size="11">✅ Servidor NUNCA ve datos reales</text>
+
+  <rect x="790" y="205" width="240" height="100" rx="6" fill="rgba(0,0,0,0.3)"/>
+  <text x="910" y="225" text-anchor="middle" fill="#ecfdf5" font-family="Arial, sans-serif" font-size="11" font-weight="bold">Lo que ve el servidor:</text>
+  <text x="810" y="250" fill="#a7f3d0" font-family="Arial, sans-serif" font-size="10">• Vectores cifrados</text>
+  <text x="810" y="270" fill="#a7f3d0" font-family="Arial, sans-serif" font-size="10">• Tamaño del dataset</text>
+  <text x="810" y="290" fill="#a7f3d0" font-family="Arial, sans-serif" font-size="10">• Metadatos (no sensibles)</text>
+
+  <rect x="790" y="310" width="240" height="25" rx="4" fill="rgba(0,0,0,0.4)"/>
+  <text x="910" y="327" text-anchor="middle" fill="#86efac" font-family="Arial, sans-serif" font-size="10">✅ Puede operar sin descifrar</text>
+
+  <!-- COMPUTATION SECTION -->
+  <rect x="50" y="350" width="1000" height="160" rx="12" fill="url(#processGrad)" filter="url(#shadow)"/>
+  <text x="550" y="380" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="18" font-weight="bold">🧮 COMPUTACIÓN HOMOMÓRFICA</text>
+  <text x="550" y="400" text-anchor="middle" fill="#c7d2fe" font-family="Arial, sans-serif" font-size="12">Las operaciones matemáticas funcionan IGUAL sobre datos cifrados</text>
+
+  <!-- Before/After comparison -->
+  <rect x="80" y="420" width="400" height="70" rx="8" fill="rgba(0,0,0,0.3)"/>
+  <text x="280" y="445" text-anchor="middle" fill="#e0e7ff" font-family="Arial, sans-serif" font-size="12" font-weight="bold">Operación Normal (insegura)</text>
+  <text x="280" y="470" text-anchor="middle" fill="#a5b4fc" font-family="Courier, monospace" font-size="11">resultado = 523.45 × 0.15 + 14 × 0.08 = 79.64</text>
+  <text x="280" y="485" text-anchor="middle" fill="#fca5a5" font-family="Arial, sans-serif" font-size="9">❌ Datos expuestos durante cálculo</text>
+
+  <rect x="620" y="420" width="400" height="70" rx="8" fill="rgba(0,0,0,0.3)"/>
+  <text x="820" y="445" text-anchor="middle" fill="#e0e7ff" font-family="Arial, sans-serif" font-size="12" font-weight="bold">Operación FHE (segura)</text>
+  <text x="820" y="470" text-anchor="middle" fill="#a5b4fc" font-family="Courier, monospace" font-size="11">enc_result = enc(523.45) × 0.15 + enc(14) × 0.08</text>
+  <text x="820" y="485" text-anchor="middle" fill="#86efac" font-family="Arial, sans-serif" font-size="9">✅ Datos NUNCA expuestos, mismo resultado</text>
+
+  <!-- Arrow to decryption -->
+  <path d="M550 510 L550 550" stroke="#64748b" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
+
+  <!-- STATE 4: Return to Bank -->
+  <rect x="200" y="560" width="320" height="160" rx="12" fill="url(#safeGrad)" filter="url(#shadow)"/>
+  <text x="360" y="590" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="16" font-weight="bold">ESTADO 4: Resultado Cifrado</text>
+  <text x="360" y="610" text-anchor="middle" fill="#d1fae5" font-family="Arial, sans-serif" font-size="11">Vuelve al banco (aún cifrado)</text>
+
+  <rect x="220" y="625" width="280" height="80" rx="6" fill="rgba(0,0,0,0.3)"/>
+  <text x="360" y="650" text-anchor="middle" fill="#ecfdf5" font-family="Arial, sans-serif" font-size="11">enc_prediction:</text>
+  <text x="360" y="670" text-anchor="middle" fill="#a7f3d0" font-family="Courier, monospace" font-size="10">[0x9f2a1b3c4d5e6f7a...]</text>
+  <text x="360" y="695" text-anchor="middle" fill="#86efac" font-family="Arial, sans-serif" font-size="10">Solo el banco puede descifrar</text>
+
+  <!-- Arrow to final decrypt -->
+  <path d="M520 640 L600 640" stroke="#10b981" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
+  <rect x="530" y="620" width="60" height="40" rx="6" fill="url(#safeGrad)"/>
+  <text x="560" y="645" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="10" font-weight="bold">DECRYPT</text>
+
+  <!-- STATE 5: Final Result -->
+  <rect x="620" y="560" width="320" height="160" rx="12" fill="url(#dangerGrad)" filter="url(#shadow)"/>
+  <text x="780" y="590" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="16" font-weight="bold">ESTADO 5: Resultado Final</text>
+  <text x="780" y="610" text-anchor="middle" fill="#fecaca" font-family="Arial, sans-serif" font-size="11">Solo visible dentro del banco</text>
+
+  <rect x="640" y="625" width="280" height="80" rx="6" fill="rgba(0,0,0,0.3)"/>
+  <text x="780" y="650" text-anchor="middle" fill="#fef2f2" font-family="Arial, sans-serif" font-size="12" font-weight="bold">Predicción:</text>
+  <text x="780" y="675" text-anchor="middle" fill="#fef2f2" font-family="Arial, sans-serif" font-size="14">fraud_probability = 0.87</text>
+  <text x="780" y="695" text-anchor="middle" fill="#fca5a5" font-family="Arial, sans-serif" font-size="11">⚠️ ALERTA: 87% probabilidad de fraude</text>
+
+  <!-- Key insight at bottom -->
+  <rect x="50" y="730" width="1000" height="15" rx="4" fill="rgba(16, 185, 129, 0.2)"/>
+  <text x="550" y="742" text-anchor="middle" fill="#10b981" font-family="Arial, sans-serif" font-size="11" font-weight="bold">💡 El dato solo existe en texto plano DENTRO del banco. Todo lo que sale está cifrado con FHE.</text>
+</svg>
