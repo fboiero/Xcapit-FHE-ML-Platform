@@ -598,97 +598,47 @@ class TestBlockchainCommands:
 
 
 class TestApiKeysCommands:
-    """Tests for API keys commands."""
+    """Tests for API keys commands (migrated to Django backend)."""
 
-    def test_create_api_key(self, capsys):
-        """Test creating an API key."""
+    def test_create_api_key_shows_migration_message(self, capsys):
+        """Test that create command shows migration message."""
         from sdk.cli.commands.api_keys import cmd_api_key_create
 
-        # Patch at sdk.api.auth where create_api_key is defined
-        with patch("sdk.api.auth.create_api_key") as mock_create:
-            mock_create.return_value = ("xcapit_abc123", "hash123")
+        args = argparse.Namespace(
+            name="test-key",
+            permissions="read,write",
+            rate_limit=100,
+        )
 
-            args = argparse.Namespace(
-                name="test-key",
-                permissions="read,write",
-                rate_limit=100,
-            )
+        result = cmd_api_key_create(args)
 
-            result = cmd_api_key_create(args)
+        assert result == 1  # Returns 1 since functionality moved
+        captured = capsys.readouterr()
+        assert "migrated to the Django backend" in captured.out
 
-            assert result == 0
-            captured = capsys.readouterr()
-            assert "API KEY CREATED" in captured.out
-            assert "xcapit_abc123" in captured.out
-
-    def test_list_api_keys_empty(self, capsys):
-        """Test listing API keys when none exist."""
+    def test_list_api_keys_shows_migration_message(self, capsys):
+        """Test that list command shows migration message."""
         from sdk.cli.commands.api_keys import cmd_api_key_list
 
-        with patch("sdk.api.auth.list_api_keys") as mock_list:
-            mock_list.return_value = []
+        args = argparse.Namespace()
 
-            args = argparse.Namespace()
+        result = cmd_api_key_list(args)
 
-            result = cmd_api_key_list(args)
+        assert result == 1
+        captured = capsys.readouterr()
+        assert "migrated to the Django backend" in captured.out
 
-            assert result == 0
-            captured = capsys.readouterr()
-            assert "No API keys found" in captured.out
-
-    def test_list_api_keys_with_keys(self, capsys):
-        """Test listing API keys when keys exist."""
-        from sdk.cli.commands.api_keys import cmd_api_key_list
-
-        with patch("sdk.api.auth.list_api_keys") as mock_list:
-            mock_list.return_value = [
-                {
-                    "name": "test-key",
-                    "key_hash": "hash123...",
-                    "permissions": "read,write",
-                    "is_active": True,
-                    "rate_limit": 100,
-                }
-            ]
-
-            args = argparse.Namespace()
-
-            result = cmd_api_key_list(args)
-
-            assert result == 0
-            captured = capsys.readouterr()
-            assert "test-key" in captured.out
-            assert "1 API key(s)" in captured.out
-
-    def test_revoke_api_key_success(self, capsys):
-        """Test revoking an API key successfully."""
+    def test_revoke_api_key_shows_migration_message(self, capsys):
+        """Test that revoke command shows migration message."""
         from sdk.cli.commands.api_keys import cmd_api_key_revoke
 
-        with patch("sdk.api.auth.revoke_api_key") as mock_revoke:
-            mock_revoke.return_value = True
+        args = argparse.Namespace(key_hash="hash123")
 
-            args = argparse.Namespace(key_hash="hash123")
+        result = cmd_api_key_revoke(args)
 
-            result = cmd_api_key_revoke(args)
-
-            assert result == 0
-            captured = capsys.readouterr()
-            assert "revoked successfully" in captured.out
-
-    def test_revoke_api_key_not_found(self, capsys):
-        """Test revoking a non-existent API key."""
-        from sdk.cli.commands.api_keys import cmd_api_key_revoke
-
-        with patch("sdk.api.auth.revoke_api_key") as mock_revoke:
-            mock_revoke.return_value = False
-
-            args = argparse.Namespace(key_hash="nonexistent")
-
-            result = cmd_api_key_revoke(args)
-
-            assert result == 1
-            captured = capsys.readouterr()
-            assert "not found" in captured.out
+        assert result == 1
+        captured = capsys.readouterr()
+        assert "migrated to the Django backend" in captured.out
 
 
 # ========== Integration Tests ==========

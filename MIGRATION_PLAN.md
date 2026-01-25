@@ -293,16 +293,17 @@ Actualizar `.github/workflows/ci.yml` para:
 - [x] Crear urls
 - [x] Actualizar config/urls.py
 
-### Fase 3: Limpiar SDK
-- [ ] Eliminar sdk/api/server.py
-- [ ] Eliminar sdk/api/*_routes.py
-- [ ] Eliminar sdk/api/consortium/
-- [ ] Eliminar sdk/api/database*.py
-- [ ] Actualizar sdk/__init__.py
-- [ ] Verificar imports
+### Fase 3: Limpiar SDK ✅ COMPLETADO
+- [x] Eliminar sdk/api/server.py
+- [x] Eliminar sdk/api/*_routes.py
+- [x] Eliminar sdk/api/consortium/
+- [x] Eliminar sdk/api/database*.py
+- [x] Actualizar sdk/__init__.py (versión 0.2.0)
+- [x] Verificar imports
+- [x] Actualizar CLI api_keys (ahora muestra mensaje de migración)
 
 ### Fase 4: Tests ✅ COMPLETADO
-- [ ] Eliminar tests de API FastAPI
+- [x] Eliminar tests de API FastAPI
 - [x] Crear tests para nuevas apps Django
 - [ ] Ejecutar suite completa de tests
 
