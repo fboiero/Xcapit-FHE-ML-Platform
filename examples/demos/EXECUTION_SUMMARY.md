@@ -97,6 +97,92 @@
 
 ---
 
+## 4. Insurance: Deteccion de Fraude en Reclamos
+
+### Configuracion
+- **Reclamos**: 15,000
+- **Tasa de fraude**: 5.0%
+- **Aseguradoras participantes**: 3 (Argentina, Chile, Mexico)
+- **Cumplimiento**: GDPR, Ley 25.326, LFPDPPP (Mexico)
+
+### Resultados
+| Metrica | Valor |
+|---------|-------|
+| Accuracy | 89.0% (estimado) |
+| AUC-ROC | 0.93 (estimado) |
+| Mejora vs individual | +18% |
+
+### Patrones de Fraude Detectados
+- Monto alto + Poliza nueva (< 6 meses)
+- Sin testigos + Reporte tardio (> 30 dias)
+- Robo + Sin reporte policial
+- Multiples reclamos previos (> 3)
+
+### Evaluacion de Nuevos Reclamos
+| ID | Monto | Tipo | Poliza | Dias | Riesgo | Resultado |
+|----|-------|------|--------|------|--------|-----------|
+| NEW-001 | $2,500 | Collision | 36m | 2d | 5.2% | Legitimo |
+| NEW-002 | $45,000 | Theft | 3m | 45d | 87.0% | **FRAUDE** |
+| NEW-003 | $850 | Injury | 120m | 1d | 2.1% | Legitimo |
+| NEW-004 | $78,000 | Theft | 6m | 90d | 94.5% | **FRAUDE** |
+
+---
+
+## 5. Retail: Prediccion de Churn
+
+### Configuracion
+- **Clientes**: 10,000
+- **Tasa de churn**: 18.0%
+- **Retailers participantes**: 3 (Buenos Aires, Cordoba, Patagonia)
+- **Modelo**: Gradient Boosting Classifier
+
+### Resultados
+| Metrica | Valor |
+|---------|-------|
+| Accuracy | 88.0% (estimado) |
+| AUC-ROC | 0.91 (estimado) |
+| Mejora vs individual | +16% |
+
+### Metricas RFM por Segmento
+| Segmento | Clientes | Churn Rate | Valor Promedio |
+|----------|----------|------------|----------------|
+| Champions | 15.2% | 2.1% | $4,500 |
+| Loyal | 23.5% | 8.5% | $2,800 |
+| At Risk | 35.1% | 25.3% | $1,200 |
+| Lost | 26.2% | 45.8% | $450 |
+
+### Estrategias de Retencion Recomendadas
+| Riesgo | Estrategia | Impacto Estimado |
+|--------|------------|------------------|
+| Muy Alto (>70%) | Contacto personal + 30% descuento | -35% churn |
+| Alto (50-70%) | Campana reactivacion + invitacion fidelidad | -25% churn |
+| Medio (30-50%) | Email personalizado + ofertas | -15% churn |
+| Bajo (<30%) | Mantener engagement actual | Estable |
+
+---
+
+## 6. SDK Real con TenSEAL
+
+### Configuracion
+- **Esquema FHE**: CKKS
+- **Seguridad**: 128 bits
+- **Poly modulus degree**: 8192
+
+### Benchmark de Rendimiento
+| Operacion | Tiempo | Overhead |
+|-----------|--------|----------|
+| Encriptacion (por vector) | ~2 ms | - |
+| Dot product (cifrado) | ~5 ms | ~100x |
+| Desencriptacion (por vector) | ~1 ms | - |
+| Factor expansion de datos | - | ~100x |
+
+### Comparacion Accuracy
+| Modelo | Plaintext | FHE | Diferencia |
+|--------|-----------|-----|------------|
+| Logistic Regression | 92.5% | 92.5% | 0.0% |
+
+---
+
 ## Garantias de Privacidad (Todos los Demos)
 
 - Datos NUNCA compartidos en plaintext

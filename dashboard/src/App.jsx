@@ -24,6 +24,8 @@ import MultiModelEnsemble from './pages/MultiModelEnsemble'
 import Demos from './pages/Demos'
 import ClientsDemo from './pages/ClientsDemo'
 import BankConsortiumDemo from './pages/BankConsortiumDemo'
+import InsuranceClaimsDemo from './pages/InsuranceClaimsDemo'
+import RetailChurnDemo from './pages/RetailChurnDemo'
 
 // Protected route wrapper
 const ProtectedRoute = ({ children }) => {
@@ -71,6 +73,8 @@ function App() {
         <Route path="/clients-demo" element={<ClientsDemo />} />
         <Route path="/demo/bank-consortium" element={<BankConsortiumDemo />} />
         <Route path="/demo-bank" element={<BankConsortiumDemo />} />
+        <Route path="/demo-insurance" element={<InsuranceClaimsDemo />} />
+        <Route path="/demo-retail" element={<RetailChurnDemo />} />
 
       {/* Protected routes with Layout */}
       <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>

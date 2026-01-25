@@ -219,6 +219,79 @@ export default function Demos() {
           </p>
         </div>
 
+        {/* Vertical Industry Demos */}
+        <section className="mb-16">
+          <div className="flex items-center gap-3 mb-6">
+            <span className="px-3 py-1 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-full text-sm font-medium">
+              INDUSTRY DEMOS
+            </span>
+            <h2 className="text-2xl font-bold text-gray-900">{t('demos.verticals.title', 'Industry-Specific Demos')}</h2>
+          </div>
+          <p className="text-gray-600 mb-8">{t('demos.verticals.description', 'Interactive step-by-step demos showing FHE consortiums in action for different industries')}</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Bank Fraud Detection */}
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+              <div className="relative h-48 bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-600">
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <svg className="w-20 h-20 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" />
+                  </svg>
+                </div>
+                <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 to-transparent">
+                  <span className="px-2 py-1 bg-blue-500 text-white text-xs rounded">Fintech</span>
+                </div>
+              </div>
+              <div className="p-4">
+                <h3 className="font-bold text-lg text-gray-900">{t('demos.verticals.bank.title', 'Bank Fraud Detection')}</h3>
+                <p className="text-gray-600 text-sm mt-1">{t('demos.verticals.bank.description', 'Two banks collaborate to detect fraud without sharing customer transaction data')}</p>
+                <a href="/demo-bank" className="mt-4 block w-full px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg text-sm font-medium hover:from-blue-700 hover:to-indigo-700 transition-all text-center">
+                  {t('demos.tryInteractive', 'Try Interactive Demo')}
+                </a>
+              </div>
+            </div>
+            {/* Insurance Fraud Detection */}
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+              <div className="relative h-48 bg-gradient-to-br from-amber-500 via-rose-500 to-pink-600">
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <svg className="w-20 h-20 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+                  </svg>
+                </div>
+                <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 to-transparent">
+                  <span className="px-2 py-1 bg-amber-500 text-white text-xs rounded">Insurance</span>
+                </div>
+              </div>
+              <div className="p-4">
+                <h3 className="font-bold text-lg text-gray-900">{t('demos.verticals.insurance.title', 'Insurance Claims Fraud')}</h3>
+                <p className="text-gray-600 text-sm mt-1">{t('demos.verticals.insurance.description', 'Three insurers detect fraudulent claims while protecting client privacy')}</p>
+                <a href="/demo-insurance" className="mt-4 block w-full px-4 py-2 bg-gradient-to-r from-amber-600 to-rose-600 text-white rounded-lg text-sm font-medium hover:from-amber-700 hover:to-rose-700 transition-all text-center">
+                  {t('demos.tryInteractive', 'Try Interactive Demo')}
+                </a>
+              </div>
+            </div>
+            {/* Retail Churn Prediction */}
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+              <div className="relative h-48 bg-gradient-to-br from-teal-500 via-cyan-500 to-indigo-600">
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <svg className="w-20 h-20 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                  </svg>
+                </div>
+                <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 to-transparent">
+                  <span className="px-2 py-1 bg-teal-500 text-white text-xs rounded">Retail</span>
+                </div>
+              </div>
+              <div className="p-4">
+                <h3 className="font-bold text-lg text-gray-900">{t('demos.verticals.retail.title', 'Customer Churn Prediction')}</h3>
+                <p className="text-gray-600 text-sm mt-1">{t('demos.verticals.retail.description', 'Three retailers predict churn using RFM metrics without exposing purchase history')}</p>
+                <a href="/demo-retail" className="mt-4 block w-full px-4 py-2 bg-gradient-to-r from-teal-600 to-cyan-600 text-white rounded-lg text-sm font-medium hover:from-teal-700 hover:to-cyan-700 transition-all text-center">
+                  {t('demos.tryInteractive', 'Try Interactive Demo')}
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Featured Demos - Main Platform Videos */}
         <section className="mb-16">
           <div className="flex items-center gap-3 mb-6">
