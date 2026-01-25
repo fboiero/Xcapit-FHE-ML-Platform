@@ -39,6 +39,9 @@ recordings/*.mp4
 # Node modules
 node_modules/
 
+# Vite temporary files
+*.timestamp-*.mjs
+
 # Data files
 data/*.csv
 data/*.npy
