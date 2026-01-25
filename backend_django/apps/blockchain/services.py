@@ -7,6 +7,7 @@ This module provides high-level services for:
 - Computation verification
 
 All private keys are fetched from OpenBao/Vault.
+Includes resilience patterns: retry with backoff and circuit breaker.
 """
 
 import json
@@ -15,6 +16,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
+from .resilience import (
+    CircuitBreaker,
+    CircuitBreakerOpen,
+    blockchain_circuit,
+    with_retry,
+)
 from .secrets import (
     BlockchainWallet,
     get_consortium_signer_wallet,
@@ -48,37 +55,82 @@ class BlockchainService:
     Handles Web3 connection, transaction signing, and gas estimation.
     Private keys are fetched from Vault and never stored in memory
     longer than necessary.
+
+    Includes resilience patterns:
+    - Circuit breaker for RPC connection
+    - Retry with exponential backoff for transient failures
     """
+
+    # RPC connection exceptions that should trigger circuit breaker
+    RPC_EXCEPTIONS = (
+        ConnectionError,
+        TimeoutError,
+        OSError,
+    )
 
     def __init__(self, network: str = "arbitrum_sepolia"):
         self.network = network
         self._web3 = None
         self._chain_id = None
+        self._circuit = blockchain_circuit
 
     @property
     def web3(self):
-        """Lazy initialization of Web3 connection."""
+        """Lazy initialization of Web3 connection with circuit breaker."""
         if self._web3 is None:
-            try:
-                from web3 import Web3
-                from web3.middleware import ExtraDataToPOAMiddleware
-
-                rpc_url = get_rpc_url(self.network)
-                self._web3 = Web3(Web3.HTTPProvider(rpc_url))
-
-                # Add PoA middleware for Arbitrum
-                self._web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
-
-                if not self._web3.is_connected():
-                    raise ConnectionError(f"Failed to connect to {rpc_url}")
-
-                self._chain_id = self._web3.eth.chain_id
-                logger.info(f"Connected to {self.network} (chain_id={self._chain_id})")
-
-            except ImportError:
-                raise ImportError("web3 package required. Install with: pip install web3")
-
+            self._connect()
         return self._web3
+
+    @with_retry(
+        max_attempts=3,
+        backoff_base=1.0,
+        backoff_factor=2.0,
+        retryable_exceptions=(ConnectionError, TimeoutError, OSError),
+    )
+    def _connect(self) -> None:
+        """Connect to Web3 RPC with retry and circuit breaker."""
+        if self._circuit.is_open:
+            raise CircuitBreakerOpen(self._circuit.name)
+
+        try:
+            from web3 import Web3
+            from web3.middleware import ExtraDataToPOAMiddleware
+
+            rpc_url = get_rpc_url(self.network)
+            self._web3 = Web3(Web3.HTTPProvider(
+                rpc_url,
+                request_kwargs={"timeout": 10},  # Connection timeout
+            ))
+
+            # Add PoA middleware for Arbitrum
+            self._web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
+
+            if not self._web3.is_connected():
+                self._circuit.record_failure(ConnectionError(f"Failed to connect to {rpc_url}"))
+                raise ConnectionError(f"Failed to connect to {rpc_url}")
+
+            self._chain_id = self._web3.eth.chain_id
+            self._circuit.record_success()
+            logger.info(f"Connected to {self.network} (chain_id={self._chain_id})")
+
+        except ImportError:
+            raise ImportError("web3 package required. Install with: pip install web3")
+        except self.RPC_EXCEPTIONS as e:
+            self._circuit.record_failure(e)
+            raise
+
+    def is_connected(self) -> bool:
+        """Check if connected to RPC, considering circuit breaker state."""
+        if self._circuit.is_open:
+            return False
+        try:
+            return self._web3 is not None and self._web3.is_connected()
+        except Exception:
+            return False
+
+    def get_circuit_status(self) -> dict:
+        """Get circuit breaker status for health checks."""
+        return self._circuit.get_stats()
 
     @property
     def chain_id(self) -> int:
@@ -149,7 +201,26 @@ class BlockchainService:
         return tx
 
     def _sign_and_send(self, wallet: BlockchainWallet, tx: dict) -> TransactionResult:
-        """Sign and send a transaction."""
+        """Sign and send a transaction with retry for transient failures."""
+        return self._sign_and_send_with_retry(wallet, tx)
+
+    @with_retry(
+        max_attempts=2,
+        backoff_base=2.0,
+        backoff_factor=2.0,
+        retryable_exceptions=(ConnectionError, TimeoutError, OSError),
+        non_retryable_exceptions=(ValueError,),  # Don't retry validation errors
+    )
+    def _sign_and_send_with_retry(
+        self, wallet: BlockchainWallet, tx: dict
+    ) -> TransactionResult:
+        """Internal method with retry logic."""
+        if self._circuit.is_open:
+            return TransactionResult(
+                success=False,
+                error=f"Circuit breaker open: {self._circuit.name}",
+            )
+
         try:
             from eth_account import Account
 
@@ -170,6 +241,7 @@ class BlockchainService:
             receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
 
             if receipt["status"] == 1:
+                self._circuit.record_success()
                 return TransactionResult(
                     success=True,
                     tx_hash=tx_hash.hex(),
@@ -177,11 +249,17 @@ class BlockchainService:
                     gas_used=receipt["gasUsed"],
                 )
             else:
+                # Transaction reverted - don't count as circuit failure
                 return TransactionResult(
                     success=False,
                     tx_hash=tx_hash.hex(),
                     error="Transaction reverted",
                 )
+
+        except self.RPC_EXCEPTIONS as e:
+            self._circuit.record_failure(e)
+            logger.error(f"Transaction failed (RPC error): {e}")
+            raise  # Let retry handle it
 
         except Exception as e:
             logger.error(f"Transaction failed: {e}")

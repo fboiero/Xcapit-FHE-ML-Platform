@@ -108,7 +108,9 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    # Security first
+    # Correlation ID (must be first for tracing)
+    "apps.core.middleware.CorrelationIdMiddleware",
+    # Security
     "django.middleware.security.SecurityMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
@@ -121,6 +123,8 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     # Brute-force protection (must be after auth)
     "axes.middleware.AxesMiddleware",
+    # Request logging (after auth to capture user info)
+    "apps.core.middleware.RequestLoggingMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -332,6 +336,9 @@ AXES_LOCKOUT_URL = None
 # LOGGING
 # =============================================================================
 
+# Use JSON logging in production, simple format in development
+LOG_FORMAT = os.environ.get("LOG_FORMAT", "json" if not DEBUG else "simple")
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -341,20 +348,35 @@ LOGGING = {
             "style": "{",
         },
         "simple": {
-            "format": "{levelname} {message}",
+            "format": "{levelname} {asctime} {name} {message}",
             "style": "{",
+        },
+        "json": {
+            "()": "apps.core.logging.CustomJsonFormatter",
+            "service_name": "xcapit-fheml",
+            "environment": "production" if not DEBUG else "development",
         },
     },
     "filters": {
         "require_debug_false": {
             "()": "django.utils.log.RequireDebugFalse",
         },
+        "correlation_id": {
+            "()": "apps.core.logging.CorrelationIdFilter",
+        },
     },
     "handlers": {
         "console": {
             "level": "INFO",
             "class": "logging.StreamHandler",
-            "formatter": "simple",
+            "formatter": LOG_FORMAT,
+            "filters": ["correlation_id"],
+        },
+        "console_json": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+            "formatter": "json",
+            "filters": ["correlation_id"],
         },
         "mail_admins": {
             "level": "ERROR",
@@ -382,6 +404,11 @@ LOGGING = {
             "level": "DEBUG" if DEBUG else "INFO",
             "propagate": False,
         },
+        "apps.api.requests": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
     },
 }
 
@@ -406,12 +433,24 @@ SENTRY_DSN = os.environ.get("SENTRY_DSN")
 if SENTRY_DSN and not DEBUG:
     import sentry_sdk
     from sentry_sdk.integrations.django import DjangoIntegration
+    from sentry_sdk.integrations.celery import CeleryIntegration
+    from sentry_sdk.integrations.redis import RedisIntegration
 
     sentry_sdk.init(
         dsn=SENTRY_DSN,
-        integrations=[DjangoIntegration()],
-        traces_sample_rate=0.1,
-        send_default_pii=False,  # Don't send PII to Sentry
+        integrations=[
+            DjangoIntegration(),
+            CeleryIntegration(),
+            RedisIntegration(),
+        ],
+        # Performance monitoring
+        traces_sample_rate=float(os.environ.get("SENTRY_TRACES_SAMPLE_RATE", "0.25")),
+        profiles_sample_rate=float(os.environ.get("SENTRY_PROFILES_SAMPLE_RATE", "0.1")),
+        # Privacy
+        send_default_pii=False,
+        # Environment
+        environment=os.environ.get("SENTRY_ENVIRONMENT", "production"),
+        release=os.environ.get("SENTRY_RELEASE", "2.0.0"),
     )
 
 # =============================================================================

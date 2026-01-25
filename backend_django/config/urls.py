@@ -13,11 +13,17 @@ from drf_spectacular.views import (
 )
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
+from apps.core.healthchecks import HealthCheckView, LivenessCheckView, ReadinessCheckView
+
 urlpatterns = [
     # Admin
     path("admin/", admin.site.urls),
-    # Health check
-    path("health/", include("health_check.urls")),
+    # Health checks (enhanced)
+    path("health/", HealthCheckView.as_view(), name="health"),
+    path("health/live/", LivenessCheckView.as_view(), name="liveness"),
+    path("health/ready/", ReadinessCheckView.as_view(), name="readiness"),
+    # Legacy health check (django-health-check)
+    path("health/legacy/", include("health_check.urls")),
     # API v2
     path(
         "api/v2/",
