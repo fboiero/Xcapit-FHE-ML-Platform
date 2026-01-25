@@ -7,13 +7,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- GitHub issue and PR templates
-- Pre-commit hooks configuration
-- EditorConfig for consistent formatting
+## [2.0.0] - 2026-01-25
 
 ### Changed
-- Updated documentation for open source best practices
+
+- **Backend Migration**: Migrated from FastAPI to Django 5.2 LTS
+  - Full REST API now powered by Django REST Framework
+  - JWT authentication with token blacklist support
+  - OpenAPI 3.0 documentation at `/api/v2/docs/`
+  - 435 tests passing with 88% coverage
+
+- **SDK Refactored**: SDK is now a pure Python library (v0.2.0)
+  - Removed `sdk/api/` directory (FastAPI server, routes, consortium logic)
+  - CLI api_keys commands now redirect to Django API
+  - Core functionality preserved: encryption, models, blockchain, utils
+
+### Added
+
+- **New Django Apps**:
+  - `apps/data_quality/` - Data quality assessment and alerts
+  - `apps/competitive_insights/` - Industry benchmarks and metrics
+  - `apps/ensemble/` - Multi-model ensemble methods
+  - `apps/explainability/` - Model explainability (SHAP, feature importance)
+
+- **Infrastructure**:
+  - Docker configuration updated for Django
+  - Multi-stage Dockerfile with Python 3.12
+  - Health checks and proper entrypoint scripts
+  - Redis support for caching
+
+- **Security**:
+  - django-axes for brute-force protection
+  - django-ratelimit for API rate limiting
+  - JWT token blacklist for secure logout
+
+### Removed
+
+- `sdk/api/server.py` - FastAPI server
+- `sdk/api/*_routes.py` - FastAPI route files (10 files)
+- `sdk/api/consortium/` - Consortium logic (13 files, migrated to Django)
+- `sdk/api/database.py` and `sdk/api/database_pg.py` - Direct DB access
+- FastAPI-related tests (25+ test files)
+
+### Migration Guide
+
+API endpoints changed from FastAPI to Django:
+
+```bash
+# Old: uvicorn sdk.api.server:app
+# New: cd backend_django && python manage.py runserver
+
+# Authentication now required:
+POST /api/v2/auth/token/ -> {"access": "...", "refresh": "..."}
+
+# All endpoints under /api/v2/ with Bearer token auth
+```
 
 ## [1.0.0] - 2025-12-13
 
@@ -93,6 +141,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[Unreleased]: https://github.com/xcapit/Xcapit-FHE-ML-Platform/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/xcapit/Xcapit-FHE-ML-Platform/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/xcapit/Xcapit-FHE-ML-Platform/compare/v1.0.0...v2.0.0
 [1.0.0]: https://github.com/xcapit/Xcapit-FHE-ML-Platform/compare/v0.1.0...v1.0.0
 [0.1.0]: https://github.com/xcapit/Xcapit-FHE-ML-Platform/releases/tag/v0.1.0

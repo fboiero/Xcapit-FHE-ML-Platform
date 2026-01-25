@@ -4,10 +4,11 @@ Privacy-preserving machine learning platform using Fully Homomorphic Encryption 
 
 [![CI](https://github.com/xcapit/Xcapit-FHE-ML-Platform/actions/workflows/ci.yml/badge.svg)](https://github.com/xcapit/Xcapit-FHE-ML-Platform/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/xcapit/Xcapit-FHE-ML-Platform/actions/workflows/codeql.yml/badge.svg)](https://github.com/xcapit/Xcapit-FHE-ML-Platform/actions/workflows/codeql.yml)
-[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Django 5.2](https://img.shields.io/badge/Django-5.2%20LTS-green.svg)](https://www.djangoproject.com/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178c6.svg)](https://www.typescriptlang.org/)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-566%20passing-brightgreen.svg)](#testing)
+[![Tests](https://img.shields.io/badge/tests-435%20passing-brightgreen.svg)](#testing)
 [![Security Audit](https://img.shields.io/badge/security-audited-blue.svg)](docs/SECURITY_AUDIT_REPORT.md)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![DCO](https://img.shields.io/badge/DCO-required-blue.svg)](DCO)
@@ -41,10 +42,10 @@ predictions = model.predict(encrypted_test)
 - **CKKS Encryption**: 128/192/256-bit security levels with optimized FHE engine
 - **Blockchain Audit**: Arbitrum integration for model verification and governance
 - **Multi-Party Learning**: Consortium-based federated learning with contribution tracking
-- **REST API**: FastAPI server with OpenAPI 3.1 documentation
+- **REST API**: Django REST Framework with OpenAPI 3.0 documentation
 - **TypeScript SDK**: Full-featured SDK for web applications
 - **CLI Tool**: Command-line interface for all operations
-- **Docker Ready**: Multi-stage builds for dev/prod/fhe
+- **Docker Ready**: Multi-stage builds for dev/prod
 - **Compliance**: Built-in GDPR, HIPAA, SOC2, PCI-DSS verification
 
 ## Live Demo
@@ -152,31 +153,32 @@ xcapit-fhe train -m logistic-regression -d encrypted.bin -o model.bin
 xcapit-fhe predict -m model.bin -i test_encrypted.bin -o predictions.npy
 ```
 
-### REST API
+### REST API (Django)
 
 ```bash
-# Start server
-uvicorn sdk.api.server:app --reload
+# Start development server
+cd backend_django
+python manage.py runserver
 
 # Or with Docker
-docker-compose up api
+docker-compose up backend
 ```
 
 ```bash
-# Create model
-curl -X POST http://localhost:8000/models \
+# Get JWT token
+curl -X POST http://localhost:8000/api/v2/auth/token/ \
   -H "Content-Type: application/json" \
-  -d '{"model_type": "logistic_regression"}'
+  -d '{"email": "user@example.com", "password": "password"}'
 
-# Train
-curl -X POST http://localhost:8000/models/{model_id}/train \
+# Create model (with auth)
+curl -X POST http://localhost:8000/api/v2/models/ \
+  -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
-  -d '{"X": [[1,2,3], [4,5,6]], "y": [0, 1]}'
+  -d '{"name": "My Model", "model_type": "logistic_regression"}'
 
-# Predict
-curl -X POST http://localhost:8000/models/{model_id}/predict \
-  -H "Content-Type: application/json" \
-  -d '{"X": [[1,2,3]]}'
+# API Documentation
+# Swagger UI: http://localhost:8000/api/v2/docs/
+# OpenAPI Schema: http://localhost:8000/api/v2/schema/
 ```
 
 ## Architecture
@@ -185,7 +187,7 @@ curl -X POST http://localhost:8000/models/{model_id}/predict \
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                        Xcapit FHE-ML Platform                           │
 ├─────────────────────────────────────────────────────────────────────────┤
-│   CLI (xcapit-fhe)  │  REST API (FastAPI)  │  TypeScript SDK  │ Python │
+│   CLI (xcapit-fhe)  │  REST API (Django)   │  TypeScript SDK  │ Python │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                            ML Models                                     │
 │    LinearRegression │ LogisticRegression │ DecisionTree │ KMeans        │
@@ -229,29 +231,30 @@ The platform includes a comprehensive consortium management system for multi-par
 | **Competitive Insights** | Industry benchmarks, trend analysis, positioning |
 | **Ensemble** | Multi-model ensembles (voting, averaging, weighted, stacking) |
 
-```python
-from sdk.api.consortium import ConsortiumManager
+```bash
+# Create consortium via API
+curl -X POST http://localhost:8000/api/v2/consortiums/ \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Healthcare AI Consortium",
+    "description": "Privacy-preserving medical ML",
+    "model_type": "logistic_regression"
+  }'
 
-manager = ConsortiumManager()
-
-# Create consortium
-consortium = manager.create_consortium(
-    name="Healthcare AI Consortium",
-    description="Privacy-preserving medical ML",
-    created_by="hospital_a",
-    model_type="logistic_regression"
-)
-
-# Add governance proposal
-proposal = manager.create_proposal(
-    consortium_id=consortium.id,
-    title="Add new member",
-    proposal_type="add_member",
-    created_by="hospital_a"
-)
+# Create governance proposal
+curl -X POST http://localhost:8000/api/v2/governance/proposals/ \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "consortium": "<consortium_id>",
+    "title": "Add new member",
+    "proposal_type": "add_member"
+  }'
 
 # Get compliance dashboard
-dashboard = manager.get_compliance_dashboard(consortium.id)
+curl http://localhost:8000/api/v2/compliance/assessments/ \
+  -H "Authorization: Bearer <token>"
 ```
 
 ## Documentation
@@ -306,16 +309,18 @@ docker-compose --profile jupyter up
 ## Testing
 
 ```bash
-# Run all tests (566 passing)
+# Run Django backend tests (435 passing)
+cd backend_django
+pytest --cov=apps --cov-report=term-missing
+
+# Run SDK library tests
+cd ..
 pytest tests/ -v
 
-# With coverage
-pytest tests/ --cov=sdk --cov-report=html
-
 # Specific test categories
-pytest tests/test_models.py -v
-pytest tests/test_api/ -v
-pytest tests/test_blockchain/ -v
+pytest tests/test_models.py -v          # ML models
+pytest tests/test_encryption.py -v      # FHE encryption
+pytest tests/test_blockchain.py -v      # Blockchain integration
 ```
 
 ## Running the Dashboard
@@ -351,52 +356,36 @@ python benchmarks/benchmark_models.py --sizes 100 500 1000 5000
 
 ```
 xcapit-fhe-ml/
-├── sdk/                    # Python SDK
+├── backend_django/         # Django REST API (main backend)
+│   ├── apps/               # Django applications
+│   │   ├── core/           # Users, companies, API keys, audit
+│   │   ├── consortiums/    # Consortium management
+│   │   ├── governance/     # Blockchain governance
+│   │   ├── compliance/     # Regulatory compliance (GDPR, HIPAA, etc.)
+│   │   ├── marketplace/    # Model marketplace
+│   │   ├── sandbox/        # Testing environments
+│   │   ├── federated/      # Federated learning
+│   │   ├── models/         # ML model management
+│   │   ├── data_quality/   # Data quality assessment
+│   │   ├── competitive_insights/  # Industry benchmarks
+│   │   ├── ensemble/       # Ensemble methods
+│   │   └── explainability/ # Model explainability (SHAP, etc.)
+│   ├── config/             # Django settings
+│   └── tests/              # Backend tests (435 tests)
+├── sdk/                    # Python SDK (library only)
 │   ├── models/             # ML model implementations
-│   ├── encryption/         # FHE encryption layer
-│   ├── cli/                # Modular CLI package
-│   │   ├── commands/             # Command implementations
-│   │   │   ├── encryption.py     # init, encrypt, decrypt
-│   │   │   ├── training.py       # train
-│   │   │   ├── prediction.py     # predict
-│   │   │   ├── blockchain.py     # blockchain operations
-│   │   │   ├── api_keys.py       # API key management
-│   │   │   ├── benchmark.py      # FHE benchmarks
-│   │   │   └── info.py           # version, info
-│   │   └── utils.py              # Common utilities
-│   ├── api/                # FastAPI server
-│   │   ├── consortium/     # Modular consortium management
-│   │   │   ├── core.py           # Company, Consortium, Membership
-│   │   │   ├── governance.py     # Proposals, voting, audit, rewards
-│   │   │   ├── compliance.py     # GDPR, HIPAA, SOC2, PCI-DSS
-│   │   │   ├── data_quality.py   # Quality assessments & alerts
-│   │   │   ├── marketplace.py    # Model marketplace
-│   │   │   ├── sandbox.py        # Testing environments
-│   │   │   ├── federated.py      # Federated inference & edge nodes
-│   │   │   ├── explainability.py # SHAP, feature importance
-│   │   │   ├── competitive_insights.py  # Industry benchmarks
-│   │   │   └── ensemble.py       # Multi-model ensembles
-│   │   └── *_routes.py     # API endpoints
+│   ├── encryption/         # FHE encryption layer (CKKS/TenSEAL)
 │   ├── blockchain/         # Smart contract integration
-│   │   └── governance/     # Modular governance client
-│   │       ├── models.py         # Enums & dataclasses
-│   │       ├── abi.py            # Contract ABI
-│   │       └── client.py         # GovernanceClient
-│   └── quality/            # Data quality calculator
-├── sdk-typescript/         # TypeScript SDK
-│   └── src/
-│       ├── client.ts       # API client
-│       └── types.ts        # Type definitions
+│   ├── cli/                # Command-line interface
+│   ├── quality/            # Data quality calculator
+│   └── utils/              # Utilities
+├── dashboard/              # React frontend (Vite + TailwindCSS)
 ├── contracts/              # Solidity smart contracts
-│   ├── v2/                 # Secure V2 contracts
-│   └── *.sol               # Original contracts
-├── dashboard/              # React dashboard
+│   └── src/v2/             # Secure V2 contracts
 ├── docs/                   # Documentation
-├── tests/                  # Test suite (566 tests)
-├── pilots/                 # Pilot implementations
-│   └── gobierno/           # Government pilot (Córdoba)
-├── examples/               # Jupyter notebooks
-└── benchmarks/             # Performance benchmarks
+├── tests/                  # SDK library tests
+├── examples/               # Jupyter notebooks & demos
+└── docker-compose.yml      # Full stack Docker setup
 ```
 
 ## Contributing
