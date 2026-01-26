@@ -5,11 +5,113 @@ Sandbox environments for testing and experimentation
 with synthetic data generation.
 """
 
+import secrets
 import uuid
 from datetime import timedelta
 
 from django.db import models
 from django.utils import timezone
+
+
+class SandboxLead(models.Model):
+    """
+    Lead captured from sandbox access request.
+
+    Stores email for marketing follow-up and provides
+    a temporary token for sandbox access.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    email = models.EmailField(db_index=True)
+
+    # Access token
+    token = models.CharField(max_length=64, unique=True, db_index=True)
+
+    # Tracking
+    source = models.CharField(max_length=50, blank=True, default="direct")
+    utm_campaign = models.CharField(max_length=100, blank=True)
+    utm_source = models.CharField(max_length=100, blank=True)
+    utm_medium = models.CharField(max_length=100, blank=True)
+
+    # Conversion tracking
+    converted = models.BooleanField(default=False)
+    converted_at = models.DateTimeField(null=True, blank=True)
+    converted_to_user = models.ForeignKey(
+        "core.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="sandbox_lead",
+    )
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    last_access_at = models.DateTimeField(null=True, blank=True)
+    access_count = models.IntegerField(default=0)
+
+    class Meta:
+        verbose_name = "sandbox lead"
+        verbose_name_plural = "sandbox leads"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["email"]),
+            models.Index(fields=["token"]),
+            models.Index(fields=["created_at"]),
+            models.Index(fields=["converted"]),
+        ]
+
+    def __str__(self):
+        return f"{self.email} ({self.created_at.date()})"
+
+    def save(self, *args, **kwargs):
+        if not self.token:
+            self.token = f"sbx_{secrets.token_urlsafe(32)}"
+        if not self.expires_at:
+            self.expires_at = timezone.now() + timedelta(days=7)
+        super().save(*args, **kwargs)
+
+    @property
+    def is_expired(self):
+        return timezone.now() > self.expires_at
+
+    @property
+    def is_valid(self):
+        return not self.is_expired
+
+    def record_access(self):
+        """Record a sandbox access."""
+        self.last_access_at = timezone.now()
+        self.access_count += 1
+        self.save(update_fields=["last_access_at", "access_count"])
+
+    def mark_converted(self, user):
+        """Mark lead as converted to a real user."""
+        self.converted = True
+        self.converted_at = timezone.now()
+        self.converted_to_user = user
+        self.save(update_fields=["converted", "converted_at", "converted_to_user"])
+
+    @classmethod
+    def get_or_create_for_email(cls, email, **kwargs):
+        """
+        Get existing valid lead or create new one.
+
+        If an unexpired lead exists for this email, return it.
+        Otherwise, create a new one.
+        """
+        # Look for existing unexpired lead
+        existing = cls.objects.filter(
+            email=email,
+            expires_at__gt=timezone.now(),
+        ).first()
+
+        if existing:
+            return existing, False
+
+        # Create new lead
+        lead = cls.objects.create(email=email, **kwargs)
+        return lead, True
 
 
 class SandboxTemplate(models.Model):

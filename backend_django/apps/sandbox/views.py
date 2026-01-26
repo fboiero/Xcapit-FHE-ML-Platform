@@ -9,22 +9,120 @@ from datetime import timedelta
 
 from apps.core.models import AuditLog
 from apps.core.permissions import IsCompanyMember
+from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from .models import Experiment, Sandbox, SandboxTemplate, SyntheticDataset
+from .models import Experiment, Sandbox, SandboxLead, SandboxTemplate, SyntheticDataset
 from .serializers import (
     ExperimentCreateSerializer,
     ExperimentSerializer,
     GenerateDataSerializer,
     SandboxCreateSerializer,
+    SandboxLeadRequestSerializer,
+    SandboxLeadResponseSerializer,
+    SandboxLeadVerifySerializer,
     SandboxSerializer,
     SandboxTemplateSerializer,
     SyntheticDatasetCreateSerializer,
     SyntheticDatasetSerializer,
 )
+
+
+# =============================================================================
+# PUBLIC SANDBOX ACCESS (Lead Capture)
+# =============================================================================
+
+
+class SandboxLeadView(APIView):
+    """
+    Public endpoint for sandbox access via email.
+
+    POST /api/v2/sandbox/leads/
+    - Captures email for marketing
+    - Returns sandbox access token (7 days validity)
+
+    No authentication required.
+    """
+
+    permission_classes = [AllowAny]
+    throttle_scope = "sandbox_lead"
+
+    def post(self, request):
+        """Request sandbox access with email."""
+        serializer = SandboxLeadRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        email = serializer.validated_data["email"]
+
+        # Get or create lead
+        lead, created = SandboxLead.get_or_create_for_email(
+            email=email,
+            source=serializer.validated_data.get("source", "direct"),
+            utm_campaign=serializer.validated_data.get("utm_campaign", ""),
+            utm_source=serializer.validated_data.get("utm_source", ""),
+            utm_medium=serializer.validated_data.get("utm_medium", ""),
+        )
+
+        # Record access
+        lead.record_access()
+
+        return Response(
+            SandboxLeadResponseSerializer(lead).data,
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )
+
+
+class SandboxLeadVerifyView(APIView):
+    """
+    Verify sandbox token validity.
+
+    POST /api/v2/sandbox/leads/verify/
+    - Checks if token is valid and not expired
+    - Records access for analytics
+
+    No authentication required.
+    """
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        """Verify sandbox token."""
+        serializer = SandboxLeadVerifySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        token = serializer.validated_data["token"]
+
+        try:
+            lead = SandboxLead.objects.get(token=token)
+        except SandboxLead.DoesNotExist:
+            return Response(
+                {"valid": False, "error": "Invalid token"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if lead.is_expired:
+            return Response(
+                {"valid": False, "error": "Token expired", "expired_at": lead.expires_at},
+                status=status.HTTP_410_GONE,
+            )
+
+        # Record access
+        lead.record_access()
+
+        return Response({
+            "valid": True,
+            "email": lead.email,
+            "expires_at": lead.expires_at,
+        })
+
+
+# =============================================================================
+# SANDBOX TEMPLATES (Authenticated)
+# =============================================================================
 
 
 class SandboxTemplateViewSet(viewsets.ReadOnlyModelViewSet):

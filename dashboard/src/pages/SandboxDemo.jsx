@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
@@ -18,7 +18,10 @@ import {
   RocketLaunchIcon
 } from '@heroicons/react/24/outline'
 import LanguageSwitcher from '../components/LanguageSwitcher'
+import SandboxGate from '../components/sandbox/SandboxGate'
+import SandboxBanner, { SandboxExpiredModal } from '../components/sandbox/SandboxBanner'
 import { INDUSTRY_SCENARIOS, DEMO_API_KEY, ACME_CORP } from '../context/DemoContext'
+import { hasSandboxAccess, clearSandboxAccess } from '../api/sandbox'
 
 const ICONS = {
   BuildingOffice2Icon,
@@ -32,10 +35,34 @@ export default function SandboxDemo() {
   const navigate = useNavigate()
   const [selectedScenario, setSelectedScenario] = useState('finance')
   const [isAnimating, setIsAnimating] = useState(false)
+  const [hasAccess, setHasAccess] = useState(false)
+  const [showExpiredModal, setShowExpiredModal] = useState(false)
+  const [checkingAccess, setCheckingAccess] = useState(true)
 
   const currentLang = i18n.language?.startsWith('es') ? 'es' : 'en'
   const scenario = INDUSTRY_SCENARIOS[selectedScenario]
   const Icon = ICONS[scenario.icon]
+
+  // Check sandbox access on mount
+  useEffect(() => {
+    setHasAccess(hasSandboxAccess())
+    setCheckingAccess(false)
+  }, [])
+
+  const handleAccessGranted = (result) => {
+    setHasAccess(true)
+  }
+
+  const handleExpired = () => {
+    setHasAccess(false)
+    setShowExpiredModal(true)
+  }
+
+  const handleRenewAccess = () => {
+    clearSandboxAccess()
+    setShowExpiredModal(false)
+    setHasAccess(false)
+  }
 
   const handleStartDemo = (mode) => {
     setIsAnimating(true)
@@ -84,6 +111,81 @@ export default function SandboxDemo() {
 
   const colors = colorClasses[scenario.color]
 
+  // Show loading state while checking access
+  if (checkingAccess) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-brand-600 border-t-transparent rounded-full" />
+      </div>
+    )
+  }
+
+  // Show gate if no access
+  if (!hasAccess) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
+        {/* Header */}
+        <header className="border-b border-slate-700/50">
+          <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <Link to="/" className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center">
+                <LockClosedIcon className="w-5 h-5 text-white" />
+              </div>
+              <span className="text-xl font-semibold text-white">Xcapit</span>
+              <span className="text-xl font-light text-brand-400">Privacy</span>
+            </Link>
+            <div className="flex items-center gap-4">
+              <LanguageSwitcher variant="minimal" />
+              <Link to="/login" className="text-slate-300 hover:text-white text-sm">
+                {currentLang === 'es' ? 'Iniciar sesion' : 'Sign in'}
+              </Link>
+            </div>
+          </div>
+        </header>
+
+        <div className="max-w-7xl mx-auto px-6 py-16 flex flex-col items-center">
+          {/* Hero */}
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-brand-600/20 rounded-full text-brand-400 text-sm mb-6">
+              <SparklesIcon className="w-4 h-4" />
+              {currentLang === 'es' ? 'Sandbox de Demostracion' : 'Demo Sandbox'}
+            </div>
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+              {currentLang === 'es'
+                ? 'Experimenta con FHE'
+                : 'Experiment with FHE'}
+            </h1>
+            <p className="text-xl text-slate-300 max-w-2xl mx-auto">
+              {currentLang === 'es'
+                ? 'Prueba nuestra plataforma de ML con encriptacion homomorfica sin compromiso'
+                : 'Try our ML platform with homomorphic encryption, no commitment required'}
+            </p>
+          </div>
+
+          {/* Gate Component */}
+          <SandboxGate
+            onAccessGranted={handleAccessGranted}
+            color={scenario.color}
+          />
+        </div>
+
+        {/* Footer */}
+        <footer className="absolute bottom-0 left-0 right-0 border-t border-slate-700/50">
+          <div className="max-w-7xl mx-auto px-6 py-6 text-center">
+            <p className="text-slate-500 text-sm">
+              {currentLang === 'es'
+                ? 'Ya tienes cuenta?'
+                : 'Already have an account?'}{' '}
+              <Link to="/login" className="text-brand-400 hover:text-brand-300">
+                {currentLang === 'es' ? 'Inicia sesion' : 'Sign in'}
+              </Link>
+            </p>
+          </div>
+        </footer>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
       {/* Header */}
@@ -97,6 +199,7 @@ export default function SandboxDemo() {
             <span className="text-xl font-light text-brand-400">Privacy</span>
           </Link>
           <div className="flex items-center gap-4">
+            <SandboxBanner variant="inline" onExpired={handleExpired} />
             <LanguageSwitcher variant="minimal" />
             <Link to="/login" className="text-slate-300 hover:text-white text-sm">
               {currentLang === 'es' ? 'Iniciar sesion' : 'Sign in'}
@@ -104,6 +207,14 @@ export default function SandboxDemo() {
           </div>
         </div>
       </header>
+
+      {/* Expired Modal */}
+      {showExpiredModal && (
+        <SandboxExpiredModal
+          onClose={() => setShowExpiredModal(false)}
+          onRenew={handleRenewAccess}
+        />
+      )}
 
       <div className="max-w-7xl mx-auto px-6 py-12">
         {/* Hero Section */}
@@ -114,8 +225,8 @@ export default function SandboxDemo() {
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
             {currentLang === 'es'
-              ? 'Explora la Plataforma sin Registro'
-              : 'Explore the Platform Without Signing Up'}
+              ? 'Explora la Plataforma'
+              : 'Explore the Platform'}
           </h1>
           <p className="text-xl text-slate-300 max-w-2xl mx-auto">
             {currentLang === 'es'

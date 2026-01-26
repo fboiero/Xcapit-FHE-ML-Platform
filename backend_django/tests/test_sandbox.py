@@ -903,3 +903,271 @@ class TestSandboxModels:
         )
 
         assert "Test Template" in str(template)
+
+
+# =============================================================================
+# SANDBOX LEAD TESTS (Public Access)
+# =============================================================================
+
+
+@pytest.mark.django_db
+class TestSandboxLeadModel:
+    """Tests for SandboxLead model."""
+
+    def test_lead_creation_sets_token(self):
+        """Test lead auto-generates token on creation."""
+        from apps.sandbox.models import SandboxLead
+
+        lead = SandboxLead.objects.create(email="test@example.com")
+
+        assert lead.token is not None
+        assert lead.token.startswith("sbx_")
+        assert len(lead.token) > 10
+
+    def test_lead_creation_sets_expiry(self):
+        """Test lead auto-sets expiry to 7 days."""
+        from apps.sandbox.models import SandboxLead
+
+        lead = SandboxLead.objects.create(email="test@example.com")
+
+        assert lead.expires_at is not None
+        # Should expire in approximately 7 days
+        expected = timezone.now() + timedelta(days=7)
+        assert abs((lead.expires_at - expected).total_seconds()) < 10
+
+    def test_lead_is_expired(self):
+        """Test lead expiration check."""
+        from apps.sandbox.models import SandboxLead
+
+        lead = SandboxLead.objects.create(
+            email="test@example.com",
+            expires_at=timezone.now() - timedelta(hours=1),
+        )
+
+        assert lead.is_expired is True
+        assert lead.is_valid is False
+
+    def test_lead_is_valid(self):
+        """Test lead validity check."""
+        from apps.sandbox.models import SandboxLead
+
+        lead = SandboxLead.objects.create(
+            email="test@example.com",
+            expires_at=timezone.now() + timedelta(days=7),
+        )
+
+        assert lead.is_expired is False
+        assert lead.is_valid is True
+
+    def test_lead_record_access(self):
+        """Test recording access increments counter."""
+        from apps.sandbox.models import SandboxLead
+
+        lead = SandboxLead.objects.create(email="test@example.com")
+        initial_count = lead.access_count
+
+        lead.record_access()
+
+        assert lead.access_count == initial_count + 1
+        assert lead.last_access_at is not None
+
+    def test_lead_mark_converted(self, user):
+        """Test marking lead as converted."""
+        from apps.sandbox.models import SandboxLead
+
+        lead = SandboxLead.objects.create(email="test@example.com")
+
+        lead.mark_converted(user)
+
+        assert lead.converted is True
+        assert lead.converted_at is not None
+        assert lead.converted_to_user == user
+
+    def test_get_or_create_for_email_creates_new(self):
+        """Test get_or_create_for_email creates new lead."""
+        from apps.sandbox.models import SandboxLead
+
+        lead, created = SandboxLead.get_or_create_for_email(
+            email="new@example.com",
+            source="test",
+        )
+
+        assert created is True
+        assert lead.email == "new@example.com"
+        assert lead.source == "test"
+
+    def test_get_or_create_for_email_returns_existing(self):
+        """Test get_or_create_for_email returns existing valid lead."""
+        from apps.sandbox.models import SandboxLead
+
+        # Create existing lead
+        existing = SandboxLead.objects.create(
+            email="existing@example.com",
+            expires_at=timezone.now() + timedelta(days=3),
+        )
+
+        lead, created = SandboxLead.get_or_create_for_email(
+            email="existing@example.com",
+        )
+
+        assert created is False
+        assert lead.id == existing.id
+
+    def test_get_or_create_for_email_creates_if_expired(self):
+        """Test get_or_create_for_email creates new lead if existing is expired."""
+        from apps.sandbox.models import SandboxLead
+
+        # Create expired lead
+        SandboxLead.objects.create(
+            email="expired@example.com",
+            expires_at=timezone.now() - timedelta(hours=1),
+        )
+
+        lead, created = SandboxLead.get_or_create_for_email(
+            email="expired@example.com",
+        )
+
+        assert created is True
+        assert lead.is_valid is True
+
+    def test_lead_str(self):
+        """Test lead string representation."""
+        from apps.sandbox.models import SandboxLead
+
+        lead = SandboxLead.objects.create(email="test@example.com")
+
+        assert "test@example.com" in str(lead)
+
+
+@pytest.mark.django_db
+class TestSandboxLeadEndpoints:
+    """Tests for public sandbox lead endpoints."""
+
+    def test_request_sandbox_access(self, api_client):
+        """Test requesting sandbox access with email."""
+        url = "/api/v2/sandbox/leads/"
+        data = {"email": "lead@example.com"}
+
+        response = api_client.post(url, data, format="json")
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert "token" in response.data
+        assert response.data["email"] == "lead@example.com"
+        assert "expires_at" in response.data
+
+    def test_request_sandbox_access_with_tracking(self, api_client):
+        """Test requesting sandbox access with UTM tracking."""
+        url = "/api/v2/sandbox/leads/"
+        data = {
+            "email": "tracked@example.com",
+            "source": "landing",
+            "utm_campaign": "winter-2026",
+            "utm_source": "google",
+            "utm_medium": "cpc",
+        }
+
+        response = api_client.post(url, data, format="json")
+
+        assert response.status_code == status.HTTP_201_CREATED
+        # Verify tracking was stored
+        from apps.sandbox.models import SandboxLead
+        lead = SandboxLead.objects.get(email="tracked@example.com")
+        assert lead.source == "landing"
+        assert lead.utm_campaign == "winter-2026"
+
+    def test_request_sandbox_access_existing_email(self, api_client):
+        """Test requesting access with existing email returns 200."""
+        from apps.sandbox.models import SandboxLead
+
+        # Create existing lead
+        existing = SandboxLead.objects.create(
+            email="existing@example.com",
+            expires_at=timezone.now() + timedelta(days=5),
+        )
+
+        url = "/api/v2/sandbox/leads/"
+        data = {"email": "existing@example.com"}
+
+        response = api_client.post(url, data, format="json")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["token"] == existing.token
+
+    def test_request_sandbox_access_invalid_email(self, api_client):
+        """Test invalid email is rejected."""
+        url = "/api/v2/sandbox/leads/"
+        data = {"email": "not-an-email"}
+
+        response = api_client.post(url, data, format="json")
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_verify_valid_token(self, api_client):
+        """Test verifying a valid sandbox token."""
+        from apps.sandbox.models import SandboxLead
+
+        lead = SandboxLead.objects.create(
+            email="verify@example.com",
+            expires_at=timezone.now() + timedelta(days=5),
+        )
+
+        url = "/api/v2/sandbox/leads/verify/"
+        data = {"token": lead.token}
+
+        response = api_client.post(url, data, format="json")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["valid"] is True
+        assert response.data["email"] == "verify@example.com"
+
+    def test_verify_invalid_token(self, api_client):
+        """Test verifying an invalid token."""
+        url = "/api/v2/sandbox/leads/verify/"
+        data = {"token": "sbx_invalid_token"}
+
+        response = api_client.post(url, data, format="json")
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data["valid"] is False
+
+    def test_verify_expired_token(self, api_client):
+        """Test verifying an expired token."""
+        from apps.sandbox.models import SandboxLead
+
+        lead = SandboxLead.objects.create(
+            email="expired@example.com",
+            expires_at=timezone.now() - timedelta(hours=1),
+        )
+
+        url = "/api/v2/sandbox/leads/verify/"
+        data = {"token": lead.token}
+
+        response = api_client.post(url, data, format="json")
+
+        assert response.status_code == status.HTTP_410_GONE
+        assert response.data["valid"] is False
+        assert "expired" in response.data["error"].lower()
+
+    def test_leads_endpoint_no_auth_required(self, api_client):
+        """Test leads endpoint works without authentication."""
+        url = "/api/v2/sandbox/leads/"
+        data = {"email": "noauth@example.com"}
+
+        # api_client has no auth
+        response = api_client.post(url, data, format="json")
+
+        assert response.status_code == status.HTTP_201_CREATED
+
+    def test_verify_endpoint_no_auth_required(self, api_client):
+        """Test verify endpoint works without authentication."""
+        from apps.sandbox.models import SandboxLead
+
+        lead = SandboxLead.objects.create(email="noauth@example.com")
+
+        url = "/api/v2/sandbox/leads/verify/"
+        data = {"token": lead.token}
+
+        # api_client has no auth
+        response = api_client.post(url, data, format="json")
+
+        assert response.status_code == status.HTTP_200_OK

@@ -21,11 +21,6 @@ import FederatedInference from './pages/FederatedInference'
 import ModelExplainability from './pages/ModelExplainability'
 import CompetitiveInsights from './pages/CompetitiveInsights'
 import MultiModelEnsemble from './pages/MultiModelEnsemble'
-import Demos from './pages/Demos'
-import ClientsDemo from './pages/ClientsDemo'
-import BankConsortiumDemo from './pages/BankConsortiumDemo'
-import InsuranceClaimsDemo from './pages/InsuranceClaimsDemo'
-import RetailChurnDemo from './pages/RetailChurnDemo'
 
 // Protected route wrapper
 const ProtectedRoute = ({ children }) => {
@@ -58,23 +53,10 @@ function App() {
           <PublicRoute><Login /></PublicRoute>
         } />
         <Route path="/join" element={<JoinConsortium />} />
+        {/* Sandbox entry point - requires email capture */}
         <Route path="/sandbox-demo" element={<SandboxDemo />} />
+        {/* Demo routes accessible after sandbox access */}
         <Route path="/demo-consorcio" element={<DemoConsorcio />} />
-        <Route path="/demo-governance" element={<Governance />} />
-        <Route path="/demo-compliance" element={<Compliance />} />
-        <Route path="/demo-quality" element={<DataQuality />} />
-        <Route path="/demo-marketplace" element={<Marketplace />} />
-        <Route path="/demo-sandbox" element={<Sandbox />} />
-        <Route path="/demo-federated" element={<FederatedInference />} />
-        <Route path="/demo-explainability" element={<ModelExplainability />} />
-        <Route path="/demo-competitive" element={<CompetitiveInsights />} />
-        <Route path="/demo-ensemble" element={<MultiModelEnsemble />} />
-        <Route path="/demos" element={<Demos />} />
-        <Route path="/clients-demo" element={<ClientsDemo />} />
-        <Route path="/demo/bank-consortium" element={<BankConsortiumDemo />} />
-        <Route path="/demo-bank" element={<BankConsortiumDemo />} />
-        <Route path="/demo-insurance" element={<InsuranceClaimsDemo />} />
-        <Route path="/demo-retail" element={<RetailChurnDemo />} />
 
       {/* Protected routes with Layout */}
       <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>

@@ -4,7 +4,50 @@ Sandbox serializers for Xcapit FHE-ML Platform.
 
 from rest_framework import serializers
 
-from .models import Experiment, Sandbox, SandboxTemplate, SyntheticDataset
+from .models import Experiment, Sandbox, SandboxLead, SandboxTemplate, SyntheticDataset
+
+
+# =============================================================================
+# SANDBOX LEAD SERIALIZERS (for public sandbox access)
+# =============================================================================
+
+
+class SandboxLeadRequestSerializer(serializers.Serializer):
+    """Serializer for requesting sandbox access."""
+
+    email = serializers.EmailField()
+    source = serializers.CharField(required=False, allow_blank=True, max_length=50)
+    utm_campaign = serializers.CharField(required=False, allow_blank=True, max_length=100)
+    utm_source = serializers.CharField(required=False, allow_blank=True, max_length=100)
+    utm_medium = serializers.CharField(required=False, allow_blank=True, max_length=100)
+
+
+class SandboxLeadResponseSerializer(serializers.ModelSerializer):
+    """Serializer for sandbox access response."""
+
+    is_valid = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = SandboxLead
+        fields = [
+            "token",
+            "email",
+            "expires_at",
+            "is_valid",
+            "created_at",
+        ]
+        read_only_fields = fields
+
+
+class SandboxLeadVerifySerializer(serializers.Serializer):
+    """Serializer for verifying sandbox token."""
+
+    token = serializers.CharField(max_length=64)
+
+
+# =============================================================================
+# SANDBOX TEMPLATE SERIALIZERS
+# =============================================================================
 
 
 class SandboxTemplateSerializer(serializers.ModelSerializer):

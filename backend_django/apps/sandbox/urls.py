@@ -14,5 +14,9 @@ router.register(r"experiments", views.ExperimentViewSet, basename="experiment")
 router.register(r"sandboxes", views.SandboxViewSet, basename="sandbox")
 
 urlpatterns = [
+    # Public endpoints (no auth required)
+    path("leads/", views.SandboxLeadView.as_view(), name="sandbox-lead"),
+    path("leads/verify/", views.SandboxLeadVerifyView.as_view(), name="sandbox-lead-verify"),
+    # Authenticated endpoints
     path("", include(router.urls)),
 ]
