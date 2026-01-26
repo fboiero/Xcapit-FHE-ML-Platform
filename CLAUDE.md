@@ -13,7 +13,7 @@ Privacy-preserving machine learning platform using Fully Homomorphic Encryption 
 - **Blockchain**: Arbitrum integration for audit trails (Web3.py)
 - **Authentication**: JWT (djangorestframework-simplejwt) with token blacklist
 - **Security**: django-axes (brute-force protection), django-ratelimit
-- **Testing**: pytest-django (317+ tests, 88% coverage)
+- **Testing**: pytest-django (465+ tests)
 - **Deployment**: Docker + docker-compose, Gunicorn + WhiteNoise
 
 ### Frontend (React/Vite)
@@ -129,15 +129,12 @@ class ExampleService(BaseService):
 
 ## Key URLs
 
-- **Production API**: https://apifhe.xcapit.com
-- **Frontend**: https://xcapit-privacy.vercel.app
-- **Hub**: /hub
-- **Fintech**: /fintech
-- **Healthcare**: /healthcare
-- **Government**: /gobierno
-- **Dashboard**: /dashboard
+- **Platform App (Frontend)**: https://appfhe.xcapit.com (Vercel)
+- **API (Backend)**: https://apifhe.xcapit.com (DNS pending)
 - **API Docs**: /api/v2/docs/ (Swagger UI)
 - **API Schema**: /api/v2/schema/
+
+Note: The commercial website (privacy.xcapit.com) is in a separate repository.
 
 ## Development Commands
 
@@ -275,7 +272,7 @@ Each vertical landing page follows this structure:
 ## Notes for Future Sessions
 
 - Backend migrated from FastAPI to Django 5.2 LTS (January 2026)
-- Test coverage is 88% with 317+ tests passing
+- 465+ tests passing
 - Docker build produces ~654MB image, uses multi-stage build
 - Build takes ~3 minutes, produces warning about chunk size >500KB (acceptable)
 - Vercel deployment is automatic on push to main
@@ -331,7 +328,7 @@ La migración de FastAPI a Django está **~95% completada**.
 #### Fase 6: Documentación (25 Enero 2026)
 - [x] Actualizar README.md principal (Django en lugar de FastAPI)
 - [x] Actualizar CHANGELOG.md con versión 2.0.0
-- [x] Ejecutar suite completa de tests (435 pasando)
+- [x] Ejecutar suite completa de tests (465 pasando)
 
 ### Estructura Final del SDK
 ```
@@ -354,5 +351,5 @@ sdk/
 La migración de FastAPI a Django está **100% completada**.
 
 - SDK versión 0.2.0 (librería pura)
-- Django backend con 435 tests pasando
+- Django backend con 465 tests pasando
 - Documentación actualizada (README, CHANGELOG)
