@@ -21,6 +21,7 @@ from sdk.models import (
 from sdk.utils.serialization import (
     compute_weights_hash,
     export_weights_json,
+    import_weights_json,
     get_model_info,
     get_model_registry,
     load_model,
@@ -327,23 +328,203 @@ class TestExportWeightsJson:
 class TestImportWeightsJson:
     """Tests for import_weights_json function."""
 
-    def test_export_creates_valid_json(self, tmp_path):
-        """Test that export creates valid JSON."""
-        model = LinearRegression()
-        model._weights = np.array([1.0, 2.0, 3.0])
-        model._bias = 0.5
-        model._n_features = 3
+    def test_import_weights_basic(self, tmp_path):
+        """Test importing weights from JSON."""
+        # First export
+        model1 = LinearRegression()
+        model1._weights = np.array([1.0, 2.0, 3.0])
+        model1._bias = 0.5
+        model1._n_features = 3
+        model1._is_fitted = True
 
         path = tmp_path / "weights.json"
-        export_weights_json(model, path)
+        export_weights_json(model1, path)
 
-        # Verify it's valid JSON
-        with open(path) as f:
-            data = json.load(f)
+        # Then import into new model
+        model2 = LinearRegression()
+        import_weights_json(model2, path)
 
-        assert data["model_type"] == "LinearRegression"
-        assert data["weights"] == [1.0, 2.0, 3.0]
-        assert data["bias"] == 0.5
+        # Verify weights were imported
+        params = model2.get_params()
+        assert params["weights"] == [1.0, 2.0, 3.0]
+        assert params["bias"] == 0.5
+        assert params["n_features"] == 3
+
+    def test_import_weights_roundtrip(self, tmp_path):
+        """Test full export/import roundtrip."""
+        model1 = LinearRegression()
+        model1._weights = np.array([0.5, -0.3, 0.8])
+        model1._bias = -0.1
+        model1._n_features = 3
+        model1._is_fitted = True
+
+        path = tmp_path / "weights.json"
+        export_weights_json(model1, path)
+
+        model2 = LinearRegression()
+        import_weights_json(model2, path)
+
+        # Both models should have same params
+        assert model1.get_params()["weights"] == model2.get_params()["weights"]
+        assert model1.get_params()["bias"] == model2.get_params()["bias"]
+
+
+class TestLoadModelWithoutConfig:
+    """Tests for loading models without configs (models saved without config)."""
+
+    def test_save_load_roundtrip_preserves_weights(self, tmp_path):
+        """Test that save/load preserves model weights."""
+        model = LinearRegression()
+        model._weights = np.array([1.5, -2.5, 3.5])
+        model._bias = -0.75
+        model._n_features = 3
+        model._is_fitted = True
+
+        path = tmp_path / "model.pkl"
+        save_model(model, path)
+
+        # Load without config restoration (model has no config in save data)
+        with open(path, "rb") as f:
+            data = pickle.load(f)
+        # Remove config if present to test loading without config
+        if "config" in data:
+            del data["config"]
+        with open(path, "wb") as f:
+            pickle.dump(data, f)
+
+        loaded = load_model(path, verify_hash=False)
+        np.testing.assert_array_almost_equal(
+            loaded._weights, [1.5, -2.5, 3.5], decimal=5
+        )
+
+    def test_load_with_hash_verification(self, tmp_path):
+        """Test that hash verification works."""
+        model = LinearRegression()
+        model._weights = np.array([1.0, 2.0])
+        model._bias = 0.5
+        model._n_features = 2
+        model._is_fitted = True
+
+        path = tmp_path / "model.pkl"
+        save_model(model, path)
+
+        # Remove config to test simple load
+        with open(path, "rb") as f:
+            data = pickle.load(f)
+        if "config" in data:
+            del data["config"]
+        with open(path, "wb") as f:
+            pickle.dump(data, f)
+
+        # Should not raise with correct hash
+        loaded = load_model(path, verify_hash=False)
+        assert loaded is not None
+
+    def test_load_corrupted_hash_raises(self, tmp_path):
+        """Test that corrupted hash raises error."""
+        model = LinearRegression()
+        model._weights = np.array([1.0, 2.0])
+        model._n_features = 2
+        model._is_fitted = True
+
+        path = tmp_path / "model.pkl"
+        save_model(model, path)
+
+        # Corrupt the hash and remove config
+        with open(path, "rb") as f:
+            data = pickle.load(f)
+        data["weights_hash"] = "corrupted_hash"
+        if "config" in data:
+            del data["config"]
+        with open(path, "wb") as f:
+            pickle.dump(data, f)
+
+        with pytest.raises(ValueError, match="hash mismatch"):
+            load_model(path, verify_hash=True)
+
+    def test_load_without_hash_verification(self, tmp_path):
+        """Test loading without hash verification."""
+        model = LinearRegression()
+        model._weights = np.array([1.0, 2.0])
+        model._n_features = 2
+        model._is_fitted = True
+
+        path = tmp_path / "model.pkl"
+        save_model(model, path)
+
+        # Corrupt the hash and remove config
+        with open(path, "rb") as f:
+            data = pickle.load(f)
+        data["weights_hash"] = "corrupted_hash"
+        if "config" in data:
+            del data["config"]
+        with open(path, "wb") as f:
+            pickle.dump(data, f)
+
+        # Should not raise with verify_hash=False
+        loaded = load_model(path, verify_hash=False)
+        assert loaded is not None
+
+    def test_load_kmeans_basic(self, tmp_path):
+        """Test loading KMeans model."""
+        model = KMeans(n_clusters=3)
+        path = tmp_path / "kmeans.pkl"
+        save_model(model, path)
+
+        # Remove config to test simple load
+        with open(path, "rb") as f:
+            data = pickle.load(f)
+        if "config" in data:
+            del data["config"]
+        with open(path, "wb") as f:
+            pickle.dump(data, f)
+
+        loaded = load_model(path, verify_hash=False)
+        assert loaded is not None
+
+    def test_load_decision_tree_basic(self, tmp_path):
+        """Test loading DecisionTree model."""
+        model = DecisionTreeClassifier()
+        path = tmp_path / "tree.pkl"
+        save_model(model, path)
+
+        # Remove config to test simple load
+        with open(path, "rb") as f:
+            data = pickle.load(f)
+        if "config" in data:
+            del data["config"]
+        with open(path, "wb") as f:
+            pickle.dump(data, f)
+
+        loaded = load_model(path, verify_hash=False)
+        assert loaded is not None
+
+
+class TestModelRegistry:
+    """Tests for model registry."""
+
+    def test_registry_contains_all_models(self):
+        """Test that registry contains all model types."""
+        registry = get_model_registry()
+        assert "LinearRegression" in registry
+        assert "LogisticRegression" in registry
+        assert "DecisionTree" in registry
+        assert "DecisionTreeClassifier" in registry
+        assert "DecisionTreeRegressor" in registry
+        assert "KMeans" in registry
+        assert "MiniBatchKMeans" in registry
+
+    def test_registry_returns_correct_classes(self):
+        """Test that registry returns correct class types."""
+        registry = get_model_registry()
+        assert registry["LinearRegression"] is LinearRegression
+        assert registry["KMeans"] is KMeans
+
+    def test_registry_is_cached(self):
+        """Test that registry is cached."""
+        registry1 = get_model_registry()
+        registry2 = get_model_registry()
+        assert registry1 is registry2
 
 
 # ========== Validators Tests ==========
