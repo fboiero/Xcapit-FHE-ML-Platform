@@ -9,8 +9,10 @@ import time
 
 from apps.core.models import AuditLog
 from apps.core.permissions import IsCompanyMember, IsConsortiumMember
+from django.db import transaction
 from django.utils import timezone
-from rest_framework import status, viewsets
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -38,16 +40,25 @@ class InferenceEndpointViewSet(viewsets.ModelViewSet):
 
     serializer_class = InferenceEndpointSerializer
     permission_classes = [IsAuthenticated, IsConsortiumMember]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ["status", "endpoint_type"]
+    search_fields = ["name", "description"]
+    ordering_fields = ["created_at", "name", "status"]
+    ordering = ["-created_at"]
 
     def get_queryset(self):
         """Filter endpoints by consortium or company."""
         consortium_id = self.request.query_params.get("consortium_id")
         if consortium_id:
-            return InferenceEndpoint.objects.filter(consortium_id=consortium_id)
+            return InferenceEndpoint.objects.filter(
+                consortium_id=consortium_id
+            ).select_related("company", "consortium", "model")
 
         user = self.request.user
         if user.company:
-            return InferenceEndpoint.objects.filter(company=user.company)
+            return InferenceEndpoint.objects.filter(
+                company=user.company
+            ).select_related("company", "consortium", "model")
         return InferenceEndpoint.objects.none()
 
     def get_serializer_class(self):
@@ -76,6 +87,7 @@ class InferenceEndpointViewSet(viewsets.ModelViewSet):
         )
 
     @action(detail=True, methods=["post"])
+    @transaction.atomic
     def predict(self, request, pk=None):
         """Make a prediction through the endpoint."""
         endpoint = self.get_object()
@@ -207,7 +219,9 @@ class InferenceRequestViewSet(viewsets.ReadOnlyModelViewSet):
         """Filter requests by requester."""
         user = self.request.user
         if user.company:
-            queryset = InferenceRequest.objects.filter(requester=user.company)
+            queryset = InferenceRequest.objects.filter(
+                requester=user.company
+            ).select_related("endpoint", "requester")
 
             # Filter by endpoint
             endpoint_id = self.request.query_params.get("endpoint_id")
@@ -311,6 +325,11 @@ class EdgeNodeViewSet(viewsets.ModelViewSet):
 
     serializer_class = EdgeNodeSerializer
     permission_classes = [IsAuthenticated, IsCompanyMember]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ["status", "node_type"]
+    search_fields = ["name", "location"]
+    ordering_fields = ["created_at", "name", "status", "last_heartbeat"]
+    ordering = ["-created_at"]
 
     def get_queryset(self):
         """Filter nodes by company."""

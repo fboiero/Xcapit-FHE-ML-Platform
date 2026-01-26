@@ -12,9 +12,11 @@ from apps.core.permissions import (
     IsConsortiumMember,
     IsConsortiumOwner,
 )
+from django.db import transaction
 from django.db.models import Count, Sum
 from django.utils import timezone
-from rest_framework import status, viewsets
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -39,6 +41,11 @@ class ConsortiumViewSet(viewsets.ModelViewSet):
 
     serializer_class = ConsortiumSerializer
     permission_classes = [IsAuthenticated, IsCompanyMember]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ["status", "model_type"]
+    search_fields = ["name", "description"]
+    ordering_fields = ["created_at", "name", "status"]
+    ordering = ["-created_at"]
 
     def get_queryset(self):
         """
@@ -54,7 +61,9 @@ class ConsortiumViewSet(viewsets.ModelViewSet):
             status=ConsortiumMember.Status.ACTIVE,
         ).values_list("consortium_id", flat=True)
 
-        return Consortium.objects.filter(id__in=member_consortiums)
+        return Consortium.objects.filter(id__in=member_consortiums).select_related(
+            "owner"
+        ).prefetch_related("members")
 
     def get_serializer_class(self):
         """Use different serializers for different actions."""
@@ -158,11 +167,17 @@ class ConsortiumMemberViewSet(viewsets.ModelViewSet):
 
     serializer_class = ConsortiumMemberSerializer
     permission_classes = [IsAuthenticated, IsConsortiumMember]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ["status", "role"]
+    ordering_fields = ["joined_at", "role", "status"]
+    ordering = ["-joined_at"]
 
     def get_queryset(self):
         """Filter members by consortium."""
         consortium_id = self.kwargs.get("consortium_pk")
-        return ConsortiumMember.objects.filter(consortium_id=consortium_id)
+        return ConsortiumMember.objects.filter(
+            consortium_id=consortium_id
+        ).select_related("company", "consortium")
 
     def get_permissions(self):
         """Only admins can modify memberships."""
@@ -262,11 +277,17 @@ class ContributionProofViewSet(viewsets.ModelViewSet):
 
     serializer_class = ContributionProofSerializer
     permission_classes = [IsAuthenticated, IsConsortiumMember]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ["verified", "company"]
+    ordering_fields = ["created_at", "record_count", "verified"]
+    ordering = ["-created_at"]
 
     def get_queryset(self):
         """Filter contributions by consortium."""
         consortium_id = self.kwargs.get("consortium_pk")
-        return ContributionProof.objects.filter(consortium_id=consortium_id)
+        return ContributionProof.objects.filter(
+            consortium_id=consortium_id
+        ).select_related("company", "consortium")
 
     def get_serializer_class(self):
         if self.action == "create":
@@ -341,6 +362,7 @@ class ConsortiumInvitationViewSet(viewsets.ModelViewSet):
         return ConsortiumInvitationSerializer
 
     @action(detail=True, methods=["post"])
+    @transaction.atomic
     def accept(self, request, pk=None):
         """Accept an invitation."""
         invitation = self.get_object()

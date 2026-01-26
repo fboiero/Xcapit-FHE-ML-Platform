@@ -6,9 +6,11 @@ Provides endpoints for compliance frameworks, checks, reports, and attestations.
 
 from apps.core.models import AuditLog
 from apps.core.permissions import IsConsortiumAdmin, IsConsortiumMember
+from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
-from rest_framework import status, viewsets
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -44,6 +46,11 @@ class ComplianceFrameworkViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = ComplianceFramework.objects.all()
     serializer_class = ComplianceFrameworkSerializer
     permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ["region", "industry"]
+    search_fields = ["name", "description"]
+    ordering_fields = ["name", "region"]
+    ordering = ["name"]
 
     def get_queryset(self):
         """Filter by region/industry if specified."""
@@ -83,7 +90,9 @@ class ConsortiumComplianceViewSet(viewsets.ModelViewSet):
         """Filter by consortium."""
         consortium_id = self.request.query_params.get("consortium_id")
         if consortium_id:
-            return ConsortiumCompliance.objects.filter(consortium_id=consortium_id)
+            return ConsortiumCompliance.objects.filter(
+                consortium_id=consortium_id
+            ).select_related("consortium").prefetch_related("enabled_frameworks")
         return ConsortiumCompliance.objects.none()
 
     @action(detail=True, methods=["get"])
@@ -138,7 +147,9 @@ class ComplianceCheckViewSet(viewsets.ModelViewSet):
         """Filter checks by consortium."""
         consortium_id = self.request.query_params.get("consortium_id")
         if consortium_id:
-            queryset = ComplianceCheck.objects.filter(consortium_id=consortium_id)
+            queryset = ComplianceCheck.objects.filter(
+                consortium_id=consortium_id
+            ).select_related("framework", "consortium", "checked_by")
 
             # Optional filters
             framework_id = self.request.query_params.get("framework_id")
@@ -180,6 +191,10 @@ class ComplianceReportViewSet(viewsets.ReadOnlyModelViewSet):
 
     serializer_class = ComplianceReportSerializer
     permission_classes = [IsAuthenticated, IsConsortiumMember]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ["status", "framework"]
+    ordering_fields = ["generated_at", "overall_score", "status"]
+    ordering = ["-generated_at"]
 
     def get_queryset(self):
         """Filter reports by consortium."""
@@ -195,6 +210,7 @@ class ComplianceReportViewSet(viewsets.ReadOnlyModelViewSet):
         return ComplianceReport.objects.none()
 
     @action(detail=False, methods=["post"], permission_classes=[IsAuthenticated, IsConsortiumAdmin])
+    @transaction.atomic
     def generate(self, request):
         """Generate a compliance report."""
         serializer = GenerateReportSerializer(data=request.data)
@@ -269,6 +285,10 @@ class AttestationViewSet(viewsets.ModelViewSet):
 
     serializer_class = AttestationSerializer
     permission_classes = [IsAuthenticated, IsConsortiumMember]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ["attestation_type", "revoked"]
+    ordering_fields = ["created_at", "valid_from", "valid_until"]
+    ordering = ["-created_at"]
 
     def get_queryset(self):
         """Filter attestations by consortium."""

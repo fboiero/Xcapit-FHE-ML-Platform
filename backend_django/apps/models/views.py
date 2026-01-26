@@ -8,8 +8,10 @@ import time
 
 from apps.core.models import AuditLog
 from apps.core.permissions import IsCompanyMember
+from django.db import transaction
 from django.db.models import Avg, Count, Q, Sum
-from rest_framework import status, viewsets
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -34,12 +36,19 @@ class MLModelViewSet(viewsets.ModelViewSet):
 
     serializer_class = MLModelSerializer
     permission_classes = [IsAuthenticated, IsCompanyMember]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ["status", "model_type"]
+    search_fields = ["name", "description"]
+    ordering_fields = ["created_at", "name", "status"]
+    ordering = ["-created_at"]
 
     def get_queryset(self):
         """Filter models by owner."""
         user = self.request.user
         if user.company:
-            return MLModel.objects.filter(owner=user.company)
+            return MLModel.objects.filter(owner=user.company).select_related(
+                "owner", "consortium"
+            ).prefetch_related("training_runs", "checkpoints")
         return MLModel.objects.none()
 
     def get_serializer_class(self):
@@ -59,6 +68,7 @@ class MLModelViewSet(viewsets.ModelViewSet):
         )
 
     @action(detail=True, methods=["post"])
+    @transaction.atomic
     def train(self, request, pk=None):
         """Start training for a model."""
         model = self.get_object()
@@ -185,6 +195,7 @@ class TrainingRunViewSet(viewsets.ReadOnlyModelViewSet):
         return TrainingRun.objects.none()
 
     @action(detail=True, methods=["post"])
+    @transaction.atomic
     def cancel(self, request, pk=None):
         """Cancel a running training."""
         run = self.get_object()

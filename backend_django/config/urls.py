@@ -56,6 +56,8 @@ urlpatterns = [
                 path("ensemble/", include("apps.ensemble.urls")),
                 # Explainability (New)
                 path("explainability/", include("apps.explainability.urls")),
+                # Blockchain
+                path("blockchain/", include("apps.blockchain.urls")),
             ]
         ),
     ),

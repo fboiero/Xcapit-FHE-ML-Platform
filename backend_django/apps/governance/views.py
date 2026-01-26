@@ -6,9 +6,11 @@ Provides endpoints for proposals, voting, audit trail, and rewards.
 
 from apps.consortiums.models import ConsortiumMember, ContributionProof
 from apps.core.permissions import IsConsortiumMember, IsConsortiumOwner
+from django.db import transaction
 from django.db.models import Sum
 from django.utils import timezone
-from rest_framework import status, viewsets
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -32,12 +34,19 @@ class ProposalViewSet(viewsets.ModelViewSet):
 
     serializer_class = ProposalSerializer
     permission_classes = [IsAuthenticated, IsConsortiumMember]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ["status", "proposal_type"]
+    search_fields = ["title", "description"]
+    ordering_fields = ["created_at", "expires_at", "status"]
+    ordering = ["-created_at"]
 
     def get_queryset(self):
         """Filter proposals by consortium."""
         consortium_id = self.request.query_params.get("consortium_id")
         if consortium_id:
-            return Proposal.objects.filter(consortium_id=consortium_id)
+            return Proposal.objects.filter(
+                consortium_id=consortium_id
+            ).select_related("consortium", "proposer").prefetch_related("votes")
         return Proposal.objects.none()
 
     def get_serializer_class(self):
@@ -72,6 +81,7 @@ class ProposalViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     @action(detail=True, methods=["post"])
+    @transaction.atomic
     def execute(self, request, pk=None):
         """Execute a proposal after voting ends."""
         proposal = self.get_object()
@@ -156,7 +166,9 @@ class VoteViewSet(viewsets.ModelViewSet):
         """Filter votes by user's company."""
         user = self.request.user
         if user.company:
-            return Vote.objects.filter(voter=user.company)
+            return Vote.objects.filter(voter=user.company).select_related(
+                "proposal", "voter"
+            )
         return Vote.objects.none()
 
     def get_serializer_class(self):
@@ -164,6 +176,7 @@ class VoteViewSet(viewsets.ModelViewSet):
             return VoteCreateSerializer
         return VoteSerializer
 
+    @transaction.atomic
     def create(self, request, *args, **kwargs):
         """Cast a vote on a proposal."""
         serializer = VoteCreateSerializer(data=request.data)
@@ -257,12 +270,18 @@ class AuditEventViewSet(viewsets.ReadOnlyModelViewSet):
 
     serializer_class = AuditEventSerializer
     permission_classes = [IsAuthenticated, IsConsortiumMember]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ["event_type", "target_type"]
+    ordering_fields = ["created_at", "event_type"]
+    ordering = ["-created_at"]
 
     def get_queryset(self):
         """Filter audit events by consortium."""
         consortium_id = self.request.query_params.get("consortium_id")
         if consortium_id:
-            queryset = AuditEvent.objects.filter(consortium_id=consortium_id)
+            queryset = AuditEvent.objects.filter(
+                consortium_id=consortium_id
+            ).select_related("consortium", "actor")
 
             # Optional filters
             event_type = self.request.query_params.get("event_type")
@@ -317,6 +336,7 @@ class RewardDistributionViewSet(viewsets.ReadOnlyModelViewSet):
         return RewardDistribution.objects.none()
 
     @action(detail=False, methods=["post"], permission_classes=[IsAuthenticated, IsConsortiumOwner])
+    @transaction.atomic
     def distribute(self, request):
         """Distribute rewards to consortium members."""
         serializer = RewardDistributionCreateSerializer(data=request.data)
