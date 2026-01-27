@@ -30,6 +30,9 @@ import ModelComparison from './pages/ModelComparison'
 import DataExplorer from './pages/DataExplorer'
 import UserSettings from './pages/UserSettings'
 import RealtimeMonitoring from './pages/RealtimeMonitoring'
+import ModelDeployment from './pages/ModelDeployment'
+import AuditLogViewer from './pages/AuditLogViewer'
+import ApiPlayground from './pages/ApiPlayground'
 
 // Protected route wrapper
 const ProtectedRoute = ({ children }) => {
@@ -106,6 +109,10 @@ function App() {
         <Route path="/monitoring" element={<RealtimeMonitoring />} />
         <Route path="/monitoring/:consortiumId" element={<RealtimeMonitoring />} />
         <Route path="/settings" element={<UserSettings />} />
+        <Route path="/deployment" element={<ModelDeployment />} />
+        <Route path="/deployment/:consortiumId" element={<ModelDeployment />} />
+        <Route path="/audit-log" element={<AuditLogViewer />} />
+        <Route path="/api-playground" element={<ApiPlayground />} />
         <Route path="/consortiums/new" element={<ConsortiumCreate />} />
         <Route path="/consortiums/:id" element={<ConsortiumDetail />} />
         <Route path="/consortiums/:id/upload" element={<UploadData />} />
