@@ -19,10 +19,45 @@ class MLModel(models.Model):
     """
 
     class ModelType(models.TextChoices):
+        # Core models
         LINEAR_REGRESSION = "linear_regression", "Linear Regression"
         LOGISTIC_REGRESSION = "logistic_regression", "Logistic Regression"
         DECISION_TREE = "decision_tree", "Decision Tree"
         KMEANS = "kmeans", "K-Means Clustering"
+
+        # Ensemble models
+        RANDOM_FOREST = "random_forest", "Random Forest"
+        GRADIENT_BOOSTING = "gradient_boosting", "Gradient Boosting"
+        ENSEMBLE_VOTING = "ensemble_voting", "Ensemble Voting"
+
+        # Neural networks
+        NEURAL_NETWORK = "neural_network", "Neural Network"
+
+        # Classification
+        SVM = "svm", "Support Vector Machine"
+        NAIVE_BAYES = "naive_bayes", "Naive Bayes"
+
+        # Dimensionality reduction
+        PCA = "pca", "Principal Component Analysis"
+
+        # Anomaly detection
+        ISOLATION_FOREST = "isolation_forest", "Isolation Forest"
+        ONE_CLASS_SVM = "one_class_svm", "One-Class SVM"
+        LOCAL_OUTLIER_FACTOR = "local_outlier_factor", "Local Outlier Factor"
+        ELLIPTIC_ENVELOPE = "elliptic_envelope", "Elliptic Envelope"
+
+        # Time series
+        ARIMA = "arima", "ARIMA"
+        EXPONENTIAL_SMOOTHING = "exponential_smoothing", "Exponential Smoothing"
+        SIMPLE_MOVING_AVERAGE = "simple_moving_average", "Simple Moving Average"
+        PROPHET_LIKE = "prophet_like", "Prophet-like Forecasting"
+
+        # Regularized models
+        RIDGE = "ridge", "Ridge Regression"
+        LASSO = "lasso", "Lasso Regression"
+        ELASTIC_NET = "elastic_net", "Elastic Net"
+        RIDGE_CLASSIFIER = "ridge_classifier", "Ridge Classifier"
+        SGD_REGRESSOR = "sgd_regressor", "SGD Regressor"
 
     class Status(models.TextChoices):
         CREATED = "created", "Created"

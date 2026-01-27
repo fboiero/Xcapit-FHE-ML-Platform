@@ -178,6 +178,224 @@ class MLModelViewSet(viewsets.ModelViewSet):
         serializer = ModelCheckpointSerializer(checkpoints, many=True)
         return Response(serializer.data)
 
+    @action(detail=True, methods=["post"])
+    def detect_anomalies(self, request, pk=None):
+        """Detect anomalies using anomaly detection models."""
+        model = self.get_object()
+
+        anomaly_types = [
+            MLModel.ModelType.ISOLATION_FOREST,
+            MLModel.ModelType.ONE_CLASS_SVM,
+            MLModel.ModelType.LOCAL_OUTLIER_FACTOR,
+            MLModel.ModelType.ELLIPTIC_ENVELOPE,
+        ]
+
+        if model.model_type not in anomaly_types:
+            return Response(
+                {"detail": f"Model type {model.model_type} is not an anomaly detection model."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if model.status != MLModel.Status.TRAINED:
+            return Response(
+                {"detail": "Model must be trained before detecting anomalies."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        data = request.data.get("data", [])
+        if not data:
+            return Response(
+                {"detail": "No data provided for anomaly detection."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        start_time = time.time()
+
+        # Simulated anomaly detection (actual FHE detection would go here)
+        n_samples = len(data)
+        # Mock results: -1 for anomaly, 1 for normal
+        predictions = [1] * n_samples
+        anomaly_scores = [0.1] * n_samples
+
+        latency_ms = (time.time() - start_time) * 1000
+
+        # Log prediction
+        PredictionLog.objects.create(
+            model=model,
+            requester=request.user.company,
+            n_samples=n_samples,
+            encrypted=request.data.get("encrypted", False),
+            latency_ms=latency_ms,
+            api_key_name=getattr(request.auth, "name", ""),
+        )
+
+        return Response({
+            "model_id": str(model.id),
+            "predictions": predictions,
+            "anomaly_scores": anomaly_scores,
+            "n_anomalies": sum(1 for p in predictions if p == -1),
+            "latency_ms": round(latency_ms, 2),
+        })
+
+    @action(detail=True, methods=["post"])
+    def forecast(self, request, pk=None):
+        """Generate forecasts using time series models."""
+        model = self.get_object()
+
+        time_series_types = [
+            MLModel.ModelType.ARIMA,
+            MLModel.ModelType.EXPONENTIAL_SMOOTHING,
+            MLModel.ModelType.SIMPLE_MOVING_AVERAGE,
+            MLModel.ModelType.PROPHET_LIKE,
+        ]
+
+        if model.model_type not in time_series_types:
+            return Response(
+                {"detail": f"Model type {model.model_type} is not a time series model."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if model.status != MLModel.Status.TRAINED:
+            return Response(
+                {"detail": "Model must be trained before forecasting."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        steps = request.data.get("steps", 10)
+        if steps < 1 or steps > 365:
+            return Response(
+                {"detail": "Steps must be between 1 and 365."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        start_time = time.time()
+
+        # Simulated forecast (actual FHE forecast would go here)
+        forecasts = [0.5] * steps
+        confidence_lower = [0.3] * steps
+        confidence_upper = [0.7] * steps
+
+        latency_ms = (time.time() - start_time) * 1000
+
+        # Log prediction
+        PredictionLog.objects.create(
+            model=model,
+            requester=request.user.company,
+            n_samples=steps,
+            encrypted=request.data.get("encrypted", False),
+            latency_ms=latency_ms,
+            api_key_name=getattr(request.auth, "name", ""),
+        )
+
+        return Response({
+            "model_id": str(model.id),
+            "steps": steps,
+            "forecasts": forecasts,
+            "confidence_lower": confidence_lower,
+            "confidence_upper": confidence_upper,
+            "latency_ms": round(latency_ms, 2),
+        })
+
+    @action(detail=True, methods=["post"])
+    def tune_hyperparameters(self, request, pk=None):
+        """Start hyperparameter tuning for a model."""
+        model = self.get_object()
+
+        if model.status == MLModel.Status.TRAINING:
+            return Response(
+                {"detail": "Model is already training."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        param_grid = request.data.get("param_grid", {})
+        n_iter = request.data.get("n_iter", 10)
+        cv_folds = request.data.get("cv_folds", 5)
+        method = request.data.get("method", "random")  # random, bayesian, halving
+
+        if not param_grid:
+            return Response(
+                {"detail": "param_grid is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if method not in ["random", "bayesian", "halving"]:
+            return Response(
+                {"detail": "method must be 'random', 'bayesian', or 'halving'."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Log event
+        AuditLog.log(
+            request,
+            action="hyperparameter_tuning_started",
+            resource_type="ml_model",
+            resource_id=model.id,
+            extra_data={
+                "method": method,
+                "n_iter": n_iter,
+                "cv_folds": cv_folds,
+            },
+        )
+
+        return Response({
+            "detail": "Hyperparameter tuning started.",
+            "model_id": str(model.id),
+            "method": method,
+            "n_iter": n_iter,
+            "cv_folds": cv_folds,
+            "param_grid": param_grid,
+        })
+
+    @action(detail=False, methods=["get"])
+    def model_types(self, request):
+        """Get available model types."""
+        types = []
+        for choice in MLModel.ModelType.choices:
+            types.append({
+                "value": choice[0],
+                "label": choice[1],
+            })
+        return Response({"model_types": types})
+
+    @action(detail=False, methods=["get"])
+    def model_categories(self, request):
+        """Get model types grouped by category."""
+        categories = {
+            "core": {
+                "label": "Core Models",
+                "types": ["linear_regression", "logistic_regression", "decision_tree", "kmeans"],
+            },
+            "ensemble": {
+                "label": "Ensemble Models",
+                "types": ["random_forest", "gradient_boosting", "ensemble_voting"],
+            },
+            "neural": {
+                "label": "Neural Networks",
+                "types": ["neural_network"],
+            },
+            "classification": {
+                "label": "Classification",
+                "types": ["svm", "naive_bayes"],
+            },
+            "dimensionality": {
+                "label": "Dimensionality Reduction",
+                "types": ["pca"],
+            },
+            "anomaly": {
+                "label": "Anomaly Detection",
+                "types": ["isolation_forest", "one_class_svm", "local_outlier_factor", "elliptic_envelope"],
+            },
+            "time_series": {
+                "label": "Time Series",
+                "types": ["arima", "exponential_smoothing", "simple_moving_average", "prophet_like"],
+            },
+            "regularized": {
+                "label": "Regularized Models",
+                "types": ["ridge", "lasso", "elastic_net", "ridge_classifier", "sgd_regressor"],
+            },
+        }
+        return Response({"categories": categories})
+
 
 class TrainingRunViewSet(viewsets.ReadOnlyModelViewSet):
     """

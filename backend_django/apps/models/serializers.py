@@ -63,12 +63,61 @@ class MLModelCreateSerializer(serializers.ModelSerializer):
     def validate_config(self, value):
         """Validate model configuration."""
         allowed_keys = {
+            # General training
             "learning_rate",
             "epochs",
             "batch_size",
             "regularization",
+            # Tree-based
             "max_depth",
+            "n_estimators",
+            "min_samples_split",
+            "min_samples_leaf",
+            # Clustering
             "n_clusters",
+            # Neural networks
+            "hidden_layers",
+            "activation",
+            "dropout",
+            # SVM
+            "kernel",
+            "C",
+            "gamma",
+            "nu",
+            # Naive Bayes
+            "var_smoothing",
+            # PCA
+            "n_components",
+            "whiten",
+            # Anomaly detection
+            "contamination",
+            "n_neighbors",
+            "max_samples",
+            # Time series
+            "order",  # ARIMA (p, d, q)
+            "seasonal_order",  # ARIMA seasonal
+            "alpha",  # Exponential smoothing
+            "beta",  # Trend smoothing
+            "gamma_seasonal",  # Seasonal smoothing
+            "window_size",  # Moving average
+            "yearly_seasonality",
+            "weekly_seasonality",
+            "daily_seasonality",
+            # Regularization
+            "alpha_reg",  # Ridge/Lasso alpha
+            "l1_ratio",  # ElasticNet
+            "fit_intercept",
+            "max_iter",
+            "tol",
+            # Ensemble
+            "voting",  # hard/soft
+            "weights",
+            "estimators",
+            # Feature selection
+            "k",  # SelectKBest
+            "percentile",
+            "threshold",
+            "score_func",
         }
         for key in value.keys():
             if key not in allowed_keys:
