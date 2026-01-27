@@ -33,6 +33,9 @@ import RealtimeMonitoring from './pages/RealtimeMonitoring'
 import ModelDeployment from './pages/ModelDeployment'
 import AuditLogViewer from './pages/AuditLogViewer'
 import ApiPlayground from './pages/ApiPlayground'
+import NotificationCenter from './pages/NotificationCenter'
+import TeamManagement from './pages/TeamManagement'
+import Billing from './pages/Billing'
 
 // Protected route wrapper
 const ProtectedRoute = ({ children }) => {
@@ -113,6 +116,9 @@ function App() {
         <Route path="/deployment/:consortiumId" element={<ModelDeployment />} />
         <Route path="/audit-log" element={<AuditLogViewer />} />
         <Route path="/api-playground" element={<ApiPlayground />} />
+        <Route path="/notifications" element={<NotificationCenter />} />
+        <Route path="/team" element={<TeamManagement />} />
+        <Route path="/billing" element={<Billing />} />
         <Route path="/consortiums/new" element={<ConsortiumCreate />} />
         <Route path="/consortiums/:id" element={<ConsortiumDetail />} />
         <Route path="/consortiums/:id/upload" element={<UploadData />} />

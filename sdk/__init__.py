@@ -173,8 +173,45 @@ from .evaluation import (
 from .persistence import (
     save_model,
     load_model,
+    get_model_info,
+    export_model_weights,
+    import_model_weights,
+    register_model,
     ModelSerializer,
-    ModelFormat,
+    ModelMetadata,
+)
+
+from .feature_selection import (
+    VarianceThreshold as VarianceThresholdNew,
+    SelectKBest as SelectKBestNew,
+    SelectPercentile as SelectPercentileNew,
+    SelectFromModel as SelectFromModelNew,
+    RFE as RFENew,
+    RFECV,
+    f_classif as f_classif_new,
+    f_regression as f_regression_new,
+    mutual_info_classif as mutual_info_classif_new,
+)
+
+from .model_selection import (
+    KFold as KFoldNew,
+    StratifiedKFold as StratifiedKFoldNew,
+    LeaveOneOut as LeaveOneOutNew,
+    ShuffleSplit,
+    train_test_split as train_test_split_new,
+    cross_val_score as cross_val_score_new,
+    cross_validate as cross_validate_new,
+    ParameterGrid,
+    ParameterSampler,
+    GridSearchCV as GridSearchCVNew,
+    RandomizedSearchCV as RandomizedSearchCVNew,
+)
+
+from .impute import (
+    SimpleImputer,
+    KNNImputer,
+    IterativeImputer,
+    MissingIndicator,
 )
 from .preprocessing import (
     # Pipeline
@@ -232,7 +269,7 @@ from .evaluation import (
     adjusted_rand_score,
 )
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"
 
 __all__ = [
     # Encryption
@@ -440,4 +477,21 @@ __all__ = [
     "calinski_harabasz_score",
     "davies_bouldin_score",
     "adjusted_rand_score",
+    # Persistence (new)
+    "get_model_info",
+    "export_model_weights",
+    "import_model_weights",
+    "register_model",
+    "ModelMetadata",
+    # Feature Selection (new)
+    "RFECV",
+    # Model Selection (new)
+    "ShuffleSplit",
+    "ParameterGrid",
+    "ParameterSampler",
+    # Imputers
+    "SimpleImputer",
+    "KNNImputer",
+    "IterativeImputer",
+    "MissingIndicator",
 ]

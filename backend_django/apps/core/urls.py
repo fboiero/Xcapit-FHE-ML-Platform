@@ -20,6 +20,9 @@ router.register(r"companies", views.CompanyViewSet, basename="company")
 router.register(r"users", views.UserViewSet, basename="user")
 router.register(r"api-keys", views.APIKeyViewSet, basename="apikey")
 router.register(r"audit-logs", views.AuditLogViewSet, basename="auditlog")
+router.register(r"webhooks", views.WebhookViewSet, basename="webhook")
+router.register(r"webhook-deliveries", views.WebhookDeliveryViewSet, basename="webhook-delivery")
+router.register(r"usage-stats", views.UsageStatsViewSet, basename="usage-stats")
 
 urlpatterns = [
     path("", include(router.urls)),

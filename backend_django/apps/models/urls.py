@@ -14,6 +14,8 @@ router.register(r"predictions", views.PredictionLogViewSet, basename="prediction
 router.register(r"batch-jobs", views.BatchPredictionJobViewSet, basename="batch-job")
 router.register(r"versions", views.ModelVersionViewSet, basename="model-version")
 router.register(r"exports", views.ModelExportViewSet, basename="model-export")
+router.register(r"shares", views.ModelShareViewSet, basename="model-share")
+router.register(r"share-requests", views.ModelShareRequestViewSet, basename="model-share-request")
 router.register(r"", views.MLModelViewSet, basename="model")
 
 urlpatterns = [

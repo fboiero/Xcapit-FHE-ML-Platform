@@ -22,6 +22,8 @@ from .models import (
     MLModel,
     ModelCheckpoint,
     ModelExport,
+    ModelShare,
+    ModelShareRequest,
     ModelVersion,
     PredictionLog,
     TrainingRun,
@@ -39,6 +41,13 @@ from .serializers import (
     MLModelSerializer,
     ModelCheckpointSerializer,
     ModelExportSerializer,
+    ModelShareApprovalSerializer,
+    ModelShareCreateSerializer,
+    ModelShareRequestCreateSerializer,
+    ModelShareRequestResponseSerializer,
+    ModelShareRequestSerializer,
+    ModelShareRevokeSerializer,
+    ModelShareSerializer,
     ModelStatsSerializer,
     ModelVersionSerializer,
     PredictionLogSerializer,
@@ -987,3 +996,508 @@ class ModelExportViewSet(viewsets.ReadOnlyModelViewSet):
             "export": ModelExportSerializer(export).data,
             "data": export.export_data,
         })
+
+
+class ModelShareViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for model sharing (CRUD + approve/reject/revoke).
+    """
+
+    serializer_class = ModelShareSerializer
+    permission_classes = [IsAuthenticated, IsCompanyMember]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ["status", "share_type", "model"]
+    ordering_fields = ["created_at", "status"]
+    ordering = ["-created_at"]
+
+    def get_queryset(self):
+        """Filter shares by source or target consortium."""
+        user = self.request.user
+        if user.company:
+            # Get consortiums where user's company is a member
+            from apps.consortiums.models import ConsortiumMember
+
+            member_consortiums = ConsortiumMember.objects.filter(
+                company=user.company,
+                status="active",
+            ).values_list("consortium_id", flat=True)
+
+            # Return shares where user is in source or target consortium
+            return ModelShare.objects.filter(
+                Q(source_consortium_id__in=member_consortiums) |
+                Q(target_consortium_id__in=member_consortiums)
+            ).select_related(
+                "model", "source_consortium", "target_consortium",
+                "shared_by", "approved_by", "version"
+            )
+        return ModelShare.objects.none()
+
+    def get_serializer_class(self):
+        if self.action == "create":
+            return ModelShareCreateSerializer
+        return ModelShareSerializer
+
+    @transaction.atomic
+    def create(self, request, *args, **kwargs):
+        """Create a new model share."""
+        serializer = ModelShareCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # Get the model
+        try:
+            model = MLModel.objects.get(id=serializer.validated_data["model_id"])
+        except MLModel.DoesNotExist:
+            return Response(
+                {"detail": "Model not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Check that user's company owns the model
+        if model.owner != request.user.company:
+            return Response(
+                {"detail": "You can only share models you own."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Check model is trained
+        if model.status != MLModel.Status.TRAINED:
+            return Response(
+                {"detail": "Model must be trained before sharing."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Get target consortium
+        from apps.consortiums.models import Consortium
+
+        try:
+            target = Consortium.objects.get(
+                id=serializer.validated_data["target_consortium_id"]
+            )
+        except Consortium.DoesNotExist:
+            return Response(
+                {"detail": "Target consortium not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Check for existing share
+        if ModelShare.objects.filter(model=model, target_consortium=target).exists():
+            return Response(
+                {"detail": "A share already exists for this model and consortium."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Get version if specified
+        version = None
+        if serializer.validated_data.get("version_id"):
+            try:
+                version = ModelVersion.objects.get(
+                    id=serializer.validated_data["version_id"],
+                    model=model,
+                )
+            except ModelVersion.DoesNotExist:
+                return Response(
+                    {"detail": "Version not found."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+        # Create share
+        share = ModelShare.objects.create(
+            model=model,
+            source_consortium=model.consortium,
+            shared_by=request.user.company,
+            target_consortium=target,
+            share_type=serializer.validated_data["share_type"],
+            version=version,
+            revenue_share_percent=serializer.validated_data["revenue_share_percent"],
+            max_predictions=serializer.validated_data.get("max_predictions"),
+            terms=serializer.validated_data.get("terms", ""),
+            requires_approval=serializer.validated_data["requires_approval"],
+            valid_until=serializer.validated_data.get("valid_until"),
+            request_message=serializer.validated_data.get("request_message", ""),
+            status=(
+                ModelShare.Status.PENDING
+                if serializer.validated_data["requires_approval"]
+                else ModelShare.Status.APPROVED
+            ),
+        )
+
+        if not serializer.validated_data["requires_approval"]:
+            share.approved_at = timezone.now()
+            share.valid_from = timezone.now()
+            share.save()
+
+        # Log event
+        AuditLog.log(
+            request,
+            action="model_share_created",
+            resource_type="model_share",
+            resource_id=share.id,
+            extra_data={
+                "model_id": str(model.id),
+                "target_consortium_id": str(target.id),
+                "share_type": share.share_type,
+            },
+        )
+
+        return Response(ModelShareSerializer(share).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["post"])
+    @transaction.atomic
+    def approve(self, request, pk=None):
+        """Approve or reject a pending share."""
+        share = self.get_object()
+
+        if share.status != ModelShare.Status.PENDING:
+            return Response(
+                {"detail": f"Share is not pending. Current status: {share.status}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = ModelShareApprovalSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        if serializer.validated_data["action"] == "approve":
+            share.approve(
+                approved_by=request.user.company,
+                message=serializer.validated_data.get("message", ""),
+            )
+            action = "approved"
+        else:
+            share.reject(
+                rejected_by=request.user.company,
+                message=serializer.validated_data.get("message", ""),
+            )
+            action = "rejected"
+
+        # Log event
+        AuditLog.log(
+            request,
+            action=f"model_share_{action}",
+            resource_type="model_share",
+            resource_id=share.id,
+        )
+
+        return Response(ModelShareSerializer(share).data)
+
+    @action(detail=True, methods=["post"])
+    @transaction.atomic
+    def revoke(self, request, pk=None):
+        """Revoke an active share."""
+        share = self.get_object()
+
+        if share.status != ModelShare.Status.APPROVED:
+            return Response(
+                {"detail": "Only approved shares can be revoked."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = ModelShareRevokeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        share.revoke(message=serializer.validated_data.get("message", ""))
+
+        # Log event
+        AuditLog.log(
+            request,
+            action="model_share_revoked",
+            resource_type="model_share",
+            resource_id=share.id,
+        )
+
+        return Response(ModelShareSerializer(share).data)
+
+    @action(detail=False, methods=["get"])
+    def received(self, request):
+        """Get shares received by user's consortiums."""
+        user = request.user
+        if not user.company:
+            return Response([])
+
+        from apps.consortiums.models import ConsortiumMember
+
+        member_consortiums = ConsortiumMember.objects.filter(
+            company=user.company,
+            status="active",
+        ).values_list("consortium_id", flat=True)
+
+        shares = ModelShare.objects.filter(
+            target_consortium_id__in=member_consortiums
+        ).select_related(
+            "model", "source_consortium", "target_consortium",
+            "shared_by", "version"
+        )
+
+        serializer = ModelShareSerializer(shares, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=["get"])
+    def given(self, request):
+        """Get shares given by user's consortiums."""
+        user = request.user
+        if not user.company:
+            return Response([])
+
+        from apps.consortiums.models import ConsortiumMember
+
+        member_consortiums = ConsortiumMember.objects.filter(
+            company=user.company,
+            status="active",
+        ).values_list("consortium_id", flat=True)
+
+        shares = ModelShare.objects.filter(
+            source_consortium_id__in=member_consortiums
+        ).select_related(
+            "model", "source_consortium", "target_consortium",
+            "shared_by", "version"
+        )
+
+        serializer = ModelShareSerializer(shares, many=True)
+        return Response(serializer.data)
+
+
+class ModelShareRequestViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for model share requests.
+    """
+
+    serializer_class = ModelShareRequestSerializer
+    permission_classes = [IsAuthenticated, IsCompanyMember]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ["status", "model"]
+    ordering_fields = ["created_at", "status"]
+    ordering = ["-created_at"]
+
+    def get_queryset(self):
+        """Filter requests by requester or model owner."""
+        user = self.request.user
+        if user.company:
+            from apps.consortiums.models import ConsortiumMember
+
+            member_consortiums = ConsortiumMember.objects.filter(
+                company=user.company,
+                status="active",
+            ).values_list("consortium_id", flat=True)
+
+            # Return requests from user's consortiums OR for models user owns
+            return ModelShareRequest.objects.filter(
+                Q(requesting_consortium_id__in=member_consortiums) |
+                Q(model__owner=user.company)
+            ).select_related(
+                "model", "model__owner", "requesting_consortium", "requested_by"
+            )
+        return ModelShareRequest.objects.none()
+
+    def get_serializer_class(self):
+        if self.action == "create":
+            return ModelShareRequestCreateSerializer
+        return ModelShareRequestSerializer
+
+    @transaction.atomic
+    def create(self, request, *args, **kwargs):
+        """Create a new share request."""
+        serializer = ModelShareRequestCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # Get the model
+        try:
+            model = MLModel.objects.get(id=serializer.validated_data["model_id"])
+        except MLModel.DoesNotExist:
+            return Response(
+                {"detail": "Model not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Check model is trained
+        if model.status != MLModel.Status.TRAINED:
+            return Response(
+                {"detail": "Model must be trained."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Get requester's consortium (use first active membership)
+        from apps.consortiums.models import ConsortiumMember
+
+        membership = ConsortiumMember.objects.filter(
+            company=request.user.company,
+            status="active",
+        ).first()
+
+        if not membership:
+            return Response(
+                {"detail": "You must be a member of a consortium to request model access."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        requesting_consortium = membership.consortium
+
+        # Check for existing pending request
+        if ModelShareRequest.objects.filter(
+            model=model,
+            requesting_consortium=requesting_consortium,
+            status=ModelShareRequest.Status.PENDING,
+        ).exists():
+            return Response(
+                {"detail": "A pending request already exists for this model."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Create request
+        share_request = ModelShareRequest.objects.create(
+            model=model,
+            requesting_consortium=requesting_consortium,
+            requested_by=request.user.company,
+            requested_share_type=serializer.validated_data["requested_share_type"],
+            message=serializer.validated_data.get("message", ""),
+            proposed_revenue_share=serializer.validated_data.get("proposed_revenue_share"),
+        )
+
+        # Log event
+        AuditLog.log(
+            request,
+            action="model_share_request_created",
+            resource_type="model_share_request",
+            resource_id=share_request.id,
+            extra_data={
+                "model_id": str(model.id),
+                "model_owner_id": str(model.owner.id) if model.owner else None,
+            },
+        )
+
+        return Response(
+            ModelShareRequestSerializer(share_request).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+    @action(detail=True, methods=["post"])
+    @transaction.atomic
+    def respond(self, request, pk=None):
+        """Respond to a share request (approve/reject)."""
+        share_request = self.get_object()
+
+        # Check that user owns the model
+        if share_request.model.owner != request.user.company:
+            return Response(
+                {"detail": "Only the model owner can respond to share requests."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if share_request.status != ModelShareRequest.Status.PENDING:
+            return Response(
+                {"detail": f"Request is not pending. Current status: {share_request.status}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = ModelShareRequestResponseSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        if serializer.validated_data["action"] == "approve":
+            # Create the share
+            share = ModelShare.objects.create(
+                model=share_request.model,
+                source_consortium=share_request.model.consortium,
+                shared_by=request.user.company,
+                target_consortium=share_request.requesting_consortium,
+                share_type=serializer.validated_data.get(
+                    "share_type", share_request.requested_share_type
+                ),
+                revenue_share_percent=serializer.validated_data.get(
+                    "revenue_share_percent",
+                    share_request.proposed_revenue_share or 0,
+                ),
+                max_predictions=serializer.validated_data.get("max_predictions"),
+                valid_until=serializer.validated_data.get("valid_until"),
+                status=ModelShare.Status.APPROVED,
+                approved_by=request.user.company,
+                approved_at=timezone.now(),
+                valid_from=timezone.now(),
+            )
+
+            share_request.status = ModelShareRequest.Status.APPROVED
+            share_request.resulting_share = share
+            share_request.response_message = serializer.validated_data.get("message", "")
+            share_request.responded_at = timezone.now()
+            share_request.save()
+
+            action = "approved"
+        else:
+            share_request.status = ModelShareRequest.Status.REJECTED
+            share_request.response_message = serializer.validated_data.get("message", "")
+            share_request.responded_at = timezone.now()
+            share_request.save()
+
+            action = "rejected"
+
+        # Log event
+        AuditLog.log(
+            request,
+            action=f"model_share_request_{action}",
+            resource_type="model_share_request",
+            resource_id=share_request.id,
+        )
+
+        return Response(ModelShareRequestSerializer(share_request).data)
+
+    @action(detail=True, methods=["post"])
+    @transaction.atomic
+    def withdraw(self, request, pk=None):
+        """Withdraw a pending request."""
+        share_request = self.get_object()
+
+        # Check that user's company made the request
+        if share_request.requested_by != request.user.company:
+            return Response(
+                {"detail": "Only the requester can withdraw the request."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if share_request.status != ModelShareRequest.Status.PENDING:
+            return Response(
+                {"detail": "Only pending requests can be withdrawn."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        share_request.status = ModelShareRequest.Status.WITHDRAWN
+        share_request.responded_at = timezone.now()
+        share_request.save()
+
+        # Log event
+        AuditLog.log(
+            request,
+            action="model_share_request_withdrawn",
+            resource_type="model_share_request",
+            resource_id=share_request.id,
+        )
+
+        return Response(ModelShareRequestSerializer(share_request).data)
+
+    @action(detail=False, methods=["get"])
+    def incoming(self, request):
+        """Get incoming requests (for models user owns)."""
+        user = request.user
+        if not user.company:
+            return Response([])
+
+        requests = ModelShareRequest.objects.filter(
+            model__owner=user.company
+        ).select_related(
+            "model", "requesting_consortium", "requested_by"
+        )
+
+        serializer = ModelShareRequestSerializer(requests, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=["get"])
+    def outgoing(self, request):
+        """Get outgoing requests (requests user's company made)."""
+        user = request.user
+        if not user.company:
+            return Response([])
+
+        requests = ModelShareRequest.objects.filter(
+            requested_by=user.company
+        ).select_related(
+            "model", "model__owner", "requesting_consortium"
+        )
+
+        serializer = ModelShareRequestSerializer(requests, many=True)
+        return Response(serializer.data)
