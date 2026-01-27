@@ -213,6 +213,68 @@ from .impute import (
     IterativeImputer,
     MissingIndicator,
 )
+
+from .ensemble import (
+    VotingClassifier as VotingClassifierNew,
+    VotingRegressor as VotingRegressorNew,
+    StackingClassifier as StackingClassifierNew,
+    StackingRegressor,
+    BaggingClassifier,
+    BaggingRegressor,
+    AdaBoostClassifier,
+    get_ensemble_feature_importances,
+)
+
+from .outlier import (
+    IsolationForest as IsolationForestNew,
+    LocalOutlierFactor as LocalOutlierFactorNew,
+    EllipticEnvelope as EllipticEnvelopeNew,
+    OneClassSVM as OneClassSVMNew,
+    detect_outliers_zscore,
+    detect_outliers_iqr,
+    detect_outliers_mad,
+    detect_outliers_dbscan,
+    get_outlier_scores,
+)
+
+from .validation import (
+    DataSchema,
+    ColumnSchema,
+    ValidationResult,
+    ValidationError as DataValidationError,
+    # Constraints
+    NotNull,
+    NotEmpty,
+    InRange,
+    InSet,
+    MatchesRegex,
+    MinLength,
+    MaxLength,
+    IsType,
+    IsPositive,
+    IsEmail,
+    IsURL,
+    CustomConstraint,
+    # Validators
+    DatasetValidator,
+    validate_features,
+    validate_labels,
+    validate_sample_weights,
+    infer_schema,
+)
+
+from .feature_engineering import (
+    PolynomialFeatures,
+    InteractionFeatures,
+    KBinsDiscretizer,
+    Binarizer,
+    FunctionTransformer,
+    TargetEncoder,
+    OrdinalEncoder as OrdinalEncoderNew,
+    OneHotEncoder as OneHotEncoderNew,
+    QuantileTransformer,
+    PowerTransformer,
+)
 from .preprocessing import (
     # Pipeline
     PreprocessingPipeline,
@@ -269,7 +331,7 @@ from .evaluation import (
     adjusted_rand_score,
 )
 
-__version__ = "0.6.0"
+__version__ = "0.7.0"
 
 __all__ = [
     # Encryption
@@ -494,4 +556,47 @@ __all__ = [
     "KNNImputer",
     "IterativeImputer",
     "MissingIndicator",
+    # Ensemble (new)
+    "StackingRegressor",
+    "BaggingClassifier",
+    "BaggingRegressor",
+    "AdaBoostClassifier",
+    "get_ensemble_feature_importances",
+    # Outlier detection (new)
+    "detect_outliers_zscore",
+    "detect_outliers_iqr",
+    "detect_outliers_mad",
+    "detect_outliers_dbscan",
+    "get_outlier_scores",
+    # Validation (new)
+    "DataSchema",
+    "ColumnSchema",
+    "ValidationResult",
+    "DataValidationError",
+    "NotNull",
+    "NotEmpty",
+    "InRange",
+    "InSet",
+    "MatchesRegex",
+    "MinLength",
+    "MaxLength",
+    "IsType",
+    "IsPositive",
+    "IsEmail",
+    "IsURL",
+    "CustomConstraint",
+    "DatasetValidator",
+    "validate_features",
+    "validate_labels",
+    "validate_sample_weights",
+    "infer_schema",
+    # Feature engineering (new)
+    "PolynomialFeatures",
+    "InteractionFeatures",
+    "KBinsDiscretizer",
+    "Binarizer",
+    "FunctionTransformer",
+    "TargetEncoder",
+    "QuantileTransformer",
+    "PowerTransformer",
 ]

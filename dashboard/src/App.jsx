@@ -36,6 +36,9 @@ import ApiPlayground from './pages/ApiPlayground'
 import NotificationCenter from './pages/NotificationCenter'
 import TeamManagement from './pages/TeamManagement'
 import Billing from './pages/Billing'
+import ReportBuilder from './pages/ReportBuilder'
+import WorkflowAutomation from './pages/WorkflowAutomation'
+import AdminPanel from './pages/AdminPanel'
 
 // Protected route wrapper
 const ProtectedRoute = ({ children }) => {
@@ -119,6 +122,9 @@ function App() {
         <Route path="/notifications" element={<NotificationCenter />} />
         <Route path="/team" element={<TeamManagement />} />
         <Route path="/billing" element={<Billing />} />
+        <Route path="/reports" element={<ReportBuilder />} />
+        <Route path="/workflows" element={<WorkflowAutomation />} />
+        <Route path="/admin" element={<AdminPanel />} />
         <Route path="/consortiums/new" element={<ConsortiumCreate />} />
         <Route path="/consortiums/:id" element={<ConsortiumDetail />} />
         <Route path="/consortiums/:id/upload" element={<UploadData />} />

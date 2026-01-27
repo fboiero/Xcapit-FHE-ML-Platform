@@ -23,6 +23,11 @@ router.register(r"audit-logs", views.AuditLogViewSet, basename="auditlog")
 router.register(r"webhooks", views.WebhookViewSet, basename="webhook")
 router.register(r"webhook-deliveries", views.WebhookDeliveryViewSet, basename="webhook-delivery")
 router.register(r"usage-stats", views.UsageStatsViewSet, basename="usage-stats")
+router.register(r"reports", views.ReportViewSet, basename="report")
+router.register(r"workflows", views.WorkflowViewSet, basename="workflow")
+router.register(r"workflow-runs", views.WorkflowRunViewSet, basename="workflow-run")
+router.register(r"scheduled-tasks", views.ScheduledTaskViewSet, basename="scheduled-task")
+router.register(r"scheduled-task-runs", views.ScheduledTaskRunViewSet, basename="scheduled-task-run")
 
 urlpatterns = [
     path("", include(router.urls)),

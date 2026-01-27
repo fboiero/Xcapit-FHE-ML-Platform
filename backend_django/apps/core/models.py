@@ -721,3 +721,596 @@ class WebhookDelivery(models.Model):
 
         self.save()
         self.webhook.update_stats(success=False, error=error)
+
+
+class Report(models.Model):
+    """
+    Generated report for analytics and compliance.
+
+    Reports can be generated on-demand or scheduled.
+    """
+
+    class ReportType(models.TextChoices):
+        PERFORMANCE = "performance", "Performance Report"
+        COMPLIANCE = "compliance", "Compliance Report"
+        CONSORTIUM = "consortium", "Consortium Report"
+        USAGE = "usage", "Usage Report"
+        AUDIT = "audit", "Audit Report"
+        CUSTOM = "custom", "Custom Report"
+
+    class Format(models.TextChoices):
+        PDF = "pdf", "PDF"
+        CSV = "csv", "CSV"
+        JSON = "json", "JSON"
+        EXCEL = "excel", "Excel"
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        GENERATING = "generating", "Generating"
+        COMPLETED = "completed", "Completed"
+        FAILED = "failed", "Failed"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name="reports",
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="created_reports",
+    )
+
+    # Report configuration
+    name = models.CharField(max_length=255)
+    report_type = models.CharField(
+        max_length=50,
+        choices=ReportType.choices,
+        db_index=True,
+    )
+    format = models.CharField(
+        max_length=20,
+        choices=Format.choices,
+        default=Format.PDF,
+    )
+
+    # Date range
+    date_from = models.DateField(null=True, blank=True)
+    date_to = models.DateField(null=True, blank=True)
+
+    # Sections to include
+    sections = models.JSONField(default=list)  # List of section names
+
+    # Filters and parameters
+    parameters = models.JSONField(default=dict, blank=True)
+
+    # Status
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+        db_index=True,
+    )
+
+    # Output
+    file_path = models.CharField(max_length=500, blank=True)
+    file_size = models.BigIntegerField(null=True, blank=True)
+    download_url = models.URLField(max_length=2000, blank=True)
+    download_expires_at = models.DateTimeField(null=True, blank=True)
+
+    # Error tracking
+    error_message = models.TextField(blank=True)
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "report"
+        verbose_name_plural = "reports"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["company"]),
+            models.Index(fields=["report_type"]),
+            models.Index(fields=["status"]),
+            models.Index(fields=["created_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.name} ({self.report_type})"
+
+    def mark_generating(self):
+        """Mark report as generating."""
+        self.status = self.Status.GENERATING
+        self.save(update_fields=["status", "updated_at"])
+
+    def mark_completed(self, file_path: str, file_size: int, download_url: str = ""):
+        """Mark report as completed."""
+        import datetime
+
+        self.status = self.Status.COMPLETED
+        self.file_path = file_path
+        self.file_size = file_size
+        self.download_url = download_url
+        self.completed_at = timezone.now()
+        # Download URL expires in 24 hours
+        self.download_expires_at = timezone.now() + datetime.timedelta(hours=24)
+        self.save()
+
+    def mark_failed(self, error: str):
+        """Mark report as failed."""
+        self.status = self.Status.FAILED
+        self.error_message = error[:1000]
+        self.save()
+
+
+class Workflow(models.Model):
+    """
+    Workflow automation configuration.
+
+    Workflows define a series of steps to execute in sequence or parallel.
+    """
+
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Draft"
+        ACTIVE = "active", "Active"
+        PAUSED = "paused", "Paused"
+        ARCHIVED = "archived", "Archived"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name="workflows",
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="created_workflows",
+    )
+
+    # Workflow definition
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+
+    # Steps configuration (JSON array of step definitions)
+    # Each step: {type, name, config, on_success, on_failure}
+    steps = models.JSONField(default=list)
+
+    # Trigger configuration
+    # {type: "manual"|"schedule"|"event", schedule: "0 0 * * *", event: "model.trained"}
+    trigger = models.JSONField(default=dict)
+
+    # Status
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.DRAFT,
+        db_index=True,
+    )
+
+    # Statistics
+    total_runs = models.IntegerField(default=0)
+    successful_runs = models.IntegerField(default=0)
+    failed_runs = models.IntegerField(default=0)
+    last_run_at = models.DateTimeField(null=True, blank=True)
+    last_success_at = models.DateTimeField(null=True, blank=True)
+    last_failure_at = models.DateTimeField(null=True, blank=True)
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "workflow"
+        verbose_name_plural = "workflows"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["company"]),
+            models.Index(fields=["status"]),
+            models.Index(fields=["created_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.name} ({self.status})"
+
+    @property
+    def success_rate(self) -> float:
+        """Calculate workflow success rate."""
+        if self.total_runs == 0:
+            return 0.0
+        return (self.successful_runs / self.total_runs) * 100
+
+    def update_stats(self, success: bool):
+        """Update workflow run statistics."""
+        from django.db.models import F
+
+        now = timezone.now()
+        updates = {
+            "total_runs": F("total_runs") + 1,
+            "last_run_at": now,
+        }
+
+        if success:
+            updates["successful_runs"] = F("successful_runs") + 1
+            updates["last_success_at"] = now
+        else:
+            updates["failed_runs"] = F("failed_runs") + 1
+            updates["last_failure_at"] = now
+
+        Workflow.objects.filter(pk=self.pk).update(**updates)
+        self.refresh_from_db()
+
+
+class WorkflowRun(models.Model):
+    """
+    Record of a workflow execution.
+    """
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        RUNNING = "running", "Running"
+        COMPLETED = "completed", "Completed"
+        FAILED = "failed", "Failed"
+        CANCELLED = "cancelled", "Cancelled"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    workflow = models.ForeignKey(
+        Workflow,
+        on_delete=models.CASCADE,
+        related_name="runs",
+    )
+    triggered_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="triggered_workflow_runs",
+    )
+
+    # Trigger info
+    trigger_type = models.CharField(max_length=50)  # manual, schedule, event
+    trigger_event = models.CharField(max_length=255, blank=True)
+
+    # Status
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+        db_index=True,
+    )
+
+    # Step execution log
+    # [{step_name, status, started_at, completed_at, output, error}]
+    step_logs = models.JSONField(default=list)
+    current_step = models.IntegerField(default=0)
+
+    # Input/output
+    input_data = models.JSONField(default=dict, blank=True)
+    output_data = models.JSONField(default=dict, blank=True)
+
+    # Error tracking
+    error_message = models.TextField(blank=True)
+
+    # Duration
+    duration_seconds = models.FloatField(null=True, blank=True)
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "workflow run"
+        verbose_name_plural = "workflow runs"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["workflow"]),
+            models.Index(fields=["status"]),
+            models.Index(fields=["created_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.workflow.name} run ({self.status})"
+
+    def start(self):
+        """Mark run as started."""
+        self.status = self.Status.RUNNING
+        self.started_at = timezone.now()
+        self.save(update_fields=["status", "started_at"])
+
+    def complete(self, output_data: dict = None):
+        """Mark run as completed."""
+        self.status = self.Status.COMPLETED
+        self.completed_at = timezone.now()
+        self.output_data = output_data or {}
+        if self.started_at:
+            self.duration_seconds = (self.completed_at - self.started_at).total_seconds()
+        self.save()
+        self.workflow.update_stats(success=True)
+
+    def fail(self, error: str):
+        """Mark run as failed."""
+        self.status = self.Status.FAILED
+        self.completed_at = timezone.now()
+        self.error_message = error[:1000]
+        if self.started_at:
+            self.duration_seconds = (self.completed_at - self.started_at).total_seconds()
+        self.save()
+        self.workflow.update_stats(success=False)
+
+    def log_step(self, step_name: str, status: str, output: dict = None, error: str = ""):
+        """Log a step execution."""
+        step_log = {
+            "step_name": step_name,
+            "status": status,
+            "timestamp": timezone.now().isoformat(),
+            "output": output or {},
+            "error": error,
+        }
+        self.step_logs.append(step_log)
+        self.current_step = len(self.step_logs)
+        self.save(update_fields=["step_logs", "current_step"])
+
+
+class ScheduledTask(models.Model):
+    """
+    Scheduled task configuration for recurring jobs.
+
+    Tasks can be scheduled using cron expressions.
+    """
+
+    class TaskType(models.TextChoices):
+        REPORT = "report", "Generate Report"
+        WORKFLOW = "workflow", "Run Workflow"
+        DATA_SYNC = "data_sync", "Data Sync"
+        CLEANUP = "cleanup", "Cleanup"
+        BACKUP = "backup", "Backup"
+        CUSTOM = "custom", "Custom Task"
+
+    class Status(models.TextChoices):
+        ACTIVE = "active", "Active"
+        PAUSED = "paused", "Paused"
+        DISABLED = "disabled", "Disabled"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name="scheduled_tasks",
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="created_scheduled_tasks",
+    )
+
+    # Task definition
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    task_type = models.CharField(
+        max_length=50,
+        choices=TaskType.choices,
+        db_index=True,
+    )
+
+    # Schedule (cron expression)
+    # Format: minute hour day month day_of_week
+    cron_expression = models.CharField(max_length=100)
+
+    # Timezone for scheduling
+    timezone = models.CharField(max_length=100, default="UTC")
+
+    # Task configuration
+    # {report_id, workflow_id, or custom config}
+    config = models.JSONField(default=dict)
+
+    # Related objects (optional)
+    report = models.ForeignKey(
+        Report,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="scheduled_tasks",
+    )
+    workflow = models.ForeignKey(
+        Workflow,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="scheduled_tasks",
+    )
+
+    # Status
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.ACTIVE,
+        db_index=True,
+    )
+
+    # Scheduling
+    next_run_at = models.DateTimeField(null=True, blank=True)
+    last_run_at = models.DateTimeField(null=True, blank=True)
+
+    # Statistics
+    total_runs = models.IntegerField(default=0)
+    successful_runs = models.IntegerField(default=0)
+    failed_runs = models.IntegerField(default=0)
+    consecutive_failures = models.IntegerField(default=0)
+
+    # Auto-disable after N consecutive failures (0 = never)
+    max_consecutive_failures = models.IntegerField(default=5)
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "scheduled task"
+        verbose_name_plural = "scheduled tasks"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["company"]),
+            models.Index(fields=["task_type"]),
+            models.Index(fields=["status"]),
+            models.Index(fields=["next_run_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.name} ({self.cron_expression})"
+
+    def calculate_next_run(self):
+        """Calculate the next run time based on cron expression."""
+        try:
+            from croniter import croniter
+            import pytz
+
+            tz = pytz.timezone(self.timezone)
+            now = timezone.now().astimezone(tz)
+            cron = croniter(self.cron_expression, now)
+            self.next_run_at = cron.get_next(timezone.datetime)
+            self.save(update_fields=["next_run_at"])
+        except Exception:
+            # If croniter is not available, skip calculation
+            pass
+
+    def update_stats(self, success: bool):
+        """Update task run statistics."""
+        from django.db.models import F
+
+        now = timezone.now()
+        updates = {
+            "total_runs": F("total_runs") + 1,
+            "last_run_at": now,
+        }
+
+        if success:
+            updates["successful_runs"] = F("successful_runs") + 1
+            updates["consecutive_failures"] = 0
+        else:
+            updates["failed_runs"] = F("failed_runs") + 1
+            updates["consecutive_failures"] = F("consecutive_failures") + 1
+
+        ScheduledTask.objects.filter(pk=self.pk).update(**updates)
+        self.refresh_from_db()
+
+        # Check for auto-disable
+        if (
+            not success
+            and self.max_consecutive_failures > 0
+            and self.consecutive_failures >= self.max_consecutive_failures
+        ):
+            self.status = self.Status.DISABLED
+            self.save(update_fields=["status"])
+
+        # Calculate next run time
+        self.calculate_next_run()
+
+
+class ScheduledTaskRun(models.Model):
+    """
+    Record of a scheduled task execution.
+    """
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        RUNNING = "running", "Running"
+        COMPLETED = "completed", "Completed"
+        FAILED = "failed", "Failed"
+        SKIPPED = "skipped", "Skipped"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    task = models.ForeignKey(
+        ScheduledTask,
+        on_delete=models.CASCADE,
+        related_name="runs",
+    )
+
+    # Status
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+        db_index=True,
+    )
+
+    # Scheduled vs actual
+    scheduled_at = models.DateTimeField()
+    started_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    # Duration
+    duration_seconds = models.FloatField(null=True, blank=True)
+
+    # Output
+    output = models.JSONField(default=dict, blank=True)
+    error_message = models.TextField(blank=True)
+
+    # Related run (if applicable)
+    workflow_run = models.ForeignKey(
+        WorkflowRun,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="scheduled_task_runs",
+    )
+    report = models.ForeignKey(
+        Report,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="scheduled_task_runs",
+    )
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "scheduled task run"
+        verbose_name_plural = "scheduled task runs"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["task"]),
+            models.Index(fields=["status"]),
+            models.Index(fields=["scheduled_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.task.name} run ({self.status})"
+
+    def start(self):
+        """Mark run as started."""
+        self.status = self.Status.RUNNING
+        self.started_at = timezone.now()
+        self.save(update_fields=["status", "started_at"])
+
+    def complete(self, output: dict = None):
+        """Mark run as completed."""
+        self.status = self.Status.COMPLETED
+        self.completed_at = timezone.now()
+        self.output = output or {}
+        if self.started_at:
+            self.duration_seconds = (self.completed_at - self.started_at).total_seconds()
+        self.save()
+        self.task.update_stats(success=True)
+
+    def fail(self, error: str):
+        """Mark run as failed."""
+        self.status = self.Status.FAILED
+        self.completed_at = timezone.now()
+        self.error_message = error[:1000]
+        if self.started_at:
+            self.duration_seconds = (self.completed_at - self.started_at).total_seconds()
+        self.save()
+        self.task.update_stats(success=False)

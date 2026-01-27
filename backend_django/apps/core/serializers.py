@@ -8,7 +8,19 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
-from .models import APIKey, AuditLog, Company, UsageTracking, Webhook, WebhookDelivery
+from .models import (
+    APIKey,
+    AuditLog,
+    Company,
+    Report,
+    ScheduledTask,
+    ScheduledTaskRun,
+    UsageTracking,
+    Webhook,
+    WebhookDelivery,
+    Workflow,
+    WorkflowRun,
+)
 
 User = get_user_model()
 
@@ -476,3 +488,385 @@ class UsageStatsSerializer(serializers.Serializer):
     limits = serializers.DictField()
     today = serializers.DictField()
     month = serializers.DictField()
+
+
+# Report Serializers
+
+
+class ReportSerializer(serializers.ModelSerializer):
+    """Serializer for Report model."""
+
+    company_name = serializers.CharField(source="company.name", read_only=True)
+    created_by_email = serializers.CharField(source="created_by.email", read_only=True)
+
+    class Meta:
+        model = Report
+        fields = [
+            "id",
+            "company",
+            "company_name",
+            "created_by",
+            "created_by_email",
+            "name",
+            "report_type",
+            "format",
+            "date_from",
+            "date_to",
+            "sections",
+            "parameters",
+            "status",
+            "file_size",
+            "download_url",
+            "download_expires_at",
+            "error_message",
+            "created_at",
+            "updated_at",
+            "completed_at",
+        ]
+        read_only_fields = [
+            "id",
+            "company",
+            "created_by",
+            "status",
+            "file_size",
+            "download_url",
+            "download_expires_at",
+            "error_message",
+            "created_at",
+            "updated_at",
+            "completed_at",
+        ]
+
+
+class ReportCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating a Report."""
+
+    class Meta:
+        model = Report
+        fields = [
+            "name",
+            "report_type",
+            "format",
+            "date_from",
+            "date_to",
+            "sections",
+            "parameters",
+        ]
+
+    def validate_report_type(self, value):
+        """Validate report type."""
+        valid_types = [choice[0] for choice in Report.ReportType.choices]
+        if value not in valid_types:
+            raise serializers.ValidationError(
+                f"Invalid report type '{value}'. Valid types: {valid_types}"
+            )
+        return value
+
+    def validate_format(self, value):
+        """Validate format."""
+        valid_formats = [choice[0] for choice in Report.Format.choices]
+        if value not in valid_formats:
+            raise serializers.ValidationError(
+                f"Invalid format '{value}'. Valid formats: {valid_formats}"
+            )
+        return value
+
+    def validate(self, attrs):
+        """Validate date range."""
+        date_from = attrs.get("date_from")
+        date_to = attrs.get("date_to")
+        if date_from and date_to and date_from > date_to:
+            raise serializers.ValidationError(
+                {"date_to": "End date must be after start date."}
+            )
+        return attrs
+
+    def create(self, validated_data):
+        """Create report for current company/user."""
+        user = self.context["request"].user
+        validated_data["company"] = user.company
+        validated_data["created_by"] = user
+        return Report.objects.create(**validated_data)
+
+
+# Workflow Serializers
+
+
+class WorkflowSerializer(serializers.ModelSerializer):
+    """Serializer for Workflow model."""
+
+    company_name = serializers.CharField(source="company.name", read_only=True)
+    created_by_email = serializers.CharField(source="created_by.email", read_only=True)
+    success_rate = serializers.FloatField(read_only=True)
+
+    class Meta:
+        model = Workflow
+        fields = [
+            "id",
+            "company",
+            "company_name",
+            "created_by",
+            "created_by_email",
+            "name",
+            "description",
+            "steps",
+            "trigger",
+            "status",
+            "total_runs",
+            "successful_runs",
+            "failed_runs",
+            "success_rate",
+            "last_run_at",
+            "last_success_at",
+            "last_failure_at",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "id",
+            "company",
+            "created_by",
+            "total_runs",
+            "successful_runs",
+            "failed_runs",
+            "success_rate",
+            "last_run_at",
+            "last_success_at",
+            "last_failure_at",
+            "created_at",
+            "updated_at",
+        ]
+
+
+class WorkflowCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating a Workflow."""
+
+    class Meta:
+        model = Workflow
+        fields = [
+            "name",
+            "description",
+            "steps",
+            "trigger",
+            "status",
+        ]
+
+    def validate_steps(self, value):
+        """Validate workflow steps."""
+        if not isinstance(value, list):
+            raise serializers.ValidationError("Steps must be a list.")
+        for i, step in enumerate(value):
+            if not isinstance(step, dict):
+                raise serializers.ValidationError(f"Step {i} must be an object.")
+            if "type" not in step:
+                raise serializers.ValidationError(f"Step {i} must have a 'type' field.")
+            if "name" not in step:
+                raise serializers.ValidationError(f"Step {i} must have a 'name' field.")
+        return value
+
+    def validate_trigger(self, value):
+        """Validate trigger configuration."""
+        if not isinstance(value, dict):
+            raise serializers.ValidationError("Trigger must be an object.")
+        trigger_type = value.get("type")
+        if trigger_type not in ["manual", "schedule", "event"]:
+            raise serializers.ValidationError(
+                "Trigger type must be 'manual', 'schedule', or 'event'."
+            )
+        if trigger_type == "schedule" and "schedule" not in value:
+            raise serializers.ValidationError(
+                "Schedule trigger must include 'schedule' (cron expression)."
+            )
+        if trigger_type == "event" and "event" not in value:
+            raise serializers.ValidationError(
+                "Event trigger must include 'event' (event type)."
+            )
+        return value
+
+    def create(self, validated_data):
+        """Create workflow for current company/user."""
+        user = self.context["request"].user
+        validated_data["company"] = user.company
+        validated_data["created_by"] = user
+        return Workflow.objects.create(**validated_data)
+
+
+class WorkflowRunSerializer(serializers.ModelSerializer):
+    """Serializer for WorkflowRun model."""
+
+    workflow_name = serializers.CharField(source="workflow.name", read_only=True)
+    triggered_by_email = serializers.CharField(
+        source="triggered_by.email", read_only=True
+    )
+
+    class Meta:
+        model = WorkflowRun
+        fields = [
+            "id",
+            "workflow",
+            "workflow_name",
+            "triggered_by",
+            "triggered_by_email",
+            "trigger_type",
+            "trigger_event",
+            "status",
+            "step_logs",
+            "current_step",
+            "input_data",
+            "output_data",
+            "error_message",
+            "duration_seconds",
+            "created_at",
+            "started_at",
+            "completed_at",
+        ]
+        read_only_fields = fields
+
+
+class WorkflowRunCreateSerializer(serializers.Serializer):
+    """Serializer for triggering a workflow run."""
+
+    input_data = serializers.DictField(required=False, default=dict)
+
+
+# Scheduled Task Serializers
+
+
+class ScheduledTaskSerializer(serializers.ModelSerializer):
+    """Serializer for ScheduledTask model."""
+
+    company_name = serializers.CharField(source="company.name", read_only=True)
+    created_by_email = serializers.CharField(source="created_by.email", read_only=True)
+    workflow_name = serializers.CharField(source="workflow.name", read_only=True)
+    report_name = serializers.CharField(source="report.name", read_only=True)
+
+    class Meta:
+        model = ScheduledTask
+        fields = [
+            "id",
+            "company",
+            "company_name",
+            "created_by",
+            "created_by_email",
+            "name",
+            "description",
+            "task_type",
+            "cron_expression",
+            "timezone",
+            "config",
+            "report",
+            "report_name",
+            "workflow",
+            "workflow_name",
+            "status",
+            "next_run_at",
+            "last_run_at",
+            "total_runs",
+            "successful_runs",
+            "failed_runs",
+            "consecutive_failures",
+            "max_consecutive_failures",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "id",
+            "company",
+            "created_by",
+            "next_run_at",
+            "last_run_at",
+            "total_runs",
+            "successful_runs",
+            "failed_runs",
+            "consecutive_failures",
+            "created_at",
+            "updated_at",
+        ]
+
+
+class ScheduledTaskCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating a ScheduledTask."""
+
+    class Meta:
+        model = ScheduledTask
+        fields = [
+            "name",
+            "description",
+            "task_type",
+            "cron_expression",
+            "timezone",
+            "config",
+            "report",
+            "workflow",
+            "status",
+            "max_consecutive_failures",
+        ]
+
+    def validate_task_type(self, value):
+        """Validate task type."""
+        valid_types = [choice[0] for choice in ScheduledTask.TaskType.choices]
+        if value not in valid_types:
+            raise serializers.ValidationError(
+                f"Invalid task type '{value}'. Valid types: {valid_types}"
+            )
+        return value
+
+    def validate_cron_expression(self, value):
+        """Validate cron expression format."""
+        parts = value.split()
+        if len(parts) != 5:
+            raise serializers.ValidationError(
+                "Cron expression must have 5 parts: minute hour day month day_of_week"
+            )
+        return value
+
+    def validate(self, attrs):
+        """Validate task type and related objects."""
+        task_type = attrs.get("task_type")
+        report = attrs.get("report")
+        workflow = attrs.get("workflow")
+
+        if task_type == "report" and not report:
+            raise serializers.ValidationError(
+                {"report": "Report must be specified for report tasks."}
+            )
+        if task_type == "workflow" and not workflow:
+            raise serializers.ValidationError(
+                {"workflow": "Workflow must be specified for workflow tasks."}
+            )
+
+        return attrs
+
+    def create(self, validated_data):
+        """Create scheduled task for current company/user."""
+        user = self.context["request"].user
+        validated_data["company"] = user.company
+        validated_data["created_by"] = user
+        task = ScheduledTask.objects.create(**validated_data)
+        task.calculate_next_run()
+        return task
+
+
+class ScheduledTaskRunSerializer(serializers.ModelSerializer):
+    """Serializer for ScheduledTaskRun model."""
+
+    task_name = serializers.CharField(source="task.name", read_only=True)
+
+    class Meta:
+        model = ScheduledTaskRun
+        fields = [
+            "id",
+            "task",
+            "task_name",
+            "status",
+            "scheduled_at",
+            "started_at",
+            "completed_at",
+            "duration_seconds",
+            "output",
+            "error_message",
+            "workflow_run",
+            "report",
+            "created_at",
+        ]
+        read_only_fields = fields

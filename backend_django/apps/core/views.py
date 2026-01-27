@@ -20,7 +20,19 @@ from rest_framework.response import Response
 from rest_framework.serializers import Serializer
 from rest_framework.views import APIView
 
-from .models import APIKey, AuditLog, Company, UsageTracking, Webhook, WebhookDelivery
+from .models import (
+    APIKey,
+    AuditLog,
+    Company,
+    Report,
+    ScheduledTask,
+    ScheduledTaskRun,
+    UsageTracking,
+    Webhook,
+    WebhookDelivery,
+    Workflow,
+    WorkflowRun,
+)
 from .permissions import IsCompanyMember
 from .serializers import (
     APIKeyCreateSerializer,
@@ -31,6 +43,11 @@ from .serializers import (
     CompanyCreateSerializer,
     CompanySerializer,
     HealthCheckSerializer,
+    ReportCreateSerializer,
+    ReportSerializer,
+    ScheduledTaskCreateSerializer,
+    ScheduledTaskRunSerializer,
+    ScheduledTaskSerializer,
     UsageStatsSerializer,
     UsageTrackingSerializer,
     UserCreateSerializer,
@@ -40,6 +57,10 @@ from .serializers import (
     WebhookDeliverySerializer,
     WebhookResponseSerializer,
     WebhookSerializer,
+    WorkflowCreateSerializer,
+    WorkflowRunCreateSerializer,
+    WorkflowRunSerializer,
+    WorkflowSerializer,
 )
 
 if TYPE_CHECKING:
@@ -723,5 +744,517 @@ class UsageStatsViewSet(viewsets.ViewSet):
         }
 
         return Response(data)
+
+
+class ReportViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for Report management.
+
+    Users can create, view, and download reports for their company.
+    """
+
+    serializer_class = ReportSerializer
+    permission_classes = [IsAuthenticated, IsCompanyMember]
+
+    def get_queryset(self) -> QuerySet[Report]:
+        """Filter to company's reports."""
+        user = self.request.user
+        if user.company:
+            queryset = Report.objects.filter(company=user.company)
+
+            # Optional filters
+            report_type = self.request.query_params.get("type")
+            report_status = self.request.query_params.get("status")
+
+            if report_type:
+                queryset = queryset.filter(report_type=report_type)
+            if report_status:
+                queryset = queryset.filter(status=report_status)
+
+            return queryset.order_by("-created_at")
+
+        return Report.objects.none()
+
+    def get_serializer_class(self) -> type[Serializer]:
+        """Use different serializers for create."""
+        if self.action == "create":
+            return ReportCreateSerializer
+        return ReportSerializer
+
+    def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """Create a new report and start generation."""
+        serializer = ReportCreateSerializer(
+            data=request.data,
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+        report = serializer.save()
+
+        # Log report creation
+        AuditLog.log(
+            request,
+            action="report_created",
+            resource_type="report",
+            resource_id=report.id,
+            extra_data={"name": report.name, "type": report.report_type},
+        )
+
+        response_serializer = ReportSerializer(report)
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["post"])
+    def generate(self, request: Request, pk: str | None = None) -> Response:
+        """Trigger report generation (for pending reports)."""
+        report = self.get_object()
+
+        if report.status not in ["pending", "failed"]:
+            return Response(
+                {"detail": "Only pending or failed reports can be generated."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        report.mark_generating()
+
+        # In a real implementation, this would queue a background task
+        # For now, we simulate instant completion
+        import uuid
+
+        file_path = f"/reports/{uuid.uuid4()}.{report.format}"
+        file_size = 1024 * 50  # 50KB simulated
+        report.mark_completed(file_path, file_size)
+
+        # Log generation
+        AuditLog.log(
+            request,
+            action="report_generated",
+            resource_type="report",
+            resource_id=report.id,
+        )
+
+        serializer = ReportSerializer(report)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=["get"])
+    def download(self, request: Request, pk: str | None = None) -> Response:
+        """Get download URL for a completed report."""
+        report = self.get_object()
+
+        if report.status != "completed":
+            return Response(
+                {"detail": "Report is not ready for download."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if report.download_expires_at and report.download_expires_at < timezone.now():
+            return Response(
+                {"detail": "Download link has expired. Please regenerate the report."},
+                status=status.HTTP_410_GONE,
+            )
+
+        # Log download
+        AuditLog.log(
+            request,
+            action="report_downloaded",
+            resource_type="report",
+            resource_id=report.id,
+        )
+
+        return Response({
+            "download_url": report.download_url or f"/api/v2/reports/{report.id}/file/",
+            "expires_at": report.download_expires_at,
+            "file_size": report.file_size,
+            "format": report.format,
+        })
+
+
+class WorkflowViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for Workflow management.
+
+    Users can create, view, and manage workflows for their company.
+    """
+
+    serializer_class = WorkflowSerializer
+    permission_classes = [IsAuthenticated, IsCompanyMember]
+
+    def get_queryset(self) -> QuerySet[Workflow]:
+        """Filter to company's workflows."""
+        user = self.request.user
+        if user.company:
+            queryset = Workflow.objects.filter(company=user.company)
+
+            # Optional filters
+            workflow_status = self.request.query_params.get("status")
+
+            if workflow_status:
+                queryset = queryset.filter(status=workflow_status)
+
+            return queryset.order_by("-created_at")
+
+        return Workflow.objects.none()
+
+    def get_serializer_class(self) -> type[Serializer]:
+        """Use different serializers for create."""
+        if self.action == "create":
+            return WorkflowCreateSerializer
+        return WorkflowSerializer
+
+    def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """Create a new workflow."""
+        serializer = WorkflowCreateSerializer(
+            data=request.data,
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+        workflow = serializer.save()
+
+        # Log workflow creation
+        AuditLog.log(
+            request,
+            action="workflow_created",
+            resource_type="workflow",
+            resource_id=workflow.id,
+            extra_data={"name": workflow.name},
+        )
+
+        response_serializer = WorkflowSerializer(workflow)
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["post"])
+    def run(self, request: Request, pk: str | None = None) -> Response:
+        """Manually trigger a workflow run."""
+        workflow = self.get_object()
+
+        if workflow.status != "active":
+            return Response(
+                {"detail": "Only active workflows can be run."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Create a workflow run
+        run_serializer = WorkflowRunCreateSerializer(data=request.data)
+        run_serializer.is_valid(raise_exception=True)
+
+        workflow_run = WorkflowRun.objects.create(
+            workflow=workflow,
+            triggered_by=request.user,
+            trigger_type="manual",
+            input_data=run_serializer.validated_data.get("input_data", {}),
+        )
+
+        # Start the run (in real implementation, this would be async)
+        workflow_run.start()
+
+        # Simulate step execution
+        for i, step in enumerate(workflow.steps):
+            workflow_run.log_step(
+                step_name=step.get("name", f"step_{i}"),
+                status="completed",
+                output={"result": "success"},
+            )
+
+        workflow_run.complete(output_data={"summary": "Workflow completed successfully"})
+
+        # Log workflow run
+        AuditLog.log(
+            request,
+            action="workflow_run_triggered",
+            resource_type="workflow",
+            resource_id=workflow.id,
+            extra_data={"run_id": str(workflow_run.id)},
+        )
+
+        serializer = WorkflowRunSerializer(workflow_run)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["post"])
+    def activate(self, request: Request, pk: str | None = None) -> Response:
+        """Activate a draft workflow."""
+        workflow = self.get_object()
+
+        if workflow.status not in ["draft", "paused"]:
+            return Response(
+                {"detail": "Only draft or paused workflows can be activated."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        workflow.status = Workflow.Status.ACTIVE
+        workflow.save(update_fields=["status", "updated_at"])
+
+        # Log activation
+        AuditLog.log(
+            request,
+            action="workflow_activated",
+            resource_type="workflow",
+            resource_id=workflow.id,
+        )
+
+        serializer = WorkflowSerializer(workflow)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=["post"])
+    def pause(self, request: Request, pk: str | None = None) -> Response:
+        """Pause an active workflow."""
+        workflow = self.get_object()
+
+        if workflow.status != "active":
+            return Response(
+                {"detail": "Only active workflows can be paused."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        workflow.status = Workflow.Status.PAUSED
+        workflow.save(update_fields=["status", "updated_at"])
+
+        # Log pause
+        AuditLog.log(
+            request,
+            action="workflow_paused",
+            resource_type="workflow",
+            resource_id=workflow.id,
+        )
+
+        serializer = WorkflowSerializer(workflow)
+        return Response(serializer.data)
+
+
+class WorkflowRunViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet for viewing workflow run history (read-only).
+
+    Users can view run history for their company's workflows.
+    """
+
+    serializer_class = WorkflowRunSerializer
+    permission_classes = [IsAuthenticated, IsCompanyMember]
+
+    def get_queryset(self) -> QuerySet[WorkflowRun]:
+        """Filter to company's workflow runs."""
+        user = self.request.user
+        if user.company:
+            queryset = WorkflowRun.objects.filter(workflow__company=user.company)
+
+            # Optional filters
+            workflow_id = self.request.query_params.get("workflow_id")
+            run_status = self.request.query_params.get("status")
+
+            if workflow_id:
+                queryset = queryset.filter(workflow_id=workflow_id)
+            if run_status:
+                queryset = queryset.filter(status=run_status)
+
+            return queryset.order_by("-created_at")
+
+        return WorkflowRun.objects.none()
+
+    @action(detail=True, methods=["post"])
+    def cancel(self, request: Request, pk: str | None = None) -> Response:
+        """Cancel a running workflow run."""
+        workflow_run = self.get_object()
+
+        if workflow_run.status not in ["pending", "running"]:
+            return Response(
+                {"detail": "Only pending or running workflow runs can be cancelled."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        workflow_run.status = WorkflowRun.Status.CANCELLED
+        workflow_run.completed_at = timezone.now()
+        workflow_run.save(update_fields=["status", "completed_at"])
+
+        # Log cancellation
+        AuditLog.log(
+            request,
+            action="workflow_run_cancelled",
+            resource_type="workflow_run",
+            resource_id=workflow_run.id,
+        )
+
+        serializer = WorkflowRunSerializer(workflow_run)
+        return Response(serializer.data)
+
+
+class ScheduledTaskViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for ScheduledTask management.
+
+    Users can create, view, and manage scheduled tasks for their company.
+    """
+
+    serializer_class = ScheduledTaskSerializer
+    permission_classes = [IsAuthenticated, IsCompanyMember]
+
+    def get_queryset(self) -> QuerySet[ScheduledTask]:
+        """Filter to company's scheduled tasks."""
+        user = self.request.user
+        if user.company:
+            queryset = ScheduledTask.objects.filter(company=user.company)
+
+            # Optional filters
+            task_type = self.request.query_params.get("type")
+            task_status = self.request.query_params.get("status")
+
+            if task_type:
+                queryset = queryset.filter(task_type=task_type)
+            if task_status:
+                queryset = queryset.filter(status=task_status)
+
+            return queryset.order_by("-created_at")
+
+        return ScheduledTask.objects.none()
+
+    def get_serializer_class(self) -> type[Serializer]:
+        """Use different serializers for create."""
+        if self.action == "create":
+            return ScheduledTaskCreateSerializer
+        return ScheduledTaskSerializer
+
+    def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """Create a new scheduled task."""
+        serializer = ScheduledTaskCreateSerializer(
+            data=request.data,
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+        task = serializer.save()
+
+        # Log task creation
+        AuditLog.log(
+            request,
+            action="scheduled_task_created",
+            resource_type="scheduled_task",
+            resource_id=task.id,
+            extra_data={"name": task.name, "cron": task.cron_expression},
+        )
+
+        response_serializer = ScheduledTaskSerializer(task)
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["post"])
+    def run_now(self, request: Request, pk: str | None = None) -> Response:
+        """Manually trigger a scheduled task run."""
+        task = self.get_object()
+
+        if task.status != "active":
+            return Response(
+                {"detail": "Only active tasks can be run."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Create a task run
+        task_run = ScheduledTaskRun.objects.create(
+            task=task,
+            scheduled_at=timezone.now(),
+        )
+        task_run.start()
+
+        # Simulate execution based on task type
+        if task.task_type == "workflow" and task.workflow:
+            # Create workflow run
+            workflow_run = WorkflowRun.objects.create(
+                workflow=task.workflow,
+                trigger_type="schedule",
+            )
+            workflow_run.start()
+            workflow_run.complete()
+            task_run.workflow_run = workflow_run
+            task_run.complete(output={"workflow_run_id": str(workflow_run.id)})
+        elif task.task_type == "report" and task.report:
+            task_run.complete(output={"report_id": str(task.report.id)})
+        else:
+            task_run.complete(output={"result": "Task executed successfully"})
+
+        # Log manual run
+        AuditLog.log(
+            request,
+            action="scheduled_task_manual_run",
+            resource_type="scheduled_task",
+            resource_id=task.id,
+            extra_data={"run_id": str(task_run.id)},
+        )
+
+        serializer = ScheduledTaskRunSerializer(task_run)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["post"])
+    def pause(self, request: Request, pk: str | None = None) -> Response:
+        """Pause a scheduled task."""
+        task = self.get_object()
+
+        if task.status != "active":
+            return Response(
+                {"detail": "Only active tasks can be paused."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        task.status = ScheduledTask.Status.PAUSED
+        task.save(update_fields=["status", "updated_at"])
+
+        # Log pause
+        AuditLog.log(
+            request,
+            action="scheduled_task_paused",
+            resource_type="scheduled_task",
+            resource_id=task.id,
+        )
+
+        serializer = ScheduledTaskSerializer(task)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=["post"])
+    def resume(self, request: Request, pk: str | None = None) -> Response:
+        """Resume a paused scheduled task."""
+        task = self.get_object()
+
+        if task.status != "paused":
+            return Response(
+                {"detail": "Only paused tasks can be resumed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        task.status = ScheduledTask.Status.ACTIVE
+        task.calculate_next_run()
+        task.save(update_fields=["status", "updated_at"])
+
+        # Log resume
+        AuditLog.log(
+            request,
+            action="scheduled_task_resumed",
+            resource_type="scheduled_task",
+            resource_id=task.id,
+        )
+
+        serializer = ScheduledTaskSerializer(task)
+        return Response(serializer.data)
+
+
+class ScheduledTaskRunViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet for viewing scheduled task run history (read-only).
+
+    Users can view run history for their company's scheduled tasks.
+    """
+
+    serializer_class = ScheduledTaskRunSerializer
+    permission_classes = [IsAuthenticated, IsCompanyMember]
+
+    def get_queryset(self) -> QuerySet[ScheduledTaskRun]:
+        """Filter to company's scheduled task runs."""
+        user = self.request.user
+        if user.company:
+            queryset = ScheduledTaskRun.objects.filter(task__company=user.company)
+
+            # Optional filters
+            task_id = self.request.query_params.get("task_id")
+            run_status = self.request.query_params.get("status")
+
+            if task_id:
+                queryset = queryset.filter(task_id=task_id)
+            if run_status:
+                queryset = queryset.filter(status=run_status)
+
+            return queryset.order_by("-created_at")
+
+        return ScheduledTaskRun.objects.none()
 
 
