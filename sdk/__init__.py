@@ -51,6 +51,23 @@ from .utils import (
     ValidationError,
     check_fhe_compatibility,
 )
+from .preprocessing import (
+    # Pipeline
+    PreprocessingPipeline,
+    create_standard_pipeline,
+    create_categorical_pipeline,
+    # Scalers
+    StandardScaler,
+    MinMaxScaler,
+    RobustScaler,
+    # Encoders
+    OneHotEncoder,
+    OrdinalEncoder,
+    # Handlers
+    MissingValueHandler,
+    OutlierHandler,
+    FeatureSelector,
+)
 
 __version__ = "0.2.0"
 
@@ -94,6 +111,18 @@ __all__ = [
     "NetworkConfig",
     "Network",
     "NETWORK_CONFIGS",
+    # Preprocessing
+    "PreprocessingPipeline",
+    "create_standard_pipeline",
+    "create_categorical_pipeline",
+    "StandardScaler",
+    "MinMaxScaler",
+    "RobustScaler",
+    "OneHotEncoder",
+    "OrdinalEncoder",
+    "MissingValueHandler",
+    "OutlierHandler",
+    "FeatureSelector",
     # Version
     "__version__",
 ]
