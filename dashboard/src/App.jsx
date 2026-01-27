@@ -24,6 +24,9 @@ import MultiModelEnsemble from './pages/MultiModelEnsemble'
 import ModelMetrics from './pages/ModelMetrics'
 import ModelBuilder from './pages/ModelBuilder'
 import DataUpload from './pages/DataUpload'
+import TrainingDashboard from './pages/TrainingDashboard'
+import ResultsVisualization from './pages/ResultsVisualization'
+import ModelComparison from './pages/ModelComparison'
 
 // Protected route wrapper
 const ProtectedRoute = ({ children }) => {
@@ -89,6 +92,12 @@ function App() {
         <Route path="/model-builder/:consortiumId" element={<ModelBuilder />} />
         <Route path="/data-upload" element={<DataUpload />} />
         <Route path="/data-upload/:consortiumId" element={<DataUpload />} />
+        <Route path="/training" element={<TrainingDashboard />} />
+        <Route path="/training/:consortiumId" element={<TrainingDashboard />} />
+        <Route path="/results" element={<ResultsVisualization />} />
+        <Route path="/results/:consortiumId" element={<ResultsVisualization />} />
+        <Route path="/comparison" element={<ModelComparison />} />
+        <Route path="/comparison/:consortiumId" element={<ModelComparison />} />
         <Route path="/consortiums/new" element={<ConsortiumCreate />} />
         <Route path="/consortiums/:id" element={<ConsortiumDetail />} />
         <Route path="/consortiums/:id/upload" element={<UploadData />} />

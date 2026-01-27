@@ -36,6 +36,14 @@ from .cross_validation import (
     GridSearchCV,
 )
 
+from .hyperparameter_tuning import (
+    BayesianOptimization,
+    HalvingRandomSearchCV,
+    ParameterSampler,
+    RandomizedSearchCV,
+    SearchResult,
+)
+
 __all__ = [
     # Classification
     "accuracy_score",
@@ -60,4 +68,10 @@ __all__ = [
     "StratifiedKFold",
     "train_test_split",
     "GridSearchCV",
+    # Hyperparameter tuning
+    "RandomizedSearchCV",
+    "BayesianOptimization",
+    "HalvingRandomSearchCV",
+    "ParameterSampler",
+    "SearchResult",
 ]

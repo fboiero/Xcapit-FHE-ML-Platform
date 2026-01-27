@@ -85,6 +85,46 @@ from .models import (
     VotingClassifier,
     VotingRegressor,
     VotingType,
+    # Anomaly Detection
+    IsolationForest,
+    IsolationForestConfig,
+    OneClassSVM,
+    OneClassSVMConfig,
+    LocalOutlierFactor,
+    LOFConfig,
+    EllipticEnvelope,
+    EllipticEnvelopeConfig,
+    AnomalyMethod,
+    # Time Series
+    ARIMA,
+    ARIMAConfig,
+    ExponentialSmoothing,
+    ExponentialSmoothingConfig,
+    SimpleMovingAverage,
+    ProphetLike,
+    ProphetConfig,
+    SeasonalityMode,
+    TrendMode,
+    # Regularization
+    Ridge,
+    RidgeConfig,
+    Lasso,
+    LassoConfig,
+    ElasticNet,
+    ElasticNetConfig,
+    RidgeClassifier,
+    SGDRegressor,
+    # Feature Selection
+    VarianceThreshold,
+    SelectKBest,
+    SelectPercentile,
+    RFE,
+    SelectFromModel,
+    f_classif,
+    f_regression,
+    chi2,
+    mutual_info_classif,
+    mutual_info_regression,
 )
 from .utils import (
     EncryptedDataset,
@@ -112,6 +152,10 @@ from .evaluation import (
     StratifiedKFold,
     train_test_split,
     GridSearchCV,
+    # Hyperparameter tuning
+    RandomizedSearchCV,
+    BayesianOptimization,
+    HalvingRandomSearchCV,
 )
 from .persistence import (
     save_model,
@@ -137,7 +181,7 @@ from .preprocessing import (
     FeatureSelector,
 )
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 __all__ = [
     # Encryption
@@ -214,6 +258,46 @@ __all__ = [
     "VotingRegressor",
     "StackingClassifier",
     "VotingType",
+    # Models - Anomaly Detection
+    "IsolationForest",
+    "IsolationForestConfig",
+    "OneClassSVM",
+    "OneClassSVMConfig",
+    "LocalOutlierFactor",
+    "LOFConfig",
+    "EllipticEnvelope",
+    "EllipticEnvelopeConfig",
+    "AnomalyMethod",
+    # Models - Time Series
+    "ARIMA",
+    "ARIMAConfig",
+    "ExponentialSmoothing",
+    "ExponentialSmoothingConfig",
+    "SimpleMovingAverage",
+    "ProphetLike",
+    "ProphetConfig",
+    "SeasonalityMode",
+    "TrendMode",
+    # Models - Regularization
+    "Ridge",
+    "RidgeConfig",
+    "Lasso",
+    "LassoConfig",
+    "ElasticNet",
+    "ElasticNetConfig",
+    "RidgeClassifier",
+    "SGDRegressor",
+    # Models - Feature Selection
+    "VarianceThreshold",
+    "SelectKBest",
+    "SelectPercentile",
+    "RFE",
+    "SelectFromModel",
+    "f_classif",
+    "f_regression",
+    "chi2",
+    "mutual_info_classif",
+    "mutual_info_regression",
     # Blockchain
     "BlockchainConnector",
     "ModelRegistryClient",
@@ -251,6 +335,10 @@ __all__ = [
     "StratifiedKFold",
     "train_test_split",
     "GridSearchCV",
+    # Evaluation - Hyperparameter Tuning
+    "RandomizedSearchCV",
+    "BayesianOptimization",
+    "HalvingRandomSearchCV",
     # Persistence
     "save_model",
     "load_model",
