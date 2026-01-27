@@ -355,3 +355,87 @@ class FHEModel:
         from .kmeans import MiniBatchKMeans
 
         return MiniBatchKMeans(**kwargs)
+
+    @staticmethod
+    def RandomForest(**kwargs) -> "BaseFHEModel":
+        """Create a Random Forest model.
+
+        Args:
+            **kwargs: Arguments passed to RandomForest constructor.
+
+        Returns:
+            RandomForest model instance.
+        """
+        from .random_forest import RandomForest
+
+        return RandomForest(**kwargs)
+
+    @staticmethod
+    def RandomForestClassifier(**kwargs) -> "BaseFHEModel":
+        """Create a Random Forest Classifier.
+
+        Args:
+            **kwargs: Arguments passed to RandomForestClassifier constructor.
+
+        Returns:
+            RandomForestClassifier model instance.
+        """
+        from .random_forest import RandomForestClassifier
+
+        return RandomForestClassifier(**kwargs)
+
+    @staticmethod
+    def RandomForestRegressor(**kwargs) -> "BaseFHEModel":
+        """Create a Random Forest Regressor.
+
+        Args:
+            **kwargs: Arguments passed to RandomForestRegressor constructor.
+
+        Returns:
+            RandomForestRegressor model instance.
+        """
+        from .random_forest import RandomForestRegressor
+
+        return RandomForestRegressor(**kwargs)
+
+    @staticmethod
+    def NeuralNetwork(**kwargs) -> "BaseFHEModel":
+        """Create a Neural Network model.
+
+        Args:
+            **kwargs: Arguments passed to NeuralNetwork constructor.
+
+        Returns:
+            NeuralNetwork model instance.
+        """
+        from .neural_network import NeuralNetwork
+
+        return NeuralNetwork(**kwargs)
+
+    @staticmethod
+    def NeuralNetworkClassifier(**kwargs) -> "BaseFHEModel":
+        """Create a Neural Network Classifier.
+
+        Args:
+            **kwargs: Arguments passed to NeuralNetworkClassifier constructor.
+
+        Returns:
+            NeuralNetworkClassifier model instance.
+        """
+        from .neural_network import NeuralNetworkClassifier
+
+        return NeuralNetworkClassifier(**kwargs)
+
+    @staticmethod
+    def NeuralNetworkRegressor(**kwargs) -> "BaseFHEModel":
+        """Create a Neural Network Regressor.
+
+        Args:
+            **kwargs: Arguments passed to NeuralNetworkRegressor constructor.
+
+        Returns:
+            NeuralNetworkRegressor model instance.
+        """
+        from .neural_network import NeuralNetworkRegressor
+
+        return NeuralNetworkRegressor(**kwargs)

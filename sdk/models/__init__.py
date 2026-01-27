@@ -34,6 +34,16 @@ from .random_forest import (
     RandomForestConfig,
     RandomForestRegressor,
 )
+from .neural_network import (
+    Activation,
+    ActivationFunctions,
+    LayerConfig,
+    NeuralNetwork,
+    NeuralNetworkClassifier,
+    NeuralNetworkConfig,
+    NeuralNetworkRegressor,
+    WeightInit,
+)
 
 __all__ = [
     # Base
@@ -59,6 +69,15 @@ __all__ = [
     "RandomForestRegressor",
     "RandomForestConfig",
     "AggregationMethod",
+    # Neural Network
+    "NeuralNetwork",
+    "NeuralNetworkClassifier",
+    "NeuralNetworkRegressor",
+    "NeuralNetworkConfig",
+    "LayerConfig",
+    "Activation",
+    "ActivationFunctions",
+    "WeightInit",
     # Clustering
     "KMeans",
     "MiniBatchKMeans",

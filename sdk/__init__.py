@@ -50,6 +50,15 @@ from .models import (
     RandomForestClassifier,
     RandomForestConfig,
     RandomForestRegressor,
+    # Neural Network
+    Activation,
+    ActivationFunctions,
+    LayerConfig,
+    NeuralNetwork,
+    NeuralNetworkClassifier,
+    NeuralNetworkConfig,
+    NeuralNetworkRegressor,
+    WeightInit,
 )
 from .utils import (
     EncryptedDataset,
@@ -112,6 +121,15 @@ __all__ = [
     "RandomForestRegressor",
     "RandomForestConfig",
     "AggregationMethod",
+    # Models - Neural Network
+    "NeuralNetwork",
+    "NeuralNetworkClassifier",
+    "NeuralNetworkRegressor",
+    "NeuralNetworkConfig",
+    "LayerConfig",
+    "Activation",
+    "ActivationFunctions",
+    "WeightInit",
     # Models - Clustering
     "KMeans",
     "MiniBatchKMeans",
