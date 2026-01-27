@@ -125,6 +125,20 @@ from .feature_selection import (
     mutual_info_classif,
     mutual_info_regression,
 )
+from .deep_learning import (
+    MLPClassifier,
+    MLPRegressor,
+    Autoencoder,
+    VariationalAutoencoder,
+    PolynomialActivations,
+)
+from .clustering import (
+    DBSCAN,
+    AgglomerativeClustering,
+    SpectralClustering,
+    MeanShift,
+    GaussianMixture,
+)
 
 __all__ = [
     # Base
@@ -236,4 +250,16 @@ __all__ = [
     "chi2",
     "mutual_info_classif",
     "mutual_info_regression",
+    # Deep Learning
+    "MLPClassifier",
+    "MLPRegressor",
+    "Autoencoder",
+    "VariationalAutoencoder",
+    "PolynomialActivations",
+    # Advanced Clustering
+    "DBSCAN",
+    "AgglomerativeClustering",
+    "SpectralClustering",
+    "MeanShift",
+    "GaussianMixture",
 ]

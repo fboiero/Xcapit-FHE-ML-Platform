@@ -1,506 +1,218 @@
-"""Cross-validation utilities for FHE machine learning models.
-
-This module provides cross-validation and model selection utilities.
+"""
+Cross-Validation Utilities for FHE-ML Platform.
 """
 
-from dataclasses import dataclass
-from typing import Any, Callable, Iterator, Optional, Union
 import numpy as np
-
-
-def train_test_split(
-    *arrays,
-    test_size: Optional[float] = None,
-    train_size: Optional[float] = None,
-    random_state: Optional[int] = None,
-    shuffle: bool = True,
-    stratify: Optional[np.ndarray] = None,
-) -> list:
-    """Split arrays into random train and test subsets.
-
-    Args:
-        *arrays: Sequence of arrays to split.
-        test_size: Proportion for test set (default 0.25).
-        train_size: Proportion for train set.
-        random_state: Random seed.
-        shuffle: Whether to shuffle before splitting.
-        stratify: Array for stratified splitting.
-
-    Returns:
-        List of train/test splits for each input array.
-
-    Example:
-        >>> X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
-    """
-    if len(arrays) == 0:
-        raise ValueError("At least one array required")
-
-    n_samples = len(arrays[0])
-
-    if test_size is None and train_size is None:
-        test_size = 0.25
-    elif test_size is None:
-        test_size = 1 - train_size
-    elif train_size is None:
-        train_size = 1 - test_size
-
-    n_test = int(n_samples * test_size)
-    n_train = n_samples - n_test
-
-    rng = np.random.RandomState(random_state)
-
-    if stratify is not None:
-        # Stratified split
-        classes, y_indices = np.unique(stratify, return_inverse=True)
-        train_indices = []
-        test_indices = []
-
-        for cls in range(len(classes)):
-            cls_indices = np.where(y_indices == cls)[0]
-            if shuffle:
-                rng.shuffle(cls_indices)
-
-            n_cls_test = max(1, int(len(cls_indices) * test_size))
-            test_indices.extend(cls_indices[:n_cls_test])
-            train_indices.extend(cls_indices[n_cls_test:])
-
-        train_indices = np.array(train_indices)
-        test_indices = np.array(test_indices)
-
-        if shuffle:
-            rng.shuffle(train_indices)
-            rng.shuffle(test_indices)
-    else:
-        indices = np.arange(n_samples)
-        if shuffle:
-            rng.shuffle(indices)
-
-        train_indices = indices[:n_train]
-        test_indices = indices[n_train:]
-
-    result = []
-    for arr in arrays:
-        arr = np.asarray(arr)
-        result.append(arr[train_indices])
-        result.append(arr[test_indices])
-
-    return result
+from typing import Optional, Tuple, Generator, Callable, Any
+import copy
+import time
 
 
 class KFold:
-    """K-Fold cross-validator.
-
-    Provides train/test indices to split data into train/test sets.
-
-    Example:
-        >>> kf = KFold(n_splits=5)
-        >>> for train_idx, test_idx in kf.split(X):
-        ...     X_train, X_test = X[train_idx], X[test_idx]
-    """
-
-    def __init__(
-        self,
-        n_splits: int = 5,
-        shuffle: bool = False,
-        random_state: Optional[int] = None,
-    ):
-        """Initialize K-Fold.
-
-        Args:
-            n_splits: Number of folds.
-            shuffle: Whether to shuffle data before splitting.
-            random_state: Random seed for shuffling.
-        """
-        if n_splits < 2:
-            raise ValueError("n_splits must be at least 2")
-
+    """K-Fold cross-validator."""
+    def __init__(self, n_splits: int = 5, shuffle: bool = False, random_state: Optional[int] = None):
         self.n_splits = n_splits
         self.shuffle = shuffle
         self.random_state = random_state
 
-    def split(
-        self,
-        X: np.ndarray,
-        y: Optional[np.ndarray] = None,
-    ) -> Iterator[tuple[np.ndarray, np.ndarray]]:
-        """Generate indices to split data into train and test sets.
-
-        Args:
-            X: Training data.
-            y: Target variable (ignored).
-
-        Yields:
-            Tuple of (train_indices, test_indices).
-        """
+    def split(self, X: np.ndarray, y=None, groups=None) -> Generator[Tuple[np.ndarray, np.ndarray], None, None]:
         n_samples = len(X)
         indices = np.arange(n_samples)
-
         if self.shuffle:
-            rng = np.random.RandomState(self.random_state)
-            rng.shuffle(indices)
-
+            if self.random_state is not None:
+                np.random.seed(self.random_state)
+            np.random.shuffle(indices)
         fold_sizes = np.full(self.n_splits, n_samples // self.n_splits, dtype=int)
         fold_sizes[:n_samples % self.n_splits] += 1
-
         current = 0
         for fold_size in fold_sizes:
-            start, stop = current, current + fold_size
-            test_indices = indices[start:stop]
-            train_indices = np.concatenate([indices[:start], indices[stop:]])
-            yield train_indices, test_indices
-            current = stop
+            test_idx = indices[current:current + fold_size]
+            train_idx = np.concatenate([indices[:current], indices[current + fold_size:]])
+            yield train_idx, test_idx
+            current += fold_size
 
-    def get_n_splits(self) -> int:
-        """Get number of splits."""
+    def get_n_splits(self, X=None, y=None, groups=None) -> int:
         return self.n_splits
 
 
 class StratifiedKFold:
-    """Stratified K-Fold cross-validator.
-
-    Preserves the percentage of samples for each class in each fold.
-
-    Example:
-        >>> skf = StratifiedKFold(n_splits=5)
-        >>> for train_idx, test_idx in skf.split(X, y):
-        ...     X_train, X_test = X[train_idx], X[test_idx]
-    """
-
-    def __init__(
-        self,
-        n_splits: int = 5,
-        shuffle: bool = False,
-        random_state: Optional[int] = None,
-    ):
-        """Initialize Stratified K-Fold.
-
-        Args:
-            n_splits: Number of folds.
-            shuffle: Whether to shuffle data before splitting.
-            random_state: Random seed for shuffling.
-        """
-        if n_splits < 2:
-            raise ValueError("n_splits must be at least 2")
-
+    """Stratified K-Fold preserving class proportions."""
+    def __init__(self, n_splits: int = 5, shuffle: bool = False, random_state: Optional[int] = None):
         self.n_splits = n_splits
         self.shuffle = shuffle
         self.random_state = random_state
 
-    def split(
-        self,
-        X: np.ndarray,
-        y: np.ndarray,
-    ) -> Iterator[tuple[np.ndarray, np.ndarray]]:
-        """Generate indices to split data into train and test sets.
-
-        Args:
-            X: Training data.
-            y: Target variable for stratification.
-
-        Yields:
-            Tuple of (train_indices, test_indices).
-        """
-        y = np.asarray(y).ravel()
-        classes, y_indices = np.unique(y, return_inverse=True)
-        n_classes = len(classes)
-
-        # Create indices per class
-        class_indices = [np.where(y_indices == i)[0] for i in range(n_classes)]
-
-        rng = np.random.RandomState(self.random_state)
-        if self.shuffle:
-            for idx in class_indices:
-                rng.shuffle(idx)
-
-        # Initialize test fold indices for each sample
-        test_folds = np.zeros(len(y), dtype=int)
-
-        for cls_idx in class_indices:
-            n_cls = len(cls_idx)
-            fold_sizes = np.full(self.n_splits, n_cls // self.n_splits, dtype=int)
-            fold_sizes[:n_cls % self.n_splits] += 1
-
+    def split(self, X: np.ndarray, y: np.ndarray, groups=None) -> Generator[Tuple[np.ndarray, np.ndarray], None, None]:
+        classes = np.unique(y)
+        if self.shuffle and self.random_state is not None:
+            np.random.seed(self.random_state)
+        class_indices = {}
+        for c in classes:
+            idx = np.where(y == c)[0]
+            if self.shuffle:
+                np.random.shuffle(idx)
+            class_indices[c] = idx
+        test_folds = [[] for _ in range(self.n_splits)]
+        for c in classes:
+            idx = class_indices[c]
+            fold_sizes = np.full(self.n_splits, len(idx) // self.n_splits)
+            fold_sizes[:len(idx) % self.n_splits] += 1
             current = 0
-            for fold, fold_size in enumerate(fold_sizes):
-                test_folds[cls_idx[current:current + fold_size]] = fold
-                current += fold_size
+            for fold_id, size in enumerate(fold_sizes):
+                test_folds[fold_id].extend(idx[current:current + size])
+                current += size
+        all_indices = np.arange(len(y))
+        for test_idx in test_folds:
+            test_idx = np.array(test_idx)
+            train_idx = np.setdiff1d(all_indices, test_idx)
+            yield train_idx, test_idx
 
-        # Yield each fold
-        for fold in range(self.n_splits):
-            test_indices = np.where(test_folds == fold)[0]
-            train_indices = np.where(test_folds != fold)[0]
-            yield train_indices, test_indices
-
-    def get_n_splits(self) -> int:
-        """Get number of splits."""
+    def get_n_splits(self, X=None, y=None, groups=None) -> int:
         return self.n_splits
 
 
-def cross_val_score(
-    estimator,
-    X: np.ndarray,
-    y: np.ndarray,
-    cv: Union[int, KFold, StratifiedKFold] = 5,
-    scoring: Optional[Union[str, Callable]] = None,
-) -> np.ndarray:
-    """Evaluate estimator by cross-validation.
+class LeaveOneOut:
+    """Leave-One-Out cross-validator."""
+    def split(self, X: np.ndarray, y=None, groups=None) -> Generator[Tuple[np.ndarray, np.ndarray], None, None]:
+        n_samples = len(X)
+        indices = np.arange(n_samples)
+        for i in range(n_samples):
+            yield np.delete(indices, i), np.array([i])
 
-    Args:
-        estimator: Model to evaluate (must have fit and score methods).
-        X: Training data.
-        y: Target variable.
-        cv: Cross-validation splitter or number of folds.
-        scoring: Scoring function ('accuracy', 'r2', or callable).
+    def get_n_splits(self, X=None, y=None, groups=None) -> int:
+        return len(X) if X is not None else 0
 
-    Returns:
-        Array of scores for each fold.
 
-    Example:
-        >>> from sdk.models import LogisticRegression
-        >>> from sdk.evaluation import cross_val_score
-        >>> model = LogisticRegression()
-        >>> scores = cross_val_score(model, X, y, cv=5)
-        >>> print(f"Accuracy: {scores.mean():.3f} (+/- {scores.std():.3f})")
-    """
-    X = np.asarray(X)
-    y = np.asarray(y)
+class TimeSeriesSplit:
+    """Time Series cross-validator respecting temporal order."""
+    def __init__(self, n_splits: int = 5, max_train_size: Optional[int] = None, test_size: Optional[int] = None, gap: int = 0):
+        self.n_splits = n_splits
+        self.max_train_size = max_train_size
+        self.test_size = test_size
+        self.gap = gap
 
-    # Get CV splitter
-    if isinstance(cv, int):
-        cv_splitter = KFold(n_splits=cv)
-    else:
-        cv_splitter = cv
+    def split(self, X: np.ndarray, y=None, groups=None) -> Generator[Tuple[np.ndarray, np.ndarray], None, None]:
+        n_samples = len(X)
+        indices = np.arange(n_samples)
+        test_size = self.test_size if self.test_size else n_samples // (self.n_splits + 1)
+        test_starts = range(test_size + self.gap, n_samples - test_size + 1, (n_samples - test_size - self.gap) // self.n_splits)
+        for test_start in list(test_starts)[-self.n_splits:]:
+            train_end = test_start - self.gap
+            train_start = max(0, train_end - self.max_train_size) if self.max_train_size else 0
+            yield indices[train_start:train_end], indices[test_start:test_start + test_size]
 
-    # Get scoring function
-    if scoring is None or scoring == "accuracy":
-        def score_func(model, X, y):
-            return model.score(X, y)
-    elif scoring == "r2":
-        def score_func(model, X, y):
-            return model.score(X, y)
-    elif callable(scoring):
-        score_func = scoring
-    else:
-        def score_func(model, X, y):
-            return model.score(X, y)
+    def get_n_splits(self, X=None, y=None, groups=None) -> int:
+        return self.n_splits
 
+
+class GroupKFold:
+    """K-Fold with non-overlapping groups."""
+    def __init__(self, n_splits: int = 5):
+        self.n_splits = n_splits
+
+    def split(self, X: np.ndarray, y=None, groups: np.ndarray = None) -> Generator[Tuple[np.ndarray, np.ndarray], None, None]:
+        if groups is None:
+            raise ValueError("Groups must be provided")
+        unique_groups = np.unique(groups)
+        n_groups = len(unique_groups)
+        fold_sizes = np.full(self.n_splits, n_groups // self.n_splits)
+        fold_sizes[:n_groups % self.n_splits] += 1
+        group_to_fold = {}
+        current = 0
+        for fold_id, size in enumerate(fold_sizes):
+            for g in unique_groups[current:current + size]:
+                group_to_fold[g] = fold_id
+            current += size
+        for fold_id in range(self.n_splits):
+            test_mask = np.array([group_to_fold[g] == fold_id for g in groups])
+            yield np.where(~test_mask)[0], np.where(test_mask)[0]
+
+    def get_n_splits(self, X=None, y=None, groups=None) -> int:
+        return self.n_splits
+
+
+class RepeatedKFold:
+    """Repeated K-Fold cross-validator."""
+    def __init__(self, n_splits: int = 5, n_repeats: int = 10, random_state: Optional[int] = None):
+        self.n_splits = n_splits
+        self.n_repeats = n_repeats
+        self.random_state = random_state
+
+    def split(self, X: np.ndarray, y=None, groups=None) -> Generator[Tuple[np.ndarray, np.ndarray], None, None]:
+        for repeat in range(self.n_repeats):
+            seed = self.random_state + repeat if self.random_state else None
+            kfold = KFold(n_splits=self.n_splits, shuffle=True, random_state=seed)
+            for train_idx, test_idx in kfold.split(X, y, groups):
+                yield train_idx, test_idx
+
+    def get_n_splits(self, X=None, y=None, groups=None) -> int:
+        return self.n_splits * self.n_repeats
+
+
+def cross_val_score(estimator: Any, X: np.ndarray, y: np.ndarray, cv: int = 5, scoring: Callable = None, groups=None) -> np.ndarray:
+    """Evaluate estimator using cross-validation."""
+    X, y = np.asarray(X), np.asarray(y)
+    if scoring is None:
+        scoring = lambda y_true, y_pred: np.mean(y_true == y_pred)
+    cv_obj = KFold(n_splits=cv, shuffle=True, random_state=42) if isinstance(cv, int) else cv
     scores = []
-
-    for train_idx, test_idx in cv_splitter.split(X, y):
-        X_train, X_test = X[train_idx], X[test_idx]
-        y_train, y_test = y[train_idx], y[test_idx]
-
-        # Clone the estimator (simple approach: create new instance)
-        import copy
+    for train_idx, test_idx in cv_obj.split(X, y, groups):
         model = copy.deepcopy(estimator)
-
-        # Fit and score
-        model.fit(X_train, y_train)
-        score = score_func(model, X_test, y_test)
-        scores.append(score)
-
+        model.fit(X[train_idx], y[train_idx])
+        scores.append(scoring(y[test_idx], model.predict(X[test_idx])))
     return np.array(scores)
 
 
-def cross_val_predict(
-    estimator,
-    X: np.ndarray,
-    y: np.ndarray,
-    cv: Union[int, KFold, StratifiedKFold] = 5,
-    method: str = "predict",
-) -> np.ndarray:
-    """Generate cross-validated predictions.
-
-    Args:
-        estimator: Model to use.
-        X: Training data.
-        y: Target variable.
-        cv: Cross-validation splitter or number of folds.
-        method: 'predict' or 'predict_proba'.
-
-    Returns:
-        Cross-validated predictions.
-
-    Example:
-        >>> from sdk.evaluation import cross_val_predict
-        >>> predictions = cross_val_predict(model, X, y, cv=5)
-    """
-    X = np.asarray(X)
-    y = np.asarray(y)
-
-    if isinstance(cv, int):
-        cv_splitter = KFold(n_splits=cv)
-    else:
-        cv_splitter = cv
-
-    # Initialize predictions array
-    if method == "predict_proba":
-        # Need to determine n_classes first
-        n_classes = len(np.unique(y))
-        predictions = np.zeros((len(y), n_classes))
-    else:
-        predictions = np.zeros(len(y))
-
-    for train_idx, test_idx in cv_splitter.split(X, y):
-        X_train, X_test = X[train_idx], X[test_idx]
-        y_train, y_test = y[train_idx], y[test_idx]
-
-        import copy
+def cross_validate(estimator: Any, X: np.ndarray, y: np.ndarray, cv: int = 5, scoring: Callable = None, groups=None, return_train_score: bool = False, return_estimator: bool = False) -> dict:
+    """Evaluate estimator and return detailed results."""
+    X, y = np.asarray(X), np.asarray(y)
+    if scoring is None:
+        scoring = lambda y_true, y_pred: np.mean(y_true == y_pred)
+    cv_obj = KFold(n_splits=cv, shuffle=True, random_state=42) if isinstance(cv, int) else cv
+    results = {"test_score": [], "fit_time": [], "score_time": []}
+    if return_train_score:
+        results["train_score"] = []
+    if return_estimator:
+        results["estimator"] = []
+    for train_idx, test_idx in cv_obj.split(X, y, groups):
         model = copy.deepcopy(estimator)
-        model.fit(X_train, y_train)
-
-        if method == "predict_proba":
-            pred = model.predict_proba(X_test)
-        else:
-            pred = model.predict(X_test)
-
-        predictions[test_idx] = pred
-
-    return predictions
-
-
-@dataclass
-class GridSearchResult:
-    """Result of grid search."""
-
-    best_params: dict
-    best_score: float
-    cv_results: list[dict]
+        start = time.time()
+        model.fit(X[train_idx], y[train_idx])
+        results["fit_time"].append(time.time() - start)
+        start = time.time()
+        y_pred = model.predict(X[test_idx])
+        results["score_time"].append(time.time() - start)
+        results["test_score"].append(scoring(y[test_idx], y_pred))
+        if return_train_score:
+            results["train_score"].append(scoring(y[train_idx], model.predict(X[train_idx])))
+        if return_estimator:
+            results["estimator"].append(model)
+    for key in ["test_score", "fit_time", "score_time"]:
+        results[key] = np.array(results[key])
+    if return_train_score:
+        results["train_score"] = np.array(results["train_score"])
+    return results
 
 
-class GridSearchCV:
-    """Exhaustive search over specified parameter values.
-
-    Example:
-        >>> from sdk.models import LogisticRegression
-        >>> from sdk.evaluation import GridSearchCV
-        >>> param_grid = {'learning_rate': [0.01, 0.1], 'n_epochs': [50, 100]}
-        >>> gs = GridSearchCV(LogisticRegression(), param_grid, cv=3)
-        >>> gs.fit(X, y)
-        >>> print(gs.best_params_)
-    """
-
-    def __init__(
-        self,
-        estimator,
-        param_grid: dict,
-        cv: Union[int, KFold, StratifiedKFold] = 5,
-        scoring: Optional[Union[str, Callable]] = None,
-        refit: bool = True,
-        verbose: int = 0,
-    ):
-        """Initialize Grid Search.
-
-        Args:
-            estimator: Model to tune.
-            param_grid: Dictionary with parameter names and values.
-            cv: Cross-validation splitter.
-            scoring: Scoring function.
-            refit: Whether to refit on full data with best params.
-            verbose: Verbosity level.
-        """
-        self.estimator = estimator
-        self.param_grid = param_grid
-        self.cv = cv
-        self.scoring = scoring
-        self.refit = refit
-        self.verbose = verbose
-
-        self.best_params_: Optional[dict] = None
-        self.best_score_: Optional[float] = None
-        self.best_estimator_: Optional[Any] = None
-        self.cv_results_: Optional[list] = None
-
-    def _generate_param_combinations(self) -> list[dict]:
-        """Generate all parameter combinations."""
-        import itertools
-
-        keys = list(self.param_grid.keys())
-        values = list(self.param_grid.values())
-
-        combinations = []
-        for combo in itertools.product(*values):
-            combinations.append(dict(zip(keys, combo)))
-
-        return combinations
-
-    def fit(self, X: np.ndarray, y: np.ndarray) -> "GridSearchCV":
-        """Run grid search.
-
-        Args:
-            X: Training data.
-            y: Target variable.
-
-        Returns:
-            self for method chaining.
-        """
-        X = np.asarray(X)
-        y = np.asarray(y)
-
-        param_combinations = self._generate_param_combinations()
-
-        if self.verbose > 0:
-            print(f"Fitting {len(param_combinations)} parameter combinations")
-
-        self.cv_results_ = []
-        best_score = -np.inf
-        best_params = None
-
-        for i, params in enumerate(param_combinations):
-            if self.verbose > 0:
-                print(f"  [{i+1}/{len(param_combinations)}] {params}")
-
-            # Create estimator with these params
-            import copy
-            estimator = copy.deepcopy(self.estimator)
-
-            # Set parameters
-            if hasattr(estimator, "_config"):
-                for key, value in params.items():
-                    if hasattr(estimator._config, key):
-                        setattr(estimator._config, key, value)
-
-            # Cross-validate
-            scores = cross_val_score(estimator, X, y, cv=self.cv, scoring=self.scoring)
-            mean_score = scores.mean()
-            std_score = scores.std()
-
-            self.cv_results_.append({
-                "params": params,
-                "mean_score": mean_score,
-                "std_score": std_score,
-                "scores": scores,
-            })
-
-            if self.verbose > 0:
-                print(f"      Score: {mean_score:.4f} (+/- {std_score:.4f})")
-
-            if mean_score > best_score:
-                best_score = mean_score
-                best_params = params
-
-        self.best_params_ = best_params
-        self.best_score_ = best_score
-
-        if self.refit:
-            import copy
-            self.best_estimator_ = copy.deepcopy(self.estimator)
-            if hasattr(self.best_estimator_, "_config"):
-                for key, value in best_params.items():
-                    if hasattr(self.best_estimator_._config, key):
-                        setattr(self.best_estimator_._config, key, value)
-            self.best_estimator_.fit(X, y)
-
-        return self
-
-    def predict(self, X: np.ndarray) -> np.ndarray:
-        """Predict using best estimator."""
-        if self.best_estimator_ is None:
-            raise RuntimeError("Must fit before predicting")
-        return self.best_estimator_.predict(X)
-
-    def score(self, X: np.ndarray, y: np.ndarray) -> float:
-        """Score using best estimator."""
-        if self.best_estimator_ is None:
-            raise RuntimeError("Must fit before scoring")
-        return self.best_estimator_.score(X, y)
+def learning_curve(estimator: Any, X: np.ndarray, y: np.ndarray, train_sizes: np.ndarray = None, cv: int = 5, scoring: Callable = None, random_state: int = None) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Generate learning curve data."""
+    X, y = np.asarray(X), np.asarray(y)
+    if train_sizes is None:
+        train_sizes = np.linspace(0.1, 1.0, 5)
+    if scoring is None:
+        scoring = lambda y_true, y_pred: np.mean(y_true == y_pred)
+    if random_state:
+        np.random.seed(random_state)
+    n_samples = len(X)
+    train_sizes_abs = (train_sizes * n_samples).astype(int) if np.all(train_sizes <= 1.0) else train_sizes.astype(int)
+    cv_obj = KFold(n_splits=cv, shuffle=True, random_state=random_state)
+    train_scores = np.zeros((len(train_sizes_abs), cv))
+    test_scores = np.zeros((len(train_sizes_abs), cv))
+    for size_idx, size in enumerate(train_sizes_abs):
+        for fold_idx, (train_idx, test_idx) in enumerate(cv_obj.split(X, y)):
+            train_idx = train_idx[:size] if len(train_idx) > size else train_idx
+            model = copy.deepcopy(estimator)
+            model.fit(X[train_idx], y[train_idx])
+            train_scores[size_idx, fold_idx] = scoring(y[train_idx], model.predict(X[train_idx]))
+            test_scores[size_idx, fold_idx] = scoring(y[test_idx], model.predict(X[test_idx]))
+    return train_sizes_abs, train_scores, test_scores

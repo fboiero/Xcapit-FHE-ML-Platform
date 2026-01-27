@@ -30,10 +30,25 @@ from .metrics import (
 from .cross_validation import (
     cross_val_score,
     cross_val_predict,
+    cross_validate,
+    learning_curve,
     KFold,
     StratifiedKFold,
+    LeaveOneOut,
+    TimeSeriesSplit,
+    GroupKFold,
+    RepeatedKFold,
     train_test_split,
     GridSearchCV,
+)
+
+from .interpretation import (
+    PermutationImportance,
+    SHAPApproximation,
+    PartialDependence,
+    IndividualConditionalExpectation,
+    FeatureInteraction,
+    explain_prediction,
 )
 
 from .hyperparameter_tuning import (
@@ -64,8 +79,14 @@ __all__ = [
     # Cross-validation
     "cross_val_score",
     "cross_val_predict",
+    "cross_validate",
+    "learning_curve",
     "KFold",
     "StratifiedKFold",
+    "LeaveOneOut",
+    "TimeSeriesSplit",
+    "GroupKFold",
+    "RepeatedKFold",
     "train_test_split",
     "GridSearchCV",
     # Hyperparameter tuning
@@ -74,4 +95,11 @@ __all__ = [
     "HalvingRandomSearchCV",
     "ParameterSampler",
     "SearchResult",
+    # Model interpretation
+    "PermutationImportance",
+    "SHAPApproximation",
+    "PartialDependence",
+    "IndividualConditionalExpectation",
+    "FeatureInteraction",
+    "explain_prediction",
 ]

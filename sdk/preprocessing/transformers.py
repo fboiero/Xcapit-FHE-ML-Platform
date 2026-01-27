@@ -697,3 +697,465 @@ class FeatureSelector(BaseTransformer):
         """Return indices of selected features."""
         self._check_fitted()
         return self._selected_indices.copy()
+
+
+class PolynomialFeatures(BaseTransformer):
+    """
+    Generate polynomial and interaction features.
+
+    Parameters
+    ----------
+    degree : int
+        Maximum degree of polynomial features.
+    interaction_only : bool
+        Only produce interaction features.
+    include_bias : bool
+        Include bias column (all 1s).
+
+    Examples
+    --------
+    >>> from sdk.preprocessing import PolynomialFeatures
+    >>> poly = PolynomialFeatures(degree=2)
+    >>> X_poly = poly.fit_transform([[2, 3]])
+    # Results in [1, 2, 3, 4, 6, 9] for [1, a, b, a^2, ab, b^2]
+    """
+
+    def __init__(
+        self,
+        degree: int = 2,
+        interaction_only: bool = False,
+        include_bias: bool = True,
+        name: Optional[str] = None,
+    ):
+        super().__init__(name)
+        self.degree = degree
+        self.interaction_only = interaction_only
+        self.include_bias = include_bias
+        self._powers: list = []
+        self._n_features_in: int = 0
+        self._n_output_features: int = 0
+
+    def _generate_powers(self, n_features: int) -> list:
+        """Generate power combinations for polynomial features."""
+        from itertools import combinations_with_replacement, combinations
+
+        powers = []
+
+        if self.include_bias:
+            powers.append([0] * n_features)
+
+        for d in range(1, self.degree + 1):
+            if self.interaction_only:
+                for combo in combinations(range(n_features), d):
+                    power = [0] * n_features
+                    for idx in combo:
+                        power[idx] = 1
+                    powers.append(power)
+            else:
+                for combo in combinations_with_replacement(range(n_features), d):
+                    power = [0] * n_features
+                    for idx in combo:
+                        power[idx] += 1
+                    if power not in powers:
+                        powers.append(power)
+
+        return powers
+
+    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> 'PolynomialFeatures':
+        X = self._validate_input(X)
+        self._n_features_in = X.shape[1]
+        self._powers = self._generate_powers(self._n_features_in)
+        self._n_output_features = len(self._powers)
+
+        self._params = {
+            "degree": self.degree,
+            "interaction_only": self.interaction_only,
+            "include_bias": self.include_bias,
+            "n_features_in": self._n_features_in,
+            "n_output_features": self._n_output_features,
+        }
+        self.state = TransformerState.FITTED
+        return self
+
+    def transform(self, X: np.ndarray) -> np.ndarray:
+        self._check_fitted()
+        X = self._validate_input(X)
+        n_samples = X.shape[0]
+
+        result = np.zeros((n_samples, self._n_output_features))
+        for i, power in enumerate(self._powers):
+            result[:, i] = np.prod(X ** power, axis=1)
+
+        return result
+
+    def get_feature_names_out(self, input_features: Optional[list] = None) -> list:
+        """Get output feature names."""
+        self._check_fitted()
+
+        if input_features is None:
+            input_features = [f"x{i}" for i in range(self._n_features_in)]
+
+        names = []
+        for power in self._powers:
+            if sum(power) == 0:
+                names.append("1")
+            else:
+                terms = []
+                for feat, p in enumerate(power):
+                    if p == 1:
+                        terms.append(input_features[feat])
+                    elif p > 1:
+                        terms.append(f"{input_features[feat]}^{p}")
+                names.append(" ".join(terms) if terms else "1")
+
+        return names
+
+
+class PowerTransformer(BaseTransformer):
+    """
+    Apply power transformation to make data more Gaussian-like.
+
+    Parameters
+    ----------
+    method : str
+        Transformation method ('yeo-johnson', 'box-cox').
+    standardize : bool
+        Standardize after transformation.
+
+    Examples
+    --------
+    >>> from sdk.preprocessing import PowerTransformer
+    >>> pt = PowerTransformer(method='yeo-johnson')
+    >>> X_transformed = pt.fit_transform(X)
+    """
+
+    def __init__(
+        self,
+        method: str = "yeo-johnson",
+        standardize: bool = True,
+        name: Optional[str] = None,
+    ):
+        super().__init__(name)
+        self.method = method
+        self.standardize = standardize
+        self._lambdas: Optional[np.ndarray] = None
+        self._scaler_mean: Optional[np.ndarray] = None
+        self._scaler_std: Optional[np.ndarray] = None
+        self._n_features_in: int = 0
+
+    def _yeo_johnson_transform(self, x: np.ndarray, lmbda: float) -> np.ndarray:
+        """Apply Yeo-Johnson transformation."""
+        result = np.zeros_like(x)
+        pos_mask = x >= 0
+
+        if lmbda != 0:
+            result[pos_mask] = ((x[pos_mask] + 1) ** lmbda - 1) / lmbda
+        else:
+            result[pos_mask] = np.log(x[pos_mask] + 1)
+
+        neg_mask = ~pos_mask
+        if lmbda != 2:
+            result[neg_mask] = -((-x[neg_mask] + 1) ** (2 - lmbda) - 1) / (2 - lmbda)
+        else:
+            result[neg_mask] = -np.log(-x[neg_mask] + 1)
+
+        return result
+
+    def _box_cox_transform(self, x: np.ndarray, lmbda: float) -> np.ndarray:
+        """Apply Box-Cox transformation (x must be positive)."""
+        if np.any(x <= 0):
+            raise ValueError("Box-Cox requires positive data.")
+        if lmbda != 0:
+            return (x ** lmbda - 1) / lmbda
+        else:
+            return np.log(x)
+
+    def _optimize_lambda(self, x: np.ndarray) -> float:
+        """Find optimal lambda using maximum likelihood."""
+        best_lambda = 0
+        best_ll = -np.inf
+
+        for lmbda in np.linspace(-2, 2, 41):
+            try:
+                if self.method == "yeo-johnson":
+                    transformed = self._yeo_johnson_transform(x, lmbda)
+                else:
+                    if np.any(x <= 0):
+                        continue
+                    transformed = self._box_cox_transform(x, lmbda)
+
+                var = np.var(transformed)
+                if var > 0:
+                    ll = -0.5 * np.log(var)
+                    if ll > best_ll:
+                        best_ll = ll
+                        best_lambda = lmbda
+            except:
+                continue
+
+        return best_lambda
+
+    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> 'PowerTransformer':
+        X = self._validate_input(X)
+        self._n_features_in = X.shape[1]
+
+        self._lambdas = np.zeros(self._n_features_in)
+        for i in range(self._n_features_in):
+            self._lambdas[i] = self._optimize_lambda(X[:, i])
+
+        if self.standardize:
+            X_transformed = self._apply_transform(X)
+            self._scaler_mean = np.mean(X_transformed, axis=0)
+            self._scaler_std = np.std(X_transformed, axis=0)
+            self._scaler_std = np.where(self._scaler_std == 0, 1, self._scaler_std)
+
+        self._params = {
+            "method": self.method,
+            "lambdas": self._lambdas.tolist(),
+            "n_features_in": self._n_features_in,
+        }
+        self.state = TransformerState.FITTED
+        return self
+
+    def _apply_transform(self, X: np.ndarray) -> np.ndarray:
+        """Apply transformation without standardization."""
+        result = np.zeros_like(X)
+        for i in range(self._n_features_in):
+            if self.method == "yeo-johnson":
+                result[:, i] = self._yeo_johnson_transform(X[:, i], self._lambdas[i])
+            else:
+                result[:, i] = self._box_cox_transform(X[:, i], self._lambdas[i])
+        return result
+
+    def transform(self, X: np.ndarray) -> np.ndarray:
+        self._check_fitted()
+        X = self._validate_input(X)
+        result = self._apply_transform(X)
+
+        if self.standardize and self._scaler_mean is not None:
+            result = (result - self._scaler_mean) / self._scaler_std
+
+        return result
+
+
+class QuantileTransformer(BaseTransformer):
+    """
+    Transform features to follow a uniform or normal distribution.
+
+    Parameters
+    ----------
+    n_quantiles : int
+        Number of quantiles to compute.
+    output_distribution : str
+        Distribution to map to ('uniform', 'normal').
+
+    Examples
+    --------
+    >>> from sdk.preprocessing import QuantileTransformer
+    >>> qt = QuantileTransformer(output_distribution='normal')
+    >>> X_transformed = qt.fit_transform(X)
+    """
+
+    def __init__(
+        self,
+        n_quantiles: int = 1000,
+        output_distribution: str = "uniform",
+        random_state: Optional[int] = None,
+        name: Optional[str] = None,
+    ):
+        super().__init__(name)
+        self.n_quantiles = n_quantiles
+        self.output_distribution = output_distribution
+        self.random_state = random_state
+        self._quantiles: Optional[np.ndarray] = None
+        self._references: Optional[np.ndarray] = None
+        self._n_features_in: int = 0
+
+    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> 'QuantileTransformer':
+        X = self._validate_input(X)
+        self._n_features_in = X.shape[1]
+
+        self._references = np.linspace(0, 1, self.n_quantiles)
+        self._quantiles = np.zeros((self.n_quantiles, self._n_features_in))
+
+        for i in range(self._n_features_in):
+            self._quantiles[:, i] = np.percentile(X[:, i], self._references * 100)
+
+        self._params = {
+            "n_quantiles": self.n_quantiles,
+            "output_distribution": self.output_distribution,
+            "n_features_in": self._n_features_in,
+        }
+        self.state = TransformerState.FITTED
+        return self
+
+    def _inverse_normal_cdf(self, p: np.ndarray) -> np.ndarray:
+        """Polynomial approximation of inverse normal CDF."""
+        a = [-3.969683028665376e+01, 2.209460984245205e+02, -2.759285104469687e+02,
+             1.383577518672690e+02, -3.066479806614716e+01, 2.506628277459239e+00]
+        b = [-5.447609879822406e+01, 1.615858368580409e+02, -1.556989798598866e+02,
+             6.680131188771972e+01, -1.328068155288572e+01]
+        c = [-7.784894002430293e-03, -3.223964580411365e-01, -2.400758277161838e+00,
+             -2.549732539343734e+00, 4.374664141464968e+00, 2.938163982698783e+00]
+        d = [7.784695709041462e-03, 3.224671290700398e-01, 2.445134137142996e+00,
+             3.754408661907416e+00]
+
+        p_low = 0.02425
+        p_high = 1 - p_low
+        result = np.zeros_like(p)
+
+        mask_low = p < p_low
+        if np.any(mask_low):
+            q = np.sqrt(-2 * np.log(p[mask_low]))
+            result[mask_low] = (((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) / ((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1)
+
+        mask_central = (p >= p_low) & (p <= p_high)
+        if np.any(mask_central):
+            q = p[mask_central] - 0.5
+            r = q * q
+            result[mask_central] = (((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q / (((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1)
+
+        mask_high = p > p_high
+        if np.any(mask_high):
+            q = np.sqrt(-2 * np.log(1 - p[mask_high]))
+            result[mask_high] = -(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) / ((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1)
+
+        return result
+
+    def transform(self, X: np.ndarray) -> np.ndarray:
+        self._check_fitted()
+        X = self._validate_input(X)
+        result = np.zeros_like(X)
+
+        for i in range(self._n_features_in):
+            result[:, i] = np.interp(X[:, i], self._quantiles[:, i], self._references)
+
+        result = np.clip(result, 0, 1)
+
+        if self.output_distribution == "normal":
+            result = np.clip(result, 1e-7, 1 - 1e-7)
+            result = self._inverse_normal_cdf(result)
+
+        return result
+
+
+class FunctionTransformer(BaseTransformer):
+    """
+    Apply an arbitrary function to features.
+
+    Parameters
+    ----------
+    func : callable
+        Function to apply.
+    inverse_func : callable, optional
+        Inverse function.
+
+    Examples
+    --------
+    >>> from sdk.preprocessing import FunctionTransformer
+    >>> ft = FunctionTransformer(func=np.log1p, inverse_func=np.expm1)
+    >>> X_transformed = ft.fit_transform(X)
+    """
+
+    def __init__(
+        self,
+        func: Optional[Any] = None,
+        inverse_func: Optional[Any] = None,
+        name: Optional[str] = None,
+    ):
+        super().__init__(name)
+        self.func = func
+        self.inverse_func = inverse_func
+        self._n_features_in: int = 0
+
+    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> 'FunctionTransformer':
+        X = self._validate_input(X)
+        self._n_features_in = X.shape[1]
+
+        self._params = {"n_features_in": self._n_features_in}
+        self.state = TransformerState.FITTED
+        return self
+
+    def transform(self, X: np.ndarray) -> np.ndarray:
+        X = self._validate_input(X)
+        if self.func is None:
+            return X
+        return self.func(X)
+
+    def inverse_transform(self, X: np.ndarray) -> np.ndarray:
+        X = self._validate_input(X)
+        if self.inverse_func is None:
+            raise ValueError("inverse_func was not provided.")
+        return self.inverse_func(X)
+
+
+class Normalizer(BaseTransformer):
+    """
+    Normalize samples individually to unit norm.
+
+    Parameters
+    ----------
+    norm : str
+        Norm to use ('l1', 'l2', 'max').
+    """
+
+    def __init__(self, norm: str = "l2", name: Optional[str] = None):
+        super().__init__(name)
+        self.norm = norm
+
+    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> 'Normalizer':
+        X = self._validate_input(X)
+        self._params = {"norm": self.norm}
+        self.state = TransformerState.FITTED
+        return self
+
+    def transform(self, X: np.ndarray) -> np.ndarray:
+        X = self._validate_input(X)
+
+        if self.norm == "l1":
+            norms = np.sum(np.abs(X), axis=1, keepdims=True)
+        elif self.norm == "l2":
+            norms = np.sqrt(np.sum(X**2, axis=1, keepdims=True))
+        elif self.norm == "max":
+            norms = np.max(np.abs(X), axis=1, keepdims=True)
+        else:
+            raise ValueError(f"Unknown norm: {self.norm}")
+
+        norms = np.where(norms == 0, 1, norms)
+        return X / norms
+
+
+class MaxAbsScaler(BaseTransformer):
+    """
+    Scale features by their maximum absolute value.
+
+    Scales to [-1, 1] range without shifting/centering.
+    """
+
+    def __init__(self, name: Optional[str] = None):
+        super().__init__(name)
+        self._max_abs: Optional[np.ndarray] = None
+        self._n_features_in: int = 0
+
+    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> 'MaxAbsScaler':
+        X = self._validate_input(X)
+        self._n_features_in = X.shape[1]
+        self._max_abs = np.max(np.abs(X), axis=0)
+        self._max_abs = np.where(self._max_abs == 0, 1, self._max_abs)
+
+        self._params = {
+            "max_abs": self._max_abs.tolist(),
+            "n_features_in": self._n_features_in,
+        }
+        self.state = TransformerState.FITTED
+        return self
+
+    def transform(self, X: np.ndarray) -> np.ndarray:
+        self._check_fitted()
+        X = self._validate_input(X)
+        return X / self._max_abs
+
+    def inverse_transform(self, X: np.ndarray) -> np.ndarray:
+        self._check_fitted()
+        X = self._validate_input(X)
+        return X * self._max_abs

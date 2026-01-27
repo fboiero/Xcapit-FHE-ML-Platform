@@ -148,14 +148,27 @@ from .evaluation import (
     # Cross-validation
     cross_val_score,
     cross_val_predict,
+    cross_validate,
+    learning_curve,
     KFold,
     StratifiedKFold,
+    LeaveOneOut,
+    TimeSeriesSplit,
+    GroupKFold,
+    RepeatedKFold,
     train_test_split,
     GridSearchCV,
     # Hyperparameter tuning
     RandomizedSearchCV,
     BayesianOptimization,
     HalvingRandomSearchCV,
+    # Model interpretation
+    PermutationImportance,
+    SHAPApproximation,
+    PartialDependence,
+    IndividualConditionalExpectation,
+    FeatureInteraction,
+    explain_prediction,
 )
 from .persistence import (
     save_model,
@@ -181,7 +194,7 @@ from .preprocessing import (
     FeatureSelector,
 )
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 __all__ = [
     # Encryption
@@ -331,14 +344,27 @@ __all__ = [
     # Evaluation - Cross-validation
     "cross_val_score",
     "cross_val_predict",
+    "cross_validate",
+    "learning_curve",
     "KFold",
     "StratifiedKFold",
+    "LeaveOneOut",
+    "TimeSeriesSplit",
+    "GroupKFold",
+    "RepeatedKFold",
     "train_test_split",
     "GridSearchCV",
     # Evaluation - Hyperparameter Tuning
     "RandomizedSearchCV",
     "BayesianOptimization",
     "HalvingRandomSearchCV",
+    # Evaluation - Model Interpretation
+    "PermutationImportance",
+    "SHAPApproximation",
+    "PartialDependence",
+    "IndividualConditionalExpectation",
+    "FeatureInteraction",
+    "explain_prediction",
     # Persistence
     "save_model",
     "load_model",
