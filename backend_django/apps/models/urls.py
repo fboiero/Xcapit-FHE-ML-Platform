@@ -11,6 +11,9 @@ from . import views
 router = DefaultRouter()
 router.register(r"training-runs", views.TrainingRunViewSet, basename="training-run")
 router.register(r"predictions", views.PredictionLogViewSet, basename="prediction-log")
+router.register(r"batch-jobs", views.BatchPredictionJobViewSet, basename="batch-job")
+router.register(r"versions", views.ModelVersionViewSet, basename="model-version")
+router.register(r"exports", views.ModelExportViewSet, basename="model-export")
 router.register(r"", views.MLModelViewSet, basename="model")
 
 urlpatterns = [
