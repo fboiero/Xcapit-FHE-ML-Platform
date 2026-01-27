@@ -140,6 +140,25 @@ from .clustering import (
     GaussianMixture,
 )
 
+from .calibration import (
+    CalibrationConfig,
+    CalibrationMethod,
+    IsotonicRegression,
+    SigmoidCalibration,
+    TemperatureScaling,
+    CalibratedClassifierCV,
+    calibration_curve,
+)
+
+from .multioutput import (
+    MultiOutputClassifier,
+    MultiOutputRegressor,
+    ClassifierChain,
+    RegressorChain,
+    MultiLabelBinarizer,
+    MultiOutputStrategy,
+)
+
 __all__ = [
     # Base
     "BaseFHEModel",
@@ -262,4 +281,19 @@ __all__ = [
     "SpectralClustering",
     "MeanShift",
     "GaussianMixture",
+    # Calibration
+    "CalibrationConfig",
+    "CalibrationMethod",
+    "IsotonicRegression",
+    "SigmoidCalibration",
+    "TemperatureScaling",
+    "CalibratedClassifierCV",
+    "calibration_curve",
+    # Multi-output
+    "MultiOutputClassifier",
+    "MultiOutputRegressor",
+    "ClassifierChain",
+    "RegressorChain",
+    "MultiLabelBinarizer",
+    "MultiOutputStrategy",
 ]

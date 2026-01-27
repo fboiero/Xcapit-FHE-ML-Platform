@@ -194,7 +194,45 @@ from .preprocessing import (
     FeatureSelector,
 )
 
-__version__ = "0.4.0"
+from .pipeline import (
+    Pipeline,
+    FeatureUnion,
+    ColumnTransformer,
+    make_pipeline,
+    make_union,
+    TransformedTargetRegressor,
+)
+
+from .models import (
+    # Calibration
+    CalibrationConfig,
+    CalibrationMethod,
+    IsotonicRegression,
+    SigmoidCalibration,
+    TemperatureScaling,
+    CalibratedClassifierCV,
+    calibration_curve,
+    # Multi-output
+    MultiOutputClassifier,
+    MultiOutputRegressor,
+    ClassifierChain,
+    RegressorChain,
+    MultiLabelBinarizer,
+)
+
+from .evaluation import (
+    # Advanced metrics
+    matthews_corrcoef,
+    cohen_kappa_score,
+    brier_score_loss,
+    balanced_accuracy_score,
+    silhouette_score,
+    calinski_harabasz_score,
+    davies_bouldin_score,
+    adjusted_rand_score,
+)
+
+__version__ = "0.5.0"
 
 __all__ = [
     # Encryption
@@ -372,4 +410,34 @@ __all__ = [
     "ModelFormat",
     # Version
     "__version__",
+    # Pipeline
+    "Pipeline",
+    "FeatureUnion",
+    "ColumnTransformer",
+    "make_pipeline",
+    "make_union",
+    "TransformedTargetRegressor",
+    # Calibration
+    "CalibrationConfig",
+    "CalibrationMethod",
+    "IsotonicRegression",
+    "SigmoidCalibration",
+    "TemperatureScaling",
+    "CalibratedClassifierCV",
+    "calibration_curve",
+    # Multi-output
+    "MultiOutputClassifier",
+    "MultiOutputRegressor",
+    "ClassifierChain",
+    "RegressorChain",
+    "MultiLabelBinarizer",
+    # Advanced metrics
+    "matthews_corrcoef",
+    "cohen_kappa_score",
+    "brier_score_loss",
+    "balanced_accuracy_score",
+    "silhouette_score",
+    "calinski_harabasz_score",
+    "davies_bouldin_score",
+    "adjusted_rand_score",
 ]
