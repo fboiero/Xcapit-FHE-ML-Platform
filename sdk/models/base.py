@@ -439,3 +439,45 @@ class FHEModel:
         from .neural_network import NeuralNetworkRegressor
 
         return NeuralNetworkRegressor(**kwargs)
+
+    @staticmethod
+    def GradientBoosting(**kwargs) -> "BaseFHEModel":
+        """Create a Gradient Boosting model.
+
+        Args:
+            **kwargs: Arguments passed to GradientBoosting constructor.
+
+        Returns:
+            GradientBoosting model instance.
+        """
+        from .gradient_boosting import GradientBoosting
+
+        return GradientBoosting(**kwargs)
+
+    @staticmethod
+    def GradientBoostingClassifier(**kwargs) -> "BaseFHEModel":
+        """Create a Gradient Boosting Classifier.
+
+        Args:
+            **kwargs: Arguments passed to GradientBoostingClassifier constructor.
+
+        Returns:
+            GradientBoostingClassifier model instance.
+        """
+        from .gradient_boosting import GradientBoostingClassifier
+
+        return GradientBoostingClassifier(**kwargs)
+
+    @staticmethod
+    def GradientBoostingRegressor(**kwargs) -> "BaseFHEModel":
+        """Create a Gradient Boosting Regressor.
+
+        Args:
+            **kwargs: Arguments passed to GradientBoostingRegressor constructor.
+
+        Returns:
+            GradientBoostingRegressor model instance.
+        """
+        from .gradient_boosting import GradientBoostingRegressor
+
+        return GradientBoostingRegressor(**kwargs)

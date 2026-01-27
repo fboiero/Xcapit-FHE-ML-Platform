@@ -44,6 +44,14 @@ from .neural_network import (
     NeuralNetworkRegressor,
     WeightInit,
 )
+from .gradient_boosting import (
+    GradientBoosting,
+    GradientBoostingClassifier,
+    GradientBoostingConfig,
+    GradientBoostingRegressor,
+    LossFunction,
+    LossFunctions,
+)
 
 __all__ = [
     # Base
@@ -78,6 +86,13 @@ __all__ = [
     "Activation",
     "ActivationFunctions",
     "WeightInit",
+    # Gradient Boosting
+    "GradientBoosting",
+    "GradientBoostingClassifier",
+    "GradientBoostingRegressor",
+    "GradientBoostingConfig",
+    "LossFunction",
+    "LossFunctions",
     # Clustering
     "KMeans",
     "MiniBatchKMeans",

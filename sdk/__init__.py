@@ -59,6 +59,13 @@ from .models import (
     NeuralNetworkConfig,
     NeuralNetworkRegressor,
     WeightInit,
+    # Gradient Boosting
+    GradientBoosting,
+    GradientBoostingClassifier,
+    GradientBoostingConfig,
+    GradientBoostingRegressor,
+    LossFunction,
+    LossFunctions,
 )
 from .utils import (
     EncryptedDataset,
@@ -130,6 +137,13 @@ __all__ = [
     "Activation",
     "ActivationFunctions",
     "WeightInit",
+    # Models - Gradient Boosting
+    "GradientBoosting",
+    "GradientBoostingClassifier",
+    "GradientBoostingRegressor",
+    "GradientBoostingConfig",
+    "LossFunction",
+    "LossFunctions",
     # Models - Clustering
     "KMeans",
     "MiniBatchKMeans",
