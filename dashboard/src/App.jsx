@@ -21,6 +21,7 @@ import FederatedInference from './pages/FederatedInference'
 import ModelExplainability from './pages/ModelExplainability'
 import CompetitiveInsights from './pages/CompetitiveInsights'
 import MultiModelEnsemble from './pages/MultiModelEnsemble'
+import ModelMetrics from './pages/ModelMetrics'
 
 // Protected route wrapper
 const ProtectedRoute = ({ children }) => {
@@ -80,6 +81,8 @@ function App() {
         <Route path="/competitive/:consortiumId" element={<CompetitiveInsights />} />
         <Route path="/ensemble" element={<MultiModelEnsemble />} />
         <Route path="/ensemble/:consortiumId" element={<MultiModelEnsemble />} />
+        <Route path="/metrics" element={<ModelMetrics />} />
+        <Route path="/metrics/:consortiumId" element={<ModelMetrics />} />
         <Route path="/consortiums/new" element={<ConsortiumCreate />} />
         <Route path="/consortiums/:id" element={<ConsortiumDetail />} />
         <Route path="/consortiums/:id/upload" element={<UploadData />} />
