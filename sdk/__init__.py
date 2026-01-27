@@ -66,12 +66,58 @@ from .models import (
     GradientBoostingRegressor,
     LossFunction,
     LossFunctions,
+    # SVM
+    KernelType,
+    SVM,
+    SVMClassifier,
+    SVMConfig,
+    SVMRegressor,
+    # Naive Bayes
+    BernoulliNaiveBayes,
+    GaussianNaiveBayes,
+    MultinomialNaiveBayes,
+    NaiveBayesConfig,
+    # PCA
+    PCA,
+    PCAConfig,
+    # Ensemble
+    StackingClassifier,
+    VotingClassifier,
+    VotingRegressor,
+    VotingType,
 )
 from .utils import (
     EncryptedDataset,
     SecureDataLoader,
     ValidationError,
     check_fhe_compatibility,
+)
+from .evaluation import (
+    # Metrics
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score,
+    roc_auc_score,
+    confusion_matrix,
+    classification_report,
+    mean_squared_error,
+    mean_absolute_error,
+    r2_score,
+    root_mean_squared_error,
+    # Cross-validation
+    cross_val_score,
+    cross_val_predict,
+    KFold,
+    StratifiedKFold,
+    train_test_split,
+    GridSearchCV,
+)
+from .persistence import (
+    save_model,
+    load_model,
+    ModelSerializer,
+    ModelFormat,
 )
 from .preprocessing import (
     # Pipeline
@@ -149,6 +195,25 @@ __all__ = [
     "MiniBatchKMeans",
     "KMeansConfig",
     "InitMethod",
+    # Models - SVM
+    "SVM",
+    "SVMClassifier",
+    "SVMRegressor",
+    "SVMConfig",
+    "KernelType",
+    # Models - Naive Bayes
+    "GaussianNaiveBayes",
+    "MultinomialNaiveBayes",
+    "BernoulliNaiveBayes",
+    "NaiveBayesConfig",
+    # Models - PCA
+    "PCA",
+    "PCAConfig",
+    # Models - Ensemble
+    "VotingClassifier",
+    "VotingRegressor",
+    "StackingClassifier",
+    "VotingType",
     # Blockchain
     "BlockchainConnector",
     "ModelRegistryClient",
@@ -167,6 +232,30 @@ __all__ = [
     "MissingValueHandler",
     "OutlierHandler",
     "FeatureSelector",
+    # Evaluation - Metrics
+    "accuracy_score",
+    "precision_score",
+    "recall_score",
+    "f1_score",
+    "roc_auc_score",
+    "confusion_matrix",
+    "classification_report",
+    "mean_squared_error",
+    "mean_absolute_error",
+    "r2_score",
+    "root_mean_squared_error",
+    # Evaluation - Cross-validation
+    "cross_val_score",
+    "cross_val_predict",
+    "KFold",
+    "StratifiedKFold",
+    "train_test_split",
+    "GridSearchCV",
+    # Persistence
+    "save_model",
+    "load_model",
+    "ModelSerializer",
+    "ModelFormat",
     # Version
     "__version__",
 ]

@@ -52,6 +52,29 @@ from .gradient_boosting import (
     LossFunction,
     LossFunctions,
 )
+from .svm import (
+    KernelType,
+    SVM,
+    SVMClassifier,
+    SVMConfig,
+    SVMRegressor,
+)
+from .naive_bayes import (
+    BernoulliNaiveBayes,
+    GaussianNaiveBayes,
+    MultinomialNaiveBayes,
+    NaiveBayesConfig,
+)
+from .pca import (
+    PCA,
+    PCAConfig,
+)
+from .ensemble import (
+    StackingClassifier,
+    VotingClassifier,
+    VotingRegressor,
+    VotingType,
+)
 
 __all__ = [
     # Base
@@ -98,4 +121,23 @@ __all__ = [
     "MiniBatchKMeans",
     "KMeansConfig",
     "InitMethod",
+    # SVM
+    "SVM",
+    "SVMClassifier",
+    "SVMRegressor",
+    "SVMConfig",
+    "KernelType",
+    # Naive Bayes
+    "GaussianNaiveBayes",
+    "MultinomialNaiveBayes",
+    "BernoulliNaiveBayes",
+    "NaiveBayesConfig",
+    # PCA
+    "PCA",
+    "PCAConfig",
+    # Ensemble
+    "VotingClassifier",
+    "VotingRegressor",
+    "StackingClassifier",
+    "VotingType",
 ]
