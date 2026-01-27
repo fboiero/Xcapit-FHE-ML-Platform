@@ -112,14 +112,14 @@ class TestReportModel:
 class TestReportAPI:
     """Tests for Report API endpoints."""
 
-    def test_list_reports(self, authenticated_client, report):
+    def test_list_reports(self, auth_client, report):
         """Test listing reports."""
-        response = authenticated_client.get("/api/v2/reports/")
+        response = auth_client.get("/api/v2/reports/")
 
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data["results"]) >= 1
 
-    def test_create_report(self, authenticated_client, company):
+    def test_create_report(self, auth_client, company):
         """Test creating a report."""
         data = {
             "name": "New Test Report",
@@ -127,58 +127,58 @@ class TestReportAPI:
             "format": "pdf",
             "sections": ["summary", "metrics"],
         }
-        response = authenticated_client.post("/api/v2/reports/", data, format="json")
+        response = auth_client.post("/api/v2/reports/", data, format="json")
 
         assert response.status_code == status.HTTP_201_CREATED
         assert response.data["name"] == "New Test Report"
         assert response.data["status"] == "pending"
 
-    def test_retrieve_report(self, authenticated_client, report):
+    def test_retrieve_report(self, auth_client, report):
         """Test retrieving a single report."""
-        response = authenticated_client.get(f"/api/v2/reports/{report.id}/")
+        response = auth_client.get(f"/api/v2/reports/{report.id}/")
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data["id"] == str(report.id)
         assert response.data["name"] == report.name
 
-    def test_generate_report(self, authenticated_client, report):
+    def test_generate_report(self, auth_client, report):
         """Test triggering report generation."""
-        response = authenticated_client.post(f"/api/v2/reports/{report.id}/generate/")
+        response = auth_client.post(f"/api/v2/reports/{report.id}/generate/")
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data["status"] == "completed"
 
-    def test_download_completed_report(self, authenticated_client, report):
+    def test_download_completed_report(self, auth_client, report):
         """Test downloading a completed report."""
         # First complete the report
         report.mark_completed("/reports/test.pdf", 1024)
 
-        response = authenticated_client.get(f"/api/v2/reports/{report.id}/download/")
+        response = auth_client.get(f"/api/v2/reports/{report.id}/download/")
 
         assert response.status_code == status.HTTP_200_OK
         assert "download_url" in response.data
 
-    def test_download_pending_report_fails(self, authenticated_client, report):
+    def test_download_pending_report_fails(self, auth_client, report):
         """Test that downloading a pending report fails."""
-        response = authenticated_client.get(f"/api/v2/reports/{report.id}/download/")
+        response = auth_client.get(f"/api/v2/reports/{report.id}/download/")
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_filter_reports_by_type(self, authenticated_client, report):
+    def test_filter_reports_by_type(self, auth_client, report):
         """Test filtering reports by type."""
-        response = authenticated_client.get("/api/v2/reports/?type=performance")
+        response = auth_client.get("/api/v2/reports/?type=performance")
 
         assert response.status_code == status.HTTP_200_OK
 
-    def test_filter_reports_by_status(self, authenticated_client, report):
+    def test_filter_reports_by_status(self, auth_client, report):
         """Test filtering reports by status."""
-        response = authenticated_client.get("/api/v2/reports/?status=pending")
+        response = auth_client.get("/api/v2/reports/?status=pending")
 
         assert response.status_code == status.HTTP_200_OK
 
-    def test_delete_report(self, authenticated_client, report):
+    def test_delete_report(self, auth_client, report):
         """Test deleting a report."""
-        response = authenticated_client.delete(f"/api/v2/reports/{report.id}/")
+        response = auth_client.delete(f"/api/v2/reports/{report.id}/")
 
         assert response.status_code == status.HTTP_204_NO_CONTENT
         assert not Report.objects.filter(id=report.id).exists()
@@ -188,29 +188,29 @@ class TestReportAPI:
 class TestReportValidation:
     """Tests for report validation."""
 
-    def test_invalid_report_type(self, authenticated_client):
+    def test_invalid_report_type(self, auth_client):
         """Test that invalid report type is rejected."""
         data = {
             "name": "Test Report",
             "report_type": "invalid_type",
             "format": "pdf",
         }
-        response = authenticated_client.post("/api/v2/reports/", data, format="json")
+        response = auth_client.post("/api/v2/reports/", data, format="json")
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_invalid_format(self, authenticated_client):
+    def test_invalid_format(self, auth_client):
         """Test that invalid format is rejected."""
         data = {
             "name": "Test Report",
             "report_type": "performance",
             "format": "invalid_format",
         }
-        response = authenticated_client.post("/api/v2/reports/", data, format="json")
+        response = auth_client.post("/api/v2/reports/", data, format="json")
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_invalid_date_range(self, authenticated_client):
+    def test_invalid_date_range(self, auth_client):
         """Test that invalid date range is rejected."""
         data = {
             "name": "Test Report",
@@ -219,6 +219,6 @@ class TestReportValidation:
             "date_from": "2024-12-31",
             "date_to": "2024-01-01",  # End before start
         }
-        response = authenticated_client.post("/api/v2/reports/", data, format="json")
+        response = auth_client.post("/api/v2/reports/", data, format="json")
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST

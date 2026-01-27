@@ -158,14 +158,14 @@ class TestWorkflowRunModel:
 class TestWorkflowAPI:
     """Tests for Workflow API endpoints."""
 
-    def test_list_workflows(self, authenticated_client, workflow):
+    def test_list_workflows(self, auth_client, workflow):
         """Test listing workflows."""
-        response = authenticated_client.get("/api/v2/workflows/")
+        response = auth_client.get("/api/v2/workflows/")
 
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data["results"]) >= 1
 
-    def test_create_workflow(self, authenticated_client, company):
+    def test_create_workflow(self, auth_client, company):
         """Test creating a workflow."""
         data = {
             "name": "New Test Workflow",
@@ -177,24 +177,24 @@ class TestWorkflowAPI:
             "trigger": {"type": "manual"},
             "status": "draft",
         }
-        response = authenticated_client.post("/api/v2/workflows/", data, format="json")
+        response = auth_client.post("/api/v2/workflows/", data, format="json")
 
         assert response.status_code == status.HTTP_201_CREATED
         assert response.data["name"] == "New Test Workflow"
         assert len(response.data["steps"]) == 2
 
-    def test_retrieve_workflow(self, authenticated_client, workflow):
+    def test_retrieve_workflow(self, auth_client, workflow):
         """Test retrieving a single workflow."""
-        response = authenticated_client.get(f"/api/v2/workflows/{workflow.id}/")
+        response = auth_client.get(f"/api/v2/workflows/{workflow.id}/")
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data["id"] == str(workflow.id)
         assert response.data["name"] == workflow.name
 
-    def test_run_workflow(self, authenticated_client, workflow):
+    def test_run_workflow(self, auth_client, workflow):
         """Test triggering a workflow run."""
         data = {"input_data": {"key": "value"}}
-        response = authenticated_client.post(
+        response = auth_client.post(
             f"/api/v2/workflows/{workflow.id}/run/", data, format="json"
         )
 
@@ -202,35 +202,35 @@ class TestWorkflowAPI:
         assert response.data["status"] == "completed"
         assert response.data["trigger_type"] == "manual"
 
-    def test_run_inactive_workflow_fails(self, authenticated_client, workflow):
+    def test_run_inactive_workflow_fails(self, auth_client, workflow):
         """Test that running an inactive workflow fails."""
         workflow.status = Workflow.Status.DRAFT
         workflow.save()
 
-        response = authenticated_client.post(f"/api/v2/workflows/{workflow.id}/run/")
+        response = auth_client.post(f"/api/v2/workflows/{workflow.id}/run/")
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_activate_workflow(self, authenticated_client, workflow):
+    def test_activate_workflow(self, auth_client, workflow):
         """Test activating a draft workflow."""
         workflow.status = Workflow.Status.DRAFT
         workflow.save()
 
-        response = authenticated_client.post(f"/api/v2/workflows/{workflow.id}/activate/")
+        response = auth_client.post(f"/api/v2/workflows/{workflow.id}/activate/")
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data["status"] == "active"
 
-    def test_pause_workflow(self, authenticated_client, workflow):
+    def test_pause_workflow(self, auth_client, workflow):
         """Test pausing an active workflow."""
-        response = authenticated_client.post(f"/api/v2/workflows/{workflow.id}/pause/")
+        response = auth_client.post(f"/api/v2/workflows/{workflow.id}/pause/")
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data["status"] == "paused"
 
-    def test_filter_workflows_by_status(self, authenticated_client, workflow):
+    def test_filter_workflows_by_status(self, auth_client, workflow):
         """Test filtering workflows by status."""
-        response = authenticated_client.get("/api/v2/workflows/?status=active")
+        response = auth_client.get("/api/v2/workflows/?status=active")
 
         assert response.status_code == status.HTTP_200_OK
 
@@ -239,45 +239,45 @@ class TestWorkflowAPI:
 class TestWorkflowRunAPI:
     """Tests for WorkflowRun API endpoints."""
 
-    def test_list_workflow_runs(self, authenticated_client, workflow_run):
+    def test_list_workflow_runs(self, auth_client, workflow_run):
         """Test listing workflow runs."""
-        response = authenticated_client.get("/api/v2/workflow-runs/")
+        response = auth_client.get("/api/v2/workflow-runs/")
 
         assert response.status_code == status.HTTP_200_OK
 
-    def test_retrieve_workflow_run(self, authenticated_client, workflow_run):
+    def test_retrieve_workflow_run(self, auth_client, workflow_run):
         """Test retrieving a single workflow run."""
-        response = authenticated_client.get(f"/api/v2/workflow-runs/{workflow_run.id}/")
+        response = auth_client.get(f"/api/v2/workflow-runs/{workflow_run.id}/")
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data["id"] == str(workflow_run.id)
 
-    def test_cancel_workflow_run(self, authenticated_client, workflow_run):
+    def test_cancel_workflow_run(self, auth_client, workflow_run):
         """Test cancelling a running workflow run."""
         workflow_run.status = WorkflowRun.Status.RUNNING
         workflow_run.save()
 
-        response = authenticated_client.post(
+        response = auth_client.post(
             f"/api/v2/workflow-runs/{workflow_run.id}/cancel/"
         )
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data["status"] == "cancelled"
 
-    def test_cancel_completed_run_fails(self, authenticated_client, workflow_run):
+    def test_cancel_completed_run_fails(self, auth_client, workflow_run):
         """Test that cancelling a completed run fails."""
         workflow_run.status = WorkflowRun.Status.COMPLETED
         workflow_run.save()
 
-        response = authenticated_client.post(
+        response = auth_client.post(
             f"/api/v2/workflow-runs/{workflow_run.id}/cancel/"
         )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_filter_runs_by_workflow(self, authenticated_client, workflow, workflow_run):
+    def test_filter_runs_by_workflow(self, auth_client, workflow, workflow_run):
         """Test filtering runs by workflow."""
-        response = authenticated_client.get(
+        response = auth_client.get(
             f"/api/v2/workflow-runs/?workflow_id={workflow.id}"
         )
 
@@ -288,46 +288,46 @@ class TestWorkflowRunAPI:
 class TestWorkflowValidation:
     """Tests for workflow validation."""
 
-    def test_invalid_steps(self, authenticated_client):
+    def test_invalid_steps(self, auth_client):
         """Test that invalid steps are rejected."""
         data = {
             "name": "Test Workflow",
             "steps": "not a list",  # Should be a list
             "trigger": {"type": "manual"},
         }
-        response = authenticated_client.post("/api/v2/workflows/", data, format="json")
+        response = auth_client.post("/api/v2/workflows/", data, format="json")
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_steps_missing_type(self, authenticated_client):
+    def test_steps_missing_type(self, auth_client):
         """Test that steps without type are rejected."""
         data = {
             "name": "Test Workflow",
             "steps": [{"name": "Step 1"}],  # Missing 'type'
             "trigger": {"type": "manual"},
         }
-        response = authenticated_client.post("/api/v2/workflows/", data, format="json")
+        response = auth_client.post("/api/v2/workflows/", data, format="json")
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_invalid_trigger(self, authenticated_client):
+    def test_invalid_trigger(self, auth_client):
         """Test that invalid trigger is rejected."""
         data = {
             "name": "Test Workflow",
             "steps": [{"type": "transform", "name": "Step 1"}],
             "trigger": {"type": "invalid_type"},
         }
-        response = authenticated_client.post("/api/v2/workflows/", data, format="json")
+        response = auth_client.post("/api/v2/workflows/", data, format="json")
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_schedule_trigger_requires_schedule(self, authenticated_client):
+    def test_schedule_trigger_requires_schedule(self, auth_client):
         """Test that schedule trigger requires schedule field."""
         data = {
             "name": "Test Workflow",
             "steps": [{"type": "transform", "name": "Step 1"}],
             "trigger": {"type": "schedule"},  # Missing 'schedule'
         }
-        response = authenticated_client.post("/api/v2/workflows/", data, format="json")
+        response = auth_client.post("/api/v2/workflows/", data, format="json")
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST

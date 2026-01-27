@@ -109,6 +109,7 @@ class TestScheduledTaskModel:
     def test_auto_disable_on_consecutive_failures(self, scheduled_task):
         """Test auto-disabling after consecutive failures."""
         scheduled_task.max_consecutive_failures = 3
+        scheduled_task.save(update_fields=["max_consecutive_failures"])
 
         for _ in range(3):
             scheduled_task.update_stats(success=False)
@@ -166,14 +167,14 @@ class TestScheduledTaskRunModel:
 class TestScheduledTaskAPI:
     """Tests for ScheduledTask API endpoints."""
 
-    def test_list_scheduled_tasks(self, authenticated_client, scheduled_task):
+    def test_list_scheduled_tasks(self, auth_client, scheduled_task):
         """Test listing scheduled tasks."""
-        response = authenticated_client.get("/api/v2/scheduled-tasks/")
+        response = auth_client.get("/api/v2/scheduled-tasks/")
 
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data["results"]) >= 1
 
-    def test_create_scheduled_task(self, authenticated_client, company):
+    def test_create_scheduled_task(self, auth_client, company):
         """Test creating a scheduled task."""
         data = {
             "name": "New Test Task",
@@ -184,7 +185,7 @@ class TestScheduledTaskAPI:
             "config": {"key": "value"},
             "status": "active",
         }
-        response = authenticated_client.post(
+        response = auth_client.post(
             "/api/v2/scheduled-tasks/", data, format="json"
         )
 
@@ -192,9 +193,9 @@ class TestScheduledTaskAPI:
         assert response.data["name"] == "New Test Task"
         assert response.data["cron_expression"] == "0 */6 * * *"
 
-    def test_retrieve_scheduled_task(self, authenticated_client, scheduled_task):
+    def test_retrieve_scheduled_task(self, auth_client, scheduled_task):
         """Test retrieving a single scheduled task."""
-        response = authenticated_client.get(
+        response = auth_client.get(
             f"/api/v2/scheduled-tasks/{scheduled_task.id}/"
         )
 
@@ -202,56 +203,56 @@ class TestScheduledTaskAPI:
         assert response.data["id"] == str(scheduled_task.id)
         assert response.data["name"] == scheduled_task.name
 
-    def test_run_task_now(self, authenticated_client, scheduled_task):
+    def test_run_task_now(self, auth_client, scheduled_task):
         """Test manually triggering a scheduled task."""
-        response = authenticated_client.post(
+        response = auth_client.post(
             f"/api/v2/scheduled-tasks/{scheduled_task.id}/run_now/"
         )
 
         assert response.status_code == status.HTTP_201_CREATED
         assert response.data["status"] == "completed"
 
-    def test_run_inactive_task_fails(self, authenticated_client, scheduled_task):
+    def test_run_inactive_task_fails(self, auth_client, scheduled_task):
         """Test that running an inactive task fails."""
         scheduled_task.status = ScheduledTask.Status.PAUSED
         scheduled_task.save()
 
-        response = authenticated_client.post(
+        response = auth_client.post(
             f"/api/v2/scheduled-tasks/{scheduled_task.id}/run_now/"
         )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_pause_task(self, authenticated_client, scheduled_task):
+    def test_pause_task(self, auth_client, scheduled_task):
         """Test pausing a scheduled task."""
-        response = authenticated_client.post(
+        response = auth_client.post(
             f"/api/v2/scheduled-tasks/{scheduled_task.id}/pause/"
         )
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data["status"] == "paused"
 
-    def test_resume_task(self, authenticated_client, scheduled_task):
+    def test_resume_task(self, auth_client, scheduled_task):
         """Test resuming a paused task."""
         scheduled_task.status = ScheduledTask.Status.PAUSED
         scheduled_task.save()
 
-        response = authenticated_client.post(
+        response = auth_client.post(
             f"/api/v2/scheduled-tasks/{scheduled_task.id}/resume/"
         )
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data["status"] == "active"
 
-    def test_filter_tasks_by_type(self, authenticated_client, scheduled_task):
+    def test_filter_tasks_by_type(self, auth_client, scheduled_task):
         """Test filtering tasks by type."""
-        response = authenticated_client.get("/api/v2/scheduled-tasks/?type=custom")
+        response = auth_client.get("/api/v2/scheduled-tasks/?type=custom")
 
         assert response.status_code == status.HTTP_200_OK
 
-    def test_filter_tasks_by_status(self, authenticated_client, scheduled_task):
+    def test_filter_tasks_by_status(self, auth_client, scheduled_task):
         """Test filtering tasks by status."""
-        response = authenticated_client.get("/api/v2/scheduled-tasks/?status=active")
+        response = auth_client.get("/api/v2/scheduled-tasks/?status=active")
 
         assert response.status_code == status.HTTP_200_OK
 
@@ -260,15 +261,15 @@ class TestScheduledTaskAPI:
 class TestScheduledTaskRunAPI:
     """Tests for ScheduledTaskRun API endpoints."""
 
-    def test_list_task_runs(self, authenticated_client, scheduled_task_run):
+    def test_list_task_runs(self, auth_client, scheduled_task_run):
         """Test listing task runs."""
-        response = authenticated_client.get("/api/v2/scheduled-task-runs/")
+        response = auth_client.get("/api/v2/scheduled-task-runs/")
 
         assert response.status_code == status.HTTP_200_OK
 
-    def test_retrieve_task_run(self, authenticated_client, scheduled_task_run):
+    def test_retrieve_task_run(self, auth_client, scheduled_task_run):
         """Test retrieving a single task run."""
-        response = authenticated_client.get(
+        response = auth_client.get(
             f"/api/v2/scheduled-task-runs/{scheduled_task_run.id}/"
         )
 
@@ -276,10 +277,10 @@ class TestScheduledTaskRunAPI:
         assert response.data["id"] == str(scheduled_task_run.id)
 
     def test_filter_runs_by_task(
-        self, authenticated_client, scheduled_task, scheduled_task_run
+        self, auth_client, scheduled_task, scheduled_task_run
     ):
         """Test filtering runs by task."""
-        response = authenticated_client.get(
+        response = auth_client.get(
             f"/api/v2/scheduled-task-runs/?task_id={scheduled_task.id}"
         )
 
@@ -290,33 +291,33 @@ class TestScheduledTaskRunAPI:
 class TestScheduledTaskValidation:
     """Tests for scheduled task validation."""
 
-    def test_invalid_task_type(self, authenticated_client):
+    def test_invalid_task_type(self, auth_client):
         """Test that invalid task type is rejected."""
         data = {
             "name": "Test Task",
             "task_type": "invalid_type",
             "cron_expression": "0 0 * * *",
         }
-        response = authenticated_client.post(
+        response = auth_client.post(
             "/api/v2/scheduled-tasks/", data, format="json"
         )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_invalid_cron_expression(self, authenticated_client):
+    def test_invalid_cron_expression(self, auth_client):
         """Test that invalid cron expression is rejected."""
         data = {
             "name": "Test Task",
             "task_type": "custom",
             "cron_expression": "invalid cron",
         }
-        response = authenticated_client.post(
+        response = auth_client.post(
             "/api/v2/scheduled-tasks/", data, format="json"
         )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_report_task_requires_report(self, authenticated_client):
+    def test_report_task_requires_report(self, auth_client):
         """Test that report task type requires report reference."""
         data = {
             "name": "Test Task",
@@ -324,13 +325,13 @@ class TestScheduledTaskValidation:
             "cron_expression": "0 0 * * *",
             # Missing 'report' field
         }
-        response = authenticated_client.post(
+        response = auth_client.post(
             "/api/v2/scheduled-tasks/", data, format="json"
         )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_workflow_task_requires_workflow(self, authenticated_client):
+    def test_workflow_task_requires_workflow(self, auth_client):
         """Test that workflow task type requires workflow reference."""
         data = {
             "name": "Test Task",
@@ -338,7 +339,7 @@ class TestScheduledTaskValidation:
             "cron_expression": "0 0 * * *",
             # Missing 'workflow' field
         }
-        response = authenticated_client.post(
+        response = auth_client.post(
             "/api/v2/scheduled-tasks/", data, format="json"
         )
 
@@ -349,7 +350,7 @@ class TestScheduledTaskValidation:
 class TestScheduledTaskWithRelatedObjects:
     """Tests for scheduled tasks with related workflow/report."""
 
-    def test_task_with_workflow(self, authenticated_client, company, user):
+    def test_task_with_workflow(self, auth_client, company, user):
         """Test creating a task linked to a workflow."""
         # Create workflow first
         workflow = Workflow.objects.create(
@@ -367,14 +368,14 @@ class TestScheduledTaskWithRelatedObjects:
             "cron_expression": "0 0 * * *",
             "workflow": str(workflow.id),
         }
-        response = authenticated_client.post(
+        response = auth_client.post(
             "/api/v2/scheduled-tasks/", data, format="json"
         )
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert response.data["workflow"] == str(workflow.id)
+        assert str(response.data["workflow"]) == str(workflow.id)
 
-    def test_task_with_report(self, authenticated_client, company, user):
+    def test_task_with_report(self, auth_client, company, user):
         """Test creating a task linked to a report."""
         # Create report first
         report = Report.objects.create(
@@ -391,9 +392,9 @@ class TestScheduledTaskWithRelatedObjects:
             "cron_expression": "0 0 * * *",
             "report": str(report.id),
         }
-        response = authenticated_client.post(
+        response = auth_client.post(
             "/api/v2/scheduled-tasks/", data, format="json"
         )
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert response.data["report"] == str(report.id)
+        assert str(response.data["report"]) == str(report.id)
