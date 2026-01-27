@@ -9,6 +9,8 @@ from .models import (
     MLModel,
     ModelCheckpoint,
     ModelExport,
+    ModelShare,
+    ModelShareRequest,
     ModelVersion,
     PredictionLog,
     TrainingRun,
@@ -443,3 +445,193 @@ class ImportResponseSerializer(serializers.Serializer):
     model_type = serializers.CharField()
     status = serializers.CharField()
     imported_from_version = serializers.CharField(required=False)
+
+
+# Model Sharing Serializers
+
+
+class ModelShareSerializer(serializers.ModelSerializer):
+    """Serializer for ModelShare."""
+
+    model_name = serializers.CharField(source="model.name", read_only=True)
+    source_consortium_name = serializers.CharField(source="source_consortium.name", read_only=True)
+    target_consortium_name = serializers.CharField(source="target_consortium.name", read_only=True)
+    shared_by_name = serializers.CharField(source="shared_by.name", read_only=True)
+    approved_by_name = serializers.CharField(source="approved_by.name", read_only=True)
+    version_str = serializers.CharField(source="version.version", read_only=True)
+    is_active = serializers.BooleanField(read_only=True)
+    can_predict = serializers.BooleanField(read_only=True)
+    can_retrain = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = ModelShare
+        fields = [
+            "id",
+            "model",
+            "model_name",
+            "source_consortium",
+            "source_consortium_name",
+            "target_consortium",
+            "target_consortium_name",
+            "shared_by",
+            "shared_by_name",
+            "approved_by",
+            "approved_by_name",
+            "share_type",
+            "status",
+            "version",
+            "version_str",
+            "revenue_share_percent",
+            "max_predictions",
+            "predictions_used",
+            "terms",
+            "requires_approval",
+            "valid_from",
+            "valid_until",
+            "request_message",
+            "approval_message",
+            "blockchain_tx",
+            "is_active",
+            "can_predict",
+            "can_retrain",
+            "created_at",
+            "approved_at",
+            "revoked_at",
+        ]
+        read_only_fields = [
+            "id",
+            "source_consortium",
+            "shared_by",
+            "approved_by",
+            "status",
+            "predictions_used",
+            "blockchain_tx",
+            "created_at",
+            "approved_at",
+            "revoked_at",
+        ]
+
+
+class ModelShareCreateSerializer(serializers.Serializer):
+    """Serializer for creating a model share."""
+
+    model_id = serializers.UUIDField()
+    target_consortium_id = serializers.UUIDField()
+    share_type = serializers.ChoiceField(
+        choices=["full_access", "prediction_only", "read_only"],
+        default="prediction_only",
+    )
+    version_id = serializers.UUIDField(required=False, allow_null=True)
+    revenue_share_percent = serializers.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=0,
+        min_value=0,
+        max_value=100,
+    )
+    max_predictions = serializers.IntegerField(
+        required=False,
+        allow_null=True,
+        min_value=1,
+    )
+    terms = serializers.CharField(required=False, allow_blank=True, default="")
+    requires_approval = serializers.BooleanField(default=True)
+    valid_until = serializers.DateTimeField(required=False, allow_null=True)
+    request_message = serializers.CharField(required=False, allow_blank=True, default="")
+
+
+class ModelShareApprovalSerializer(serializers.Serializer):
+    """Serializer for approving/rejecting a share."""
+
+    action = serializers.ChoiceField(choices=["approve", "reject"])
+    message = serializers.CharField(required=False, allow_blank=True, default="")
+
+
+class ModelShareRevokeSerializer(serializers.Serializer):
+    """Serializer for revoking a share."""
+
+    message = serializers.CharField(required=False, allow_blank=True, default="")
+
+
+class ModelShareRequestSerializer(serializers.ModelSerializer):
+    """Serializer for ModelShareRequest."""
+
+    model_name = serializers.CharField(source="model.name", read_only=True)
+    model_type = serializers.CharField(source="model.model_type", read_only=True)
+    model_owner_name = serializers.CharField(source="model.owner.name", read_only=True)
+    requesting_consortium_name = serializers.CharField(
+        source="requesting_consortium.name", read_only=True
+    )
+    requested_by_name = serializers.CharField(source="requested_by.name", read_only=True)
+
+    class Meta:
+        model = ModelShareRequest
+        fields = [
+            "id",
+            "model",
+            "model_name",
+            "model_type",
+            "model_owner_name",
+            "requesting_consortium",
+            "requesting_consortium_name",
+            "requested_by",
+            "requested_by_name",
+            "requested_share_type",
+            "message",
+            "proposed_revenue_share",
+            "status",
+            "response_message",
+            "resulting_share",
+            "created_at",
+            "responded_at",
+        ]
+        read_only_fields = [
+            "id",
+            "model",
+            "requesting_consortium",
+            "requested_by",
+            "status",
+            "response_message",
+            "resulting_share",
+            "created_at",
+            "responded_at",
+        ]
+
+
+class ModelShareRequestCreateSerializer(serializers.Serializer):
+    """Serializer for creating a share request."""
+
+    model_id = serializers.UUIDField()
+    requested_share_type = serializers.ChoiceField(
+        choices=["full_access", "prediction_only", "read_only"],
+        default="prediction_only",
+    )
+    message = serializers.CharField(required=False, allow_blank=True, default="")
+    proposed_revenue_share = serializers.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        required=False,
+        allow_null=True,
+        min_value=0,
+        max_value=100,
+    )
+
+
+class ModelShareRequestResponseSerializer(serializers.Serializer):
+    """Serializer for responding to a share request."""
+
+    action = serializers.ChoiceField(choices=["approve", "reject"])
+    message = serializers.CharField(required=False, allow_blank=True, default="")
+    share_type = serializers.ChoiceField(
+        choices=["full_access", "prediction_only", "read_only"],
+        required=False,
+    )
+    revenue_share_percent = serializers.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        required=False,
+        min_value=0,
+        max_value=100,
+    )
+    max_predictions = serializers.IntegerField(required=False, allow_null=True)
+    valid_until = serializers.DateTimeField(required=False, allow_null=True)

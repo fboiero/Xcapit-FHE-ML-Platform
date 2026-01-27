@@ -8,7 +8,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
-from .models import APIKey, AuditLog, Company
+from .models import APIKey, AuditLog, Company, UsageTracking, Webhook, WebhookDelivery
 
 User = get_user_model()
 
@@ -272,3 +272,207 @@ class HealthCheckSerializer(serializers.Serializer):
     status = serializers.CharField()
     version = serializers.CharField()
     timestamp = serializers.DateTimeField()
+
+
+class CompanyWithTierSerializer(serializers.ModelSerializer):
+    """Serializer for Company model with tier information."""
+
+    rate_limit = serializers.IntegerField(read_only=True)
+    daily_limit = serializers.IntegerField(read_only=True)
+    model_limit = serializers.IntegerField(read_only=True)
+    consortium_limit = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Company
+        fields = [
+            "id",
+            "name",
+            "email",
+            "tier",
+            "custom_rate_limit",
+            "custom_daily_limit",
+            "industry",
+            "website",
+            "description",
+            "is_active",
+            "is_verified",
+            "rate_limit",
+            "daily_limit",
+            "model_limit",
+            "consortium_limit",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "id",
+            "tier",
+            "is_verified",
+            "created_at",
+            "updated_at",
+        ]
+
+
+class UsageTrackingSerializer(serializers.ModelSerializer):
+    """Serializer for UsageTracking model."""
+
+    company_name = serializers.CharField(source="company.name", read_only=True)
+
+    class Meta:
+        model = UsageTracking
+        fields = [
+            "id",
+            "company",
+            "company_name",
+            "date",
+            "api_requests",
+            "predictions",
+            "training_runs",
+            "data_uploads_bytes",
+            "rate_limit_hits",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = fields
+
+
+class WebhookSerializer(serializers.ModelSerializer):
+    """Serializer for Webhook model."""
+
+    class Meta:
+        model = Webhook
+        fields = [
+            "id",
+            "name",
+            "url",
+            "events",
+            "custom_headers",
+            "is_active",
+            "is_verified",
+            "max_retries",
+            "timeout_seconds",
+            "total_deliveries",
+            "successful_deliveries",
+            "failed_deliveries",
+            "last_delivery_at",
+            "last_success_at",
+            "last_failure_at",
+            "last_error",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "id",
+            "is_verified",
+            "total_deliveries",
+            "successful_deliveries",
+            "failed_deliveries",
+            "last_delivery_at",
+            "last_success_at",
+            "last_failure_at",
+            "last_error",
+            "created_at",
+            "updated_at",
+        ]
+
+
+class WebhookCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating a Webhook."""
+
+    secret = serializers.CharField(required=False, write_only=True)
+
+    class Meta:
+        model = Webhook
+        fields = [
+            "name",
+            "url",
+            "secret",
+            "events",
+            "custom_headers",
+            "max_retries",
+            "timeout_seconds",
+        ]
+
+    def validate_events(self, value):
+        """Validate event types."""
+        valid_events = [choice[0] for choice in Webhook.EventType.choices]
+        for event in value:
+            if event not in valid_events:
+                raise serializers.ValidationError(
+                    f"Invalid event type '{event}'. Valid types: {valid_events}"
+                )
+        return value
+
+    def validate_url(self, value):
+        """Validate webhook URL."""
+        if not value.startswith("https://"):
+            raise serializers.ValidationError("Webhook URL must use HTTPS.")
+        return value
+
+    def validate_max_retries(self, value):
+        """Validate max retries."""
+        if value < 0 or value > 10:
+            raise serializers.ValidationError("Max retries must be between 0 and 10.")
+        return value
+
+    def validate_timeout_seconds(self, value):
+        """Validate timeout."""
+        if value < 5 or value > 60:
+            raise serializers.ValidationError("Timeout must be between 5 and 60 seconds.")
+        return value
+
+    def create(self, validated_data):
+        """Create webhook with generated secret if not provided."""
+        import secrets as py_secrets
+
+        company = self.context["request"].user.company
+        if "secret" not in validated_data or not validated_data.get("secret"):
+            validated_data["secret"] = py_secrets.token_urlsafe(32)
+
+        webhook = Webhook.objects.create(company=company, **validated_data)
+        return webhook
+
+
+class WebhookResponseSerializer(WebhookSerializer):
+    """Serializer for Webhook creation response (includes secret once)."""
+
+    secret = serializers.CharField(read_only=True)
+
+    class Meta(WebhookSerializer.Meta):
+        fields = WebhookSerializer.Meta.fields + ["secret"]
+
+
+class WebhookDeliverySerializer(serializers.ModelSerializer):
+    """Serializer for WebhookDelivery model."""
+
+    webhook_name = serializers.CharField(source="webhook.name", read_only=True)
+
+    class Meta:
+        model = WebhookDelivery
+        fields = [
+            "id",
+            "webhook",
+            "webhook_name",
+            "event_type",
+            "event_id",
+            "payload",
+            "status",
+            "attempt_count",
+            "max_attempts",
+            "response_status_code",
+            "response_body",
+            "latency_ms",
+            "error_message",
+            "created_at",
+            "delivered_at",
+            "next_retry_at",
+        ]
+        read_only_fields = fields
+
+
+class UsageStatsSerializer(serializers.Serializer):
+    """Serializer for usage statistics response."""
+
+    tier = serializers.CharField()
+    limits = serializers.DictField()
+    today = serializers.DictField()
+    month = serializers.DictField()

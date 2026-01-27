@@ -745,3 +745,281 @@ class ModelCheckpoint(models.Model):
 
     def __str__(self):
         return f"{self.model.name} - Epoch {self.epoch}"
+
+
+class ModelShare(models.Model):
+    """
+    Model sharing between consortiums.
+
+    Allows one consortium to share a trained model with another consortium,
+    with configurable permissions and optional revenue sharing.
+    """
+
+    class ShareType(models.TextChoices):
+        FULL_ACCESS = "full_access", "Full Access"  # Read + Predict + Re-train
+        PREDICTION_ONLY = "prediction_only", "Prediction Only"  # Only run predictions
+        READ_ONLY = "read_only", "Read Only"  # View model info only
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending Approval"
+        APPROVED = "approved", "Approved"
+        REJECTED = "rejected", "Rejected"
+        REVOKED = "revoked", "Revoked"
+        EXPIRED = "expired", "Expired"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    model = models.ForeignKey(
+        MLModel,
+        on_delete=models.CASCADE,
+        related_name="shares",
+    )
+
+    # Source (who is sharing)
+    source_consortium = models.ForeignKey(
+        "consortiums.Consortium",
+        on_delete=models.CASCADE,
+        related_name="model_shares_given",
+    )
+    shared_by = models.ForeignKey(
+        "core.Company",
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="models_shared",
+    )
+
+    # Target (who receives the share)
+    target_consortium = models.ForeignKey(
+        "consortiums.Consortium",
+        on_delete=models.CASCADE,
+        related_name="model_shares_received",
+    )
+    approved_by = models.ForeignKey(
+        "core.Company",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="shares_approved",
+    )
+
+    # Share configuration
+    share_type = models.CharField(
+        max_length=20,
+        choices=ShareType.choices,
+        default=ShareType.PREDICTION_ONLY,
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+        db_index=True,
+    )
+
+    # Optional version lock (share specific version only)
+    version = models.ForeignKey(
+        ModelVersion,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="shares",
+    )
+
+    # Revenue sharing (percentage of prediction revenue to source)
+    revenue_share_percent = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=0,
+    )
+
+    # Usage limits
+    max_predictions = models.IntegerField(null=True, blank=True)  # None = unlimited
+    predictions_used = models.IntegerField(default=0)
+
+    # Terms and conditions
+    terms = models.TextField(blank=True)
+    requires_approval = models.BooleanField(default=True)
+
+    # Validity period
+    valid_from = models.DateTimeField(null=True, blank=True)
+    valid_until = models.DateTimeField(null=True, blank=True)
+
+    # Notes
+    request_message = models.TextField(blank=True)  # Message when requesting
+    approval_message = models.TextField(blank=True)  # Message when approving/rejecting
+
+    # Blockchain
+    blockchain_tx = models.CharField(max_length=66, blank=True)
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    approved_at = models.DateTimeField(null=True, blank=True)
+    revoked_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "model share"
+        verbose_name_plural = "model shares"
+        ordering = ["-created_at"]
+        unique_together = ["model", "target_consortium"]  # One share per consortium per model
+        indexes = [
+            models.Index(fields=["model"]),
+            models.Index(fields=["source_consortium"]),
+            models.Index(fields=["target_consortium"]),
+            models.Index(fields=["status"]),
+        ]
+
+    def __str__(self):
+        return f"{self.model.name} -> {self.target_consortium.name}"
+
+    @property
+    def is_active(self) -> bool:
+        """Check if share is currently active and valid."""
+        if self.status != self.Status.APPROVED:
+            return False
+
+        now = timezone.now()
+
+        # Check validity period
+        if self.valid_from and now < self.valid_from:
+            return False
+        if self.valid_until and now > self.valid_until:
+            return False
+
+        # Check usage limits
+        if self.max_predictions and self.predictions_used >= self.max_predictions:
+            return False
+
+        return True
+
+    def can_predict(self) -> bool:
+        """Check if target consortium can make predictions."""
+        if not self.is_active:
+            return False
+        return self.share_type in [self.ShareType.FULL_ACCESS, self.ShareType.PREDICTION_ONLY]
+
+    def can_retrain(self) -> bool:
+        """Check if target consortium can re-train the model."""
+        if not self.is_active:
+            return False
+        return self.share_type == self.ShareType.FULL_ACCESS
+
+    def approve(self, approved_by=None, message: str = ""):
+        """Approve the share request."""
+        self.status = self.Status.APPROVED
+        self.approved_by = approved_by
+        self.approved_at = timezone.now()
+        self.approval_message = message
+        if not self.valid_from:
+            self.valid_from = timezone.now()
+        self.save()
+
+    def reject(self, rejected_by=None, message: str = ""):
+        """Reject the share request."""
+        self.status = self.Status.REJECTED
+        self.approved_by = rejected_by
+        self.approval_message = message
+        self.save()
+
+    def revoke(self, revoked_by=None, message: str = ""):
+        """Revoke an active share."""
+        self.status = self.Status.REVOKED
+        self.revoked_at = timezone.now()
+        self.approval_message = message
+        self.save()
+
+    def increment_predictions(self, count: int = 1):
+        """Increment prediction usage count."""
+        from django.db.models import F
+
+        ModelShare.objects.filter(pk=self.pk).update(
+            predictions_used=F("predictions_used") + count
+        )
+        self.refresh_from_db()
+
+        # Check if limit reached
+        if self.max_predictions and self.predictions_used >= self.max_predictions:
+            self.status = self.Status.EXPIRED
+            self.save(update_fields=["status"])
+
+
+class ModelShareRequest(models.Model):
+    """
+    Request to share a model from another consortium.
+
+    Used when a consortium wants access to a model they don't own.
+    """
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        APPROVED = "approved", "Approved"
+        REJECTED = "rejected", "Rejected"
+        WITHDRAWN = "withdrawn", "Withdrawn"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    model = models.ForeignKey(
+        MLModel,
+        on_delete=models.CASCADE,
+        related_name="share_requests",
+    )
+
+    # Requester
+    requesting_consortium = models.ForeignKey(
+        "consortiums.Consortium",
+        on_delete=models.CASCADE,
+        related_name="model_share_requests",
+    )
+    requested_by = models.ForeignKey(
+        "core.Company",
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="model_requests",
+    )
+
+    # Request details
+    requested_share_type = models.CharField(
+        max_length=20,
+        choices=ModelShare.ShareType.choices,
+        default=ModelShare.ShareType.PREDICTION_ONLY,
+    )
+    message = models.TextField(blank=True)
+    proposed_revenue_share = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True,
+    )
+
+    # Status
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+        db_index=True,
+    )
+    response_message = models.TextField(blank=True)
+
+    # Created share (if approved)
+    resulting_share = models.OneToOneField(
+        ModelShare,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="original_request",
+    )
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    responded_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "model share request"
+        verbose_name_plural = "model share requests"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["model"]),
+            models.Index(fields=["requesting_consortium"]),
+            models.Index(fields=["status"]),
+        ]
+
+    def __str__(self):
+        return f"Request: {self.requesting_consortium.name} -> {self.model.name}"
