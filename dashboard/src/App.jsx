@@ -27,6 +27,9 @@ import DataUpload from './pages/DataUpload'
 import TrainingDashboard from './pages/TrainingDashboard'
 import ResultsVisualization from './pages/ResultsVisualization'
 import ModelComparison from './pages/ModelComparison'
+import DataExplorer from './pages/DataExplorer'
+import UserSettings from './pages/UserSettings'
+import RealtimeMonitoring from './pages/RealtimeMonitoring'
 
 // Protected route wrapper
 const ProtectedRoute = ({ children }) => {
@@ -98,6 +101,11 @@ function App() {
         <Route path="/results/:consortiumId" element={<ResultsVisualization />} />
         <Route path="/comparison" element={<ModelComparison />} />
         <Route path="/comparison/:consortiumId" element={<ModelComparison />} />
+        <Route path="/data-explorer" element={<DataExplorer />} />
+        <Route path="/data-explorer/:consortiumId" element={<DataExplorer />} />
+        <Route path="/monitoring" element={<RealtimeMonitoring />} />
+        <Route path="/monitoring/:consortiumId" element={<RealtimeMonitoring />} />
+        <Route path="/settings" element={<UserSettings />} />
         <Route path="/consortiums/new" element={<ConsortiumCreate />} />
         <Route path="/consortiums/:id" element={<ConsortiumDetail />} />
         <Route path="/consortiums/:id/upload" element={<UploadData />} />

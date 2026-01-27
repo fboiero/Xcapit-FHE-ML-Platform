@@ -627,6 +627,9 @@
     "training": "Entrenamiento",
     "results": "Resultados",
     "comparison": "Comparacion",
+    "dataExplorer": "Explorador de Datos",
+    "monitoring": "Monitoreo en Tiempo Real",
+    "settings": "Configuracion",
     "technicalDemo": "Demo Tecnica",
     "createConsortium": "Crear Consorcio",
     "needHelp": "Necesitas ayuda?",
@@ -676,5 +679,91 @@
     "preview": "Vista Previa de Datos",
     "encryptionCode": "Codigo de Cifrado",
     "fheInfo": "Acerca del Cifrado FHE"
+  },
+  "dataExplorer": {
+    "title": "Explorador de Datos",
+    "subtitle": "Visualizacion interactiva y analisis de datasets cifrados",
+    "noData": "No hay datos para mostrar",
+    "loadData": "Carga un dataset cifrado para comenzar la exploracion",
+    "statistics": "Estadisticas",
+    "distribution": "Distribucion",
+    "correlations": "Correlaciones",
+    "filters": "Filtros",
+    "columns": "Columnas",
+    "rows": "Filas",
+    "nullValues": "Valores Nulos",
+    "mean": "Media",
+    "median": "Mediana",
+    "std": "Desv. Est.",
+    "min": "Min",
+    "max": "Max"
+  },
+  "monitoring": {
+    "title": "Monitoreo en Tiempo Real",
+    "subtitle": "Metricas en vivo y monitoreo de salud del sistema",
+    "requestsPerSec": "Peticiones/seg",
+    "avgLatency": "Latencia Promedio",
+    "cpuUsage": "Uso de CPU",
+    "memoryUsage": "Uso de Memoria",
+    "gpuUsage": "Uso de GPU",
+    "activeConnections": "Conexiones Activas",
+    "logs": "Logs del Sistema",
+    "alerts": "Alertas",
+    "metrics": "Metricas",
+    "health": "Salud del Sistema",
+    "lastUpdated": "Ultima Actualizacion"
+  },
+  "settings": {
+    "title": "Configuracion",
+    "subtitle": "Administra tu cuenta y preferencias",
+    "tabs": {
+      "profile": "Perfil",
+      "preferences": "Preferencias",
+      "notifications": "Notificaciones",
+      "security": "Seguridad",
+      "apiKeys": "Claves API"
+    },
+    "profile": {
+      "title": "Configuracion de Perfil",
+      "name": "Nombre Completo",
+      "email": "Correo Electronico",
+      "company": "Empresa",
+      "role": "Rol",
+      "timezone": "Zona Horaria",
+      "save": "Guardar Cambios"
+    },
+    "preferences": {
+      "title": "Preferencias",
+      "language": "Idioma",
+      "theme": "Tema",
+      "themeLight": "Claro",
+      "themeDark": "Oscuro",
+      "themeAuto": "Automatico",
+      "dateFormat": "Formato de Fecha",
+      "numberFormat": "Formato de Numeros"
+    },
+    "notifications": {
+      "title": "Configuracion de Notificaciones",
+      "email": "Notificaciones por Email",
+      "push": "Notificaciones Push",
+      "training": "Entrenamiento Completado",
+      "governance": "Actualizaciones de Gobernanza",
+      "security": "Alertas de Seguridad"
+    },
+    "security": {
+      "title": "Configuracion de Seguridad",
+      "changePassword": "Cambiar Contrasena",
+      "twoFactor": "Autenticacion de Dos Factores",
+      "sessions": "Sesiones Activas",
+      "auditLog": "Registro de Auditoria"
+    },
+    "apiKeys": {
+      "title": "Claves API",
+      "create": "Crear Nueva Clave",
+      "name": "Nombre de Clave",
+      "created": "Creada",
+      "lastUsed": "Ultimo Uso",
+      "revoke": "Revocar"
+    }
   }
 }

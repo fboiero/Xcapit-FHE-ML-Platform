@@ -627,6 +627,9 @@
     "training": "Training",
     "results": "Results",
     "comparison": "Comparison",
+    "dataExplorer": "Data Explorer",
+    "monitoring": "Real-time Monitoring",
+    "settings": "Settings",
     "technicalDemo": "Technical Demo",
     "createConsortium": "Create Consortium",
     "needHelp": "Need help?",
@@ -676,5 +679,91 @@
     "preview": "Data Preview",
     "encryptionCode": "Encryption Code",
     "fheInfo": "About FHE Encryption"
+  },
+  "dataExplorer": {
+    "title": "Data Explorer",
+    "subtitle": "Interactive visualization and analysis of encrypted datasets",
+    "noData": "No data to display",
+    "loadData": "Load encrypted dataset to begin exploration",
+    "statistics": "Statistics",
+    "distribution": "Distribution",
+    "correlations": "Correlations",
+    "filters": "Filters",
+    "columns": "Columns",
+    "rows": "Rows",
+    "nullValues": "Null Values",
+    "mean": "Mean",
+    "median": "Median",
+    "std": "Std Dev",
+    "min": "Min",
+    "max": "Max"
+  },
+  "monitoring": {
+    "title": "Real-time Monitoring",
+    "subtitle": "Live metrics and system health monitoring",
+    "requestsPerSec": "Requests/sec",
+    "avgLatency": "Avg Latency",
+    "cpuUsage": "CPU Usage",
+    "memoryUsage": "Memory Usage",
+    "gpuUsage": "GPU Usage",
+    "activeConnections": "Active Connections",
+    "logs": "System Logs",
+    "alerts": "Alerts",
+    "metrics": "Metrics",
+    "health": "System Health",
+    "lastUpdated": "Last Updated"
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Manage your account and preferences",
+    "tabs": {
+      "profile": "Profile",
+      "preferences": "Preferences",
+      "notifications": "Notifications",
+      "security": "Security",
+      "apiKeys": "API Keys"
+    },
+    "profile": {
+      "title": "Profile Settings",
+      "name": "Full Name",
+      "email": "Email",
+      "company": "Company",
+      "role": "Role",
+      "timezone": "Timezone",
+      "save": "Save Changes"
+    },
+    "preferences": {
+      "title": "Preferences",
+      "language": "Language",
+      "theme": "Theme",
+      "themeLight": "Light",
+      "themeDark": "Dark",
+      "themeAuto": "Auto",
+      "dateFormat": "Date Format",
+      "numberFormat": "Number Format"
+    },
+    "notifications": {
+      "title": "Notification Settings",
+      "email": "Email Notifications",
+      "push": "Push Notifications",
+      "training": "Training Completed",
+      "governance": "Governance Updates",
+      "security": "Security Alerts"
+    },
+    "security": {
+      "title": "Security Settings",
+      "changePassword": "Change Password",
+      "twoFactor": "Two-Factor Authentication",
+      "sessions": "Active Sessions",
+      "auditLog": "Audit Log"
+    },
+    "apiKeys": {
+      "title": "API Keys",
+      "create": "Create New Key",
+      "name": "Key Name",
+      "created": "Created",
+      "lastUsed": "Last Used",
+      "revoke": "Revoke"
+    }
   }
 }
