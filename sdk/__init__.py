@@ -44,6 +44,12 @@ from .models import (
     SplitFunction,
     TreeConfig,
     TreeType,
+    # Random Forest
+    AggregationMethod,
+    RandomForest,
+    RandomForestClassifier,
+    RandomForestConfig,
+    RandomForestRegressor,
 )
 from .utils import (
     EncryptedDataset,
@@ -100,6 +106,12 @@ __all__ = [
     "TreeConfig",
     "TreeType",
     "SplitFunction",
+    # Models - Random Forest
+    "RandomForest",
+    "RandomForestClassifier",
+    "RandomForestRegressor",
+    "RandomForestConfig",
+    "AggregationMethod",
     # Models - Clustering
     "KMeans",
     "MiniBatchKMeans",

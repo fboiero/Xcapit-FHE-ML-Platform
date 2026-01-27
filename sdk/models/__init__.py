@@ -27,6 +27,13 @@ from .kmeans import (
 )
 from .linear_regression import LinearRegression
 from .logistic_regression import LogisticRegression, SigmoidApproximation
+from .random_forest import (
+    AggregationMethod,
+    RandomForest,
+    RandomForestClassifier,
+    RandomForestConfig,
+    RandomForestRegressor,
+)
 
 __all__ = [
     # Base
@@ -46,6 +53,12 @@ __all__ = [
     "TreeConfig",
     "TreeType",
     "SplitFunction",
+    # Random Forest
+    "RandomForest",
+    "RandomForestClassifier",
+    "RandomForestRegressor",
+    "RandomForestConfig",
+    "AggregationMethod",
     # Clustering
     "KMeans",
     "MiniBatchKMeans",
