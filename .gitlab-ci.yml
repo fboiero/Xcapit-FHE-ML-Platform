@@ -1,0 +1,167 @@
+# =============================================================================
+# Xcapit FHE-ML Platform — GitLab CI/CD Pipeline
+# =============================================================================
+# Equivalent to .github/workflows/ci.yml for GitLab-hosted repos.
+#
+# Stages: lint → test → build → security
+# Runs on: pushes to main/develop, merge requests to main
+# =============================================================================
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_BRANCH == "develop"
+
+stages:
+  - lint
+  - test
+  - build
+  - security
+
+# ---------------------------------------------------------------------------
+# Stage: lint
+# ---------------------------------------------------------------------------
+
+lint:
+  stage: lint
+  image: python:3.11-slim
+  script:
+    - pip install ruff
+    - ruff check sdk/ tests/ sdk/tests/
+    - ruff format --check sdk/ tests/ sdk/tests/
+
+# ---------------------------------------------------------------------------
+# Stage: test
+# ---------------------------------------------------------------------------
+
+test-sdk:
+  stage: test
+  needs: [lint]
+  image: python:${PYTHON_VERSION}-slim
+  parallel:
+    matrix:
+      - PYTHON_VERSION: ["3.9", "3.10", "3.11"]
+  variables:
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  cache:
+    key: pip-sdk-${PYTHON_VERSION}
+    paths:
+      - .cache/pip
+  script:
+    - python -m pip install --upgrade pip
+    - pip install -e ".[dev]"
+    - pytest tests/ sdk/tests/ -v --tb=short --cov=sdk --cov-report=xml
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+
+test-django:
+  stage: test
+  needs: [lint]
+  image: python:3.12-slim
+  variables:
+    DJANGO_SECRET_KEY: test-secret-key-for-ci-only
+    DJANGO_DEBUG: "True"
+    DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,testserver
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  cache:
+    key: pip-django
+    paths:
+      - .cache/pip
+  before_script:
+    - cd backend_django
+    - python -m pip install --upgrade pip
+    - pip install -r requirements.txt
+  script:
+    - DJANGO_SETTINGS_MODULE=config.settings_test pytest --cov=apps --cov-report=xml --cov-fail-under=90 -v --tb=short
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: backend_django/coverage.xml
+
+test-contracts:
+  stage: test
+  image:
+    name: ghcr.io/foundry-rs/foundry:latest
+    entrypoint: [""]
+  variables:
+    GIT_SUBMODULE_STRATEGY: recursive
+  script:
+    - cd contracts
+    - forge test -vvv
+  after_script:
+    - cd contracts
+    - forge coverage --report summary || true
+
+test-typescript:
+  stage: test
+  image: node:18-slim
+  rules:
+    - exists:
+        - sdk-typescript/package.json
+  script:
+    - cd sdk-typescript
+    - npm install
+    - npm run build
+    - npm run lint
+
+# ---------------------------------------------------------------------------
+# Stage: build
+# ---------------------------------------------------------------------------
+
+build-dashboard:
+  stage: build
+  image: node:18-slim
+  cache:
+    key: npm-dashboard
+    paths:
+      - dashboard/node_modules
+  script:
+    - cd dashboard
+    - npm ci
+    - npm run build
+  artifacts:
+    paths:
+      - dashboard/dist
+    expire_in: 1 day
+
+# ---------------------------------------------------------------------------
+# Stage: security
+# ---------------------------------------------------------------------------
+
+security-scan:
+  stage: security
+  image: python:3.11-slim
+  allow_failure: true
+  script:
+    - pip install pip-audit
+    - pip-audit || true
+    - apt-get update && apt-get install -y --no-install-recommends curl
+    - curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b /usr/local/bin
+    - trufflehog filesystem ./ --only-verified || true
+
+container-scan:
+  stage: security
+  image: docker:24
+  needs: [lint, test-sdk]
+  services:
+    - docker:24-dind
+  variables:
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_HOST: tcp://docker:2375
+  allow_failure: true
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+  before_script:
+    - until docker info >/dev/null 2>&1; do sleep 2; done
+  script:
+    - docker build --target production -t xcapit-fhe-django:scan ./backend_django
+    - apk add --no-cache curl
+    - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+    - trivy image --severity CRITICAL,HIGH --ignore-unfixed --exit-code 0 xcapit-fhe-django:scan
