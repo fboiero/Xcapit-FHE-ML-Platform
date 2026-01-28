@@ -1,0 +1,19 @@
+name: "DCO Check"
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  dco:
+    name: DCO
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check DCO
+        uses: dcoapp/app@v1
+        with:
+          # Require DCO sign-off
+          # Contributors must sign commits with:
+          # git commit -s -m "commit message"
+          # Which adds: Signed-off-by: Name <email>
+          dco_policy: none
