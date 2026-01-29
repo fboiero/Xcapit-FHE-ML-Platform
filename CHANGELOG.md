@@ -7,6 +7,72 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-01-29
+
+### Added
+
+- **Automatic Consortium Activation**: Consortiums now auto-activate when minimum member count is reached
+  - Signal-based activation on membership changes
+  - Email notification to owner when activated
+
+- **Automatic Contribution Verification**: Contributions are verified automatically on creation
+  - Validates SHA-256 hash format
+  - Validates record count, feature count, schema version
+  - Verifies contributor is active member
+  - New `VerificationStatus` enum (pending, verified, failed)
+
+- **Email Notification System**: Comprehensive email notifications for consortium events
+  - Invitation emails with accept link
+  - Invitation acceptance notifications
+  - Consortium activation alerts
+  - Training started/completed notifications
+  - 5 responsive HTML email templates
+  - Console backend for development, SMTP/SendGrid for production
+
+- **Celery Training Tasks**: Real FHE model training via async tasks
+  - `train_consortium_model` task with retry logic
+  - `FHETrainingService` for training orchestration
+  - Training progress tracking with `TrainingResult` model
+  - `task_id` returned immediately for status polling
+
+- **Blockchain Registration**: Immutable audit trail on Arbitrum
+  - `BlockchainRegistrationService` for contributions and results
+  - Automatic registration after verification
+  - Transaction hash and timestamp stored
+  - Explorer URL generation
+
+- **Integration Tests**: Comprehensive E2E test suite
+  - `test_complete_consortium_flow`: Full 3-hospital workflow
+  - `test_serializers_return_ids`: Validates ID returns
+  - `test_contribution_auto_verification`: Validates auto-verify
+  - `test_consortium_auto_activation`: Validates auto-activation
+
+### Changed
+
+- **Serializers**: Create serializers now return `id` in response
+  - `ConsortiumCreateSerializer`
+  - `ContributionProofCreateSerializer`
+  - `ConsortiumInvitationCreateSerializer`
+
+- **Training Endpoint**: `/start_training/` now returns `task_id` and `training_result_id`
+
+- **ContributionProof Model**: Added new fields
+  - `verification_status` (enum)
+  - `verification_message` (text)
+  - `schema_version` (default "1.0")
+  - `blockchain_registered_at` (datetime)
+
+### New Files
+
+- `apps/consortiums/signals.py` - Django signals for automation
+- `apps/consortiums/tasks.py` - Celery async tasks
+- `apps/consortiums/emails.py` - Email notification service
+- `apps/consortiums/services/verification.py` - Verification logic
+- `apps/consortiums/services/training.py` - FHE training service
+- `apps/consortiums/services/blockchain.py` - Blockchain registration
+- `templates/emails/*.html` - 5 email templates
+- `tests/integration/test_consortium_flow.py` - E2E tests
+
 ## [2.0.0] - 2026-01-25
 
 ### Changed
@@ -141,7 +207,8 @@ POST /api/v2/auth/token/ -> {"access": "...", "refresh": "..."}
 
 ---
 
-[Unreleased]: https://github.com/xcapit/Xcapit-FHE-ML-Platform/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/xcapit/Xcapit-FHE-ML-Platform/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/xcapit/Xcapit-FHE-ML-Platform/compare/v2.0.0...v0.8.0
 [2.0.0]: https://github.com/xcapit/Xcapit-FHE-ML-Platform/compare/v1.0.0...v2.0.0
 [1.0.0]: https://github.com/xcapit/Xcapit-FHE-ML-Platform/compare/v0.1.0...v1.0.0
 [0.1.0]: https://github.com/xcapit/Xcapit-FHE-ML-Platform/releases/tag/v0.1.0
