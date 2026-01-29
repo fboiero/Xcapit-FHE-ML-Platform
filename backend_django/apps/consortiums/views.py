@@ -114,6 +114,8 @@ class ConsortiumViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated, IsConsortiumAdmin])
     def start_training(self, request, pk=None):
         """Start consortium model training."""
+        from .services.training import FHETrainingService
+
         consortium = self.get_object()
 
         if consortium.status != Consortium.Status.ACTIVE:
@@ -134,9 +136,15 @@ class ConsortiumViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Update status
-        consortium.status = Consortium.Status.TRAINING
-        consortium.save(update_fields=["status"])
+        # Start training via service
+        training_service = FHETrainingService(request=request)
+        result = training_service.start_training(consortium)
+
+        if not result.success:
+            return Response(
+                {"detail": result.error},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         # Log event
         AuditLog.log(
@@ -144,9 +152,20 @@ class ConsortiumViewSet(viewsets.ModelViewSet):
             action="training_started",
             resource_type="consortium",
             resource_id=consortium.id,
+            extra_data={
+                "task_id": result.data.get("task_id"),
+                "training_result_id": result.data.get("training_result_id"),
+            },
         )
 
-        return Response({"detail": "Training started.", "status": consortium.status})
+        return Response({
+            "detail": "Training started.",
+            "status": "training",
+            "task_id": result.data.get("task_id"),
+            "training_result_id": result.data.get("training_result_id"),
+            "contributions_count": result.data.get("contributions_count"),
+            "total_records": result.data.get("total_records"),
+        })
 
     @action(detail=False, methods=["get"])
     def owned(self, request):

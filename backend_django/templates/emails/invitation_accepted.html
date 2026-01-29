@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invitation Accepted</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 30px; border-radius: 8px 8px 0 0; text-align: center; }
+        .content { background: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px; }
+        .button { display: inline-block; background: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 500; margin: 20px 0; }
+        .details { background: white; padding: 20px; border-radius: 6px; margin: 20px 0; border: 1px solid #e5e7eb; }
+        .footer { text-align: center; color: #6b7280; font-size: 12px; margin-top: 30px; }
+        .highlight { color: #10b981; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>New Member Joined!</h1>
+        <p>{{ consortium_name }}</p>
+    </div>
+    <div class="content">
+        <p>Hello {{ inviter_name }},</p>
+        <p>Great news! <span class="highlight">{{ invitee_name }}</span> has accepted your invitation to join the <strong>{{ consortium_name }}</strong> consortium.</p>
+
+        <div class="details">
+            <p><strong>New Member:</strong> {{ invitee_name }}</p>
+            <p><strong>Role:</strong> {{ role }}</p>
+            <p><strong>Consortium:</strong> {{ consortium_name }}</p>
+        </div>
+
+        <p>You can now:</p>
+        <ul>
+            <li>View the member's profile in the consortium dashboard</li>
+            <li>Coordinate data contributions</li>
+            <li>Start training once all members have contributed</li>
+        </ul>
+
+        <center>
+            <a href="{{ consortium_url }}" class="button">View Consortium</a>
+        </center>
+    </div>
+    <div class="footer">
+        <p>Xcapit FHE-ML Platform - Privacy-Preserving Machine Learning</p>
+        <p><a href="{{ platform_url }}">{{ platform_url }}</a></p>
+    </div>
+</body>
+</html>

@@ -163,6 +163,11 @@ class ContributionProof(models.Model):
     Records are hashed - actual data is never stored on server.
     """
 
+    class VerificationStatus(models.TextChoices):
+        PENDING = "pending", "Pending"
+        VERIFIED = "verified", "Verified"
+        FAILED = "failed", "Failed"
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     consortium = models.ForeignKey(
@@ -179,17 +184,28 @@ class ContributionProof(models.Model):
     # Contribution metadata
     record_count = models.IntegerField()
     feature_count = models.IntegerField()
+    schema_version = models.CharField(max_length=20, default="1.0")
 
     # Cryptographic proofs (hashes only, never raw data)
     data_hash = models.CharField(max_length=64, db_index=True)
     checksum = models.CharField(max_length=64)
 
-    # Verification
+    # Verification (legacy field kept for backwards compatibility)
     verified = models.BooleanField(default=False)
     verified_at = models.DateTimeField(null=True, blank=True)
 
+    # New verification fields
+    verification_status = models.CharField(
+        max_length=20,
+        choices=VerificationStatus.choices,
+        default=VerificationStatus.PENDING,
+        db_index=True,
+    )
+    verification_message = models.TextField(blank=True)
+
     # Blockchain record
     blockchain_tx = models.CharField(max_length=66, blank=True)  # 0x + 64 hex chars
+    blockchain_registered_at = models.DateTimeField(null=True, blank=True)
 
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
@@ -207,11 +223,87 @@ class ContributionProof(models.Model):
     def __str__(self):
         return f"{self.company.name}: {self.record_count} records"
 
-    def verify(self):
+    def verify(self, message: str = "Verification successful"):
         """Mark contribution as verified."""
         self.verified = True
         self.verified_at = timezone.now()
-        self.save(update_fields=["verified", "verified_at"])
+        self.verification_status = self.VerificationStatus.VERIFIED
+        self.verification_message = message
+        self.save(update_fields=[
+            "verified", "verified_at", "verification_status", "verification_message"
+        ])
+
+    def fail_verification(self, message: str):
+        """Mark contribution verification as failed."""
+        self.verification_status = self.VerificationStatus.FAILED
+        self.verification_message = message
+        self.save(update_fields=["verification_status", "verification_message"])
+
+
+class TrainingResult(models.Model):
+    """
+    Result of a consortium model training run.
+    """
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        RUNNING = "running", "Running"
+        COMPLETED = "completed", "Completed"
+        FAILED = "failed", "Failed"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    consortium = models.ForeignKey(
+        Consortium,
+        on_delete=models.CASCADE,
+        related_name="training_results",
+    )
+
+    # Training metadata
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+        db_index=True,
+    )
+    task_id = models.CharField(max_length=255, blank=True, db_index=True)
+
+    # Model information
+    model_hash = models.CharField(max_length=64, blank=True)
+    accuracy = models.FloatField(null=True, blank=True)
+    loss = models.FloatField(null=True, blank=True)
+    epochs_completed = models.IntegerField(default=0)
+
+    # Configuration used
+    config_snapshot = models.JSONField(default=dict, blank=True)
+
+    # Contributions included
+    contributions_count = models.IntegerField(default=0)
+    total_records = models.IntegerField(default=0)
+
+    # Error tracking
+    error_message = models.TextField(blank=True)
+
+    # Blockchain registration
+    blockchain_tx = models.CharField(max_length=66, blank=True)
+    blockchain_registered_at = models.DateTimeField(null=True, blank=True)
+
+    # Timestamps
+    started_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "training result"
+        verbose_name_plural = "training results"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["consortium", "status"]),
+            models.Index(fields=["task_id"]),
+        ]
+
+    def __str__(self):
+        return f"{self.consortium.name} training ({self.status})"
 
 
 class ConsortiumInvitation(models.Model):

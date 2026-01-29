@@ -42,6 +42,7 @@ class ConsortiumCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Consortium
         fields = [
+            "id",
             "name",
             "description",
             "model_type",
@@ -50,6 +51,7 @@ class ConsortiumCreateSerializer(serializers.ModelSerializer):
             "voting_threshold",
             "voting_duration_days",
         ]
+        read_only_fields = ["id"]
 
     def validate_name(self, value):
         """Validate consortium name."""
@@ -152,12 +154,14 @@ class ContributionProofCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ContributionProof
         fields = [
+            "id",
             "consortium",
             "record_count",
             "feature_count",
             "data_hash",
             "checksum",
         ]
+        read_only_fields = ["id"]
 
     def validate_record_count(self, value):
         """Validate record count is positive."""
@@ -217,7 +221,8 @@ class ConsortiumInvitationCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ConsortiumInvitation
-        fields = ["consortium", "invitee_email", "role", "message", "expires_at"]
+        fields = ["id", "consortium", "invitee_email", "role", "message", "expires_at"]
+        read_only_fields = ["id"]
 
     def validate_invitee_email(self, value):
         """Validate email and check not already a member."""

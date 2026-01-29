@@ -521,6 +521,9 @@ CELERY_RESULT_EXPIRES = 60 * 60 * 24  # Results expire after 24 hours
 CELERY_TASK_ROUTES = {
     "apps.competitive_insights.tasks.*": {"queue": "reports"},
     "apps.governance.tasks.*": {"queue": "governance"},
+    "consortiums.train_model": {"queue": "training"},
+    "consortiums.register_contribution_blockchain": {"queue": "blockchain"},
+    "consortiums.register_training_result_blockchain": {"queue": "blockchain"},
 }
 
 # =============================================================================
@@ -571,6 +574,31 @@ if not DEBUG and BLOCKCHAIN_ENV == "mainnet":
         raise ValueError(
             "MAINNET_GOVERNANCE_ADDRESS is required when BLOCKCHAIN_ENV=mainnet"
         )
+
+# =============================================================================
+# EMAIL CONFIGURATION
+# =============================================================================
+
+# Email backend - use console in development, SMTP in production
+EMAIL_BACKEND = os.environ.get(
+    "EMAIL_BACKEND",
+    "django.core.mail.backends.console.EmailBackend" if DEBUG
+    else "django.core.mail.backends.smtp.EmailBackend",
+)
+
+# SMTP Configuration (SendGrid recommended for production)
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.sendgrid.net")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "true").lower() == "true"
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "apikey")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+
+# Default sender
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "Xcapit FHE-ML <noreply@xcapit.com>")
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
+
+# Platform URL for email links
+PLATFORM_URL = os.environ.get("PLATFORM_URL", "https://appfhe.xcapit.com")
 
 # =============================================================================
 # DEFAULT PRIMARY KEY
