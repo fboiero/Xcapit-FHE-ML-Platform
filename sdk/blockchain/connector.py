@@ -281,13 +281,18 @@ class BlockchainConnector:
         """
         return self.web3.eth.estimate_gas(transaction)
 
-    def get_gas_price(self) -> int:
-        """Get current gas price in wei.
+    def get_gas_price(self, buffer_percent: int = 20) -> int:
+        """Get current gas price in wei with buffer for fluctuations.
+
+        Args:
+            buffer_percent: Percentage buffer to add (default 20%).
 
         Returns:
-            Gas price in wei.
+            Gas price in wei with buffer.
         """
-        return self.web3.eth.gas_price
+        base_price = self.web3.eth.gas_price
+        # Add buffer to handle base fee fluctuations
+        return int(base_price * (100 + buffer_percent) / 100)
 
     def send_transaction(
         self,
