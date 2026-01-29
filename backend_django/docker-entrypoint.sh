@@ -56,20 +56,30 @@ if [ "${DJANGO_DEBUG:-False}" = "False" ]; then
 fi
 
 # Create superuser if credentials are provided (for initial setup)
+# SECURITY: Using heredoc with single quotes to prevent shell injection
+# Variables are read via os.environ inside Python, not interpolated by shell
 if [ -n "$DJANGO_SUPERUSER_EMAIL" ] && [ -n "$DJANGO_SUPERUSER_PASSWORD" ]; then
     echo -e "${YELLOW}Creating superuser if not exists...${NC}"
-    python manage.py shell -c "
+    python manage.py shell << 'PYTHON_EOF'
+import os
 from django.contrib.auth import get_user_model
+
 User = get_user_model()
-if not User.objects.filter(email='$DJANGO_SUPERUSER_EMAIL').exists():
-    User.objects.create_superuser(
-        email='$DJANGO_SUPERUSER_EMAIL',
-        password='$DJANGO_SUPERUSER_PASSWORD'
-    )
-    print('Superuser created!')
+email = os.environ.get('DJANGO_SUPERUSER_EMAIL', '')
+password = os.environ.get('DJANGO_SUPERUSER_PASSWORD', '')
+
+if email and password:
+    if not User.objects.filter(email=email).exists():
+        User.objects.create_superuser(email=email, password=password)
+        print('Superuser created!')
+    else:
+        print('Superuser already exists.')
 else:
-    print('Superuser already exists.')
-" 2>/dev/null || echo "Superuser creation skipped"
+    print('Email or password not provided.')
+PYTHON_EOF
+    if [ $? -ne 0 ]; then
+        echo "Superuser creation skipped"
+    fi
 fi
 
 echo ""

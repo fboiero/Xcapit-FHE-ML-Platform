@@ -129,36 +129,44 @@ xcapit-fhe info -m model.bin
 ### Start the Server
 
 ```bash
-# Development mode
-uvicorn sdk.api.server:app --reload --port 8000
+# Development mode (Django)
+cd backend_django
+python manage.py runserver
 
 # Production mode with Docker
-docker-compose up api
+docker compose --profile production up -d
 ```
 
 ### API Endpoints
 
+The API is available at `/api/v2/`. Documentation is available at `/api/docs/`.
+
 ```bash
 # Health check
-curl http://localhost:8000/health
+curl http://localhost:8000/health/
+
+# Authenticate and get token
+curl -X POST http://localhost:8000/api/v2/auth/token/ \
+  -H "Content-Type: application/json" \
+  -d '{"email": "user@example.com", "password": "password"}'
+
+# Use token for authenticated requests
+TOKEN="your-access-token"
+
+# List models
+curl http://localhost:8000/api/v2/models/ \
+  -H "Authorization: Bearer $TOKEN"
 
 # Create a model
-curl -X POST http://localhost:8000/models \
+curl -X POST http://localhost:8000/api/v2/models/ \
   -H "Content-Type: application/json" \
-  -d '{"model_type": "logistic_regression"}'
-
-# Train the model
-curl -X POST http://localhost:8000/models/{model_id}/train \
-  -H "Content-Type: application/json" \
-  -d '{"X": [[1,2], [3,4]], "y": [0, 1]}'
-
-# Make predictions
-curl -X POST http://localhost:8000/models/{model_id}/predict \
-  -H "Content-Type: application/json" \
-  -d '{"X": [[1,2]]}'
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"name": "My Model", "model_type": "logistic_regression"}'
 ```
 
-See the [OpenAPI documentation](openapi.yaml) for complete API reference.
+API documentation is available at:
+- Swagger UI: http://localhost:8000/api/docs/
+- OpenAPI Schema: http://localhost:8000/api/v2/schema/
 
 ## Using TypeScript SDK
 

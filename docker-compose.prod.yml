@@ -1,0 +1,179 @@
+# =============================================================================
+# Xcapit FHE-ML Platform - Production Docker Compose Override
+# =============================================================================
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml --profile production up -d
+#
+# This file provides production-specific overrides:
+#   - Resource limits and reservations
+#   - Optimized logging configuration
+#   - Redis memory policies
+#   - Security hardening
+#
+# Prerequisites:
+#   - Run scripts/validate_env.py to verify environment
+#   - Set all required environment variables in .env or CI/CD
+#
+# =============================================================================
+
+services:
+  # ============ PostgreSQL Production Overrides ============
+  postgres:
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+    command:
+      - postgres
+      - -c
+      - max_connections=100
+      - -c
+      - shared_buffers=256MB
+      - -c
+      - effective_cache_size=768MB
+      - -c
+      - maintenance_work_mem=64MB
+      - -c
+      - checkpoint_completion_target=0.9
+      - -c
+      - wal_buffers=16MB
+      - -c
+      - default_statistics_target=100
+      - -c
+      - random_page_cost=1.1
+      - -c
+      - effective_io_concurrency=200
+      - -c
+      - work_mem=4MB
+      - -c
+      - min_wal_size=1GB
+      - -c
+      - max_wal_size=4GB
+
+  # ============ Redis Production Overrides ============
+  redis:
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "3"
+    command:
+      - redis-server
+      - --maxmemory
+      - 256mb
+      - --maxmemory-policy
+      - allkeys-lru
+      - --appendonly
+      - "yes"
+      - --appendfsync
+      - everysec
+
+  # ============ Django API Production Overrides ============
+  django:
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+    environment:
+      - GUNICORN_WORKERS=${GUNICORN_WORKERS:-4}
+      - GUNICORN_THREADS=${GUNICORN_THREADS:-2}
+      - GUNICORN_TIMEOUT=${GUNICORN_TIMEOUT:-120}
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+
+  # ============ Celery Worker Production Overrides ============
+  celery:
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 3
+        window: 120s
+    logging:
+      driver: json-file
+      options:
+        max-size: "30m"
+        max-file: "3"
+    command: celery -A config worker -l warning --concurrency=4
+    environment:
+      - CELERY_WORKER_PREFETCH_MULTIPLIER=4
+      - CELERY_TASK_ACKS_LATE=true
+
+  # ============ Celery Beat Production Overrides ============
+  celery-beat:
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 3
+        window: 120s
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "3"
+    command: celery -A config beat -l warning
+
+  # ============ OpenBao (Vault) Production Overrides ============
+  openbao:
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "3"
