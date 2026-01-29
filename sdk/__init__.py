@@ -173,12 +173,8 @@ from .evaluation import (
 from .persistence import (
     save_model,
     load_model,
-    get_model_info,
-    export_model_weights,
-    import_model_weights,
-    register_model,
     ModelSerializer,
-    ModelMetadata,
+    ModelFormat,
 )
 
 from .feature_selection import (
@@ -276,10 +272,6 @@ from .feature_engineering import (
     PowerTransformer,
 )
 from .preprocessing import (
-    # Pipeline
-    PreprocessingPipeline,
-    create_standard_pipeline,
-    create_categorical_pipeline,
     # Scalers
     StandardScaler,
     MinMaxScaler,
@@ -287,10 +279,6 @@ from .preprocessing import (
     # Encoders
     OneHotEncoder,
     OrdinalEncoder,
-    # Handlers
-    MissingValueHandler,
-    OutlierHandler,
-    FeatureSelector,
 )
 
 from .pipeline import (
@@ -455,17 +443,11 @@ __all__ = [
     "Network",
     "NETWORK_CONFIGS",
     # Preprocessing
-    "PreprocessingPipeline",
-    "create_standard_pipeline",
-    "create_categorical_pipeline",
     "StandardScaler",
     "MinMaxScaler",
     "RobustScaler",
     "OneHotEncoder",
     "OrdinalEncoder",
-    "MissingValueHandler",
-    "OutlierHandler",
-    "FeatureSelector",
     # Evaluation - Metrics
     "accuracy_score",
     "precision_score",
@@ -539,12 +521,6 @@ __all__ = [
     "calinski_harabasz_score",
     "davies_bouldin_score",
     "adjusted_rand_score",
-    # Persistence (new)
-    "get_model_info",
-    "export_model_weights",
-    "import_model_weights",
-    "register_model",
-    "ModelMetadata",
     # Feature Selection (new)
     "RFECV",
     # Model Selection (new)
