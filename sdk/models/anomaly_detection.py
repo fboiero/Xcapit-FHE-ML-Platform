@@ -6,7 +6,7 @@ encrypted data using polynomial approximations for FHE compatibility.
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import numpy as np
 
@@ -39,7 +39,7 @@ class AnomalyConfig(ModelConfig):
 class IsolationForestConfig(AnomalyConfig):
     """Configuration for Isolation Forest."""
     n_estimators: int = 100
-    max_samples: str | int = "auto"  # "auto" or int
+    max_samples: Union[str, int] = "auto"  # "auto" or int
     max_features: float = 1.0
     max_depth: Optional[int] = None
     bootstrap: bool = False
@@ -51,7 +51,7 @@ class OneClassSVMConfig(AnomalyConfig):
     kernel: KernelType = KernelType.POLYNOMIAL
     degree: int = 3
     nu: float = 0.1  # Upper bound on fraction of outliers
-    gamma: str | float = "scale"
+    gamma: Union[str, float] = "scale"
     coef0: float = 0.0
     max_iter: int = 1000
     tol: float = 1e-3
@@ -94,7 +94,7 @@ class IsolationForest(BaseFHEModel):
     def __init__(
         self,
         n_estimators: int = 100,
-        max_samples: str | int = "auto",
+        max_samples: Union[str, int] = "auto",
         max_features: float = 1.0,
         max_depth: Optional[int] = None,
         contamination: float = 0.1,
@@ -364,7 +364,7 @@ class OneClassSVM(BaseFHEModel):
         kernel: str = "polynomial",
         degree: int = 3,
         nu: float = 0.1,
-        gamma: str | float = "scale",
+        gamma: Union[str, float] = "scale",
         coef0: float = 1.0,
         max_iter: int = 1000,
         tol: float = 1e-3,
