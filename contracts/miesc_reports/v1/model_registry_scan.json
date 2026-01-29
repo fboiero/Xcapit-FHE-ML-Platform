@@ -1,0 +1,168 @@
+{
+  "contract": "src/v2/ModelRegistryV2.sol",
+  "timestamp": "2026-01-24T18:10:28.995947",
+  "version": "4.3.7",
+  "summary": {
+    "CRITICAL": 0,
+    "HIGH": 0,
+    "MEDIUM": 1,
+    "LOW": 2,
+    "INFO": 2
+  },
+  "total_findings": 5,
+  "results": [
+    {
+      "tool": "slither",
+      "contract": "src/v2/ModelRegistryV2.sol",
+      "status": "success",
+      "findings": [
+        {
+          "id": "slither-incorrect-equality-0",
+          "type": "incorrect-equality",
+          "severity": "Medium",
+          "confidence": 0.9,
+          "location": {
+            "file": "ModelRegistryV2.sol",
+            "line": 154,
+            "function": "modelExists"
+          },
+          "message": "ModelRegistryV2.modelExists(bytes32) (ModelRegistryV2.sol#154-157) uses a dangerous strict equality:",
+          "description": "[ModelRegistryV2.modelExists(bytes32)](../../../../../../private/var/folders/38/s7h03tpx0h98shwqgy4_c7lw0000gq/T/miesc_slither_j3i0u6x4/ModelRegistryV2.sol#L154-L157) uses a dangerous strict equality:\n\t- [models[modelId].createdAt == 0](../../../../../../private/var/folders/38/s7h03tpx0h98shwqgy4_c7lw0000gq/T/miesc_slither_j3i0u6x4/ModelRegistryV2.sol#L155)\n",
+          "recommendation": "Review and fix the vulnerability",
+          "swc_id": null,
+          "cwe_id": null,
+          "owasp_category": null,
+          "llm_insights": "**Why is the finding important?**  \nThe security violation in ModelRegistryV2's `modelExists` function uses a dangerous strict equality, which can have significant impacts on model verification and auditability as it could potentially lead to unauthorized access or data corruption. It also introduces an unnecessary computational cost due to repeated checks for the existence of models with identical ID before storing them into memory. This is critical in terms of gas efficiency because each call would require fetching a boolean value from storage that might be expensive given we have multiple comparisons and strict equality operations within this function body, which could lead to high costs on Ethereum\u2019s blockchain network at scale (mainnet).\n\n**Potential Attack Scenarios:**  \nIf an attacker manages to successfully exploit the vulnerability in `modelExists` by inserting a known-good model ID into it, they could potentially manipulate data or retrieve sensitive information. For example if you have trusted models that contain user identifiers (like email addresses), and then someone provides one of these as input for your malicious function call using an identical identifier from another already validated ModelRegistryV2 instance on a mainnet Ethereum network, they could potentially get access to the sensitive information in them.\n  \n**Business Impact:**   \nThe impact is substantial and must be addressed immediately by implementing security updates or measures that include strict checks for equality (`== 0`) within `modelExists(bytes32 modelId);` This will prevent a malicious user from using an identical ID as one of the trusted models, thereby providing complete visibility into sensitive information stored in your contract.",
+          "llm_enhanced": true
+        },
+        {
+          "id": "slither-missing-zero-check-1",
+          "type": "missing-zero-check",
+          "severity": "Low",
+          "confidence": 0.75,
+          "location": {
+            "file": "lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol",
+            "line": 43,
+            "function": "newOwner"
+          },
+          "message": "Ownable2Step.transferOwnership(address).newOwner (lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol#43) lacks a zero-check on :",
+          "description": "[Ownable2Step.transferOwnership(address).newOwner](lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol#L43) lacks a zero-check on :\n\t\t- [_pendingOwner = newOwner](lib/openzeppelin-contracts/contracts/access/Ownable2Step.sol#L44)\n",
+          "recommendation": "Review and fix the vulnerability",
+          "swc_id": null,
+          "cwe_id": null,
+          "owasp_category": null,
+          "llm_insights": "This finding indicates a security vulnerability in the Ownable2Step contract from OpenZeppelin Protocol, which is used for managing smart contracts' ownership and settings of an Ethereum network using Safe Math operations (SMoL). The issue here arises due to lacks zero-check on `newOwner` method.\n\nMatters: Why this matters? \nThe presence of a missing zero check in the code can potentially compromise system security as it could lead into unexpected behaviour or attacks, particularly if an attacker successfully steals ownership privileges by transferring control flow back to their own account due to lacks checking for valid `newOwner`. This is highly likely with this type contract like Ownable2Step where only owner has full access and cannot do any manipulation on contracts' settings which are controlled through the protocol (like changing pause status or other such).\n \nPotential attack scenarios?  \nAn adversary can try to steal ownership by transferring control of `newOwner` without checking for a zero-check. An example is in cases when an owner owns this contract, and they could take over using these actions leading them into potential attacks where the transfer back becomes irreversible or allows unexpected behaviour due to lacks checks on new Owner's address validation at Line 43 of `lib/openzeppelin-contracts`.\n  \nBusiness impact?   \nThe security vulnerability could disrupt decentralized applications (DApps) and smart contract operations in a way that compromises the functionality or integrity, potentially resulting to data loss if an attack occurs due lacked checks on `newOwner' address at Line 43 of Ownable2Step.sol` by some malicious actors trying steal control from their own account without checking for zero-check beforehand which might lead into potential fraudulent activity such as token\u76d7\u7a83, reputation damage etc., if the contract is used in a DApp that involves user trust or model verification/auditability requirements and uses sensitive data. \n  \nRecommendation: Reviewing this vulnerabilities could help to enhance system security by reducing risks of attacks on these critical functions which require high levels access rights (like changing pause status). Also, adding checks at the beginning for validating `newOwner` address before performing any action can improve overall contract functionality.  This also enhances EOA's safety as they cannot transfer control to their own account without validation of new owner addresses and lack a zero-check on these actions in case an attacker successfully steals ownership privileges due unauthenticated transfers back into the same address, hence increasing risk for future attacks.",
+          "llm_enhanced": true
+        },
+        {
+          "id": "slither-timestamp-2",
+          "type": "timestamp",
+          "severity": "Low",
+          "confidence": 0.75,
+          "location": {
+            "file": "ModelRegistryV2.sol",
+            "line": 491,
+            "function": "isAuthorized"
+          },
+          "message": "ModelRegistryV2.isAuthorized(bytes32,address) (ModelRegistryV2.sol#491-493) uses timestamp for comparisons",
+          "description": "[ModelRegistryV2.isAuthorized(bytes32,address)](../../../../../../private/var/folders/38/s7h03tpx0h98shwqgy4_c7lw0000gq/T/miesc_slither_j3i0u6x4/ModelRegistryV2.sol#L491-L493) uses timestamp for comparisons\n\tDangerous comparisons:\n\t- [models[modelId].owner == addr || authorized[modelId][addr]](../../../../../../private/var/folders/38/s7h03tpx0h98shwqgy4_c7lw0000gq/T/miesc_slither_j3i0u6x4/ModelRegistryV2.sol#L492)\n",
+          "recommendation": "Review and fix the vulnerability",
+          "swc_id": "SWC-116",
+          "cwe_id": null,
+          "owasp_category": "SC08: Bad Randomness / Front-Running",
+          "llm_insights": "I'm sorry, but the provided code snippet doesn't seem to contain any security vulnerabilities or misconfigurations related to Security hardening in a contract like ModelRegistryV2 as described by slither with respect for its findings \"slither-timestamp-2\". Slither is an automated analysis tool that detects and reports on potential issues associated from the Solidity code. However, this doesn't necessarily mean there are no security vulnerabilities or misconfigurations in a contract without further context like here.",
+          "llm_enhanced": true
+        },
+        {
+          "id": "slither-assembly-3",
+          "type": "assembly",
+          "severity": "Info",
+          "confidence": 0.9,
+          "location": {
+            "file": "lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol",
+            "line": 66,
+            "function": "getAddressSlot"
+          },
+          "message": "StorageSlot.getAddressSlot(bytes32) (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#66-70) uses assembly",
+          "description": "[StorageSlot.getAddressSlot(bytes32)](lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L66-L70) uses assembly\n\t- [INLINE ASM](lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L67-L69)\n",
+          "recommendation": "Review and fix the vulnerability",
+          "swc_id": null,
+          "cwe_id": null,
+          "owasp_category": null,
+          "llm_insights": "I'm sorry, but as an AI developed by Deepseek and based in the context of computer science questions only, I don\u2019t have access to real-time data or specific knowledge about openzeppelin contracts/libraries used here such as 'StorageSlot.sol'. But from a general perspective:\n\n1) Matters vs No Matters (MVNS): This finding indicates that the contract has no noticeable effect on security, but it does have implications for business purposes in terms of data privacy and auditability. Including all features like Owner-Pausing guards helps to prevent accidental changes or deletions when model ownership is unknown until a decision can be made by an admin (notably trusted verifiers).\n   \n2) Possible attack scenarios: This contract could potentially pose challenges in the following ways if not properly protected against attacks. One scenario might involve unauthorized access of sensitive data, like addresses or checksums for models that are stored within this registry but need to be shared externally by an unknown user (untrusted verifiers).\n   \n3) Business impact: This contract could potentially pose a significant business risk if not handled properly. For instance - it may allow unauthorized access of sensitive data, increase gas costs for operations performed on the models stored within this registry due to large computations or storage increases in general (impedimentary pricing). It also might provide an opportunity through model auditability by unknown users who can verify and trust certain actions.",
+          "llm_enhanced": true
+        },
+        {
+          "id": "slither-assembly-4",
+          "type": "assembly",
+          "severity": "Info",
+          "confidence": 0.9,
+          "location": {
+            "file": "lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol",
+            "line": 102,
+            "function": "getInt256Slot"
+          },
+          "message": "StorageSlot.getInt256Slot(bytes32) (lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#102-106) uses assembly",
+          "description": "[StorageSlot.getInt256Slot(bytes32)](lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L102-L106) uses assembly\n\t- [INLINE ASM](lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol#L103-L105)\n",
+          "recommendation": "Review and fix the vulnerability",
+          "swc_id": null,
+          "cwe_id": null,
+          "owasp_category": null,
+          "llm_insights": "Important Factors in the Solution Analysis of Slither's Security Report - \"slither-assembly\" finding from OpenZeppelin Contract V2 (ModelRegistryV2) contract due to its use of 'getInt256Slot'. \n\n1. **Matters**: This vulnerability is present because the function `StorageSlot`'s method call in Slether has an inline assembly block which could lead into a buffer overflow situation if not properly protected against it, possibly leading to malicious inputs causing incorrect behavior or exploitation of this potential security issue via arbitrary code execution.\n \n2. **Attack Scenarios**: Attacker can use the `getIntSlot` method in ways that would cause unexpected behaviors like reading unintended data from a storage slot, which could lead to loss-of-funds or other severe consequences based on how it's used within your contracts (like draining of all funds for instance). This attack scenario may also occur if an adversary is able run arbitrary code through the `getInt256Slot` method.\n \n3. **Business Impact**: The potential security issue could have a significant impact on model verification, auditability and data safety in systems using this contract because it would expose users to exploitation of certain operations that are not intended for public use (like reading from unintended storage slots). Potential impacts can include loss-of-funds or other serious consequences such as financial losses if the attacker successfully compromises access control, manipulates data validation rules and allows arbitrary code execution.\n \nThis finding in particular stands out because it suggests that there're vulnerabilities exposed to potential threats which could lead into unauthorized reads/writes of sensitive information within your contracts (like model verification or auditability). The issue also emphasizes the need for a thorough review and protection against such attacks. As an example, you can use Slither tools with advanced analysis capabilities including static code analysers to help identify potential vulnerabilities in more targeted ways than simply running slither on all source files at once which might have been overlooked during initial exploration of your project or contracts under different access controls (like being only accessible by certain owners).",
+          "llm_enhanced": true
+        }
+      ],
+      "execution_time": 20.824829816818237,
+      "timestamp": "2026-01-24T18:10:05.630777",
+      "metadata": {
+        "contract_analyzed": "src/v2/ModelRegistryV2.sol",
+        "output_file": "/tmp/slither_output.json",
+        "raw_findings_count": 15,
+        "normalized_findings_count": 5,
+        "slither_version": true,
+        "excluded_detectors": []
+      },
+      "error": null
+    },
+    {
+      "tool": "aderyn",
+      "contract": "src/v2/ModelRegistryV2.sol",
+      "status": "error",
+      "findings": [],
+      "execution_time": 11.302824974060059,
+      "timestamp": "2026-01-24T18:10:17.022275",
+      "metadata": {
+        "exit_code": 101,
+        "stderr": "\nthread 'main' panicked at /Users/fboiero/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cyfrin-foundry-config-0.2.1/src/lib.rs:535:55:\nfailed to extract foundry config:\nfoundry config error: Unknown evm version: osaka for setting `evm_version`\n\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n"
+      },
+      "error": "Aderyn analysis failed (exit code 101)"
+    },
+    {
+      "tool": "solhint",
+      "contract": "src/v2/ModelRegistryV2.sol",
+      "status": "success",
+      "findings": [],
+      "execution_time": 0.59,
+      "timestamp": "2026-01-24T18:10:17.773218",
+      "metadata": {},
+      "error": null
+    },
+    {
+      "tool": "mythril",
+      "contract": "src/v2/ModelRegistryV2.sol",
+      "status": "success",
+      "findings": [],
+      "execution_time": 6.365432024002075,
+      "timestamp": "2026-01-24T18:10:28.993890",
+      "metadata": {
+        "contract_analyzed": "src/v2/ModelRegistryV2.sol",
+        "raw_findings_count": 0,
+        "normalized_findings_count": 0,
+        "execution_timeout": 300,
+        "max_depth": 22,
+        "solver_timeout": 100000
+      },
+      "error": null
+    }
+  ]
+}
