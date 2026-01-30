@@ -36,6 +36,9 @@ governance_*/
 recordings/*.mp4
 *.gif
 
+# Allow dashboard src/lib (overrides Python lib/ rule above)
+!dashboard/src/lib/
+
 # Node modules
 node_modules/
 

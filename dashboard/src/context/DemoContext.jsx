@@ -1,8 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 
-// Demo API Key - Anyone can use this to explore
-export const DEMO_API_KEY = 'demo_xcapit_2024_public_access'
-export const DEMO_EMAIL = 'demo@xcapit.com'
+import { DEMO_API_KEY, DEMO_EMAIL } from '../config/demo'
+export { DEMO_API_KEY, DEMO_EMAIL }
 
 // Industry scenarios with complete mock data
 export const INDUSTRY_SCENARIOS = {

@@ -1,1 +1,10 @@
+node_modules/
+dist/
+.env
+.env.local
+.env.production
+.env.staging
 .vercel
+.DS_Store
+*.timestamp-*.mjs
+coverage/

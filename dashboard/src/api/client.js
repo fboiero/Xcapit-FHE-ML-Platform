@@ -6,8 +6,8 @@
 // In development, Vite proxy handles /api requests to localhost:8000
 const API_BASE = import.meta.env.VITE_API_URL || '/api/v1/consortiums';
 
-// Demo API Key - for sandbox demo mode
-export const DEMO_API_KEY = 'demo_xcapit_2024_public_access';
+import { DEMO_API_KEY } from '../config/demo';
+export { DEMO_API_KEY };
 
 // Get stored API key
 const getApiKey = () => localStorage.getItem('xcapit_api_key');
