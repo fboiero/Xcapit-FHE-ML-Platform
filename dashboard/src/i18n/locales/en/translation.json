@@ -722,6 +722,33 @@
     "health": "System Health",
     "lastUpdated": "Last Updated"
   },
+  "toast": {
+    "consortiumCreated": "Consortium created successfully",
+    "consortiumDeleted": "Consortium deleted",
+    "dataSaved": "Data saved successfully",
+    "dataUploaded": "Data uploaded successfully",
+    "error": "An error occurred. Please try again.",
+    "copySuccess": "Copied to clipboard",
+    "settingsSaved": "Settings saved"
+  },
+  "onboarding": {
+    "title": "Welcome to Xcapit Privacy",
+    "subtitle": "Get started by exploring the key features of the platform.",
+    "createConsortium": "Create consortium",
+    "exploreSandbox": "Explore sandbox",
+    "uploadData": "Upload data",
+    "documentation": "Documentation"
+  },
+  "breadcrumbs": {
+    "home": "Dashboard",
+    "detail": "Detail"
+  },
+  "emptyState": {
+    "noConsortiums": "No consortiums yet",
+    "noConsortiumsDescription": "Create your first consortium to start collaborating.",
+    "noData": "No data available",
+    "noResults": "No results found"
+  },
   "settings": {
     "title": "Settings",
     "subtitle": "Manage your account and preferences",

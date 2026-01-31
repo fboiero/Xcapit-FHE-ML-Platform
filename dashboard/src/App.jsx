@@ -3,17 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { isAuthenticated } from './api/client'
 import { DemoProvider } from './context/DemoContext'
 import Layout from './components/Layout'
-
-function PageLoader() {
-  return (
-    <div className="flex items-center justify-center min-h-[60vh]">
-      <div className="flex flex-col items-center gap-4">
-        <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-        <p className="text-sm text-slate-500">Loading...</p>
-      </div>
-    </div>
-  )
-}
+import { PageLoader } from './components/ui'
 
 const Register = lazy(() => import('./pages/Register'))
 const Login = lazy(() => import('./pages/Login'))

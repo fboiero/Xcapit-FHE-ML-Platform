@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { listConsortiums, isDemoMode } from '../api/client'
 import { useDemo } from '../context/DemoContext'
+import { SkeletonCard, EmptyState } from '../components/ui'
+import WelcomeOnboarding from '../components/WelcomeOnboarding'
 import {
   BuildingOffice2Icon,
   HeartIcon,
@@ -14,25 +16,6 @@ import {
   UserGroupIcon,
   CubeIcon
 } from '@heroicons/react/24/outline'
-
-// Skeleton loading component
-function SkeletonCard() {
-  return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-6 animate-pulse">
-      <div className="flex items-start justify-between mb-4">
-        <div className="w-12 h-12 bg-slate-200 rounded-xl"></div>
-        <div className="w-20 h-6 bg-slate-200 rounded-full"></div>
-      </div>
-      <div className="h-5 bg-slate-200 rounded w-3/4 mb-3"></div>
-      <div className="h-4 bg-slate-200 rounded w-full mb-2"></div>
-      <div className="h-4 bg-slate-200 rounded w-2/3 mb-4"></div>
-      <div className="flex gap-4">
-        <div className="h-4 bg-slate-200 rounded w-20"></div>
-        <div className="h-4 bg-slate-200 rounded w-24"></div>
-      </div>
-    </div>
-  )
-}
 
 // Animated counter hook
 function useCounter(end, duration = 1500, startOnMount = true) {
@@ -212,6 +195,9 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Welcome Onboarding */}
+      {!isDemo && <WelcomeOnboarding />}
+
       {/* Demo Stats */}
       {isDemo && scenarioData && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -276,26 +262,16 @@ export default function Dashboard() {
 
       {/* Consortiums grid */}
       {consortiums.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
-          <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-          </div>
-          <h3 className="text-lg font-medium text-slate-900 mb-2">No hay consorcios</h3>
-          <p className="text-slate-600 mb-6">
-            Crea tu primer consorcio para comenzar a colaborar.
-          </p>
-          <Link
-            to="/consortiums/new"
-            className="inline-flex items-center gap-2 bg-brand-600 text-white px-4 py-2 rounded-xl font-medium hover:bg-brand-700 transition"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-            Crear Consorcio
-          </Link>
-        </div>
+        <EmptyState
+          icon={UserGroupIcon}
+          title={t('emptyState.noConsortiums')}
+          description={t('emptyState.noConsortiumsDescription')}
+          action={{
+            label: currentLang === 'es' ? 'Crear Consorcio' : 'Create Consortium',
+            to: '/consortiums/new',
+            icon: PlusIcon,
+          }}
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {consortiums.map((consortium, index) => (

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { createConsortium } from '../api/client'
 
 const modelTypes = [
@@ -60,13 +60,6 @@ export default function ConsortiumCreate() {
 
   return (
     <div className="pt-16 max-w-2xl mx-auto">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-slate-500 mb-6">
-        <Link to="/dashboard" className="hover:text-brand-600">Dashboard</Link>
-        <span>/</span>
-        <span className="text-slate-900">Crear Consorcio</span>
-      </div>
-
       {/* Progress */}
       <div className="flex items-center gap-4 mb-8">
         {[1, 2, 3].map((s) => (
