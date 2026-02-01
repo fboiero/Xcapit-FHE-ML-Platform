@@ -104,7 +104,7 @@ sdk = ["py.typed"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
-testpaths = ["tests"]
+testpaths = ["tests", "sdk/tests"]
 addopts = "-v --tb=short"
 asyncio_mode = "auto"
 
@@ -164,6 +164,7 @@ known-first-party = ["sdk"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["B011", "B017", "E402"]  # Allow assert, pytest.raises, late imports
+"sdk/tests/*" = ["B011", "B017", "E402"]  # Allow assert, pytest.raises, late imports
 "sdk/api/server.py" = ["E402"]  # Dynamic imports after setup
 
 [tool.mypy]
