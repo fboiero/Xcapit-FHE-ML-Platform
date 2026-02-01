@@ -1,207 +1,158 @@
-# Xcapit FHE-ML Platform - GitLab CI/CD Pipeline
+# =============================================================================
+# Xcapit FHE-ML Platform — GitLab CI/CD Pipeline
+# =============================================================================
+# Equivalent to .github/workflows/ci.yml for GitLab-hosted repos.
+#
+# Stages: lint → test → build → security
+# Runs on: pushes to main/develop, merge requests to main
+# =============================================================================
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_BRANCH == "develop"
 
 stages:
   - lint
   - test
   - build
-  - deploy
+  - security
 
-variables:
-  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
-  DOCKER_IMAGE: $CI_REGISTRY_IMAGE
-  PYTHON_VERSION: "3.11"
+# ---------------------------------------------------------------------------
+# Stage: lint
+# ---------------------------------------------------------------------------
 
-# Cache pip dependencies
-cache:
-  paths:
-    - .cache/pip
-    - venv/
-
-# ============ Templates ============
-
-.python_base:
-  image: python:${PYTHON_VERSION}-slim
-  before_script:
-    - python -m venv venv
-    - source venv/bin/activate
-    - pip install --upgrade pip
-    - pip install -e ".[dev]"
-
-# ============ Lint Stage ============
-
-lint:ruff:
+lint:
   stage: lint
   image: python:3.11-slim
-  before_script:
-    - pip install ruff
   script:
+    - pip install ruff
     - ruff check sdk/ tests/
     - ruff format --check sdk/ tests/
 
-lint:security:
-  stage: lint
-  extends: .python_base
-  script:
-    - pip install bandit safety
-    - bandit -r sdk/ -ll
-    - safety check || true
-  allow_failure: true
+# ---------------------------------------------------------------------------
+# Stage: test
+# ---------------------------------------------------------------------------
 
-# ============ Test Stage ============
-
-test:unit:
+test-sdk:
   stage: test
-  extends: .python_base
+  needs: [lint]
+  image: python:${PYTHON_VERSION}-slim
+  parallel:
+    matrix:
+      - PYTHON_VERSION: ["3.9", "3.10", "3.11"]
+  variables:
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  cache:
+    key: pip-sdk-${PYTHON_VERSION}
+    paths:
+      - .cache/pip
   script:
-    - pip install pytest pytest-cov
-    - pytest tests/ -v --cov=sdk --cov-report=xml --cov-report=term
-  coverage: '/TOTAL.*\s+(\d+%)/'
+    - python -m pip install --upgrade pip
+    - pip install -e ".[dev]"
+    - pytest tests/ -v --tb=short --cov=sdk --cov-report=xml
   artifacts:
     reports:
       coverage_report:
         coverage_format: cobertura
         path: coverage.xml
-    paths:
-      - coverage.xml
-    expire_in: 1 week
 
-test:models:
+test-django:
   stage: test
-  extends: .python_base
+  needs: [lint]
+  image: python:3.12-slim
+  variables:
+    DJANGO_SECRET_KEY: test-secret-key-for-ci-only
+    DJANGO_DEBUG: "True"
+    DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,testserver
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  cache:
+    key: pip-django
+    paths:
+      - .cache/pip
+  before_script:
+    - cd backend_django
+    - python -m pip install --upgrade pip
+    - pip install -r requirements.txt
   script:
-    - pytest tests/test_models.py -v
+    - DJANGO_SETTINGS_MODULE=config.settings_test pytest --cov=apps --cov-report=xml -v --tb=short
   artifacts:
-    when: on_failure
-    paths:
-      - tests/
-    expire_in: 1 week
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: backend_django/coverage.xml
 
-test:api:
+test-contracts:
   stage: test
-  extends: .python_base
+  image: ghcr.io/foundry-rs/foundry:latest
+  variables:
+    GIT_SUBMODULE_STRATEGY: recursive
   script:
-    - pip install httpx pytest-asyncio
-    - pytest tests/ -v -k "api" || echo "No API tests found"
+    - cd contracts
+    - forge test -vvv
+  after_script:
+    - cd contracts
+    - forge coverage --report summary || true
+
+test-typescript:
+  stage: test
+  image: node:18-slim
+  rules:
+    - exists:
+        - sdk-ts/package.json
+  script:
+    - cd sdk-ts
+    - npm ci
+    - npm run build
+    - npm run lint
+
+# ---------------------------------------------------------------------------
+# Stage: build
+# ---------------------------------------------------------------------------
+
+build-dashboard:
+  stage: build
+  image: node:18-slim
+  cache:
+    key: npm-dashboard
+    paths:
+      - dashboard/node_modules
+  script:
+    - cd dashboard
+    - npm ci
+    - npm run build
+  artifacts:
+    paths:
+      - dashboard/dist
+    expire_in: 1 day
+
+# ---------------------------------------------------------------------------
+# Stage: security
+# ---------------------------------------------------------------------------
+
+security-scan:
+  stage: security
+  image: python:3.11-slim
   allow_failure: true
-
-# ============ Build Stage ============
-
-build:package:
-  stage: build
-  extends: .python_base
   script:
-    - pip install build
-    - python -m build
-  artifacts:
-    paths:
-      - dist/
-    expire_in: 1 week
-  only:
-    - main
-    - tags
+    - pip install pip-audit
+    - pip-audit || true
+    - apt-get update && apt-get install -y --no-install-recommends curl
+    - curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b /usr/local/bin
+    - trufflehog filesystem ./ --only-verified || true
 
-build:docker:
-  stage: build
+container-scan:
+  stage: security
   image: docker:24
+  needs: [lint, test-sdk]
   services:
     - docker:24-dind
   variables:
     DOCKER_TLS_CERTDIR: "/certs"
-  before_script:
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  allow_failure: true
   script:
-    - docker build -t $DOCKER_IMAGE:$CI_COMMIT_SHORT_SHA --target production .
-    - docker build -t $DOCKER_IMAGE:$CI_COMMIT_SHORT_SHA-dev --target development .
-    - docker push $DOCKER_IMAGE:$CI_COMMIT_SHORT_SHA
-    - docker push $DOCKER_IMAGE:$CI_COMMIT_SHORT_SHA-dev
-    # Tag latest on main branch
-    - |
-      if [ "$CI_COMMIT_BRANCH" == "main" ]; then
-        docker tag $DOCKER_IMAGE:$CI_COMMIT_SHORT_SHA $DOCKER_IMAGE:latest
-        docker push $DOCKER_IMAGE:latest
-      fi
-  only:
-    - main
-    - tags
-  when: manual
-
-build:docker-fhe:
-  stage: build
-  image: docker:24
-  services:
-    - docker:24-dind
-  variables:
-    DOCKER_TLS_CERTDIR: "/certs"
-  before_script:
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-  script:
-    - docker build -t $DOCKER_IMAGE:$CI_COMMIT_SHORT_SHA-fhe --target fhe .
-    - docker push $DOCKER_IMAGE:$CI_COMMIT_SHORT_SHA-fhe
-  only:
-    - main
-    - tags
-  when: manual
-
-# ============ Deploy Stage ============
-
-deploy:staging:
-  stage: deploy
-  image: alpine:latest
-  before_script:
+    - docker build --target production -t xcapit-fhe-django:scan ./backend_django
     - apk add --no-cache curl
-  script:
-    - echo "Deploying to staging environment..."
-    - echo "Image: $DOCKER_IMAGE:$CI_COMMIT_SHORT_SHA"
-    # Add your deployment commands here
-    # Example: kubectl set image deployment/fhe-ml-api api=$DOCKER_IMAGE:$CI_COMMIT_SHORT_SHA
-  environment:
-    name: staging
-    url: https://staging-api.xcapit-fhe.example.com
-  only:
-    - main
-  when: manual
-
-deploy:production:
-  stage: deploy
-  image: alpine:latest
-  before_script:
-    - apk add --no-cache curl
-  script:
-    - echo "Deploying to production environment..."
-    - echo "Image: $DOCKER_IMAGE:$CI_COMMIT_SHORT_SHA"
-    # Add your deployment commands here
-  environment:
-    name: production
-    url: https://api.xcapit-fhe.example.com
-  only:
-    - tags
-  when: manual
-
-# ============ Scheduled Jobs ============
-
-benchmark:nightly:
-  stage: test
-  extends: .python_base
-  script:
-    - python benchmarks/benchmark_models.py --output benchmark_results.json
-  artifacts:
-    paths:
-      - benchmark_results.json
-    expire_in: 1 month
-  only:
-    - schedules
-
-# ============ Pages (Documentation) ============
-
-pages:
-  stage: deploy
-  image: python:${PYTHON_VERSION}-slim
-  script:
-    - pip install mkdocs mkdocs-material
-    - mkdocs build -d public || mkdir -p public && cp README.md public/index.md
-  artifacts:
-    paths:
-      - public
-  only:
-    - main
-  when: manual
+    - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+    - trivy image --severity CRITICAL,HIGH --ignore-unfixed --exit-code 0 xcapit-fhe-django:scan
