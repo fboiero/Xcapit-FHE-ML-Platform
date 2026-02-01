@@ -4,8 +4,9 @@ Missing Value Imputers for FHE-ML Platform.
 Implements imputation strategies for handling missing data.
 """
 
+from typing import Optional
+
 import numpy as np
-from typing import Optional, Union, List
 
 
 class SimpleImputer:
@@ -176,7 +177,9 @@ class KNNImputer:
         self._is_fitted = True
         return self
 
-    def _compute_distances(self, x1: np.ndarray, x2: np.ndarray, mask1: np.ndarray, mask2: np.ndarray) -> float:
+    def _compute_distances(
+        self, x1: np.ndarray, x2: np.ndarray, mask1: np.ndarray, mask2: np.ndarray
+    ) -> float:
         """Compute distance ignoring missing values."""
         valid = ~mask1 & ~mask2
         if not np.any(valid):
@@ -224,7 +227,7 @@ class KNNImputer:
                 distances.append((d, j))
 
             distances.sort(key=lambda x: x[0])
-            neighbors = [idx for _, idx in distances[:self.n_neighbors] if _ != np.inf]
+            neighbors = [idx for _, idx in distances[: self.n_neighbors] if _ != np.inf]
 
             if not neighbors:
                 # No valid neighbors, use column mean
@@ -238,7 +241,7 @@ class KNNImputer:
                 neighbor_values = []
                 neighbor_weights = []
 
-                for d, idx in distances[:self.n_neighbors]:
+                for d, idx in distances[: self.n_neighbors]:
                     if d == np.inf:
                         continue
                     val = self._fit_X[idx, feat]
@@ -357,7 +360,7 @@ class IterativeImputer:
         X_filled = self.initial_imputer_.transform(X)
 
         # Iterative imputation
-        for iteration in range(self.max_iter):
+        for _iteration in range(self.max_iter):
             X_old = X_filled.copy()
 
             # Impute each feature using others as predictors

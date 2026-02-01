@@ -60,7 +60,7 @@ class TestAnomalyDetection:
         X, _ = normal_data
         X_train = X[:100]  # Train only on normal data
 
-        model = OneClassSVM(kernel='polynomial', nu=0.1, random_state=42)
+        model = OneClassSVM(kernel="polynomial", nu=0.1, random_state=42)
         model.fit(X_train)
 
         predictions = model.predict(X)
@@ -142,7 +142,7 @@ class TestTimeSeries:
 
         y = time_series_data
 
-        model = ExponentialSmoothing(trend='add', seasonal='add', seasonal_period=12)
+        model = ExponentialSmoothing(trend="add", seasonal="add", seasonal_period=12)
         model.fit(y)
 
         forecast = model.predict(steps=12)
@@ -279,8 +279,8 @@ class TestRegularization:
         X, y, _ = regression_data
 
         model = SGDRegressor(
-            loss='squared_error',
-            penalty='l2',
+            loss="squared_error",
+            penalty="l2",
             max_iter=1000,
             random_state=42,
         )
@@ -330,7 +330,7 @@ class TestFeatureSelection:
 
         X, y = feature_data
 
-        selector = SelectKBest(score_func='f_classif', k=5)
+        selector = SelectKBest(score_func="f_classif", k=5)
         X_selected = selector.fit_transform(X, y)
 
         assert X_selected.shape == (100, 5)
@@ -405,6 +405,7 @@ class TestHyperparameterTuning:
     def simple_classifier(self):
         """Simple classifier for testing."""
         from sdk.models.regularization import RidgeClassifier
+
         return RidgeClassifier
 
     @pytest.fixture
@@ -422,7 +423,7 @@ class TestHyperparameterTuning:
         X, y = classification_data
 
         param_dist = {
-            'alpha': {'type': 'log_uniform', 'low': 0.01, 'high': 10.0},
+            "alpha": {"type": "log_uniform", "low": 0.01, "high": 10.0},
         }
 
         search = RandomizedSearchCV(
@@ -443,9 +444,9 @@ class TestHyperparameterTuning:
         from sdk.evaluation.hyperparameter_tuning import ParameterSampler
 
         param_dist = {
-            'alpha': {'type': 'uniform', 'low': 0.1, 'high': 1.0},
-            'max_iter': {'type': 'int_uniform', 'low': 100, 'high': 500},
-            'solver': ['auto', 'svd'],
+            "alpha": {"type": "uniform", "low": 0.1, "high": 1.0},
+            "max_iter": {"type": "int_uniform", "low": 100, "high": 500},
+            "solver": ["auto", "svd"],
         }
 
         sampler = ParameterSampler(param_dist, n_iter=10, random_state=42)
@@ -453,9 +454,9 @@ class TestHyperparameterTuning:
 
         assert len(samples) == 10
         for params in samples:
-            assert 0.1 <= params['alpha'] <= 1.0
-            assert 100 <= params['max_iter'] <= 500
-            assert params['solver'] in ['auto', 'svd']
+            assert 0.1 <= params["alpha"] <= 1.0
+            assert 100 <= params["max_iter"] <= 500
+            assert params["solver"] in ["auto", "svd"]
 
     def test_bayesian_optimization(self, simple_classifier, classification_data):
         """Test BayesianOptimization."""
@@ -464,7 +465,7 @@ class TestHyperparameterTuning:
         X, y = classification_data
 
         param_bounds = {
-            'alpha': (0.01, 10.0, 'log'),
+            "alpha": (0.01, 10.0, "log"),
         }
 
         opt = BayesianOptimization(
@@ -487,7 +488,7 @@ class TestHyperparameterTuning:
         X, y = classification_data
 
         param_dist = {
-            'alpha': {'type': 'log_uniform', 'low': 0.01, 'high': 10.0},
+            "alpha": {"type": "log_uniform", "low": 0.01, "high": 10.0},
         }
 
         search = HalvingRandomSearchCV(

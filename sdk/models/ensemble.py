@@ -7,6 +7,7 @@ predictions from multiple different model types.
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Optional, Union
+
 import numpy as np
 
 from ..encryption.ckks_wrapper import (
@@ -151,7 +152,7 @@ class VotingClassifier(BaseFHEModel):
 
         # Collect probabilities from all estimators
         all_probs = []
-        for name, estimator in self.estimators:
+        for _name, estimator in self.estimators:
             if hasattr(estimator, "predict_proba"):
                 probs = estimator.predict_proba(X_pred)
             else:
@@ -206,7 +207,7 @@ class VotingClassifier(BaseFHEModel):
             # Hard voting: majority vote
             predictions = np.zeros((len(X_pred), len(self.estimators)))
 
-            for i, (name, estimator) in enumerate(self.estimators):
+            for i, (_name, estimator) in enumerate(self.estimators):
                 preds = estimator.predict(X_pred)
                 # Convert to class indices
                 for j, p in enumerate(preds):
@@ -216,6 +217,7 @@ class VotingClassifier(BaseFHEModel):
 
             # Majority vote
             from scipy import stats
+
             majority, _ = stats.mode(predictions, axis=1, keepdims=False)
             return self._classes[majority.astype(int)]
 
@@ -252,12 +254,14 @@ class VotingClassifier(BaseFHEModel):
     def get_params(self) -> dict[str, Any]:
         """Get model parameters."""
         params = super().get_params()
-        params.update({
-            "voting": self._voting_config.voting.value,
-            "weights": self._voting_config.weights,
-            "estimators": [(name, est.get_params()) for name, est in self.estimators],
-            "classes": self._classes.tolist() if self._classes is not None else None,
-        })
+        params.update(
+            {
+                "voting": self._voting_config.voting.value,
+                "weights": self._voting_config.weights,
+                "estimators": [(name, est.get_params()) for name, est in self.estimators],
+                "classes": self._classes.tolist() if self._classes is not None else None,
+            }
+        )
         return params
 
     def __repr__(self) -> str:
@@ -370,7 +374,7 @@ class VotingRegressor(BaseFHEModel):
 
         # Collect predictions from all estimators
         all_preds = []
-        for name, estimator in self.estimators:
+        for _name, estimator in self.estimators:
             preds = estimator.predict(X_pred)
             all_preds.append(preds)
 
@@ -424,10 +428,12 @@ class VotingRegressor(BaseFHEModel):
     def get_params(self) -> dict[str, Any]:
         """Get model parameters."""
         params = super().get_params()
-        params.update({
-            "weights": self._voting_config.weights,
-            "estimators": [(name, est.get_params()) for name, est in self.estimators],
-        })
+        params.update(
+            {
+                "weights": self._voting_config.weights,
+                "estimators": [(name, est.get_params()) for name, est in self.estimators],
+            }
+        )
         return params
 
     def __repr__(self) -> str:
@@ -516,17 +522,19 @@ class StackingClassifier(BaseFHEModel):
 
         # Generate meta-features using cross-validation
         from ..evaluation import KFold
+
         kf = KFold(n_splits=self.cv)
 
         meta_features = []
 
-        for name, estimator in self.estimators:
+        for _name, estimator in self.estimators:
             # Cross-validated predictions for this estimator
             cv_preds = np.zeros((len(X_train), len(self._classes)))
 
             for train_idx, val_idx in kf.split(X_train):
                 # Clone estimator
                 import copy
+
                 est = copy.deepcopy(estimator)
 
                 # Fit on training fold
@@ -557,7 +565,7 @@ class StackingClassifier(BaseFHEModel):
         self.final_estimator.fit(X_meta, y_train)
 
         # Refit base estimators on full data
-        for name, estimator in self.estimators:
+        for _name, estimator in self.estimators:
             estimator.fit(X_train, y_train)
 
         self._state = ModelState.TRAINED
@@ -567,7 +575,7 @@ class StackingClassifier(BaseFHEModel):
         """Generate meta-features from base estimators."""
         meta_features = []
 
-        for name, estimator in self.estimators:
+        for _name, estimator in self.estimators:
             if self.stack_method == "predict_proba" and hasattr(estimator, "predict_proba"):
                 preds = estimator.predict_proba(X)
             else:

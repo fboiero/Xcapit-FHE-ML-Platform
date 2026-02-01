@@ -5,15 +5,15 @@ Provides wrappers for handling multi-target regression and
 multi-label classification with FHE-compatible base estimators.
 """
 
-from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, List, Optional
 
 import numpy as np
 
 
 class MultiOutputStrategy(Enum):
     """Strategy for handling multiple outputs."""
+
     INDEPENDENT = "independent"  # Train separate model per output
     CHAIN = "chain"  # Use previous outputs as features
     REGRESSOR_CHAIN = "regressor_chain"  # Chain for regression
@@ -126,7 +126,7 @@ class MultiOutputClassifier:
         probas = []
 
         for estimator in self._estimators:
-            if hasattr(estimator, 'predict_proba'):
+            if hasattr(estimator, "predict_proba"):
                 probas.append(estimator.predict_proba(X))
             else:
                 raise AttributeError("Base estimator does not have predict_proba")
@@ -151,7 +151,9 @@ class MultiOutputClassifier:
         predictions = self.predict(X)
         return (predictions == y).mean()
 
-    def partial_fit(self, X: np.ndarray, y: np.ndarray, classes: Optional[List] = None) -> "MultiOutputClassifier":
+    def partial_fit(
+        self, X: np.ndarray, y: np.ndarray, classes: Optional[List] = None
+    ) -> "MultiOutputClassifier":
         """
         Incrementally fit estimators (for streaming data).
 
@@ -179,7 +181,7 @@ class MultiOutputClassifier:
             self._fitted = True
 
         for i, estimator in enumerate(self._estimators):
-            if hasattr(estimator, 'partial_fit'):
+            if hasattr(estimator, "partial_fit"):
                 estimator.partial_fit(X, y[:, i], classes=self._classes[i])
             else:
                 estimator.fit(X, y[:, i])
@@ -319,7 +321,7 @@ class MultiOutputRegressor:
             self._fitted = True
 
         for i, estimator in enumerate(self._estimators):
-            if hasattr(estimator, 'partial_fit'):
+            if hasattr(estimator, "partial_fit"):
                 estimator.partial_fit(X, y[:, i])
             else:
                 estimator.fit(X, y[:, i])
@@ -468,7 +470,7 @@ class ClassifierChain:
         X_chain = X.copy()
 
         for i, (target_idx, estimator) in enumerate(zip(self._order, self._estimators)):
-            if hasattr(estimator, 'predict_proba'):
+            if hasattr(estimator, "predict_proba"):
                 proba = estimator.predict_proba(X_chain)
                 probas[target_idx] = proba
             else:

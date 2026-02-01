@@ -4,19 +4,19 @@ This module provides hyperparameter optimization methods that work with
 FHE-compatible models. Includes RandomizedSearchCV and Bayesian optimization.
 """
 
-from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Union
 import copy
-import warnings
+from dataclasses import dataclass
+from typing import Any, Callable, Dict, Optional, Union
 
 import numpy as np
 
-from .cross_validation import KFold, StratifiedKFold, cross_val_score
+from .cross_validation import cross_val_score
 
 
 @dataclass
 class SearchResult:
     """Result of hyperparameter search."""
+
     best_params: Dict[str, Any]
     best_score: float
     best_estimator: Any
@@ -166,7 +166,6 @@ class RandomizedSearchCV:
 
         best_score = -np.inf
         best_params = None
-        best_estimator = None
 
         for i, params in enumerate(sampler):
             if self.verbose > 0:
@@ -180,7 +179,9 @@ class RandomizedSearchCV:
             # Cross-validation
             try:
                 scores = cross_val_score(
-                    estimator, X, y,
+                    estimator,
+                    X,
+                    y,
                     cv=self.cv,
                     scoring=self.scoring,
                 )
@@ -210,9 +211,9 @@ class RandomizedSearchCV:
         scores = np.array(results["mean_test_score"])
         valid_mask = ~np.isnan(scores)
         ranks = np.zeros_like(scores, dtype=int)
-        ranks[valid_mask] = (
-            len(scores) - np.argsort(np.argsort(scores[valid_mask]))
-        )[: np.sum(valid_mask)]
+        ranks[valid_mask] = (len(scores) - np.argsort(np.argsort(scores[valid_mask])))[
+            : np.sum(valid_mask)
+        ]
         ranks[~valid_mask] = len(scores)
         results["rank_test_score"] = ranks.tolist()
 
@@ -337,8 +338,8 @@ class BayesianOptimization:
 
     def _rbf_kernel(self, X1: np.ndarray, X2: np.ndarray, length_scale: float = 1.0) -> np.ndarray:
         """RBF kernel for Gaussian Process."""
-        sq_dists = np.sum(X1 ** 2, axis=1, keepdims=True) + np.sum(X2 ** 2, axis=1) - 2 * X1 @ X2.T
-        return np.exp(-0.5 * sq_dists / length_scale ** 2)
+        sq_dists = np.sum(X1**2, axis=1, keepdims=True) + np.sum(X2**2, axis=1) - 2 * X1 @ X2.T
+        return np.exp(-0.5 * sq_dists / length_scale**2)
 
     def _gp_predict(self, X_new: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """Predict mean and std using Gaussian Process."""
@@ -392,7 +393,7 @@ class BayesianOptimization:
             # CDF(z) ≈ sigmoid(1.7 * z)
             cdf = 1 / (1 + np.exp(-1.7 * z))
             # PDF(z) ≈ 0.4 * exp(-0.5 * z^2)
-            pdf = 0.4 * np.exp(-0.5 * z ** 2)
+            pdf = 0.4 * np.exp(-0.5 * z**2)
             ei = (mean - best_y - self.xi) * cdf + std * pdf
             return ei
 
@@ -428,7 +429,9 @@ class BayesianOptimization:
             setattr(estimator, param, value)
 
         scores = cross_val_score(
-            estimator, X, y,
+            estimator,
+            X,
+            y,
             cv=self.cv,
             scoring=self.scoring,
         )
@@ -615,7 +618,9 @@ class HalvingRandomSearchCV:
 
         while len(candidates) > 1 and n_resources <= max_resources:
             if self.verbose > 0:
-                print(f"Iteration {iteration}: {len(candidates)} candidates, {n_resources} resources")
+                print(
+                    f"Iteration {iteration}: {len(candidates)} candidates, {n_resources} resources"
+                )
 
             # Evaluate candidates
             scores = []
@@ -631,7 +636,9 @@ class HalvingRandomSearchCV:
 
                 try:
                     cv_scores = cross_val_score(
-                        estimator, X_sub, y_sub,
+                        estimator,
+                        X_sub,
+                        y_sub,
                         cv=min(self.cv, len(X_sub) // 2),
                         scoring=self.scoring,
                     )
@@ -640,12 +647,14 @@ class HalvingRandomSearchCV:
                     score = -np.inf
 
                 scores.append(score)
-                results.append({
-                    "iteration": iteration,
-                    "params": params,
-                    "score": score,
-                    "n_resources": n_resources,
-                })
+                results.append(
+                    {
+                        "iteration": iteration,
+                        "params": params,
+                        "score": score,
+                        "n_resources": n_resources,
+                    }
+                )
 
             # Select top 1/factor candidates
             n_select = max(1, len(candidates) // self.factor)
@@ -668,7 +677,9 @@ class HalvingRandomSearchCV:
             self.best_estimator_.fit(X, y)
 
             cv_scores = cross_val_score(
-                self.best_estimator_, X, y,
+                self.best_estimator_,
+                X,
+                y,
                 cv=self.cv,
                 scoring=self.scoring,
             )

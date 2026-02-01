@@ -10,7 +10,7 @@ Key design decisions for FHE compatibility:
 - Supports regression (MSE) and classification (log loss)
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Callable, Optional, Union
 
@@ -110,7 +110,7 @@ class LossFunctions:
         abs_residual = np.abs(residual)
         quadratic = np.minimum(abs_residual, delta)
         linear = abs_residual - quadratic
-        return np.mean(0.5 * quadratic ** 2 + delta * linear)
+        return np.mean(0.5 * quadratic**2 + delta * linear)
 
     @staticmethod
     def huber_negative_gradient(
@@ -141,9 +141,7 @@ class LossFunctions:
         return np.mean(np.exp(-y_true * y_pred))
 
     @staticmethod
-    def exponential_negative_gradient(
-        y_true: np.ndarray, y_pred: np.ndarray
-    ) -> np.ndarray:
+    def exponential_negative_gradient(y_true: np.ndarray, y_pred: np.ndarray) -> np.ndarray:
         """Negative gradient of exponential loss."""
         return y_true * np.exp(-y_true * y_pred)
 
@@ -418,9 +416,7 @@ class GradientBoosting(BaseFHEModel):
             # Subsample if configured
             if self._gb_config.subsample < 1.0:
                 n_subsample = int(n_samples * self._gb_config.subsample)
-                sample_indices = self._rng.choice(
-                    n_samples, size=n_subsample, replace=False
-                )
+                sample_indices = self._rng.choice(n_samples, size=n_subsample, replace=False)
                 X_sample = X_train[sample_indices]
                 residuals_sample = residuals[sample_indices]
             else:
@@ -430,9 +426,7 @@ class GradientBoosting(BaseFHEModel):
 
             # Feature subsampling
             if n_max_features < n_features:
-                feature_subset = self._rng.choice(
-                    n_features, size=n_max_features, replace=False
-                )
+                feature_subset = self._rng.choice(n_features, size=n_max_features, replace=False)
                 feature_subset.sort()
                 X_subset = X_sample[:, feature_subset]
             else:
@@ -467,9 +461,7 @@ class GradientBoosting(BaseFHEModel):
                 proba = self._raw_to_proba(current_predictions)
                 train_loss = loss_fn(y_train, proba)
             elif self._gb_config.loss == LossFunction.HUBER:
-                train_loss = loss_fn(
-                    y_train, current_predictions, self._gb_config.huber_delta
-                )
+                train_loss = loss_fn(y_train, current_predictions, self._gb_config.huber_delta)
             else:
                 train_loss = loss_fn(y_train, current_predictions)
 
@@ -488,9 +480,7 @@ class GradientBoosting(BaseFHEModel):
                     val_proba = self._raw_to_proba(val_predictions)
                     val_loss = loss_fn(y_val, val_proba)
                 elif self._gb_config.loss == LossFunction.HUBER:
-                    val_loss = loss_fn(
-                        y_val, val_predictions, self._gb_config.huber_delta
-                    )
+                    val_loss = loss_fn(y_val, val_predictions, self._gb_config.huber_delta)
                 else:
                     val_loss = loss_fn(y_val, val_predictions)
 
@@ -647,21 +637,23 @@ class GradientBoosting(BaseFHEModel):
     def get_params(self) -> dict[str, Any]:
         """Get model parameters."""
         params = super().get_params()
-        params.update({
-            "n_estimators": self.n_estimators,
-            "n_estimators_target": self.n_estimators_target,
-            "max_depth": self._gb_config.max_depth,
-            "learning_rate": self._gb_config.learning_rate,
-            "loss": self._gb_config.loss.value,
-            "initial_prediction": self._initial_prediction,
-            "train_losses": self._train_losses,
-            "val_losses": self._val_losses,
-            "n_features": self._n_features,
-            "feature_subsets": [
-                fs.tolist() if fs is not None else None for fs in self._feature_subsets
-            ],
-            "trees": [tree.get_params() for tree in self._trees],
-        })
+        params.update(
+            {
+                "n_estimators": self.n_estimators,
+                "n_estimators_target": self.n_estimators_target,
+                "max_depth": self._gb_config.max_depth,
+                "learning_rate": self._gb_config.learning_rate,
+                "loss": self._gb_config.loss.value,
+                "initial_prediction": self._initial_prediction,
+                "train_losses": self._train_losses,
+                "val_losses": self._val_losses,
+                "n_features": self._n_features,
+                "feature_subsets": [
+                    fs.tolist() if fs is not None else None for fs in self._feature_subsets
+                ],
+                "trees": [tree.get_params() for tree in self._trees],
+            }
+        )
         return params
 
     def __repr__(self) -> str:

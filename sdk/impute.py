@@ -6,7 +6,7 @@ Provides missing value imputation strategies compatible with encrypted data.
 
 from __future__ import annotations
 
-from typing import Any, Callable, List, Literal, Optional, Union
+from typing import Any, Literal, Optional
 
 import numpy as np
 
@@ -54,7 +54,7 @@ class SimpleImputer:
         else:
             return X == self.missing_values
 
-    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> "SimpleImputer":
+    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> SimpleImputer:
         """
         Fit the imputer on X.
 
@@ -74,13 +74,9 @@ class SimpleImputer:
 
         if self.strategy == "mean":
             # Calculate mean ignoring missing values
-            self.statistics_ = np.nanmean(
-                np.where(mask, np.nan, X), axis=0
-            )
+            self.statistics_ = np.nanmean(np.where(mask, np.nan, X), axis=0)
         elif self.strategy == "median":
-            self.statistics_ = np.nanmedian(
-                np.where(mask, np.nan, X), axis=0
-            )
+            self.statistics_ = np.nanmedian(np.where(mask, np.nan, X), axis=0)
         elif self.strategy == "most_frequent":
             self.statistics_ = np.zeros(self.n_features_in_)
             for i in range(self.n_features_in_):
@@ -192,13 +188,13 @@ class KNNImputer:
 
                 diff = X1[i, valid] - X2[j, valid]
                 if self.metric == "euclidean":
-                    distances[i, j] = np.sqrt(np.sum(diff ** 2))
+                    distances[i, j] = np.sqrt(np.sum(diff**2))
                 else:  # manhattan
                     distances[i, j] = np.sum(np.abs(diff))
 
         return distances
 
-    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> "KNNImputer":
+    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> KNNImputer:
         """
         Fit the imputer on X.
 
@@ -246,7 +242,7 @@ class KNNImputer:
                 continue
 
             # Compute distances to all training samples
-            distances = self._compute_distances(X[i:i+1], self._fit_X)[0]
+            distances = self._compute_distances(X[i : i + 1], self._fit_X)[0]
 
             # Get k nearest neighbors
             neighbor_indices = np.argsort(distances)[: self.n_neighbors]
@@ -310,7 +306,9 @@ class IterativeImputer:
         max_iter: int = 10,
         tol: float = 1e-3,
         initial_strategy: Literal["mean", "median", "most_frequent"] = "mean",
-        imputation_order: Literal["ascending", "descending", "roman", "arabic", "random"] = "ascending",
+        imputation_order: Literal[
+            "ascending", "descending", "roman", "arabic", "random"
+        ] = "ascending",
         random_state: Optional[int] = None,
     ):
         self.estimator = estimator
@@ -329,6 +327,7 @@ class IterativeImputer:
         """Get estimator for imputation."""
         if self.estimator is not None:
             import copy
+
             return copy.deepcopy(self.estimator)
 
         # Default: simple mean predictor
@@ -362,7 +361,7 @@ class IterativeImputer:
             rng = np.random.RandomState(self.random_state)
             return rng.permutation(n_features)
 
-    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> "IterativeImputer":
+    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> IterativeImputer:
         """
         Fit the imputer on X.
 
@@ -415,7 +414,7 @@ class IterativeImputer:
         order = self._get_imputation_order(missing_mask)
 
         # Iterative imputation
-        for iteration in range(self.max_iter):
+        for _iteration in range(self.max_iter):
             X_prev = X_imputed.copy()
 
             for feat_idx in order:
@@ -495,7 +494,7 @@ class MissingIndicator:
         else:
             return X == self.missing_values
 
-    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> "MissingIndicator":
+    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> MissingIndicator:
         """
         Fit the indicator.
 

@@ -21,9 +21,9 @@ from sdk.models import (
 from sdk.utils.serialization import (
     compute_weights_hash,
     export_weights_json,
-    import_weights_json,
     get_model_info,
     get_model_registry,
+    import_weights_json,
     load_model,
     save_model,
 )
@@ -393,9 +393,7 @@ class TestLoadModelWithoutConfig:
             pickle.dump(data, f)
 
         loaded = load_model(path, verify_hash=False)
-        np.testing.assert_array_almost_equal(
-            loaded._weights, [1.5, -2.5, 3.5], decimal=5
-        )
+        np.testing.assert_array_almost_equal(loaded._weights, [1.5, -2.5, 3.5], decimal=5)
 
     def test_load_with_hash_verification(self, tmp_path):
         """Test that hash verification works."""
@@ -500,7 +498,7 @@ class TestLoadModelWithoutConfig:
         assert loaded is not None
 
 
-class TestModelRegistry:
+class TestModelRegistryExtended:
     """Tests for model registry."""
 
     def test_registry_contains_all_models(self):

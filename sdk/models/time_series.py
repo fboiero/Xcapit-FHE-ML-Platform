@@ -4,9 +4,9 @@ This module provides time series forecasting algorithms that work with
 encrypted data using polynomial approximations for FHE compatibility.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Optional, List, Tuple
+from typing import Optional, Tuple
 
 import numpy as np
 
@@ -15,12 +15,14 @@ from .base import BaseFHEModel, FHELevel, ModelConfig, ModelState
 
 class SeasonalityMode(Enum):
     """Seasonality mode for Prophet-like models."""
+
     ADDITIVE = "additive"
     MULTIPLICATIVE = "multiplicative"
 
 
 class TrendMode(Enum):
     """Trend mode for time series."""
+
     LINEAR = "linear"
     LOGISTIC = "logistic"
     FLAT = "flat"
@@ -29,6 +31,7 @@ class TrendMode(Enum):
 @dataclass
 class ARIMAConfig(ModelConfig):
     """Configuration for ARIMA model."""
+
     p: int = 1  # AR order
     d: int = 1  # Differencing order
     q: int = 1  # MA order
@@ -43,6 +46,7 @@ class ARIMAConfig(ModelConfig):
 @dataclass
 class ExponentialSmoothingConfig(ModelConfig):
     """Configuration for Exponential Smoothing."""
+
     trend: Optional[str] = "add"  # "add", "mul", or None
     seasonal: Optional[str] = None  # "add", "mul", or None
     seasonal_period: int = 12
@@ -56,6 +60,7 @@ class ExponentialSmoothingConfig(ModelConfig):
 @dataclass
 class ProphetConfig(ModelConfig):
     """Configuration for Prophet-like model."""
+
     growth: TrendMode = TrendMode.LINEAR
     seasonality_mode: SeasonalityMode = SeasonalityMode.ADDITIVE
     yearly_seasonality: bool = True
@@ -142,9 +147,7 @@ class ARIMA(BaseFHEModel):
             result = result[s:] - result[:-s]
         return result
 
-    def _undifference(
-        self, y_diff: np.ndarray, y_original: np.ndarray, d: int
-    ) -> np.ndarray:
+    def _undifference(self, y_diff: np.ndarray, y_original: np.ndarray, d: int) -> np.ndarray:
         """Reverse differencing to get original scale."""
         result = y_diff.copy()
         for i in range(d - 1, -1, -1):
@@ -217,7 +220,7 @@ class ARIMA(BaseFHEModel):
         """
         y = np.asarray(y, dtype=np.float64).flatten()
         self._y_train = y.copy()
-        n = len(y)
+        len(y)
 
         # Apply differencing
         y_diff = y.copy()
@@ -242,9 +245,7 @@ class ARIMA(BaseFHEModel):
             p = self.config.p
             fitted = np.zeros_like(y_diff)
             for t in range(p, len(y_diff)):
-                fitted[t] = self.intercept_ + np.dot(
-                    self.ar_params_, y_diff[t - p : t][::-1]
-                )
+                fitted[t] = self.intercept_ + np.dot(self.ar_params_, y_diff[t - p : t][::-1])
             residuals = y_diff[p:] - fitted[p:]
         else:
             residuals = y_diff - np.mean(y_diff)
@@ -321,10 +322,12 @@ class ARIMA(BaseFHEModel):
             # Confidence intervals
             std = np.sqrt(self.sigma2_)
             z = 1.96  # 95% CI
-            conf_int = np.column_stack([
-                forecasts - z * std * np.sqrt(np.arange(1, steps + 1)),
-                forecasts + z * std * np.sqrt(np.arange(1, steps + 1))
-            ])
+            conf_int = np.column_stack(
+                [
+                    forecasts - z * std * np.sqrt(np.arange(1, steps + 1)),
+                    forecasts + z * std * np.sqrt(np.arange(1, steps + 1)),
+                ]
+            )
             return forecasts, conf_int
 
         return forecasts
@@ -335,7 +338,7 @@ class ARIMA(BaseFHEModel):
 
         # Undo regular differencing
         if self.config.d > 0:
-            last_vals = self._y_train[-self.config.d:]
+            last_vals = self._y_train[-self.config.d :]
             for i in range(self.config.d):
                 cumsum = np.cumsum(np.concatenate([[last_vals[-(i + 1)]], forecasts]))
                 forecasts = cumsum[1:]
@@ -343,8 +346,8 @@ class ARIMA(BaseFHEModel):
         # Undo seasonal differencing
         if self.config.seasonal_d > 0:
             s = self.config.seasonal_period
-            seasonal_history = self._y_train[-s * self.config.seasonal_d:]
-            for i in range(self.config.seasonal_d):
+            seasonal_history = self._y_train[-s * self.config.seasonal_d :]
+            for _ in range(self.config.seasonal_d):
                 new_forecasts = []
                 for j, f in enumerate(forecasts):
                     idx = len(seasonal_history) - s + j
@@ -420,7 +423,9 @@ class ExponentialSmoothing(BaseFHEModel):
         best_mse = np.inf
         best_params = (0.2, 0.1, 0.1)
 
-        alphas = [0.1, 0.2, 0.3, 0.5, 0.7, 0.9] if self.config.alpha is None else [self.config.alpha]
+        alphas = (
+            [0.1, 0.2, 0.3, 0.5, 0.7, 0.9] if self.config.alpha is None else [self.config.alpha]
+        )
         betas = [0.1, 0.2, 0.3] if self.config.beta is None and self.config.trend else [0.0]
         gammas = [0.1, 0.2, 0.3] if self.config.gamma is None and self.config.seasonal else [0.0]
 
@@ -433,7 +438,7 @@ class ExponentialSmoothing(BaseFHEModel):
                         if mse < best_mse:
                             best_mse = mse
                             best_params = (alpha, beta, gamma)
-                    except:
+                    except Exception:
                         continue
 
         return best_params
@@ -487,9 +492,13 @@ class ExponentialSmoothing(BaseFHEModel):
                 y_t = y[t]
 
                 if self.config.seasonal == "add":
-                    new_level = alpha * (y_t - seasonal[seasonal_idx]) + (1 - alpha) * (level + phi * trend)
+                    new_level = alpha * (y_t - seasonal[seasonal_idx]) + (1 - alpha) * (
+                        level + phi * trend
+                    )
                 elif self.config.seasonal == "mul":
-                    new_level = alpha * (y_t / (seasonal[seasonal_idx] + 1e-10)) + (1 - alpha) * (level + phi * trend)
+                    new_level = alpha * (y_t / (seasonal[seasonal_idx] + 1e-10)) + (1 - alpha) * (
+                        level + phi * trend
+                    )
                 else:
                     new_level = alpha * y_t + (1 - alpha) * (level + phi * trend)
 
@@ -499,9 +508,13 @@ class ExponentialSmoothing(BaseFHEModel):
                     new_trend = 0.0
 
                 if self.config.seasonal == "add":
-                    seasonal[seasonal_idx] = gamma * (y_t - new_level) + (1 - gamma) * seasonal[seasonal_idx]
+                    seasonal[seasonal_idx] = (
+                        gamma * (y_t - new_level) + (1 - gamma) * seasonal[seasonal_idx]
+                    )
                 elif self.config.seasonal == "mul":
-                    seasonal[seasonal_idx] = gamma * (y_t / (new_level + 1e-10)) + (1 - gamma) * seasonal[seasonal_idx]
+                    seasonal[seasonal_idx] = (
+                        gamma * (y_t / (new_level + 1e-10)) + (1 - gamma) * seasonal[seasonal_idx]
+                    )
 
                 level = new_level
                 trend = new_trend
@@ -606,7 +619,7 @@ class SimpleMovingAverage(BaseFHEModel):
         """Fit SMA model (store last window values)."""
         y = np.asarray(y, dtype=np.float64).flatten()
         self._y_train = y.copy()
-        self._last_window = y[-self.window:]
+        self._last_window = y[-self.window :]
         self.state = ModelState.TRAINED
         return self
 
@@ -846,7 +859,7 @@ class ProphetLike(BaseFHEModel):
             if self.config.seasonality_mode == SeasonalityMode.ADDITIVE:
                 forecasts += yearly
             else:
-                forecasts *= (1 + yearly)
+                forecasts *= 1 + yearly
 
         if self.weekly_coeffs_ is not None:
             period = 7 / (self._t_max - self._t_min + 1e-10)
@@ -855,7 +868,7 @@ class ProphetLike(BaseFHEModel):
             if self.config.seasonality_mode == SeasonalityMode.ADDITIVE:
                 forecasts += weekly
             else:
-                forecasts *= (1 + weekly)
+                forecasts *= 1 + weekly
 
         if self.daily_coeffs_ is not None:
             period = 1 / (self._t_max - self._t_min + 1e-10)
@@ -864,7 +877,7 @@ class ProphetLike(BaseFHEModel):
             if self.config.seasonality_mode == SeasonalityMode.ADDITIVE:
                 forecasts += daily
             else:
-                forecasts *= (1 + daily)
+                forecasts *= 1 + daily
 
         return forecasts
 

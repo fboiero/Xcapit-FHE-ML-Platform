@@ -6,12 +6,23 @@ complex dependencies for quick demos.
 """
 
 # FHE Encryption
+# Blockchain
+from .blockchain import (
+    ARBITRUM_SEPOLIA_CONTRACTS,
+    NETWORK_CONFIGS,
+    BlockchainConnector,
+    GovernanceClient,
+    ModelRegistryClient,
+    Network,
+    NetworkConfig,
+    get_contracts,
+)
 from .encryption import (
     CKKSEncryptor,
     CKKSParameters,
-    FHEContextManager,
     EncryptedMatrix,
     EncryptedVector,
+    FHEContextManager,
     SecurityLevel,
 )
 
@@ -22,39 +33,27 @@ from .models.base import (
     ModelConfig,
     ModelState,
 )
-from .models.linear_regression import LinearRegression
-from .models.logistic_regression import LogisticRegression, SigmoidApproximation
 from .models.decision_tree import (
     DecisionTree,
     DecisionTreeClassifier,
     DecisionTreeRegressor,
+    SplitFunction,
     TreeConfig,
     TreeType,
-    SplitFunction,
 )
 from .models.kmeans import (
+    InitMethod,
     KMeans,
     KMeansConfig,
     MiniBatchKMeans,
-    InitMethod,
 )
+from .models.linear_regression import LinearRegression
+from .models.logistic_regression import LogisticRegression, SigmoidApproximation
 
 # Data loading
 from .utils import (
-    SecureDataLoader,
     EncryptedDataset,
-)
-
-# Blockchain
-from .blockchain import (
-    BlockchainConnector,
-    Network,
-    GovernanceClient,
-    ModelRegistryClient,
-    NetworkConfig,
-    NETWORK_CONFIGS,
-    ARBITRUM_SEPOLIA_CONTRACTS,
-    get_contracts,
+    SecureDataLoader,
 )
 
 __all__ = [

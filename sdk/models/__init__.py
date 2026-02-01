@@ -4,77 +4,6 @@ This module provides machine learning models that can be trained
 and used for inference on encrypted data.
 """
 
-from .base import (
-    BaseFHEModel,
-    FHEModel,
-    ModelConfig,
-    ModelState,
-    TrainingHistory,
-)
-from .decision_tree import (
-    DecisionTree,
-    DecisionTreeClassifier,
-    DecisionTreeRegressor,
-    SplitFunction,
-    TreeConfig,
-    TreeType,
-)
-from .kmeans import (
-    InitMethod,
-    KMeans,
-    KMeansConfig,
-    MiniBatchKMeans,
-)
-from .linear_regression import LinearRegression
-from .logistic_regression import LogisticRegression, SigmoidApproximation
-from .random_forest import (
-    AggregationMethod,
-    RandomForest,
-    RandomForestClassifier,
-    RandomForestConfig,
-    RandomForestRegressor,
-)
-from .neural_network import (
-    Activation,
-    ActivationFunctions,
-    LayerConfig,
-    NeuralNetwork,
-    NeuralNetworkClassifier,
-    NeuralNetworkConfig,
-    NeuralNetworkRegressor,
-    WeightInit,
-)
-from .gradient_boosting import (
-    GradientBoosting,
-    GradientBoostingClassifier,
-    GradientBoostingConfig,
-    GradientBoostingRegressor,
-    LossFunction,
-    LossFunctions,
-)
-from .svm import (
-    KernelType,
-    SVM,
-    SVMClassifier,
-    SVMConfig,
-    SVMRegressor,
-)
-from .naive_bayes import (
-    BernoulliNaiveBayes,
-    GaussianNaiveBayes,
-    MultinomialNaiveBayes,
-    NaiveBayesConfig,
-)
-from .pca import (
-    PCA,
-    PCAConfig,
-)
-from .ensemble import (
-    StackingClassifier,
-    VotingClassifier,
-    VotingRegressor,
-    VotingType,
-)
 from .anomaly_detection import (
     AnomalyConfig,
     AnomalyMethod,
@@ -87,27 +16,49 @@ from .anomaly_detection import (
     OneClassSVM,
     OneClassSVMConfig,
 )
-from .time_series import (
-    ARIMA,
-    ARIMAConfig,
-    ExponentialSmoothing,
-    ExponentialSmoothingConfig,
-    ProphetConfig,
-    ProphetLike,
-    SeasonalityMode,
-    SimpleMovingAverage,
-    TrendMode,
+from .base import (
+    BaseFHEModel,
+    FHEModel,
+    ModelConfig,
+    ModelState,
+    TrainingHistory,
 )
-from .regularization import (
-    ElasticNet,
-    ElasticNetConfig,
-    Lasso,
-    LassoConfig,
-    RegularizationType,
-    Ridge,
-    RidgeClassifier,
-    RidgeConfig,
-    SGDRegressor,
+from .calibration import (
+    CalibratedClassifierCV,
+    CalibrationConfig,
+    CalibrationMethod,
+    IsotonicRegression,
+    SigmoidCalibration,
+    TemperatureScaling,
+    calibration_curve,
+)
+from .clustering import (
+    DBSCAN,
+    AgglomerativeClustering,
+    GaussianMixture,
+    MeanShift,
+    SpectralClustering,
+)
+from .decision_tree import (
+    DecisionTree,
+    DecisionTreeClassifier,
+    DecisionTreeRegressor,
+    SplitFunction,
+    TreeConfig,
+    TreeType,
+)
+from .deep_learning import (
+    Autoencoder,
+    MLPClassifier,
+    MLPRegressor,
+    PolynomialActivations,
+    VariationalAutoencoder,
+)
+from .ensemble import (
+    StackingClassifier,
+    VotingClassifier,
+    VotingRegressor,
+    VotingType,
 )
 from .feature_selection import (
     RFE,
@@ -125,38 +76,85 @@ from .feature_selection import (
     mutual_info_classif,
     mutual_info_regression,
 )
-from .deep_learning import (
-    MLPClassifier,
-    MLPRegressor,
-    Autoencoder,
-    VariationalAutoencoder,
-    PolynomialActivations,
+from .gradient_boosting import (
+    GradientBoosting,
+    GradientBoostingClassifier,
+    GradientBoostingConfig,
+    GradientBoostingRegressor,
+    LossFunction,
+    LossFunctions,
 )
-from .clustering import (
-    DBSCAN,
-    AgglomerativeClustering,
-    SpectralClustering,
-    MeanShift,
-    GaussianMixture,
+from .kmeans import (
+    InitMethod,
+    KMeans,
+    KMeansConfig,
+    MiniBatchKMeans,
 )
-
-from .calibration import (
-    CalibrationConfig,
-    CalibrationMethod,
-    IsotonicRegression,
-    SigmoidCalibration,
-    TemperatureScaling,
-    CalibratedClassifierCV,
-    calibration_curve,
-)
-
+from .linear_regression import LinearRegression
+from .logistic_regression import LogisticRegression, SigmoidApproximation
 from .multioutput import (
+    ClassifierChain,
+    MultiLabelBinarizer,
     MultiOutputClassifier,
     MultiOutputRegressor,
-    ClassifierChain,
-    RegressorChain,
-    MultiLabelBinarizer,
     MultiOutputStrategy,
+    RegressorChain,
+)
+from .naive_bayes import (
+    BernoulliNaiveBayes,
+    GaussianNaiveBayes,
+    MultinomialNaiveBayes,
+    NaiveBayesConfig,
+)
+from .neural_network import (
+    Activation,
+    ActivationFunctions,
+    LayerConfig,
+    NeuralNetwork,
+    NeuralNetworkClassifier,
+    NeuralNetworkConfig,
+    NeuralNetworkRegressor,
+    WeightInit,
+)
+from .pca import (
+    PCA,
+    PCAConfig,
+)
+from .random_forest import (
+    AggregationMethod,
+    RandomForest,
+    RandomForestClassifier,
+    RandomForestConfig,
+    RandomForestRegressor,
+)
+from .regularization import (
+    ElasticNet,
+    ElasticNetConfig,
+    Lasso,
+    LassoConfig,
+    RegularizationType,
+    Ridge,
+    RidgeClassifier,
+    RidgeConfig,
+    SGDRegressor,
+)
+from .svm import (
+    SVM,
+    KernelType,
+    SVMClassifier,
+    SVMConfig,
+    SVMRegressor,
+)
+from .time_series import (
+    ARIMA,
+    ARIMAConfig,
+    ExponentialSmoothing,
+    ExponentialSmoothingConfig,
+    ProphetConfig,
+    ProphetLike,
+    SeasonalityMode,
+    SimpleMovingAverage,
+    TrendMode,
 )
 
 __all__ = [

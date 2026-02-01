@@ -7,7 +7,7 @@ following scikit-learn's API patterns.
 
 from __future__ import annotations
 
-from typing import Any, Callable, List, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Tuple, Union
 
 import numpy as np
 
@@ -98,7 +98,7 @@ class VarianceThreshold(SelectorMixin):
         self.variances_: Optional[np.ndarray] = None
         self._support_mask: Optional[np.ndarray] = None
 
-    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> "VarianceThreshold":
+    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> VarianceThreshold:
         """
         Learn empirical variances from X.
 
@@ -143,10 +143,7 @@ def _f_classif(X: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     overall_mean = X.mean(axis=0)
 
     # Between-class sum of squares
-    ss_between = np.sum(
-        class_counts[:, np.newaxis] * (class_means - overall_mean) ** 2,
-        axis=0
-    )
+    ss_between = np.sum(class_counts[:, np.newaxis] * (class_means - overall_mean) ** 2, axis=0)
 
     # Within-class sum of squares
     ss_within = np.zeros(n_features)
@@ -187,8 +184,8 @@ def _f_regression(X: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]
 
     # Correlation coefficient
     ss_xy = np.sum(X_centered * y_centered[:, np.newaxis], axis=0)
-    ss_xx = np.sum(X_centered ** 2, axis=0)
-    ss_yy = np.sum(y_centered ** 2)
+    ss_xx = np.sum(X_centered**2, axis=0)
+    ss_yy = np.sum(y_centered**2)
 
     # Avoid division by zero
     ss_xx = np.where(ss_xx == 0, 1e-10, ss_xx)
@@ -198,7 +195,7 @@ def _f_regression(X: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]
 
     # F-statistic from correlation
     df = n_samples - 2
-    f_statistic = (correlation ** 2 * df) / (1 - correlation ** 2 + 1e-10)
+    f_statistic = (correlation**2 * df) / (1 - correlation**2 + 1e-10)
 
     # Approximate p-values
     p_values = 1.0 / (1.0 + f_statistic)
@@ -229,7 +226,7 @@ def _mutual_info_classif(X: np.ndarray, y: np.ndarray) -> np.ndarray:
         # Joint and marginal probabilities
         for c_idx, c in enumerate(classes):
             mask = y == c
-            feature_class = digitized[mask]
+            digitized[mask]
 
             for b in range(n_bins):
                 # P(feature=b, class=c)
@@ -284,7 +281,7 @@ class SelectKBest(SelectorMixin):
         self.pvalues_: Optional[np.ndarray] = None
         self._support_mask: Optional[np.ndarray] = None
 
-    def fit(self, X: np.ndarray, y: np.ndarray) -> "SelectKBest":
+    def fit(self, X: np.ndarray, y: np.ndarray) -> SelectKBest:
         """
         Run the score function on (X, y) and get appropriate features.
 
@@ -359,7 +356,7 @@ class SelectPercentile(SelectorMixin):
         self.pvalues_: Optional[np.ndarray] = None
         self._support_mask: Optional[np.ndarray] = None
 
-    def fit(self, X: np.ndarray, y: np.ndarray) -> "SelectPercentile":
+    def fit(self, X: np.ndarray, y: np.ndarray) -> SelectPercentile:
         """
         Run the score function on (X, y) and get features above percentile.
 
@@ -376,7 +373,7 @@ class SelectPercentile(SelectorMixin):
         if X.ndim == 1:
             X = X.reshape(-1, 1)
 
-        n_features = X.shape[1]
+        X.shape[1]
 
         # Calculate scores
         result = self.score_func(X, y)
@@ -429,7 +426,7 @@ class SelectFromModel(SelectorMixin):
         self.estimator_: Optional[Any] = None
         self._support_mask: Optional[np.ndarray] = None
 
-    def fit(self, X: np.ndarray, y: np.ndarray) -> "SelectFromModel":
+    def fit(self, X: np.ndarray, y: np.ndarray) -> SelectFromModel:
         """
         Fit the model and determine feature importances.
 
@@ -466,7 +463,7 @@ class SelectFromModel(SelectorMixin):
 
         # Apply max_features constraint
         if self.max_features is not None and mask.sum() > self.max_features:
-            top_indices = np.argsort(importances)[-self.max_features:]
+            top_indices = np.argsort(importances)[-self.max_features :]
             mask = np.zeros(n_features, dtype=bool)
             mask[top_indices] = True
 
@@ -483,9 +480,7 @@ class SelectFromModel(SelectorMixin):
                 coef = np.mean(np.abs(coef), axis=0)
             return np.abs(coef)
         else:
-            raise ValueError(
-                "Estimator must have feature_importances_ or coef_ attribute"
-            )
+            raise ValueError("Estimator must have feature_importances_ or coef_ attribute")
 
     def _get_support_mask(self) -> np.ndarray:
         return self._support_mask
@@ -531,7 +526,7 @@ class RFE(SelectorMixin):
         self.support_: Optional[np.ndarray] = None
         self.ranking_: Optional[np.ndarray] = None
 
-    def fit(self, X: np.ndarray, y: np.ndarray) -> "RFE":
+    def fit(self, X: np.ndarray, y: np.ndarray) -> RFE:
         """
         Fit the RFE model and determine the optimal number of features.
 
@@ -580,9 +575,7 @@ class RFE(SelectorMixin):
                     coef = np.mean(np.abs(coef), axis=0)
                 importances = np.abs(coef)
             else:
-                raise ValueError(
-                    "Estimator must have feature_importances_ or coef_"
-                )
+                raise ValueError("Estimator must have feature_importances_ or coef_")
 
             # Determine features to remove
             n_to_remove = min(step, np.sum(support) - n_features_to_select)
@@ -647,7 +640,7 @@ class RFECV(RFE):
         self.scoring = scoring
         self.cv_results_: Optional[dict] = None
 
-    def fit(self, X: np.ndarray, y: np.ndarray) -> "RFECV":
+    def fit(self, X: np.ndarray, y: np.ndarray) -> RFECV:
         """
         Fit the RFECV model with cross-validation.
 
@@ -678,8 +671,8 @@ class RFECV(RFE):
         n_features_list = sorted(n_features_list, reverse=True)
 
         scores = []
-        support = np.ones(n_features, dtype=bool)
-        ranking = np.ones(n_features, dtype=int)
+        np.ones(n_features, dtype=bool)
+        np.ones(n_features, dtype=int)
 
         for n_feat in n_features_list:
             # Set target number and run RFE
@@ -690,13 +683,12 @@ class RFECV(RFE):
             features = self.get_support(indices=True)
             X_selected = X[:, features]
             cv_scores = cross_val_score(
-                self.estimator, X_selected, y,
-                cv=self.cv, scoring=self.scoring
+                self.estimator, X_selected, y, cv=self.cv, scoring=self.scoring
             )
             scores.append(cv_scores.mean())
 
-            support = self.support_.copy()
-            ranking = self.ranking_.copy()
+            self.support_.copy()
+            self.ranking_.copy()
 
         # Find best number of features
         best_idx = np.argmax(scores)

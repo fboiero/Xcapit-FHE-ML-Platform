@@ -4,9 +4,9 @@ This module provides anomaly detection algorithms that work with
 encrypted data using polynomial approximations for FHE compatibility.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Optional, Union
+from typing import Optional, Union
 
 import numpy as np
 
@@ -15,6 +15,7 @@ from .base import BaseFHEModel, FHELevel, ModelConfig, ModelState
 
 class AnomalyMethod(Enum):
     """Anomaly detection method."""
+
     ISOLATION_FOREST = "isolation_forest"
     ONE_CLASS_SVM = "one_class_svm"
     LOCAL_OUTLIER_FACTOR = "local_outlier_factor"
@@ -23,6 +24,7 @@ class AnomalyMethod(Enum):
 
 class KernelType(Enum):
     """Kernel types for One-Class SVM."""
+
     LINEAR = "linear"
     POLYNOMIAL = "polynomial"
     RBF_APPROX = "rbf_approx"  # Polynomial approximation of RBF
@@ -31,6 +33,7 @@ class KernelType(Enum):
 @dataclass
 class AnomalyConfig(ModelConfig):
     """Configuration for anomaly detection models."""
+
     contamination: float = 0.1  # Expected proportion of outliers
     random_state: Optional[int] = None
 
@@ -38,6 +41,7 @@ class AnomalyConfig(ModelConfig):
 @dataclass
 class IsolationForestConfig(AnomalyConfig):
     """Configuration for Isolation Forest."""
+
     n_estimators: int = 100
     max_samples: Union[str, int] = "auto"  # "auto" or int
     max_features: float = 1.0
@@ -48,6 +52,7 @@ class IsolationForestConfig(AnomalyConfig):
 @dataclass
 class OneClassSVMConfig(AnomalyConfig):
     """Configuration for One-Class SVM."""
+
     kernel: KernelType = KernelType.POLYNOMIAL
     degree: int = 3
     nu: float = 0.1  # Upper bound on fraction of outliers
@@ -60,6 +65,7 @@ class OneClassSVMConfig(AnomalyConfig):
 @dataclass
 class LOFConfig(AnomalyConfig):
     """Configuration for Local Outlier Factor."""
+
     n_neighbors: int = 20
     metric: str = "euclidean"
     novelty: bool = True  # For prediction on new data
@@ -68,6 +74,7 @@ class LOFConfig(AnomalyConfig):
 @dataclass
 class EllipticEnvelopeConfig(AnomalyConfig):
     """Configuration for Elliptic Envelope (robust covariance)."""
+
     support_fraction: Optional[float] = None
     assume_centered: bool = False
 
@@ -207,7 +214,7 @@ class IsolationForest(BaseFHEModel):
             # Soft decision using polynomial sigmoid for FHE
             diff = x[feature_idx] - threshold
             # Polynomial sigmoid approximation: 0.5 + 0.5 * tanh(x) ≈ 0.5 + 0.1875*x - 0.0208*x^3
-            sigmoid = 0.5 + 0.1875 * diff - 0.0208 * (diff ** 3)
+            sigmoid = 0.5 + 0.1875 * diff - 0.0208 * (diff**3)
             sigmoid = np.clip(sigmoid, 0, 1)
 
             # Weighted combination of both paths
@@ -255,7 +262,7 @@ class IsolationForest(BaseFHEModel):
 
         # Build trees
         self.trees_ = []
-        for i in range(self.config.n_estimators):
+        for _i in range(self.config.n_estimators):
             # Sample data
             if self.config.bootstrap:
                 indices = rng.choice(n_samples, size=self._max_samples, replace=True)
@@ -317,7 +324,7 @@ class IsolationForest(BaseFHEModel):
 
             # Anomaly score: -2^(-E[h(x)]/c(n))
             # Higher values = more normal, lower = more anomalous
-            scores[x_idx] = -2 ** (-avg_path_length / self._average_path_length)
+            scores[x_idx] = -(2 ** (-avg_path_length / self._average_path_length))
 
         return scores
 
@@ -403,16 +410,12 @@ class OneClassSVM(BaseFHEModel):
             # Polynomial approximation of RBF kernel
             # exp(-gamma * ||x-y||^2) ≈ polynomial expansion
             # Using Taylor expansion: exp(-x) ≈ 1 - x + x^2/2 - x^3/6 + ...
-            sq_dists = (
-                np.sum(X1 ** 2, axis=1, keepdims=True)
-                + np.sum(X2 ** 2, axis=1)
-                - 2 * X1 @ X2.T
-            )
+            sq_dists = np.sum(X1**2, axis=1, keepdims=True) + np.sum(X2**2, axis=1) - 2 * X1 @ X2.T
             sq_dists = np.maximum(sq_dists, 0)  # Numerical stability
 
             x = self._gamma * sq_dists
             # 4th order Taylor approximation
-            kernel = 1 - x + (x ** 2) / 2 - (x ** 3) / 6 + (x ** 4) / 24
+            kernel = 1 - x + (x**2) / 2 - (x**3) / 6 + (x**4) / 24
             return np.clip(kernel, 0, 1)
 
         else:
@@ -459,7 +462,7 @@ class OneClassSVM(BaseFHEModel):
         alphas[sv_indices] = 1.0 / n_sv
 
         # SMO-like optimization
-        for iteration in range(self.config.max_iter):
+        for _iteration in range(self.config.max_iter):
             # Compute decision function: f(x) = sum(alpha_i * K(x_i, x)) - rho
             f = K @ alphas
 
@@ -601,11 +604,7 @@ class LocalOutlierFactor(BaseFHEModel):
     def _compute_distances(self, X1: np.ndarray, X2: np.ndarray) -> np.ndarray:
         """Compute pairwise distances between X1 and X2."""
         # Squared Euclidean distance (FHE-compatible)
-        sq_dists = (
-            np.sum(X1 ** 2, axis=1, keepdims=True)
-            + np.sum(X2 ** 2, axis=1)
-            - 2 * X1 @ X2.T
-        )
+        sq_dists = np.sum(X1**2, axis=1, keepdims=True) + np.sum(X2**2, axis=1) - 2 * X1 @ X2.T
         sq_dists = np.maximum(sq_dists, 0)
 
         if self.config.metric == "euclidean":
@@ -672,9 +671,7 @@ class LocalOutlierFactor(BaseFHEModel):
         ref_k_distances = ref_k_dist[:, -1]
 
         # Reachability distances
-        reach_dist = self._reachability_distance(
-            distances, neighbor_indices, ref_k_distances
-        )
+        reach_dist = self._reachability_distance(distances, neighbor_indices, ref_k_distances)
 
         # LRD = 1 / mean(reachability_distance)
         mean_reach_dist = np.mean(reach_dist, axis=1)
@@ -849,7 +846,7 @@ class EllipticEnvelope(BaseFHEModel):
 
         n_trials = min(10, n_samples)
 
-        for trial in range(n_trials):
+        for _trial in range(n_trials):
             # Random initial subset
             indices = rng.choice(n_samples, size=h, replace=False)
             X_subset = X[indices]

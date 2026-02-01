@@ -6,27 +6,29 @@ before FHE encryption.
 """
 
 import json
-from dataclasses import dataclass, field
-from typing import Optional, Union, Any
+from dataclasses import dataclass
 from enum import Enum
+from typing import Optional
+
 import numpy as np
 
 from .transformers import (
     BaseTransformer,
-    TransformerState,
-    StandardScaler,
+    FeatureSelector,
     MinMaxScaler,
-    RobustScaler,
+    MissingValueHandler,
     OneHotEncoder,
     OrdinalEncoder,
-    MissingValueHandler,
     OutlierHandler,
-    FeatureSelector
+    RobustScaler,
+    StandardScaler,
+    TransformerState,
 )
 
 
 class PipelineState(Enum):
     """State of the pipeline in its lifecycle."""
+
     EMPTY = "empty"
     CONFIGURED = "configured"
     FITTED = "fitted"
@@ -35,6 +37,7 @@ class PipelineState(Enum):
 @dataclass
 class PipelineStep:
     """A single step in the preprocessing pipeline."""
+
     name: str
     transformer: BaseTransformer
     columns: Optional[list] = None  # Apply only to specific columns (None = all)
@@ -78,11 +81,8 @@ class PreprocessingPipeline:
         self._feature_names_out: Optional[list] = None
 
     def add_step(
-        self,
-        name: str,
-        transformer: BaseTransformer,
-        columns: Optional[list] = None
-    ) -> 'PreprocessingPipeline':
+        self, name: str, transformer: BaseTransformer, columns: Optional[list] = None
+    ) -> "PreprocessingPipeline":
         """
         Add a transformation step to the pipeline.
 
@@ -110,7 +110,7 @@ class PreprocessingPipeline:
         self.state = PipelineState.CONFIGURED
         return self
 
-    def remove_step(self, name: str) -> 'PreprocessingPipeline':
+    def remove_step(self, name: str) -> "PreprocessingPipeline":
         """Remove a step from the pipeline by name."""
         self.steps = [s for s in self.steps if s.name != name]
         if len(self.steps) == 0:
@@ -125,11 +125,8 @@ class PreprocessingPipeline:
         return None
 
     def fit(
-        self,
-        X: np.ndarray,
-        y: Optional[np.ndarray] = None,
-        feature_names: Optional[list] = None
-    ) -> 'PreprocessingPipeline':
+        self, X: np.ndarray, y: Optional[np.ndarray] = None, feature_names: Optional[list] = None
+    ) -> "PreprocessingPipeline":
         """
         Fit all transformers in the pipeline.
 
@@ -204,10 +201,7 @@ class PreprocessingPipeline:
         return X_current
 
     def fit_transform(
-        self,
-        X: np.ndarray,
-        y: Optional[np.ndarray] = None,
-        feature_names: Optional[list] = None
+        self, X: np.ndarray, y: Optional[np.ndarray] = None, feature_names: Optional[list] = None
     ) -> np.ndarray:
         """Fit and transform in one step."""
         return self.fit(X, y, feature_names).transform(X)
@@ -265,26 +259,26 @@ class PreprocessingPipeline:
                 {
                     "name": step.name,
                     "columns": step.columns,
-                    "transformer": step.transformer.get_params()
+                    "transformer": step.transformer.get_params(),
                 }
                 for step in self.steps
-            ]
+            ],
         }
 
     def save(self, path: str) -> None:
         """Save pipeline parameters to JSON file."""
-        with open(path, 'w') as f:
+        with open(path, "w") as f:
             json.dump(self.get_params(), f, indent=2)
 
     @classmethod
-    def load(cls, path: str) -> 'PreprocessingPipeline':
+    def load(cls, path: str) -> "PreprocessingPipeline":
         """Load pipeline from JSON file."""
-        with open(path, 'r') as f:
+        with open(path) as f:
             params = json.load(f)
         return cls.from_params(params)
 
     @classmethod
-    def from_params(cls, params: dict) -> 'PreprocessingPipeline':
+    def from_params(cls, params: dict) -> "PreprocessingPipeline":
         """
         Reconstruct pipeline from saved parameters.
 
@@ -292,7 +286,9 @@ class PreprocessingPipeline:
         """
         pipeline = cls(name=params.get("name", "loaded_pipeline"))
         pipeline._input_shape = tuple(params["input_shape"]) if params.get("input_shape") else None
-        pipeline._output_shape = tuple(params["output_shape"]) if params.get("output_shape") else None
+        pipeline._output_shape = (
+            tuple(params["output_shape"]) if params.get("output_shape") else None
+        )
         pipeline._feature_names_in = params.get("feature_names_in")
         pipeline._feature_names_out = params.get("feature_names_out")
 
@@ -322,13 +318,17 @@ class PreprocessingPipeline:
             # Restore specific attributes from params
             cls._restore_transformer_attributes(transformer, transformer._params)
 
-            pipeline.steps.append(PipelineStep(
-                name=step_params["name"],
-                transformer=transformer,
-                columns=step_params.get("columns")
-            ))
+            pipeline.steps.append(
+                PipelineStep(
+                    name=step_params["name"],
+                    transformer=transformer,
+                    columns=step_params.get("columns"),
+                )
+            )
 
-        pipeline.state = PipelineState.FITTED if params.get("state") == "fitted" else PipelineState.CONFIGURED
+        pipeline.state = (
+            PipelineState.FITTED if params.get("state") == "fitted" else PipelineState.CONFIGURED
+        )
         return pipeline
 
     @staticmethod
@@ -366,12 +366,12 @@ class PreprocessingPipeline:
             f"PreprocessingPipeline: {self.name}",
             f"State: {self.state.value}",
             f"Steps: {len(self.steps)}",
-            "-" * 40
+            "-" * 40,
         ]
 
         for i, step in enumerate(self.steps):
             cols = f"columns={step.columns}" if step.columns else "all columns"
-            lines.append(f"  {i+1}. {step.name}: {step.transformer.__class__.__name__} ({cols})")
+            lines.append(f"  {i + 1}. {step.name}: {step.transformer.__class__.__name__} ({cols})")
 
         if self._input_shape:
             lines.append("-" * 40)
@@ -393,12 +393,7 @@ class PreprocessingPipeline:
         if self.state != PipelineState.FITTED:
             raise RuntimeError("Pipeline must be fitted before transform")
 
-    def _replace_columns(
-        self,
-        X: np.ndarray,
-        X_new: np.ndarray,
-        columns: list
-    ) -> np.ndarray:
+    def _replace_columns(self, X: np.ndarray, X_new: np.ndarray, columns: list) -> np.ndarray:
         """Replace specific columns in X with X_new values."""
         X_result = X.copy()
         for i, col_idx in enumerate(columns):
@@ -411,7 +406,7 @@ class PreprocessingPipeline:
         names = self._feature_names_in.copy() if self._feature_names_in else []
 
         for step in self.steps:
-            if hasattr(step.transformer, 'get_feature_names_out'):
+            if hasattr(step.transformer, "get_feature_names_out"):
                 try:
                     names = step.transformer.get_feature_names_out(names)
                 except Exception:
@@ -425,9 +420,7 @@ class PreprocessingPipeline:
 
 # Convenience function to create common preprocessing pipelines
 def create_standard_pipeline(
-    handle_missing: bool = True,
-    handle_outliers: bool = False,
-    scaling: str = 'standard'
+    handle_missing: bool = True, handle_outliers: bool = False, scaling: str = "standard"
 ) -> PreprocessingPipeline:
     """
     Create a standard preprocessing pipeline for FHE.
@@ -456,27 +449,25 @@ def create_standard_pipeline(
     pipeline = PreprocessingPipeline(name="standard_fhe_pipeline")
 
     if handle_missing:
-        pipeline.add_step('impute', MissingValueHandler(strategy='mean'))
+        pipeline.add_step("impute", MissingValueHandler(strategy="mean"))
 
     if handle_outliers:
-        pipeline.add_step('outliers', OutlierHandler(method='iqr', strategy='clip'))
+        pipeline.add_step("outliers", OutlierHandler(method="iqr", strategy="clip"))
 
-    if scaling == 'standard':
-        pipeline.add_step('scale', StandardScaler())
-    elif scaling == 'minmax':
-        pipeline.add_step('scale', MinMaxScaler(feature_range=(-1, 1)))
-    elif scaling == 'robust':
-        pipeline.add_step('scale', RobustScaler())
-    elif scaling != 'none':
+    if scaling == "standard":
+        pipeline.add_step("scale", StandardScaler())
+    elif scaling == "minmax":
+        pipeline.add_step("scale", MinMaxScaler(feature_range=(-1, 1)))
+    elif scaling == "robust":
+        pipeline.add_step("scale", RobustScaler())
+    elif scaling != "none":
         raise ValueError(f"Unknown scaling method: {scaling}")
 
     return pipeline
 
 
 def create_categorical_pipeline(
-    categorical_columns: list,
-    encoding: str = 'onehot',
-    scaling: str = 'standard'
+    categorical_columns: list, encoding: str = "onehot", scaling: str = "standard"
 ) -> PreprocessingPipeline:
     """
     Create a pipeline that handles categorical features.
@@ -498,18 +489,18 @@ def create_categorical_pipeline(
     pipeline = PreprocessingPipeline(name="categorical_fhe_pipeline")
 
     # Handle missing values first
-    pipeline.add_step('impute', MissingValueHandler(strategy='most_frequent'))
+    pipeline.add_step("impute", MissingValueHandler(strategy="most_frequent"))
 
     # Encode categoricals
-    if encoding == 'onehot':
-        pipeline.add_step('encode', OneHotEncoder(columns=categorical_columns))
+    if encoding == "onehot":
+        pipeline.add_step("encode", OneHotEncoder(columns=categorical_columns))
     else:
-        pipeline.add_step('encode', OrdinalEncoder(columns=categorical_columns))
+        pipeline.add_step("encode", OrdinalEncoder(columns=categorical_columns))
 
     # Scale all features
-    if scaling == 'standard':
-        pipeline.add_step('scale', StandardScaler())
-    elif scaling == 'minmax':
-        pipeline.add_step('scale', MinMaxScaler(feature_range=(-1, 1)))
+    if scaling == "standard":
+        pipeline.add_step("scale", StandardScaler())
+    elif scaling == "minmax":
+        pipeline.add_step("scale", MinMaxScaler(feature_range=(-1, 1)))
 
     return pipeline

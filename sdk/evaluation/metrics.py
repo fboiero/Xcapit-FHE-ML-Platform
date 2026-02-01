@@ -4,12 +4,13 @@ This module provides metrics for evaluating classification and regression models
 """
 
 from typing import Optional, Union
-import numpy as np
 
+import numpy as np
 
 # =============================================================================
 # Classification Metrics
 # =============================================================================
+
 
 def accuracy_score(
     y_true: np.ndarray,
@@ -374,7 +375,7 @@ def classification_report(
         labels = np.unique(np.concatenate([y_true, y_pred]))
 
     if target_names is None:
-        target_names = [str(l) for l in labels]
+        target_names = [str(label) for label in labels]
 
     report = {}
 
@@ -430,7 +431,9 @@ def classification_report(
         lines.append(line)
 
     lines.append("")
-    lines.append(f"{'accuracy':>{name_width}}  {'':>10}  {'':>10}  {report['accuracy']:>10.2f}  {len(y_true):>10}")
+    lines.append(
+        f"{'accuracy':>{name_width}}  {'':>10}  {'':>10}  {report['accuracy']:>10.2f}  {len(y_true):>10}"
+    )
 
     for avg in ["macro avg", "weighted avg"]:
         values = report[avg]
@@ -447,6 +450,7 @@ def classification_report(
 # =============================================================================
 # Regression Metrics
 # =============================================================================
+
 
 def mean_squared_error(
     y_true: np.ndarray,

@@ -5,9 +5,10 @@ Implements clustering algorithms compatible with homomorphic encryption
 using polynomial approximations for distance computations.
 """
 
-import numpy as np
-from typing import Optional, List, Tuple, Union
 from collections import deque
+from typing import List, Optional, Tuple
+
+import numpy as np
 
 
 class DBSCAN:
@@ -218,11 +219,11 @@ class AgglomerativeClustering:
         for i in range(n):
             for j in range(i + 1, n):
                 if self.metric == "euclidean":
-                    d = np.sqrt(np.sum((X[i] - X[j])**2))
+                    d = np.sqrt(np.sum((X[i] - X[j]) ** 2))
                 elif self.metric == "manhattan":
                     d = np.sum(np.abs(X[i] - X[j]))
                 else:
-                    d = np.sqrt(np.sum((X[i] - X[j])**2))
+                    d = np.sqrt(np.sum((X[i] - X[j]) ** 2))
 
                 dist_matrix[i, j] = d
                 dist_matrix[j, i] = d
@@ -298,7 +299,7 @@ class AgglomerativeClustering:
 
             cluster_list = list(active_clusters)
             for i, c1 in enumerate(cluster_list):
-                for c2 in cluster_list[i + 1:]:
+                for c2 in cluster_list[i + 1 :]:
                     d = self._cluster_distance(clusters[c1], clusters[c2], dist_matrix, X)
                     if d < min_dist:
                         min_dist = d
@@ -400,17 +401,17 @@ class SpectralClustering:
         if self.affinity == "rbf":
             # RBF (Gaussian) kernel
             # K(x, y) = exp(-gamma * ||x - y||^2)
-            sq_dists = np.sum((X[:, np.newaxis] - X[np.newaxis, :])**2, axis=2)
+            sq_dists = np.sum((X[:, np.newaxis] - X[np.newaxis, :]) ** 2, axis=2)
             affinity = np.exp(-self.gamma * sq_dists)
 
         elif self.affinity == "nearest_neighbors":
             # k-nearest neighbors affinity
-            sq_dists = np.sum((X[:, np.newaxis] - X[np.newaxis, :])**2, axis=2)
+            sq_dists = np.sum((X[:, np.newaxis] - X[np.newaxis, :]) ** 2, axis=2)
             affinity = np.zeros((n_samples, n_samples))
 
             for i in range(n_samples):
                 # Find k nearest neighbors
-                neighbor_indices = np.argsort(sq_dists[i])[:self.n_neighbors + 1]
+                neighbor_indices = np.argsort(sq_dists[i])[: self.n_neighbors + 1]
                 affinity[i, neighbor_indices] = 1
                 affinity[neighbor_indices, i] = 1
 
@@ -460,7 +461,7 @@ class SpectralClustering:
         eigenvectors = []
         eigenvalues = []
 
-        for k in range(n_components):
+        for _k in range(n_components):
             # Random initialization
             v = np.random.randn(n)
             v = v / np.linalg.norm(v)
@@ -504,7 +505,7 @@ class SpectralClustering:
 
             for _ in range(100):  # Max iterations
                 # Assign labels
-                distances = np.sum((X[:, np.newaxis] - centroids[np.newaxis, :])**2, axis=2)
+                distances = np.sum((X[:, np.newaxis] - centroids[np.newaxis, :]) ** 2, axis=2)
                 labels = np.argmin(distances, axis=1)
 
                 # Update centroids
@@ -526,7 +527,7 @@ class SpectralClustering:
             for k in range(self.n_clusters):
                 mask = labels == k
                 if np.sum(mask) > 0:
-                    inertia += np.sum((X[mask] - centroids[k])**2)
+                    inertia += np.sum((X[mask] - centroids[k]) ** 2)
 
             if inertia < best_inertia:
                 best_inertia = inertia
@@ -646,7 +647,7 @@ class MeanShift:
         converged = np.zeros(n_samples, dtype=bool)
 
         # Mean shift iteration for each seed
-        for iteration in range(self.max_iter):
+        for _iteration in range(self.max_iter):
             all_converged = True
 
             for i in range(n_samples):
@@ -657,10 +658,12 @@ class MeanShift:
                 distances = np.sqrt(np.sum((X - seeds[i]) ** 2, axis=1))
 
                 # Compute kernel weights
-                weights = np.array([
-                    self._gaussian_kernel(d, bandwidth) if d <= bandwidth * 3 else 0
-                    for d in distances
-                ])
+                weights = np.array(
+                    [
+                        self._gaussian_kernel(d, bandwidth) if d <= bandwidth * 3 else 0
+                        for d in distances
+                    ]
+                )
 
                 # Update seed position
                 if np.sum(weights) > 0:
@@ -791,9 +794,7 @@ class GaussianMixture:
 
         # Initialize covariances
         if self.covariance_type == "full":
-            self.covariances_ = np.array([
-                np.eye(n_features) for _ in range(self.n_components)
-            ])
+            self.covariances_ = np.array([np.eye(n_features) for _ in range(self.n_components)])
         elif self.covariance_type == "diag":
             self.covariances_ = np.ones((self.n_components, n_features))
         else:  # spherical
@@ -821,9 +822,7 @@ class GaussianMixture:
             diff = X - self.means_[k]
             mahal = np.sum(diff @ cov_inv * diff, axis=1)
 
-            log_prob[:, k] = -0.5 * (
-                n_features * np.log(2 * np.pi) + log_det + mahal
-            )
+            log_prob[:, k] = -0.5 * (n_features * np.log(2 * np.pi) + log_det + mahal)
 
         return log_prob
 
@@ -835,8 +834,10 @@ class GaussianMixture:
         # Log-sum-exp trick for numerical stability
         weighted_log_prob = log_prob + log_weights
         log_prob_norm = np.max(weighted_log_prob, axis=1, keepdims=True)
-        log_resp = weighted_log_prob - log_prob_norm - np.log(
-            np.sum(np.exp(weighted_log_prob - log_prob_norm), axis=1, keepdims=True)
+        log_resp = (
+            weighted_log_prob
+            - log_prob_norm
+            - np.log(np.sum(np.exp(weighted_log_prob - log_prob_norm), axis=1, keepdims=True))
         )
 
         # Lower bound (log-likelihood)
@@ -861,7 +862,7 @@ class GaussianMixture:
         # Update covariances
         for k in range(self.n_components):
             diff = X - self.means_[k]
-            weighted_diff = resp[:, k:k+1] * diff
+            weighted_diff = resp[:, k : k + 1] * diff
 
             if self.covariance_type == "full":
                 self.covariances_[k] = (weighted_diff.T @ diff) / nk[k]
@@ -894,7 +895,7 @@ class GaussianMixture:
 
         lower_bound = -np.inf
 
-        for n_iter in range(self.max_iter):
+        for n_iter in range(self.max_iter):  # noqa: B007
             # E-step
             resp, new_lower_bound = self._e_step(X)
 

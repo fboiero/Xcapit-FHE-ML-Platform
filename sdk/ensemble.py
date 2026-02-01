@@ -12,7 +12,7 @@ Provides ensemble learning methods compatible with FHE operations:
 
 from __future__ import annotations
 
-from typing import Any, Callable, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -38,9 +38,7 @@ class BaseEnsemble:
         names = set()
         for item in estimators:
             if not isinstance(item, (list, tuple)) or len(item) != 2:
-                raise ValueError(
-                    "Each estimator must be a tuple of (name, estimator)"
-                )
+                raise ValueError("Each estimator must be a tuple of (name, estimator)")
             name, est = item
             if name in names:
                 raise ValueError(f"Duplicate estimator name: {name}")
@@ -96,7 +94,7 @@ class VotingClassifier(BaseEnsemble):
         self.classes_: Optional[np.ndarray] = None
         self.le_: Optional[Any] = None  # Label encoder if needed
 
-    def fit(self, X: np.ndarray, y: np.ndarray) -> "VotingClassifier":
+    def fit(self, X: np.ndarray, y: np.ndarray) -> VotingClassifier:
         """
         Fit the estimators.
 
@@ -156,9 +154,9 @@ class VotingClassifier(BaseEnsemble):
 
     def _predict_hard(self, X: np.ndarray) -> np.ndarray:
         """Hard voting: majority vote of predictions."""
-        predictions = np.array([
-            est.predict(X) for _, est in self.estimators_
-        ])  # shape: (n_estimators, n_samples)
+        predictions = np.array(
+            [est.predict(X) for _, est in self.estimators_]
+        )  # shape: (n_estimators, n_samples)
 
         # Weighted voting
         weights = self.weights if self.weights is not None else np.ones(len(self.estimators_))
@@ -259,7 +257,7 @@ class VotingRegressor(BaseEnsemble):
         self.estimators = self._validate_estimators(estimators)
         self.weights = weights
 
-    def fit(self, X: np.ndarray, y: np.ndarray) -> "VotingRegressor":
+    def fit(self, X: np.ndarray, y: np.ndarray) -> VotingRegressor:
         """
         Fit the estimators.
 
@@ -303,9 +301,7 @@ class VotingRegressor(BaseEnsemble):
         self._check_is_fitted()
         X = np.asarray(X)
 
-        predictions = np.array([
-            est.predict(X) for _, est in self.estimators_
-        ])
+        predictions = np.array([est.predict(X) for _, est in self.estimators_])
 
         weights = self.weights if self.weights is not None else np.ones(len(self.estimators_))
         weights = np.array(weights) / np.sum(weights)
@@ -368,7 +364,7 @@ class StackingClassifier(BaseEnsemble):
         self.passthrough = passthrough
         self.classes_: Optional[np.ndarray] = None
 
-    def fit(self, X: np.ndarray, y: np.ndarray) -> "StackingClassifier":
+    def fit(self, X: np.ndarray, y: np.ndarray) -> StackingClassifier:
         """
         Fit the stacking classifier.
 
@@ -427,7 +423,7 @@ class StackingClassifier(BaseEnsemble):
                         est_meta[val_idx[i], idx] = 1.0
 
             # Store meta-features
-            meta_features[:, est_idx * n_classes:(est_idx + 1) * n_classes] = est_meta
+            meta_features[:, est_idx * n_classes : (est_idx + 1) * n_classes] = est_meta
 
             # Refit on full data
             est.fit(X, y)
@@ -478,7 +474,7 @@ class StackingClassifier(BaseEnsemble):
                     idx = np.where(self.classes_ == p)[0][0]
                     est_meta[i, idx] = 1.0
 
-            meta_features[:, est_idx * n_classes:(est_idx + 1) * n_classes] = est_meta
+            meta_features[:, est_idx * n_classes : (est_idx + 1) * n_classes] = est_meta
 
         if self.passthrough:
             meta_features = np.hstack([meta_features, X])
@@ -527,7 +523,7 @@ class StackingRegressor(BaseEnsemble):
         self.cv = cv
         self.passthrough = passthrough
 
-    def fit(self, X: np.ndarray, y: np.ndarray) -> "StackingRegressor":
+    def fit(self, X: np.ndarray, y: np.ndarray) -> StackingRegressor:
         """Fit the stacking regressor."""
         X = np.asarray(X)
         y = np.asarray(y)
@@ -572,9 +568,7 @@ class StackingRegressor(BaseEnsemble):
         self._check_is_fitted()
         X = np.asarray(X)
 
-        meta_features = np.column_stack([
-            est.predict(X) for _, est in self.estimators_
-        ])
+        meta_features = np.column_stack([est.predict(X) for _, est in self.estimators_])
 
         if self.passthrough:
             meta_features = np.hstack([meta_features, X])
@@ -642,7 +636,7 @@ class BaggingClassifier(BaseEnsemble):
         self.classes_: Optional[np.ndarray] = None
         self.estimators_features_: List[np.ndarray] = []
 
-    def fit(self, X: np.ndarray, y: np.ndarray) -> "BaggingClassifier":
+    def fit(self, X: np.ndarray, y: np.ndarray) -> BaggingClassifier:
         """Fit the bagging classifier."""
         X = np.asarray(X)
         y = np.asarray(y)
@@ -705,10 +699,12 @@ class BaggingClassifier(BaseEnsemble):
         X = np.asarray(X)
 
         # Collect predictions
-        predictions = np.array([
-            est.predict(X[:, self.estimators_features_[i]])
-            for i, est in enumerate(self.estimators_)
-        ])
+        predictions = np.array(
+            [
+                est.predict(X[:, self.estimators_features_[i]])
+                for i, est in enumerate(self.estimators_)
+            ]
+        )
 
         # Majority vote
         n_samples = X.shape[0]
@@ -799,7 +795,7 @@ class BaggingRegressor(BaseEnsemble):
         self.random_state = random_state
         self.estimators_features_: List[np.ndarray] = []
 
-    def fit(self, X: np.ndarray, y: np.ndarray) -> "BaggingRegressor":
+    def fit(self, X: np.ndarray, y: np.ndarray) -> BaggingRegressor:
         """Fit the bagging regressor."""
         X = np.asarray(X)
         y = np.asarray(y)
@@ -853,10 +849,12 @@ class BaggingRegressor(BaseEnsemble):
         self._check_is_fitted()
         X = np.asarray(X)
 
-        predictions = np.array([
-            est.predict(X[:, self.estimators_features_[i]])
-            for i, est in enumerate(self.estimators_)
-        ])
+        predictions = np.array(
+            [
+                est.predict(X[:, self.estimators_features_[i]])
+                for i, est in enumerate(self.estimators_)
+            ]
+        )
 
         return np.mean(predictions, axis=0)
 
@@ -907,7 +905,7 @@ class AdaBoostClassifier(BaseEnsemble):
         self.estimator_weights_: List[float] = []
         self.classes_: Optional[np.ndarray] = None
 
-    def fit(self, X: np.ndarray, y: np.ndarray) -> "AdaBoostClassifier":
+    def fit(self, X: np.ndarray, y: np.ndarray) -> AdaBoostClassifier:
         """Fit the AdaBoost classifier."""
         X = np.asarray(X)
         y = np.asarray(y)
@@ -1001,7 +999,7 @@ class DecisionStump:
         X: np.ndarray,
         y: np.ndarray,
         sample_weight: Optional[np.ndarray] = None,
-    ) -> "DecisionStump":
+    ) -> DecisionStump:
         """Fit the decision stump."""
         n_samples, n_features = X.shape
         self.classes_ = np.unique(y)
@@ -1042,6 +1040,7 @@ class DecisionStump:
 
 
 # Utility functions
+
 
 def get_ensemble_feature_importances(
     ensemble: BaseEnsemble,

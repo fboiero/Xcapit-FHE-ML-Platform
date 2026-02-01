@@ -85,7 +85,7 @@ class IsolationForest(BaseOutlierDetector):
         self.threshold_: float = 0.0
         self._max_samples: int = 0
 
-    def fit(self, X: np.ndarray, y: np.ndarray = None) -> "IsolationForest":
+    def fit(self, X: np.ndarray, y: np.ndarray = None) -> IsolationForest:
         """
         Fit the isolation forest.
 
@@ -220,12 +220,12 @@ class IsolationTree:
         self.root: Optional[IsolationNode] = None
         self.feature_idx_: np.ndarray = np.array([])
 
-    def fit(self, X: np.ndarray) -> "IsolationTree":
+    def fit(self, X: np.ndarray) -> IsolationTree:
         """Build the isolation tree."""
         self.root = self._build_tree(X, depth=0)
         return self
 
-    def _build_tree(self, X: np.ndarray, depth: int) -> "IsolationNode":
+    def _build_tree(self, X: np.ndarray, depth: int) -> IsolationNode:
         """Recursively build tree."""
         n_samples, n_features = X.shape
 
@@ -258,9 +258,7 @@ class IsolationTree:
         """Calculate path length for each sample."""
         return np.array([self._path_length_single(x, self.root, 0) for x in X])
 
-    def _path_length_single(
-        self, x: np.ndarray, node: "IsolationNode", current_depth: int
-    ) -> float:
+    def _path_length_single(self, x: np.ndarray, node: IsolationNode, current_depth: int) -> float:
         """Calculate path length for a single sample."""
         if node.is_external:
             # Add correction for unbuilt subtree
@@ -289,8 +287,8 @@ class IsolationNode:
         self,
         feature: Optional[int] = None,
         split_value: Optional[float] = None,
-        left: Optional["IsolationNode"] = None,
-        right: Optional["IsolationNode"] = None,
+        left: Optional[IsolationNode] = None,
+        right: Optional[IsolationNode] = None,
         size: int = 0,
     ):
         self.feature = feature
@@ -345,7 +343,7 @@ class LocalOutlierFactor(BaseOutlierDetector):
         self.threshold_: float = 0.0
         self._lrd_: Optional[np.ndarray] = None
 
-    def fit(self, X: np.ndarray, y: np.ndarray = None) -> "LocalOutlierFactor":
+    def fit(self, X: np.ndarray, y: np.ndarray = None) -> LocalOutlierFactor:
         """Fit the LOF model."""
         X = np.asarray(X)
         self.X_fit_ = X
@@ -384,8 +382,8 @@ class LocalOutlierFactor(BaseOutlierDetector):
         """Compute pairwise distances."""
         if self.metric == "euclidean":
             # Efficient computation
-            X1_sq = np.sum(X1 ** 2, axis=1, keepdims=True)
-            X2_sq = np.sum(X2 ** 2, axis=1, keepdims=True)
+            X1_sq = np.sum(X1**2, axis=1, keepdims=True)
+            X2_sq = np.sum(X2**2, axis=1, keepdims=True)
             cross = np.dot(X1, X2.T)
             distances = np.sqrt(np.maximum(X1_sq + X2_sq.T - 2 * cross, 0))
         elif self.metric == "manhattan":
@@ -398,7 +396,7 @@ class LocalOutlierFactor(BaseOutlierDetector):
     def _compute_lrd(self, X: np.ndarray, distances: np.ndarray) -> np.ndarray:
         """Compute local reachability density."""
         n_samples = X.shape[0]
-        k = min(self.n_neighbors, n_samples - 1)
+        min(self.n_neighbors, n_samples - 1)
         lrd = np.zeros(n_samples)
 
         for i in range(n_samples):
@@ -461,7 +459,7 @@ class LocalOutlierFactor(BaseOutlierDetector):
             lof_scores = np.zeros(n_samples)
             for i in range(n_samples):
                 sorted_idx = np.argsort(distances[i])[:k]
-                k_dist = distances[i, sorted_idx[-1]]
+                distances[i, sorted_idx[-1]]
 
                 reach_distances = []
                 for j in sorted_idx:
@@ -516,7 +514,7 @@ class EllipticEnvelope(BaseOutlierDetector):
         self.precision_: Optional[np.ndarray] = None
         self.threshold_: float = 0.0
 
-    def fit(self, X: np.ndarray, y: np.ndarray = None) -> "EllipticEnvelope":
+    def fit(self, X: np.ndarray, y: np.ndarray = None) -> EllipticEnvelope:
         """Fit the elliptic envelope."""
         X = np.asarray(X)
         n_samples, n_features = X.shape
@@ -538,9 +536,7 @@ class EllipticEnvelope(BaseOutlierDetector):
             self.precision_ = np.linalg.inv(self.covariance_)
         except np.linalg.LinAlgError:
             # Add small regularization if singular
-            self.precision_ = np.linalg.inv(
-                self.covariance_ + 1e-6 * np.eye(n_features)
-            )
+            self.precision_ = np.linalg.inv(self.covariance_ + 1e-6 * np.eye(n_features))
 
         # Calculate threshold
         distances = self.mahalanobis(X)
@@ -549,11 +545,9 @@ class EllipticEnvelope(BaseOutlierDetector):
         self.is_fitted_ = True
         return self
 
-    def _robust_estimate(
-        self, X: np.ndarray, h: int
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    def _robust_estimate(self, X: np.ndarray, h: int) -> Tuple[np.ndarray, np.ndarray]:
         """Compute robust location and covariance estimates."""
-        n_samples = X.shape[0]
+        X.shape[0]
 
         # Initial estimate using all data
         mean = np.mean(X, axis=0)
@@ -651,7 +645,7 @@ class OneClassSVM(BaseOutlierDetector):
         self.intercept_: float = 0.0
         self._gamma_value: float = 1.0
 
-    def fit(self, X: np.ndarray, y: np.ndarray = None) -> "OneClassSVM":
+    def fit(self, X: np.ndarray, y: np.ndarray = None) -> OneClassSVM:
         """Fit the one-class SVM."""
         X = np.asarray(X)
         n_samples, n_features = X.shape
@@ -691,8 +685,8 @@ class OneClassSVM(BaseOutlierDetector):
             return np.dot(X1, X2.T)
         elif self.kernel == "rbf":
             # RBF kernel: exp(-gamma * ||x - y||^2)
-            X1_sq = np.sum(X1 ** 2, axis=1, keepdims=True)
-            X2_sq = np.sum(X2 ** 2, axis=1, keepdims=True)
+            X1_sq = np.sum(X1**2, axis=1, keepdims=True)
+            X2_sq = np.sum(X2**2, axis=1, keepdims=True)
             cross = np.dot(X1, X2.T)
             distances_sq = X1_sq + X2_sq.T - 2 * cross
             return np.exp(-self._gamma_value * distances_sq)
@@ -724,6 +718,7 @@ class OneClassSVM(BaseOutlierDetector):
 
 
 # Statistical outlier detection utilities
+
 
 def detect_outliers_zscore(
     X: np.ndarray,

@@ -12,11 +12,10 @@ import gzip
 import hashlib
 import hmac
 import json
-import os
 import secrets
 from dataclasses import asdict, dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, List, Optional, Tuple, Type
 
 import numpy as np
 
@@ -349,7 +348,7 @@ def load_model(
         >>> model = load_model("model.fheml")
         >>> model = load_model("model_encrypted.fheml", password="secret")
     """
-    with open(path, "r") as f:
+    with open(path) as f:
         file_data = json.load(f)
 
     # Verify format
@@ -396,6 +395,7 @@ def load_model(
         module_name = model_data.get("model_module", "")
         try:
             import importlib
+
             module = importlib.import_module(module_name)
             model_class = getattr(module, model_class_name)
         except (ImportError, AttributeError):
@@ -427,7 +427,7 @@ def get_model_info(path: str) -> ModelMetadata:
     Returns:
         ModelMetadata object
     """
-    with open(path, "r") as f:
+    with open(path) as f:
         file_data = json.load(f)
 
     return ModelMetadata(**file_data["metadata"])

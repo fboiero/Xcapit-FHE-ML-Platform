@@ -5,7 +5,7 @@ Provides sklearn-style Pipeline and FeatureUnion for composing
 transformers and models that work with encrypted data.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
@@ -14,6 +14,7 @@ import numpy as np
 
 class PipelineStepType(Enum):
     """Types of pipeline steps."""
+
     TRANSFORMER = "transformer"
     ESTIMATOR = "estimator"
     FEATURE_UNION = "feature_union"
@@ -22,6 +23,7 @@ class PipelineStepType(Enum):
 @dataclass
 class PipelineStep:
     """A single step in a pipeline."""
+
     name: str
     transformer: Any
     step_type: PipelineStepType = PipelineStepType.TRANSFORMER
@@ -77,18 +79,16 @@ class Pipeline:
             raise ValueError(f"Duplicate step name: {name}")
 
         # Check for required methods
-        if not (hasattr(transformer, 'fit') or hasattr(transformer, 'transform')):
-            raise TypeError(
-                f"Step '{name}' must have fit() or transform() method"
-            )
+        if not (hasattr(transformer, "fit") or hasattr(transformer, "transform")):
+            raise TypeError(f"Step '{name}' must have fit() or transform() method")
 
     def _is_transformer(self, step: PipelineStep) -> bool:
         """Check if step is a transformer (not final estimator)."""
-        return hasattr(step.transformer, 'transform')
+        return hasattr(step.transformer, "transform")
 
     def _is_estimator(self, step: PipelineStep) -> bool:
         """Check if step is an estimator with predict."""
-        return hasattr(step.transformer, 'predict')
+        return hasattr(step.transformer, "predict")
 
     def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None, **fit_params) -> "Pipeline":
         """
@@ -110,16 +110,16 @@ class Pipeline:
         # Fit and transform all steps except the last
         for i, step in enumerate(self.steps[:-1]):
             if self.verbose:
-                print(f"Fitting step {i+1}/{len(self.steps)}: {step.name}")
+                print(f"Fitting step {i + 1}/{len(self.steps)}: {step.name}")
 
             # Get fit_params for this step
             step_params = self._filter_params(fit_params, step.name)
 
-            if hasattr(step.transformer, 'fit_transform'):
+            if hasattr(step.transformer, "fit_transform"):
                 Xt = step.transformer.fit_transform(Xt, y, **step_params)
             else:
                 step.transformer.fit(Xt, y, **step_params)
-                if hasattr(step.transformer, 'transform'):
+                if hasattr(step.transformer, "transform"):
                     Xt = step.transformer.transform(Xt)
 
         # Fit the last step
@@ -137,11 +137,7 @@ class Pipeline:
     def _filter_params(self, params: Dict, step_name: str) -> Dict:
         """Filter parameters for a specific step."""
         prefix = f"{step_name}__"
-        return {
-            k[len(prefix):]: v
-            for k, v in params.items()
-            if k.startswith(prefix)
-        }
+        return {k[len(prefix) :]: v for k, v in params.items() if k.startswith(prefix)}
 
     def transform(self, X: np.ndarray) -> np.ndarray:
         """
@@ -158,12 +154,14 @@ class Pipeline:
 
         Xt = X
         for step in self.steps:
-            if hasattr(step.transformer, 'transform'):
+            if hasattr(step.transformer, "transform"):
                 Xt = step.transformer.transform(Xt)
 
         return Xt
 
-    def fit_transform(self, X: np.ndarray, y: Optional[np.ndarray] = None, **fit_params) -> np.ndarray:
+    def fit_transform(
+        self, X: np.ndarray, y: Optional[np.ndarray] = None, **fit_params
+    ) -> np.ndarray:
         """Fit and transform in one step."""
         return self.fit(X, y, **fit_params).transform(X)
 
@@ -184,11 +182,11 @@ class Pipeline:
 
         # Transform through all steps except the last
         for step in self.steps[:-1]:
-            if hasattr(step.transformer, 'transform'):
+            if hasattr(step.transformer, "transform"):
                 Xt = step.transformer.transform(Xt)
 
         # Predict with the last step
-        if self.steps and hasattr(self.steps[-1].transformer, 'predict'):
+        if self.steps and hasattr(self.steps[-1].transformer, "predict"):
             return self.steps[-1].transformer.predict(Xt)
 
         raise AttributeError("Final step does not have predict method")
@@ -200,10 +198,10 @@ class Pipeline:
 
         Xt = X
         for step in self.steps[:-1]:
-            if hasattr(step.transformer, 'transform'):
+            if hasattr(step.transformer, "transform"):
                 Xt = step.transformer.transform(Xt)
 
-        if self.steps and hasattr(self.steps[-1].transformer, 'predict_proba'):
+        if self.steps and hasattr(self.steps[-1].transformer, "predict_proba"):
             return self.steps[-1].transformer.predict_proba(Xt)
 
         raise AttributeError("Final step does not have predict_proba method")
@@ -215,10 +213,10 @@ class Pipeline:
 
         Xt = X
         for step in self.steps[:-1]:
-            if hasattr(step.transformer, 'transform'):
+            if hasattr(step.transformer, "transform"):
                 Xt = step.transformer.transform(Xt)
 
-        if self.steps and hasattr(self.steps[-1].transformer, 'score'):
+        if self.steps and hasattr(self.steps[-1].transformer, "score"):
             return self.steps[-1].transformer.score(Xt, y)
 
         raise AttributeError("Final step does not have score method")
@@ -226,14 +224,14 @@ class Pipeline:
     def get_params(self, deep: bool = True) -> Dict[str, Any]:
         """Get pipeline parameters."""
         params = {
-            'memory': self.memory,
-            'verbose': self.verbose,
-            'steps': [(s.name, s.transformer) for s in self.steps],
+            "memory": self.memory,
+            "verbose": self.verbose,
+            "steps": [(s.name, s.transformer) for s in self.steps],
         }
 
         if deep:
             for step in self.steps:
-                if hasattr(step.transformer, 'get_params'):
+                if hasattr(step.transformer, "get_params"):
                     step_params = step.transformer.get_params(deep=True)
                     for key, value in step_params.items():
                         params[f"{step.name}__{key}"] = value
@@ -243,14 +241,14 @@ class Pipeline:
     def set_params(self, **params) -> "Pipeline":
         """Set pipeline parameters."""
         for key, value in params.items():
-            if '__' in key:
-                step_name, param_name = key.split('__', 1)
+            if "__" in key:
+                step_name, param_name = key.split("__", 1)
                 if step_name in self.named_steps:
-                    if hasattr(self.named_steps[step_name], 'set_params'):
+                    if hasattr(self.named_steps[step_name], "set_params"):
                         self.named_steps[step_name].set_params(**{param_name: value})
-            elif key == 'memory':
+            elif key == "memory":
                 self.memory = value
-            elif key == 'verbose':
+            elif key == "verbose":
                 self.verbose = value
 
         return self
@@ -318,12 +316,10 @@ class FeatureUnion:
         """Fit all transformers."""
         for i, (name, transformer) in enumerate(self.transformer_list):
             if self.verbose:
-                print(f"Fitting transformer {i+1}/{len(self.transformer_list)}: {name}")
+                print(f"Fitting transformer {i + 1}/{len(self.transformer_list)}: {name}")
 
             step_params = {
-                k.split('__', 1)[1]: v
-                for k, v in fit_params.items()
-                if k.startswith(f"{name}__")
+                k.split("__", 1)[1]: v for k, v in fit_params.items() if k.startswith(f"{name}__")
             }
 
             transformer.fit(X, y, **step_params)
@@ -349,7 +345,9 @@ class FeatureUnion:
 
         return np.hstack(outputs)
 
-    def fit_transform(self, X: np.ndarray, y: Optional[np.ndarray] = None, **fit_params) -> np.ndarray:
+    def fit_transform(
+        self, X: np.ndarray, y: Optional[np.ndarray] = None, **fit_params
+    ) -> np.ndarray:
         """Fit and transform in one step."""
         return self.fit(X, y, **fit_params).transform(X)
 
@@ -357,25 +355,25 @@ class FeatureUnion:
         """Get output feature names."""
         names = []
         for name, transformer in self.transformer_list:
-            if hasattr(transformer, 'get_feature_names_out'):
+            if hasattr(transformer, "get_feature_names_out"):
                 trans_names = transformer.get_feature_names_out(input_features)
                 names.extend([f"{name}__{n}" for n in trans_names])
-            elif hasattr(transformer, 'n_components'):
+            elif hasattr(transformer, "n_components"):
                 names.extend([f"{name}_{i}" for i in range(transformer.n_components)])
         return names
 
     def get_params(self, deep: bool = True) -> Dict[str, Any]:
         """Get parameters."""
         params = {
-            'n_jobs': self.n_jobs,
-            'transformer_weights': self.transformer_weights,
-            'verbose': self.verbose,
-            'transformer_list': self.transformer_list,
+            "n_jobs": self.n_jobs,
+            "transformer_weights": self.transformer_weights,
+            "verbose": self.verbose,
+            "transformer_list": self.transformer_list,
         }
 
         if deep:
             for name, transformer in self.transformer_list:
-                if hasattr(transformer, 'get_params'):
+                if hasattr(transformer, "get_params"):
                     for key, value in transformer.get_params(deep=True).items():
                         params[f"{name}__{key}"] = value
 
@@ -384,12 +382,12 @@ class FeatureUnion:
     def set_params(self, **params) -> "FeatureUnion":
         """Set parameters."""
         for key, value in params.items():
-            if '__' in key:
-                name, param_name = key.split('__', 1)
+            if "__" in key:
+                name, param_name = key.split("__", 1)
                 if name in self.named_transformers:
-                    if hasattr(self.named_transformers[name], 'set_params'):
+                    if hasattr(self.named_transformers[name], "set_params"):
                         self.named_transformers[name].set_params(**{param_name: value})
-            elif key == 'transformer_weights':
+            elif key == "transformer_weights":
                 self.transformer_weights = value
 
         return self
@@ -411,7 +409,7 @@ class ColumnTransformer:
     def __init__(
         self,
         transformers: List[Tuple[str, Any, Union[List[int], List[str], slice]]],
-        remainder: str = 'drop',
+        remainder: str = "drop",
         sparse_threshold: float = 0.3,
         n_jobs: Optional[int] = None,
         transformer_weights: Optional[Dict[str, float]] = None,
@@ -438,7 +436,9 @@ class ColumnTransformer:
         self._n_features = None
         self._remainder_cols = None
 
-    def _get_column_indices(self, columns: Union[List[int], List[str], slice], X: np.ndarray) -> List[int]:
+    def _get_column_indices(
+        self, columns: Union[List[int], List[str], slice], X: np.ndarray
+    ) -> List[int]:
         """Convert column specification to indices."""
         if isinstance(columns, slice):
             return list(range(*columns.indices(X.shape[1])))
@@ -491,7 +491,7 @@ class ColumnTransformer:
             outputs.append(Xt)
 
         # Handle remainder
-        if self.remainder == 'passthrough' and self._remainder_cols:
+        if self.remainder == "passthrough" and self._remainder_cols:
             outputs.append(X[:, self._remainder_cols])
 
         return np.hstack(outputs) if outputs else np.empty((X.shape[0], 0))
@@ -503,12 +503,12 @@ class ColumnTransformer:
     def get_params(self, deep: bool = True) -> Dict[str, Any]:
         """Get parameters."""
         return {
-            'transformers': self.transformers,
-            'remainder': self.remainder,
-            'sparse_threshold': self.sparse_threshold,
-            'n_jobs': self.n_jobs,
-            'transformer_weights': self.transformer_weights,
-            'verbose': self.verbose,
+            "transformers": self.transformers,
+            "remainder": self.remainder,
+            "sparse_threshold": self.sparse_threshold,
+            "n_jobs": self.n_jobs,
+            "transformer_weights": self.transformer_weights,
+            "verbose": self.verbose,
         }
 
 
@@ -645,14 +645,14 @@ class TransformedTargetRegressor:
     def get_params(self, deep: bool = True) -> Dict[str, Any]:
         """Get parameters."""
         params = {
-            'regressor': self.regressor,
-            'transformer': self.transformer,
-            'func': self.func,
-            'inverse_func': self.inverse_func,
-            'check_inverse': self.check_inverse,
+            "regressor": self.regressor,
+            "transformer": self.transformer,
+            "func": self.func,
+            "inverse_func": self.inverse_func,
+            "check_inverse": self.check_inverse,
         }
 
-        if deep and hasattr(self.regressor, 'get_params'):
+        if deep and hasattr(self.regressor, "get_params"):
             for key, value in self.regressor.get_params(deep=True).items():
                 params[f"regressor__{key}"] = value
 

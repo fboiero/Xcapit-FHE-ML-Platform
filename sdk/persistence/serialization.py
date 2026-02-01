@@ -4,13 +4,14 @@ This module provides utilities for saving and loading models to/from disk.
 Supports JSON and binary (pickle) formats.
 """
 
+import gzip
 import json
 import pickle
-import gzip
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from typing import Any, Optional, Union
+
 import numpy as np
 
 
@@ -106,22 +107,22 @@ class ModelSerializer:
         """Auto-register known model types."""
         try:
             from ..models import (
-                LinearRegression,
-                LogisticRegression,
                 DecisionTree,
                 DecisionTreeClassifier,
                 DecisionTreeRegressor,
-                KMeans,
-                MiniBatchKMeans,
-                RandomForest,
-                RandomForestClassifier,
-                RandomForestRegressor,
-                NeuralNetwork,
-                NeuralNetworkClassifier,
-                NeuralNetworkRegressor,
                 GradientBoosting,
                 GradientBoostingClassifier,
                 GradientBoostingRegressor,
+                KMeans,
+                LinearRegression,
+                LogisticRegression,
+                MiniBatchKMeans,
+                NeuralNetwork,
+                NeuralNetworkClassifier,
+                NeuralNetworkRegressor,
+                RandomForest,
+                RandomForestClassifier,
+                RandomForestRegressor,
             )
 
             models = [
@@ -175,6 +176,7 @@ class ModelSerializer:
 
         # Create metadata
         from datetime import datetime
+
         metadata = {
             "model_type": model_type,
             "sdk_version": self._get_sdk_version(),
@@ -229,7 +231,7 @@ class ModelSerializer:
 
         # Load data
         if format == ModelFormat.JSON:
-            with open(path, "r") as f:
+            with open(path) as f:
                 data = json.load(f, object_hook=numpy_decoder)
 
         elif format == ModelFormat.PICKLE:
@@ -272,6 +274,7 @@ class ModelSerializer:
         """Get SDK version string."""
         try:
             from .. import __version__
+
             return __version__
         except ImportError:
             return "unknown"
@@ -301,7 +304,7 @@ class ModelSerializer:
                 format = ModelFormat.PICKLE
 
         if format == ModelFormat.JSON:
-            with open(path, "r") as f:
+            with open(path) as f:
                 data = json.load(f)
         elif format == ModelFormat.PICKLE:
             with open(path, "rb") as f:

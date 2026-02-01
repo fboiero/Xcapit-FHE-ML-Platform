@@ -113,7 +113,7 @@ class ActivationFunctions:
     @staticmethod
     def square(x: np.ndarray) -> np.ndarray:
         """Square activation: f(x) = x²"""
-        return x ** 2
+        return x**2
 
     @staticmethod
     def square_derivative(x: np.ndarray) -> np.ndarray:
@@ -123,12 +123,12 @@ class ActivationFunctions:
     @staticmethod
     def cube(x: np.ndarray) -> np.ndarray:
         """Cube activation: f(x) = x³"""
-        return x ** 3
+        return x**3
 
     @staticmethod
     def cube_derivative(x: np.ndarray) -> np.ndarray:
         """Derivative of cube: f'(x) = 3x²"""
-        return 3 * x ** 2
+        return 3 * x**2
 
     @staticmethod
     def polynomial_sigmoid(x: np.ndarray) -> np.ndarray:
@@ -139,12 +139,12 @@ class ActivationFunctions:
 
         Valid for x in approximately [-5, 5].
         """
-        return 0.5 + 0.197 * x - 0.004 * x ** 3
+        return 0.5 + 0.197 * x - 0.004 * x**3
 
     @staticmethod
     def polynomial_sigmoid_derivative(x: np.ndarray) -> np.ndarray:
         """Derivative of polynomial sigmoid: f'(x) = 0.197 - 0.012x²"""
-        return 0.197 - 0.012 * x ** 2
+        return 0.197 - 0.012 * x**2
 
     @staticmethod
     def polynomial_relu(x: np.ndarray) -> np.ndarray:
@@ -156,12 +156,12 @@ class ActivationFunctions:
         This maintains positivity while being polynomial.
         """
         # Smooth approximation that's always non-negative
-        return np.maximum(0, 0.5 * x + 0.125 * x ** 2)
+        return np.maximum(0, 0.5 * x + 0.125 * x**2)
 
     @staticmethod
     def polynomial_relu_derivative(x: np.ndarray) -> np.ndarray:
         """Derivative of polynomial ReLU approximation."""
-        mask = (0.5 * x + 0.125 * x ** 2) > 0
+        mask = (0.5 * x + 0.125 * x**2) > 0
         return mask * (0.5 + 0.25 * x)
 
     @staticmethod
@@ -170,12 +170,12 @@ class ActivationFunctions:
 
         Uses: tanh(x) ≈ x - x³/3 for small x
         """
-        return x - (x ** 3) / 3
+        return x - (x**3) / 3
 
     @staticmethod
     def polynomial_tanh_derivative(x: np.ndarray) -> np.ndarray:
         """Derivative of polynomial tanh: f'(x) = 1 - x²"""
-        return 1 - x ** 2
+        return 1 - x**2
 
     @staticmethod
     def linear(x: np.ndarray) -> np.ndarray:
@@ -485,7 +485,7 @@ class NeuralNetwork(BaseFHEModel):
 
         # Add L2 regularization term
         if self._nn_config.l2_reg > 0:
-            l2_term = sum(np.sum(W ** 2) for W in self._layer_weights)
+            l2_term = sum(np.sum(W**2) for W in self._layer_weights)
             mse += 0.5 * self._nn_config.l2_reg * l2_term
 
         return mse
@@ -678,19 +678,18 @@ class NeuralNetwork(BaseFHEModel):
     def get_params(self) -> dict[str, Any]:
         """Get model parameters."""
         params = super().get_params()
-        params.update({
-            "layer_sizes": self.layer_sizes,
-            "layer_weights": [W.tolist() for W in self._layer_weights],
-            "layer_biases": [b.tolist() for b in self._layer_biases],
-            "layer_activations": [a.value for a in self._layer_activations],
-        })
+        params.update(
+            {
+                "layer_sizes": self.layer_sizes,
+                "layer_weights": [W.tolist() for W in self._layer_weights],
+                "layer_biases": [b.tolist() for b in self._layer_biases],
+                "layer_activations": [a.value for a in self._layer_activations],
+            }
+        )
         return params
 
     def __repr__(self) -> str:
-        return (
-            f"NeuralNetwork(layers={self.layer_sizes}, "
-            f"state={self._state.value})"
-        )
+        return f"NeuralNetwork(layers={self.layer_sizes}, state={self._state.value})"
 
 
 class NeuralNetworkClassifier(NeuralNetwork):
@@ -731,10 +730,7 @@ class NeuralNetworkClassifier(NeuralNetwork):
         if hidden_units is None:
             hidden_units = [32]
 
-        hidden_layers = [
-            LayerConfig(units=units, activation=activation)
-            for units in hidden_units
-        ]
+        hidden_layers = [LayerConfig(units=units, activation=activation) for units in hidden_units]
 
         config = NeuralNetworkConfig(
             hidden_layers=hidden_layers,
@@ -991,10 +987,7 @@ class NeuralNetworkRegressor(NeuralNetwork):
         if hidden_units is None:
             hidden_units = [32]
 
-        hidden_layers = [
-            LayerConfig(units=units, activation=activation)
-            for units in hidden_units
-        ]
+        hidden_layers = [LayerConfig(units=units, activation=activation) for units in hidden_units]
 
         config = NeuralNetworkConfig(
             hidden_layers=hidden_layers,

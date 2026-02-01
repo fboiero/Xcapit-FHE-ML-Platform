@@ -90,8 +90,7 @@ def get_contracts(network: Network) -> ContractAddresses:
     # Validate contracts are deployed (for non-local networks)
     if network != Network.LOCAL and not contracts.governance:
         raise ValueError(
-            f"Contracts not yet deployed on {network.value}. "
-            "Use ARBITRUM_SEPOLIA for testing."
+            f"Contracts not yet deployed on {network.value}. Use ARBITRUM_SEPOLIA for testing."
         )
 
     return contracts

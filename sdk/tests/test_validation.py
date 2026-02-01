@@ -3,32 +3,31 @@ Tests for the data validation module.
 """
 
 import numpy as np
-import pytest
 
 from sdk.validation import (
-    DataSchema,
     ColumnSchema,
-    ValidationResult,
-    ValidationError,
-    # Constraints
-    NotNull,
-    NotEmpty,
-    InRange,
-    InSet,
-    MatchesRegex,
-    MinLength,
-    MaxLength,
-    IsType,
-    IsPositive,
-    IsEmail,
-    IsURL,
     CustomConstraint,
+    DataSchema,
     # Validators
     DatasetValidator,
+    InRange,
+    InSet,
+    IsEmail,
+    IsPositive,
+    IsType,
+    IsURL,
+    MatchesRegex,
+    MaxLength,
+    MinLength,
+    NotEmpty,
+    # Constraints
+    NotNull,
+    ValidationError,
+    ValidationResult,
+    infer_schema,
     validate_features,
     validate_labels,
     validate_sample_weights,
-    infer_schema,
 )
 
 

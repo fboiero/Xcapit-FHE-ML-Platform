@@ -1,18 +1,16 @@
 """Tests for model registry on blockchain."""
 
 import hashlib
-import json
 from datetime import datetime
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import numpy as np
-import pytest
 
 from sdk.blockchain.registry import (
+    MODEL_REGISTRY_ABI,
     CheckpointInfo,
     ModelInfo,
     ModelRegistryClient,
-    MODEL_REGISTRY_ABI,
 )
 
 
@@ -189,9 +187,7 @@ class TestModelRegistryClientRegister:
         client = ModelRegistryClient(mock_connector, "0x" + "2" * 40)
         result = client.register_model("LinearRegression", "1.0.0")
 
-        mock_contract.functions.registerModel.assert_called_once_with(
-            "LinearRegression", "1.0.0"
-        )
+        mock_contract.functions.registerModel.assert_called_once_with("LinearRegression", "1.0.0")
         assert result is not None
 
     def test_register_model_without_wait(self):

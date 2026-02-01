@@ -143,11 +143,7 @@ class TestNeuralNetwork:
         """Generate regression data."""
         np.random.seed(42)
         X, y = make_regression(
-            n_samples=100,
-            n_features=5,
-            n_informative=3,
-            noise=0.1,
-            random_state=42
+            n_samples=100, n_features=5, n_informative=3, noise=0.1, random_state=42
         )
         # Scale y to smaller range
         y = (y - y.mean()) / y.std()
@@ -155,7 +151,7 @@ class TestNeuralNetwork:
 
     def test_basic_fit(self, regression_data):
         """Test basic fitting."""
-        from sdk.models.neural_network import NeuralNetwork, NeuralNetworkConfig, LayerConfig
+        from sdk.models.neural_network import LayerConfig, NeuralNetwork, NeuralNetworkConfig
 
         X_train, X_test, y_train, y_test = regression_data
 
@@ -172,7 +168,7 @@ class TestNeuralNetwork:
 
     def test_predict(self, regression_data):
         """Test prediction."""
-        from sdk.models.neural_network import NeuralNetwork, NeuralNetworkConfig, LayerConfig
+        from sdk.models.neural_network import LayerConfig, NeuralNetwork, NeuralNetworkConfig
 
         X_train, X_test, y_train, y_test = regression_data
 
@@ -214,7 +210,7 @@ class TestNeuralNetwork:
 
     def test_training_history(self, regression_data):
         """Test that training history is recorded."""
-        from sdk.models.neural_network import NeuralNetwork, NeuralNetworkConfig, LayerConfig
+        from sdk.models.neural_network import LayerConfig, NeuralNetwork, NeuralNetworkConfig
 
         X_train, _, y_train, _ = regression_data
 
@@ -231,7 +227,7 @@ class TestNeuralNetwork:
 
     def test_early_stopping(self, regression_data):
         """Test early stopping."""
-        from sdk.models.neural_network import NeuralNetwork, NeuralNetworkConfig, LayerConfig
+        from sdk.models.neural_network import LayerConfig, NeuralNetwork, NeuralNetworkConfig
 
         X_train, _, y_train, _ = regression_data
 
@@ -249,7 +245,7 @@ class TestNeuralNetwork:
 
     def test_l2_regularization(self, regression_data):
         """Test L2 regularization."""
-        from sdk.models.neural_network import NeuralNetwork, NeuralNetworkConfig, LayerConfig
+        from sdk.models.neural_network import LayerConfig, NeuralNetwork, NeuralNetworkConfig
 
         X_train, _, y_train, _ = regression_data
 
@@ -267,7 +263,7 @@ class TestNeuralNetwork:
 
     def test_momentum(self, regression_data):
         """Test training with momentum."""
-        from sdk.models.neural_network import NeuralNetwork, NeuralNetworkConfig, LayerConfig
+        from sdk.models.neural_network import LayerConfig, NeuralNetwork, NeuralNetworkConfig
 
         X_train, _, y_train, _ = regression_data
 
@@ -283,7 +279,7 @@ class TestNeuralNetwork:
 
     def test_mini_batch_training(self, regression_data):
         """Test mini-batch training."""
-        from sdk.models.neural_network import NeuralNetwork, NeuralNetworkConfig, LayerConfig
+        from sdk.models.neural_network import LayerConfig, NeuralNetwork, NeuralNetworkConfig
 
         X_train, _, y_train, _ = regression_data
 
@@ -299,7 +295,7 @@ class TestNeuralNetwork:
 
     def test_get_params(self, regression_data):
         """Test getting model parameters."""
-        from sdk.models.neural_network import NeuralNetwork, NeuralNetworkConfig, LayerConfig
+        from sdk.models.neural_network import LayerConfig, NeuralNetwork, NeuralNetworkConfig
 
         X_train, _, y_train, _ = regression_data
 
@@ -329,7 +325,7 @@ class TestNeuralNetworkClassifier:
             n_informative=3,
             n_redundant=1,
             n_classes=2,
-            random_state=42
+            random_state=42,
         )
         return train_test_split(X, y, test_size=0.2, random_state=42)
 
@@ -396,11 +392,9 @@ class TestNeuralNetworkClassifier:
             n_informative=3,
             n_classes=3,
             n_clusters_per_class=1,
-            random_state=42
+            random_state=42,
         )
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.2, random_state=42
-        )
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
         clf = NeuralNetworkClassifier(
             hidden_units=[32],
@@ -424,11 +418,7 @@ class TestNeuralNetworkRegressor:
         """Generate regression data."""
         np.random.seed(42)
         X, y = make_regression(
-            n_samples=100,
-            n_features=5,
-            n_informative=3,
-            noise=0.1,
-            random_state=42
+            n_samples=100, n_features=5, n_informative=3, noise=0.1, random_state=42
         )
         y = (y - y.mean()) / y.std()
         return train_test_split(X, y, test_size=0.2, random_state=42)
@@ -528,11 +518,9 @@ class TestEdgeCases:
 
     def test_repr(self):
         """Test string representation."""
-        from sdk.models.neural_network import NeuralNetwork, NeuralNetworkConfig, LayerConfig
+        from sdk.models.neural_network import LayerConfig, NeuralNetwork, NeuralNetworkConfig
 
-        config = NeuralNetworkConfig(
-            hidden_layers=[LayerConfig(units=32), LayerConfig(units=16)]
-        )
+        config = NeuralNetworkConfig(hidden_layers=[LayerConfig(units=32), LayerConfig(units=16)])
         nn = NeuralNetwork(config=config)
 
         repr_str = repr(nn)

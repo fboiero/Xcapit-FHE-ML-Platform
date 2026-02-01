@@ -4,8 +4,9 @@ Categorical Encoders for FHE-ML Platform.
 Implements encoding transformations for categorical data.
 """
 
+from typing import Any, Dict, List, Optional, Union
+
 import numpy as np
-from typing import Optional, List, Dict, Any, Union
 
 
 class LabelEncoder:
@@ -242,7 +243,7 @@ class OneHotEncoder:
             drop_idx = self._drop_idx_[i]
             n_cats = len(cats) - (1 if drop_idx is not None else 0)
 
-            feature_encoded = X[:, col_idx:col_idx + n_cats]
+            feature_encoded = X[:, col_idx : col_idx + n_cats]
             col_idx += n_cats
 
             # Find which category is active
@@ -452,9 +453,9 @@ class TargetEncoder:
                 if n_samples >= self.min_samples_leaf:
                     cat_mean = np.mean(y[mask])
                     # Smoothed mean: (n * cat_mean + smoothing * global_mean) / (n + smoothing)
-                    smoothed = (
-                        n_samples * cat_mean + self.smoothing * self.global_mean_
-                    ) / (n_samples + self.smoothing)
+                    smoothed = (n_samples * cat_mean + self.smoothing * self.global_mean_) / (
+                        n_samples + self.smoothing
+                    )
                     encoding[cat] = smoothed
                 else:
                     encoding[cat] = self.global_mean_

@@ -13,7 +13,7 @@ Provides feature transformation and generation methods:
 from __future__ import annotations
 
 from itertools import combinations, combinations_with_replacement
-from typing import Any, Callable, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -82,7 +82,7 @@ class PolynomialFeatures(BaseTransformer):
         self.powers_: Optional[np.ndarray] = None
         self.feature_names_: List[str] = []
 
-    def fit(self, X: np.ndarray, y: np.ndarray = None) -> "PolynomialFeatures":
+    def fit(self, X: np.ndarray, y: np.ndarray = None) -> PolynomialFeatures:
         """
         Compute the exponent combinations.
 
@@ -124,8 +124,13 @@ class PolynomialFeatures(BaseTransformer):
                         for idx in combo:
                             power[idx] += 1
                         powers.append(tuple(power))
-                        name = "*".join([f"x{i}^{power[i]}" if power[i] > 1 else f"x{i}"
-                                        for i in range(self.n_features_in_) if power[i] > 0])
+                        name = "*".join(
+                            [
+                                f"x{i}^{power[i]}" if power[i] > 1 else f"x{i}"
+                                for i in range(self.n_features_in_)
+                                if power[i] > 0
+                            ]
+                        )
                         feature_names.append(name)
 
         self.powers_ = np.array(powers)
@@ -155,7 +160,7 @@ class PolynomialFeatures(BaseTransformer):
         result = np.empty((n_samples, self.n_features_out_))
 
         for i, power in enumerate(self.powers_):
-            result[:, i] = np.prod(X ** power, axis=1)
+            result[:, i] = np.prod(X**power, axis=1)
 
         return result
 
@@ -197,7 +202,7 @@ class InteractionFeatures(BaseTransformer):
         self.include_self = include_self
         self.interaction_pairs_: List[Tuple[int, int]] = []
 
-    def fit(self, X: np.ndarray, y: np.ndarray = None) -> "InteractionFeatures":
+    def fit(self, X: np.ndarray, y: np.ndarray = None) -> InteractionFeatures:
         """Fit the interaction feature generator."""
         X = np.asarray(X)
         self.n_features_in_ = X.shape[1]
@@ -267,7 +272,7 @@ class KBinsDiscretizer(BaseTransformer):
         self.bin_edges_: List[np.ndarray] = []
         self.n_bins_: Optional[np.ndarray] = None
 
-    def fit(self, X: np.ndarray, y: np.ndarray = None) -> "KBinsDiscretizer":
+    def fit(self, X: np.ndarray, y: np.ndarray = None) -> KBinsDiscretizer:
         """
         Fit the discretizer.
 
@@ -331,7 +336,7 @@ class KBinsDiscretizer(BaseTransformer):
         """Compute bin edges using k-means."""
         # Simple 1D k-means
         col_sorted = np.sort(col)
-        n = len(col_sorted)
+        len(col_sorted)
 
         # Initialize centers uniformly
         centers = np.linspace(col_sorted.min(), col_sorted.max(), k)
@@ -342,10 +347,12 @@ class KBinsDiscretizer(BaseTransformer):
             labels = np.argmin(distances, axis=1)
 
             # Update centers
-            new_centers = np.array([
-                col_sorted[labels == i].mean() if np.sum(labels == i) > 0 else centers[i]
-                for i in range(k)
-            ])
+            new_centers = np.array(
+                [
+                    col_sorted[labels == i].mean() if np.sum(labels == i) > 0 else centers[i]
+                    for i in range(k)
+                ]
+            )
 
             if np.allclose(centers, new_centers):
                 break
@@ -353,11 +360,13 @@ class KBinsDiscretizer(BaseTransformer):
 
         # Compute bin edges as midpoints between centers
         centers_sorted = np.sort(centers)
-        edges = np.concatenate([
-            [col_sorted.min()],
-            (centers_sorted[:-1] + centers_sorted[1:]) / 2,
-            [col_sorted.max()],
-        ])
+        edges = np.concatenate(
+            [
+                [col_sorted.min()],
+                (centers_sorted[:-1] + centers_sorted[1:]) / 2,
+                [col_sorted.max()],
+            ]
+        )
         return edges
 
     def transform(self, X: np.ndarray) -> np.ndarray:
@@ -421,7 +430,7 @@ class Binarizer(BaseTransformer):
         super().__init__()
         self.threshold = threshold
 
-    def fit(self, X: np.ndarray, y: np.ndarray = None) -> "Binarizer":
+    def fit(self, X: np.ndarray, y: np.ndarray = None) -> Binarizer:
         """Fit (no-op, for API consistency)."""
         X = np.asarray(X)
         self.n_features_in_ = X.shape[1] if X.ndim == 2 else 1
@@ -471,7 +480,7 @@ class FunctionTransformer(BaseTransformer):
         self.validate = validate
         self.kw_args = kw_args or {}
 
-    def fit(self, X: np.ndarray, y: np.ndarray = None) -> "FunctionTransformer":
+    def fit(self, X: np.ndarray, y: np.ndarray = None) -> FunctionTransformer:
         """Fit (validates input)."""
         if self.validate:
             X = np.asarray(X)
@@ -533,7 +542,7 @@ class TargetEncoder(BaseTransformer):
         self.encoding_map_: Dict[int, Dict[Any, float]] = {}
         self.global_mean_: float = 0.0
 
-    def fit(self, X: np.ndarray, y: np.ndarray) -> "TargetEncoder":
+    def fit(self, X: np.ndarray, y: np.ndarray) -> TargetEncoder:
         """
         Fit the target encoder.
 
@@ -570,8 +579,12 @@ class TargetEncoder(BaseTransformer):
                 else:
                     cat_mean = np.mean(y[mask])
                     # Smoothing: blend with global mean
-                    lambda_smooth = 1 / (1 + np.exp(-(n_samples - self.min_samples_leaf) / self.smoothing))
-                    encoding[cat] = lambda_smooth * cat_mean + (1 - lambda_smooth) * self.global_mean_
+                    lambda_smooth = 1 / (
+                        1 + np.exp(-(n_samples - self.min_samples_leaf) / self.smoothing)
+                    )
+                    encoding[cat] = (
+                        lambda_smooth * cat_mean + (1 - lambda_smooth) * self.global_mean_
+                    )
 
             self.encoding_map_[i] = encoding
 
@@ -621,7 +634,7 @@ class OrdinalEncoder(BaseTransformer):
         self.categories_: List[np.ndarray] = []
         self.category_map_: List[Dict[Any, int]] = []
 
-    def fit(self, X: np.ndarray, y: np.ndarray = None) -> "OrdinalEncoder":
+    def fit(self, X: np.ndarray, y: np.ndarray = None) -> OrdinalEncoder:
         """Fit the ordinal encoder."""
         X = np.asarray(X)
         self.n_features_in_ = X.shape[1]
@@ -706,7 +719,7 @@ class OneHotEncoder(BaseTransformer):
         self.categories_: List[np.ndarray] = []
         self.drop_idx_: List[Optional[int]] = []
 
-    def fit(self, X: np.ndarray, y: np.ndarray = None) -> "OneHotEncoder":
+    def fit(self, X: np.ndarray, y: np.ndarray = None) -> OneHotEncoder:
         """Fit the one-hot encoder."""
         X = np.asarray(X)
         self.n_features_in_ = X.shape[1]
@@ -796,7 +809,7 @@ class QuantileTransformer(BaseTransformer):
         self.quantiles_: Optional[np.ndarray] = None
         self.references_: Optional[np.ndarray] = None
 
-    def fit(self, X: np.ndarray, y: np.ndarray = None) -> "QuantileTransformer":
+    def fit(self, X: np.ndarray, y: np.ndarray = None) -> QuantileTransformer:
         """Fit the quantile transformer."""
         X = np.asarray(X)
         n_samples, n_features = X.shape
@@ -822,6 +835,7 @@ class QuantileTransformer(BaseTransformer):
             self.references_ = np.linspace(0, 1, self.n_quantiles)
         elif self.output_distribution == "normal":
             from scipy.stats import norm
+
             self.references_ = norm.ppf(np.linspace(0.001, 0.999, self.n_quantiles))
         else:
             raise ValueError(f"Unknown distribution: {self.output_distribution}")
@@ -872,7 +886,7 @@ class PowerTransformer(BaseTransformer):
         self.means_: Optional[np.ndarray] = None
         self.stds_: Optional[np.ndarray] = None
 
-    def fit(self, X: np.ndarray, y: np.ndarray = None) -> "PowerTransformer":
+    def fit(self, X: np.ndarray, y: np.ndarray = None) -> PowerTransformer:
         """Fit the power transformer."""
         X = np.asarray(X)
         self.n_features_in_ = X.shape[1]
@@ -954,7 +968,7 @@ class PowerTransformer(BaseTransformer):
         if lam == 0:
             return np.log(x)
         else:
-            return (x ** lam - 1) / lam
+            return (x**lam - 1) / lam
 
     def _transform_raw(self, X: np.ndarray) -> np.ndarray:
         """Transform without standardization."""

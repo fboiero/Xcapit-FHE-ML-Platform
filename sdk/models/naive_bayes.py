@@ -211,7 +211,7 @@ class GaussianNaiveBayes(BaseFHEModel):
 
             # -0.5 * sum((x-μ)²/σ²)
             diff = X - mean
-            log_exp = -0.5 * np.sum(diff ** 2 / var, axis=1)
+            log_exp = -0.5 * np.sum(diff**2 / var, axis=1)
 
             joint_log_likelihood.append(log_prior + log_det + log_exp)
 
@@ -316,13 +316,17 @@ class GaussianNaiveBayes(BaseFHEModel):
     def get_params(self) -> dict[str, Any]:
         """Get model parameters."""
         params = super().get_params()
-        params.update({
-            "classes": self._classes.tolist() if self._classes is not None else None,
-            "class_prior": self._class_prior.tolist() if self._class_prior is not None else None,
-            "theta": self._theta.tolist() if self._theta is not None else None,
-            "var": self._var.tolist() if self._var is not None else None,
-            "var_smoothing": self._nb_config.var_smoothing,
-        })
+        params.update(
+            {
+                "classes": self._classes.tolist() if self._classes is not None else None,
+                "class_prior": self._class_prior.tolist()
+                if self._class_prior is not None
+                else None,
+                "theta": self._theta.tolist() if self._theta is not None else None,
+                "var": self._var.tolist() if self._var is not None else None,
+                "var_smoothing": self._nb_config.var_smoothing,
+            }
+        )
         return params
 
     def __repr__(self) -> str:
@@ -575,7 +579,9 @@ class BernoulliNaiveBayes(BaseFHEModel):
 
         # Compute probabilities with smoothing
         alpha = self._nb_config.alpha
-        self._feature_prob = (feature_count + alpha) / (self._class_count.reshape(-1, 1) + 2 * alpha)
+        self._feature_prob = (feature_count + alpha) / (
+            self._class_count.reshape(-1, 1) + 2 * alpha
+        )
 
         # Class priors
         if self._nb_config.fit_prior:

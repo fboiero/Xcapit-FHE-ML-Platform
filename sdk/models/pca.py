@@ -188,10 +188,10 @@ class PCA(BaseFHEModel):
             print(f"  Keeping {self._n_components} components")
 
         # Keep top components
-        self._components = eigenvectors[:, :self._n_components].T
-        self._explained_variance = eigenvalues[:self._n_components]
+        self._components = eigenvectors[:, : self._n_components].T
+        self._explained_variance = eigenvalues[: self._n_components]
         self._explained_variance_ratio = self._explained_variance / eigenvalues.sum()
-        self._singular_values = np.sqrt(eigenvalues[:self._n_components] * (n_samples - 1))
+        self._singular_values = np.sqrt(eigenvalues[: self._n_components] * (n_samples - 1))
 
         self._state = ModelState.TRAINED
 
@@ -344,15 +344,21 @@ class PCA(BaseFHEModel):
     def get_params(self) -> dict[str, Any]:
         """Get model parameters."""
         params = super().get_params()
-        params.update({
-            "n_components": self._n_components,
-            "n_features": self._n_features,
-            "components": self._components.tolist() if self._components is not None else None,
-            "mean": self._mean.tolist() if self._mean is not None else None,
-            "explained_variance": self._explained_variance.tolist() if self._explained_variance is not None else None,
-            "explained_variance_ratio": self._explained_variance_ratio.tolist() if self._explained_variance_ratio is not None else None,
-            "whiten": self._pca_config.whiten,
-        })
+        params.update(
+            {
+                "n_components": self._n_components,
+                "n_features": self._n_features,
+                "components": self._components.tolist() if self._components is not None else None,
+                "mean": self._mean.tolist() if self._mean is not None else None,
+                "explained_variance": self._explained_variance.tolist()
+                if self._explained_variance is not None
+                else None,
+                "explained_variance_ratio": self._explained_variance_ratio.tolist()
+                if self._explained_variance_ratio is not None
+                else None,
+                "whiten": self._pca_config.whiten,
+            }
+        )
         return params
 
     @classmethod
@@ -371,8 +377,14 @@ class PCA(BaseFHEModel):
         pca._n_features = params.get("n_features")
         pca._components = np.array(params["components"]) if params.get("components") else None
         pca._mean = np.array(params["mean"]) if params.get("mean") else None
-        pca._explained_variance = np.array(params["explained_variance"]) if params.get("explained_variance") else None
-        pca._explained_variance_ratio = np.array(params["explained_variance_ratio"]) if params.get("explained_variance_ratio") else None
+        pca._explained_variance = (
+            np.array(params["explained_variance"]) if params.get("explained_variance") else None
+        )
+        pca._explained_variance_ratio = (
+            np.array(params["explained_variance_ratio"])
+            if params.get("explained_variance_ratio")
+            else None
+        )
 
         if pca._components is not None:
             pca._state = ModelState.TRAINED

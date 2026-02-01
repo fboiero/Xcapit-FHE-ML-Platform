@@ -5,9 +5,10 @@ Implements neural network architectures that work with encrypted data
 using polynomial approximations for activation functions.
 """
 
-import numpy as np
-from typing import Optional, List, Tuple, Union, Callable
 from dataclasses import dataclass
+from typing import Callable, List, Optional, Tuple
+
+import numpy as np
 
 from .base import FHELevel
 
@@ -15,6 +16,7 @@ from .base import FHELevel
 @dataclass
 class LayerConfig:
     """Configuration for a neural network layer."""
+
     units: int
     activation: str = "relu"
     dropout: float = 0.0
@@ -137,7 +139,7 @@ class MLPClassifier:
 
     def __init__(
         self,
-        hidden_layers: List[int] = [100],
+        hidden_layers: Optional[List[int]] = None,
         activation: str = "relu",
         learning_rate: float = 0.001,
         max_iter: int = 200,
@@ -148,6 +150,8 @@ class MLPClassifier:
         n_iter_no_change: int = 10,
         random_state: Optional[int] = None,
     ):
+        if hidden_layers is None:
+            hidden_layers = [100]
         self.hidden_layers = hidden_layers
         self.activation = activation
         self.learning_rate = learning_rate
@@ -179,6 +183,7 @@ class MLPClassifier:
 
     def _get_activation_derivative(self) -> Callable:
         """Get the derivative of the activation function."""
+
         def relu_deriv(x):
             return (x > 0).astype(float) * 0.5 + 0.5
 
@@ -341,12 +346,12 @@ class MLPClassifier:
         best_loss = float("inf")
         no_improvement_count = 0
 
-        for epoch in range(self.max_iter):
+        for _epoch in range(self.max_iter):
             # Mini-batch training
             indices = np.random.permutation(len(X_train))
 
             for start_idx in range(0, len(X_train), self.batch_size):
-                batch_indices = indices[start_idx:start_idx + self.batch_size]
+                batch_indices = indices[start_idx : start_idx + self.batch_size]
                 X_batch = X_train[batch_indices]
                 y_batch = y_train[batch_indices]
 
@@ -475,7 +480,7 @@ class MLPRegressor:
 
     def __init__(
         self,
-        hidden_layers: List[int] = [100],
+        hidden_layers: Optional[List[int]] = None,
         activation: str = "relu",
         learning_rate: float = 0.001,
         max_iter: int = 200,
@@ -483,6 +488,8 @@ class MLPRegressor:
         alpha: float = 0.0001,
         random_state: Optional[int] = None,
     ):
+        if hidden_layers is None:
+            hidden_layers = [100]
         self.hidden_layers = hidden_layers
         self.activation = activation
         self.learning_rate = learning_rate
@@ -564,11 +571,11 @@ class MLPRegressor:
         activation_fn = self._get_activation()
         self.loss_curve_ = []
 
-        for epoch in range(self.max_iter):
+        for _epoch in range(self.max_iter):
             indices = np.random.permutation(len(X))
 
             for start_idx in range(0, len(X), self.batch_size):
-                batch_indices = indices[start_idx:start_idx + self.batch_size]
+                batch_indices = indices[start_idx : start_idx + self.batch_size]
                 X_batch = X[batch_indices]
                 y_batch = y[batch_indices]
 
@@ -683,7 +690,7 @@ class Autoencoder:
     def __init__(
         self,
         encoding_dim: int = 32,
-        hidden_layers: List[int] = [128, 64],
+        hidden_layers: Optional[List[int]] = None,
         activation: str = "relu",
         learning_rate: float = 0.001,
         max_iter: int = 100,
@@ -691,6 +698,8 @@ class Autoencoder:
         random_state: Optional[int] = None,
     ):
         self.encoding_dim = encoding_dim
+        if hidden_layers is None:
+            hidden_layers = [128, 64]
         self.hidden_layers = hidden_layers
         self.activation = activation
         self.learning_rate = learning_rate
@@ -794,12 +803,12 @@ class Autoencoder:
         self.loss_curve_ = []
         batch_size = 32
 
-        for epoch in range(self.max_iter):
+        for _epoch in range(self.max_iter):
             indices = np.random.permutation(len(X))
             epoch_loss = 0
 
             for start_idx in range(0, len(X), batch_size):
-                batch_indices = indices[start_idx:start_idx + batch_size]
+                batch_indices = indices[start_idx : start_idx + batch_size]
                 X_batch = X[batch_indices]
 
                 # Add noise for denoising autoencoder
@@ -823,14 +832,14 @@ class Autoencoder:
 
                 for i in range(len(self.decoder_weights_) - 1, -1, -1):
                     if i == len(self.decoder_weights_) - 1:
-                        prev_activation = encoded if i == 0 else activation_fn(
-                            self._decode_partial(encoded, i)
+                        prev_activation = (
+                            encoded if i == 0 else activation_fn(self._decode_partial(encoded, i))
                         )
                     else:
                         prev_activation = self._decode_partial(encoded, i)
 
                     # Simplified gradient update
-                    dW = prev_activation.T @ dZ if i == 0 else np.zeros_like(self.decoder_weights_[i])
+                    (prev_activation.T @ dZ if i == 0 else np.zeros_like(self.decoder_weights_[i]))
                     db = np.sum(dZ, axis=0, keepdims=True)
 
                     self.decoder_weights_[i] -= self.learning_rate * self.decoder_weights_[i] * 0.01
@@ -840,7 +849,7 @@ class Autoencoder:
                 for i in range(len(self.encoder_weights_)):
                     self.encoder_weights_[i] -= self.learning_rate * self.encoder_weights_[i] * 0.01
 
-                epoch_loss += np.mean(error ** 2)
+                epoch_loss += np.mean(error**2)
 
             self.loss_curve_.append(epoch_loss / (len(X) // batch_size))
 
@@ -982,13 +991,15 @@ class VariationalAutoencoder:
     def __init__(
         self,
         encoding_dim: int = 32,
-        hidden_layers: List[int] = [128, 64],
+        hidden_layers: Optional[List[int]] = None,
         learning_rate: float = 0.001,
         max_iter: int = 100,
         beta: float = 1.0,
         random_state: Optional[int] = None,
     ):
         self.encoding_dim = encoding_dim
+        if hidden_layers is None:
+            hidden_layers = [128, 64]
         self.hidden_layers = hidden_layers
         self.learning_rate = learning_rate
         self.max_iter = max_iter
@@ -1057,12 +1068,12 @@ class VariationalAutoencoder:
         batch_size = 32
         activation = PolynomialActivations.relu_approx
 
-        for epoch in range(self.max_iter):
+        for _epoch in range(self.max_iter):
             indices = np.random.permutation(len(X))
             epoch_loss = 0
 
             for start_idx in range(0, len(X), batch_size):
-                batch_indices = indices[start_idx:start_idx + batch_size]
+                batch_indices = indices[start_idx : start_idx + batch_size]
                 X_batch = X[batch_indices]
 
                 # Encode

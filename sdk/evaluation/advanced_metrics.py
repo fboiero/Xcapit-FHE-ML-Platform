@@ -12,11 +12,9 @@ Provides additional metrics beyond standard accuracy/F1:
 - Explained variance
 """
 
-from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import List, Optional
 
 import numpy as np
-
 
 # ==================== Classification Metrics ====================
 
@@ -98,13 +96,13 @@ def cohen_kappa_score(
     # Weight matrix
     if weights is None:
         w_mat = np.ones((n_labels, n_labels)) - np.eye(n_labels)
-    elif weights == 'linear':
+    elif weights == "linear":
         w_mat = np.zeros((n_labels, n_labels))
         for i in range(n_labels):
             for j in range(n_labels):
                 w_mat[i, j] = abs(i - j)
         w_mat = w_mat / (n_labels - 1)
-    elif weights == 'quadratic':
+    elif weights == "quadratic":
         w_mat = np.zeros((n_labels, n_labels))
         for i in range(n_labels):
             for j in range(n_labels):
@@ -373,7 +371,7 @@ def mean_squared_log_error(y_true: np.ndarray, y_pred: np.ndarray) -> float:
 def silhouette_score(
     X: np.ndarray,
     labels: np.ndarray,
-    metric: str = 'euclidean',
+    metric: str = "euclidean",
     sample_size: Optional[int] = None,
     random_state: Optional[int] = None,
 ) -> float:
@@ -409,9 +407,9 @@ def silhouette_score(
         n_samples = sample_size
 
     # Calculate pairwise distances
-    if metric == 'euclidean':
+    if metric == "euclidean":
         distances = _euclidean_distances(X)
-    elif metric == 'manhattan':
+    elif metric == "manhattan":
         distances = _manhattan_distances(X)
     else:
         raise ValueError(f"Unknown metric: {metric}")
@@ -624,12 +622,10 @@ def adjusted_rand_score(labels_true: np.ndarray, labels_pred: np.ndarray) -> flo
 
     # Sum of combinations
     sum_comb_c = sum(
-        contingency[:, j].sum() * (contingency[:, j].sum() - 1) / 2
-        for j in range(len(clusters))
+        contingency[:, j].sum() * (contingency[:, j].sum() - 1) / 2 for j in range(len(clusters))
     )
     sum_comb_k = sum(
-        contingency[i, :].sum() * (contingency[i, :].sum() - 1) / 2
-        for i in range(len(classes))
+        contingency[i, :].sum() * (contingency[i, :].sum() - 1) / 2 for i in range(len(classes))
     )
 
     sum_comb = sum(
@@ -653,7 +649,7 @@ def adjusted_rand_score(labels_true: np.ndarray, labels_pred: np.ndarray) -> flo
 def normalized_mutual_info_score(
     labels_true: np.ndarray,
     labels_pred: np.ndarray,
-    average_method: str = 'arithmetic',
+    average_method: str = "arithmetic",
 ) -> float:
     """
     Compute normalized mutual information (NMI).
@@ -701,13 +697,13 @@ def normalized_mutual_info_score(
                 mi += p_joint * np.log(p_joint / (p_true * p_pred))
 
     # Normalize
-    if average_method == 'arithmetic':
+    if average_method == "arithmetic":
         normalizer = (h_true + h_pred) / 2
-    elif average_method == 'geometric':
+    elif average_method == "geometric":
         normalizer = np.sqrt(h_true * h_pred)
-    elif average_method == 'min':
+    elif average_method == "min":
         normalizer = min(h_true, h_pred)
-    elif average_method == 'max':
+    elif average_method == "max":
         normalizer = max(h_true, h_pred)
     else:
         raise ValueError(f"Unknown average_method: {average_method}")

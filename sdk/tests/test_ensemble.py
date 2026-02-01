@@ -3,16 +3,15 @@ Tests for the ensemble module.
 """
 
 import numpy as np
-import pytest
 
 from sdk.ensemble import (
-    VotingClassifier,
-    VotingRegressor,
-    StackingClassifier,
-    StackingRegressor,
+    AdaBoostClassifier,
     BaggingClassifier,
     BaggingRegressor,
-    AdaBoostClassifier,
+    StackingClassifier,
+    StackingRegressor,
+    VotingClassifier,
+    VotingRegressor,
     get_ensemble_feature_importances,
 )
 

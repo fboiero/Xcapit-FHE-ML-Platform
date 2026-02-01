@@ -7,10 +7,10 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from sdk.blockchain.connector import (
+    NETWORK_CONFIGS,
     BlockchainConnector,
     Network,
     NetworkConfig,
-    NETWORK_CONFIGS,
 )
 
 

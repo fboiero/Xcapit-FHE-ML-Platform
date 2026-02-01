@@ -10,7 +10,7 @@ from __future__ import annotations
 import copy
 import itertools
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Union
 
 import numpy as np
@@ -102,10 +102,7 @@ class KFold:
         current = 0
         for fold_size in fold_sizes:
             test_indices = indices[current : current + fold_size]
-            train_indices = np.concatenate([
-                indices[:current],
-                indices[current + fold_size:]
-            ])
+            train_indices = np.concatenate([indices[:current], indices[current + fold_size :]])
             yield train_indices, test_indices
             current += fold_size
 
@@ -143,9 +140,7 @@ class StratifiedKFold:
         self.shuffle = shuffle
         self.random_state = random_state
 
-    def split(
-        self, X: np.ndarray, y: np.ndarray
-    ) -> Iterator[Tuple[np.ndarray, np.ndarray]]:
+    def split(self, X: np.ndarray, y: np.ndarray) -> Iterator[Tuple[np.ndarray, np.ndarray]]:
         """
         Generate stratified indices to split data.
 
@@ -627,7 +622,7 @@ class GridSearchCV:
         self.best_estimator_: Optional[Any] = None
         self.cv_results_: Optional[Dict[str, Any]] = None
 
-    def fit(self, X: np.ndarray, y: np.ndarray) -> "GridSearchCV":
+    def fit(self, X: np.ndarray, y: np.ndarray) -> GridSearchCV:
         """
         Run fit with all sets of parameters.
 
@@ -761,7 +756,7 @@ class RandomizedSearchCV:
         self.best_estimator_: Optional[Any] = None
         self.cv_results_: Optional[Dict[str, Any]] = None
 
-    def fit(self, X: np.ndarray, y: np.ndarray) -> "RandomizedSearchCV":
+    def fit(self, X: np.ndarray, y: np.ndarray) -> RandomizedSearchCV:
         """
         Run randomized search.
 

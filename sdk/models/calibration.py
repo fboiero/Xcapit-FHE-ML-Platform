@@ -10,15 +10,16 @@ Methods:
 - Temperature scaling
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Tuple
 
 import numpy as np
 
 
 class CalibrationMethod(Enum):
     """Calibration methods."""
+
     SIGMOID = "sigmoid"  # Platt scaling
     ISOTONIC = "isotonic"  # Isotonic regression
     TEMPERATURE = "temperature"  # Temperature scaling
@@ -27,6 +28,7 @@ class CalibrationMethod(Enum):
 @dataclass
 class CalibrationConfig:
     """Configuration for model calibration."""
+
     method: CalibrationMethod = CalibrationMethod.SIGMOID
     cv: int = 5  # Cross-validation folds for calibration
     ensemble: bool = True  # Use ensemble of calibrators
@@ -40,7 +42,7 @@ class IsotonicRegression:
     to calibrated probabilities.
     """
 
-    def __init__(self, out_of_bounds: str = 'clip'):
+    def __init__(self, out_of_bounds: str = "clip"):
         """
         Initialize isotonic regression.
 
@@ -132,22 +134,22 @@ class IsotonicRegression:
 
         for i, x in enumerate(X):
             if x <= self._x_thresholds[0]:
-                if self.out_of_bounds == 'clip':
+                if self.out_of_bounds == "clip":
                     result[i] = self._y_thresholds[0]
-                elif self.out_of_bounds == 'nan':
+                elif self.out_of_bounds == "nan":
                     result[i] = np.nan
                 else:
                     raise ValueError(f"Value {x} out of bounds")
             elif x >= self._x_thresholds[-1]:
-                if self.out_of_bounds == 'clip':
+                if self.out_of_bounds == "clip":
                     result[i] = self._y_thresholds[-1]
-                elif self.out_of_bounds == 'nan':
+                elif self.out_of_bounds == "nan":
                     result[i] = np.nan
                 else:
                     raise ValueError(f"Value {x} out of bounds")
             else:
                 # Find appropriate threshold
-                idx = np.searchsorted(self._x_thresholds, x, side='right') - 1
+                idx = np.searchsorted(self._x_thresholds, x, side="right") - 1
                 result[i] = self._y_thresholds[idx]
 
         return result
@@ -219,7 +221,7 @@ class SigmoidCalibration:
             # Hessian
             w = p * (1 - p)
             hess_aa = np.sum(w * X * X)
-            hess_ab = np.sum(w * X)
+            np.sum(w * X)
             hess_bb = np.sum(w)
 
             # Add regularization for numerical stability
@@ -313,14 +315,14 @@ class TemperatureScaling:
 
             # Cross-entropy loss
             n_samples = len(y)
-            correct_probs = probs[np.arange(n_samples), y]
+            probs[np.arange(n_samples), y]
 
             # Gradient of NLL w.r.t. temperature
             # Simplified gradient computation
             grad = 0.0
             for i in range(n_samples):
                 grad += np.dot(probs[i], logits[i]) - logits[i, y[i]]
-            grad /= (temperature ** 2 * n_samples)
+            grad /= temperature**2 * n_samples
 
             # Update temperature
             temperature -= self.lr * grad
@@ -378,7 +380,7 @@ class CalibratedClassifierCV:
     def __init__(
         self,
         estimator: Any,
-        method: str = 'sigmoid',
+        method: str = "sigmoid",
         cv: int = 5,
         ensemble: bool = True,
     ):
@@ -402,11 +404,11 @@ class CalibratedClassifierCV:
 
     def _get_calibrator(self):
         """Get calibrator instance based on method."""
-        if self.method == 'sigmoid':
+        if self.method == "sigmoid":
             return SigmoidCalibration()
-        elif self.method == 'isotonic':
+        elif self.method == "isotonic":
             return IsotonicRegression()
-        elif self.method == 'temperature':
+        elif self.method == "temperature":
             return TemperatureScaling()
         else:
             raise ValueError(f"Unknown method: {self.method}")
@@ -448,14 +450,15 @@ class CalibratedClassifierCV:
 
             # Clone and fit estimator
             import copy
+
             estimator = copy.deepcopy(self.estimator)
             estimator.fit(X_train, y_train)
             self._estimators.append(estimator)
 
             # Get predictions on validation set
-            if hasattr(estimator, 'decision_function'):
+            if hasattr(estimator, "decision_function"):
                 scores = estimator.decision_function(X_val)
-            elif hasattr(estimator, 'predict_proba'):
+            elif hasattr(estimator, "predict_proba"):
                 probs = estimator.predict_proba(X_val)
                 scores = probs[:, 1] if len(self._classes) == 2 else probs
             else:
@@ -464,7 +467,7 @@ class CalibratedClassifierCV:
             # Fit calibrator
             calibrator = self._get_calibrator()
 
-            if self.method == 'temperature' and scores.ndim > 1:
+            if self.method == "temperature" and scores.ndim > 1:
                 calibrator.fit(scores, y_val)
             else:
                 if scores.ndim > 1:
@@ -498,20 +501,20 @@ class CalibratedClassifierCV:
             raise RuntimeError("Must fit before predict_proba")
 
         X = np.asarray(X)
-        n_samples = X.shape[0]
+        X.shape[0]
 
         if self.ensemble:
             # Average predictions from all estimators
             all_probs = []
 
             for estimator, calibrator in zip(self._estimators, self._calibrators):
-                if hasattr(estimator, 'decision_function'):
+                if hasattr(estimator, "decision_function"):
                     scores = estimator.decision_function(X)
                 else:
                     probs = estimator.predict_proba(X)
                     scores = probs[:, 1] if len(self._classes) == 2 else probs
 
-                if self.method == 'temperature' and scores.ndim > 1:
+                if self.method == "temperature" and scores.ndim > 1:
                     calibrated = calibrator.predict(scores)
                 else:
                     if scores.ndim > 1:
@@ -531,7 +534,7 @@ class CalibratedClassifierCV:
             estimator = self._estimators[0]
             calibrator = self._calibrators[0]
 
-            if hasattr(estimator, 'decision_function'):
+            if hasattr(estimator, "decision_function"):
                 scores = estimator.decision_function(X)
             else:
                 probs = estimator.predict_proba(X)
@@ -565,7 +568,7 @@ def calibration_curve(
     y_true: np.ndarray,
     y_prob: np.ndarray,
     n_bins: int = 10,
-    strategy: str = 'uniform',
+    strategy: str = "uniform",
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Compute calibration curve (reliability diagram data).
@@ -582,9 +585,9 @@ def calibration_curve(
     y_true = np.asarray(y_true).ravel()
     y_prob = np.asarray(y_prob).ravel()
 
-    if strategy == 'uniform':
+    if strategy == "uniform":
         bins = np.linspace(0, 1, n_bins + 1)
-    elif strategy == 'quantile':
+    elif strategy == "quantile":
         bins = np.percentile(y_prob, np.linspace(0, 100, n_bins + 1))
         bins = np.unique(bins)  # Remove duplicates
     else:

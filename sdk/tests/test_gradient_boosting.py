@@ -139,11 +139,7 @@ class TestGradientBoosting:
         """Generate regression data."""
         np.random.seed(42)
         X, y = make_regression(
-            n_samples=100,
-            n_features=5,
-            n_informative=3,
-            noise=0.5,
-            random_state=42
+            n_samples=100, n_features=5, n_informative=3, noise=0.5, random_state=42
         )
         y = (y - y.mean()) / y.std()
         return train_test_split(X, y, test_size=0.2, random_state=42)
@@ -154,11 +150,7 @@ class TestGradientBoosting:
 
         X_train, X_test, y_train, y_test = regression_data
 
-        config = GradientBoostingConfig(
-            n_estimators=10,
-            max_depth=2,
-            random_state=42
-        )
+        config = GradientBoostingConfig(n_estimators=10, max_depth=2, random_state=42)
         gb = GradientBoosting(config=config)
         gb.fit(X_train, y_train)
 
@@ -171,11 +163,7 @@ class TestGradientBoosting:
 
         X_train, X_test, y_train, y_test = regression_data
 
-        config = GradientBoostingConfig(
-            n_estimators=20,
-            max_depth=3,
-            random_state=42
-        )
+        config = GradientBoostingConfig(n_estimators=20, max_depth=3, random_state=42)
         gb = GradientBoosting(config=config)
         gb.fit(X_train, y_train)
 
@@ -189,10 +177,7 @@ class TestGradientBoosting:
         X_train, _, y_train, _ = regression_data
 
         config = GradientBoostingConfig(
-            n_estimators=50,
-            max_depth=3,
-            learning_rate=0.1,
-            random_state=42
+            n_estimators=50, max_depth=3, learning_rate=0.1, random_state=42
         )
         gb = GradientBoosting(config=config)
         gb.fit(X_train, y_train)
@@ -208,20 +193,14 @@ class TestGradientBoosting:
 
         # Small learning rate
         config_small = GradientBoostingConfig(
-            n_estimators=20,
-            max_depth=2,
-            learning_rate=0.01,
-            random_state=42
+            n_estimators=20, max_depth=2, learning_rate=0.01, random_state=42
         )
         gb_small = GradientBoosting(config=config_small)
         gb_small.fit(X_train, y_train)
 
         # Large learning rate
         config_large = GradientBoostingConfig(
-            n_estimators=20,
-            max_depth=2,
-            learning_rate=0.5,
-            random_state=42
+            n_estimators=20, max_depth=2, learning_rate=0.5, random_state=42
         )
         gb_large = GradientBoosting(config=config_large)
         gb_large.fit(X_train, y_train)
@@ -236,10 +215,7 @@ class TestGradientBoosting:
         X_train, _, y_train, _ = regression_data
 
         config = GradientBoostingConfig(
-            n_estimators=20,
-            max_depth=2,
-            subsample=0.8,
-            random_state=42
+            n_estimators=20, max_depth=2, subsample=0.8, random_state=42
         )
         gb = GradientBoosting(config=config)
         gb.fit(X_train, y_train)
@@ -253,10 +229,7 @@ class TestGradientBoosting:
         X_train, _, y_train, _ = regression_data
 
         config = GradientBoostingConfig(
-            n_estimators=10,
-            max_depth=2,
-            max_features='sqrt',
-            random_state=42
+            n_estimators=10, max_depth=2, max_features="sqrt", random_state=42
         )
         gb = GradientBoosting(config=config)
         gb.fit(X_train, y_train)
@@ -272,11 +245,7 @@ class TestGradientBoosting:
 
         X_train, _, y_train, _ = regression_data
 
-        config = GradientBoostingConfig(
-            n_estimators=20,
-            max_depth=3,
-            random_state=42
-        )
+        config = GradientBoostingConfig(n_estimators=20, max_depth=3, random_state=42)
         gb = GradientBoosting(config=config)
         gb.fit(X_train, y_train)
 
@@ -291,11 +260,7 @@ class TestGradientBoosting:
 
         X_train, X_test, y_train, _ = regression_data
 
-        config = GradientBoostingConfig(
-            n_estimators=10,
-            max_depth=2,
-            random_state=42
-        )
+        config = GradientBoostingConfig(n_estimators=10, max_depth=2, random_state=42)
         gb = GradientBoosting(config=config)
         gb.fit(X_train, y_train)
 
@@ -311,11 +276,7 @@ class TestGradientBoosting:
 
         X_train, _, y_train, _ = regression_data
 
-        config = GradientBoostingConfig(
-            n_estimators=5,
-            max_depth=2,
-            random_state=42
-        )
+        config = GradientBoostingConfig(n_estimators=5, max_depth=2, random_state=42)
         gb = GradientBoosting(config=config)
         gb.fit(X_train, y_train)
 
@@ -338,7 +299,7 @@ class TestGradientBoostingClassifier:
             n_informative=3,
             n_redundant=1,
             n_classes=2,
-            random_state=42
+            random_state=42,
         )
         return train_test_split(X, y, test_size=0.2, random_state=42)
 
@@ -348,11 +309,7 @@ class TestGradientBoostingClassifier:
 
         X_train, X_test, y_train, y_test = classification_data
 
-        clf = GradientBoostingClassifier(
-            n_estimators=20,
-            max_depth=3,
-            random_state=42
-        )
+        clf = GradientBoostingClassifier(n_estimators=20, max_depth=3, random_state=42)
         clf.fit(X_train, y_train)
 
         predictions = clf.predict(X_test)
@@ -365,11 +322,7 @@ class TestGradientBoostingClassifier:
 
         X_train, X_test, y_train, y_test = classification_data
 
-        clf = GradientBoostingClassifier(
-            n_estimators=20,
-            max_depth=3,
-            random_state=42
-        )
+        clf = GradientBoostingClassifier(n_estimators=20, max_depth=3, random_state=42)
         clf.fit(X_train, y_train)
 
         proba = clf.predict_proba(X_test)
@@ -386,10 +339,7 @@ class TestGradientBoostingClassifier:
         X_train, X_test, y_train, y_test = classification_data
 
         clf = GradientBoostingClassifier(
-            n_estimators=50,
-            max_depth=3,
-            learning_rate=0.1,
-            random_state=42
+            n_estimators=50, max_depth=3, learning_rate=0.1, random_state=42
         )
         clf.fit(X_train, y_train)
 
@@ -404,11 +354,7 @@ class TestGradientBoostingClassifier:
 
         X_train, X_test, y_train, _ = classification_data
 
-        clf = GradientBoostingClassifier(
-            n_estimators=10,
-            max_depth=2,
-            random_state=42
-        )
+        clf = GradientBoostingClassifier(n_estimators=10, max_depth=2, random_state=42)
         clf.fit(X_train, y_train)
 
         staged_proba = list(clf.staged_predict_proba(X_test))
@@ -427,11 +373,7 @@ class TestGradientBoostingRegressor:
         """Generate regression data."""
         np.random.seed(42)
         X, y = make_regression(
-            n_samples=100,
-            n_features=5,
-            n_informative=3,
-            noise=0.5,
-            random_state=42
+            n_samples=100, n_features=5, n_informative=3, noise=0.5, random_state=42
         )
         y = (y - y.mean()) / y.std()
         return train_test_split(X, y, test_size=0.2, random_state=42)
@@ -442,11 +384,7 @@ class TestGradientBoostingRegressor:
 
         X_train, X_test, y_train, y_test = regression_data
 
-        reg = GradientBoostingRegressor(
-            n_estimators=50,
-            max_depth=3,
-            random_state=42
-        )
+        reg = GradientBoostingRegressor(n_estimators=50, max_depth=3, random_state=42)
         reg.fit(X_train, y_train)
 
         predictions = reg.predict(X_test)
@@ -459,10 +397,7 @@ class TestGradientBoostingRegressor:
         X_train, X_test, y_train, y_test = regression_data
 
         reg = GradientBoostingRegressor(
-            n_estimators=100,
-            max_depth=4,
-            learning_rate=0.1,
-            random_state=42
+            n_estimators=100, max_depth=4, learning_rate=0.1, random_state=42
         )
         reg.fit(X_train, y_train)
 
@@ -476,12 +411,7 @@ class TestGradientBoostingRegressor:
 
         X_train, X_test, y_train, _ = regression_data
 
-        reg = GradientBoostingRegressor(
-            n_estimators=30,
-            max_depth=3,
-            loss='mae',
-            random_state=42
-        )
+        reg = GradientBoostingRegressor(n_estimators=30, max_depth=3, loss="mae", random_state=42)
         reg.fit(X_train, y_train)
 
         predictions = reg.predict(X_test)
@@ -493,12 +423,7 @@ class TestGradientBoostingRegressor:
 
         X_train, X_test, y_train, _ = regression_data
 
-        reg = GradientBoostingRegressor(
-            n_estimators=30,
-            max_depth=3,
-            loss='huber',
-            random_state=42
-        )
+        reg = GradientBoostingRegressor(n_estimators=30, max_depth=3, loss="huber", random_state=42)
         reg.fit(X_train, y_train)
 
         predictions = reg.predict(X_test)
@@ -520,7 +445,7 @@ class TestEarlyStopping:
             n_estimators=500,  # Large number
             max_depth=3,
             n_iter_no_change=10,
-            random_state=42
+            random_state=42,
         )
         reg.fit(X, y)
 
@@ -534,10 +459,7 @@ class TestEarlyStopping:
         X, y = make_classification(n_samples=100, n_features=5, random_state=42)
 
         clf = GradientBoostingClassifier(
-            n_estimators=500,
-            max_depth=3,
-            n_iter_no_change=10,
-            random_state=42
+            n_estimators=500, max_depth=3, n_iter_no_change=10, random_state=42
         )
         clf.fit(X, y)
 
@@ -578,11 +500,7 @@ class TestEdgeCases:
         X = np.random.randn(50, 1)
         y = 2 * X.ravel() + 1 + 0.1 * np.random.randn(50)
 
-        reg = GradientBoostingRegressor(
-            n_estimators=20,
-            max_depth=2,
-            random_state=42
-        )
+        reg = GradientBoostingRegressor(n_estimators=20, max_depth=2, random_state=42)
         reg.fit(X, y)
 
         predictions = reg.predict(X)

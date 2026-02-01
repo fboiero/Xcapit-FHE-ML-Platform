@@ -16,7 +16,7 @@ class TestRandomForestConfig:
         config = RandomForestConfig()
         assert config.n_estimators == 10
         assert config.max_depth == 3
-        assert config.max_features == 'sqrt'
+        assert config.max_features == "sqrt"
         assert config.bootstrap is True
         assert config.bootstrap_ratio == 1.0
 
@@ -52,11 +52,7 @@ class TestRandomForest:
     def regression_data(self):
         """Generate regression data."""
         X, y = make_regression(
-            n_samples=100,
-            n_features=10,
-            n_informative=5,
-            noise=0.1,
-            random_state=42
+            n_samples=100, n_features=10, n_informative=5, noise=0.1, random_state=42
         )
         return train_test_split(X, y, test_size=0.2, random_state=42)
 
@@ -107,11 +103,7 @@ class TestRandomForest:
 
         X_train, _, y_train, _ = regression_data
 
-        config = RandomForestConfig(
-            n_estimators=3,
-            max_features='sqrt',
-            random_state=42
-        )
+        config = RandomForestConfig(n_estimators=3, max_features="sqrt", random_state=42)
         forest = RandomForest(config=config)
         forest.fit(X_train, y_train)
 
@@ -126,11 +118,7 @@ class TestRandomForest:
 
         X_train, _, y_train, _ = regression_data
 
-        config = RandomForestConfig(
-            n_estimators=3,
-            max_features='log2',
-            random_state=42
-        )
+        config = RandomForestConfig(n_estimators=3, max_features="log2", random_state=42)
         forest = RandomForest(config=config)
         forest.fit(X_train, y_train)
 
@@ -144,11 +132,7 @@ class TestRandomForest:
 
         X_train, _, y_train, _ = regression_data
 
-        config = RandomForestConfig(
-            n_estimators=3,
-            max_features=0.5,
-            random_state=42
-        )
+        config = RandomForestConfig(n_estimators=3, max_features=0.5, random_state=42)
         forest = RandomForest(config=config)
         forest.fit(X_train, y_train)
 
@@ -162,11 +146,7 @@ class TestRandomForest:
 
         X_train, _, y_train, _ = regression_data
 
-        config = RandomForestConfig(
-            n_estimators=3,
-            max_features=4,
-            random_state=42
-        )
+        config = RandomForestConfig(n_estimators=3, max_features=4, random_state=42)
         forest = RandomForest(config=config)
         forest.fit(X_train, y_train)
 
@@ -179,11 +159,7 @@ class TestRandomForest:
 
         X_train, _, y_train, _ = regression_data
 
-        config = RandomForestConfig(
-            n_estimators=3,
-            bootstrap=False,
-            random_state=42
-        )
+        config = RandomForestConfig(n_estimators=3, bootstrap=False, random_state=42)
         forest = RandomForest(config=config)
         forest.fit(X_train, y_train)
 
@@ -218,7 +194,7 @@ class TestRandomForestClassifier:
             n_informative=5,
             n_redundant=2,
             n_classes=2,
-            random_state=42
+            random_state=42,
         )
         return train_test_split(X, y, test_size=0.2, random_state=42)
 
@@ -228,11 +204,7 @@ class TestRandomForestClassifier:
 
         X_train, X_test, y_train, y_test = classification_data
 
-        clf = RandomForestClassifier(
-            n_estimators=5,
-            max_depth=3,
-            random_state=42
-        )
+        clf = RandomForestClassifier(n_estimators=5, max_depth=3, random_state=42)
         clf.fit(X_train, y_train)
 
         predictions = clf.predict(X_test)
@@ -245,12 +217,7 @@ class TestRandomForestClassifier:
 
         X_train, X_test, y_train, y_test = classification_data
 
-        clf = RandomForestClassifier(
-            n_estimators=5,
-            max_depth=3,
-            n_classes=2,
-            random_state=42
-        )
+        clf = RandomForestClassifier(n_estimators=5, max_depth=3, n_classes=2, random_state=42)
         clf.fit(X_train, y_train)
 
         proba = clf.predict_proba(X_test)
@@ -263,11 +230,7 @@ class TestRandomForestClassifier:
 
         X_train, X_test, y_train, y_test = classification_data
 
-        clf = RandomForestClassifier(
-            n_estimators=10,
-            max_depth=4,
-            random_state=42
-        )
+        clf = RandomForestClassifier(n_estimators=10, max_depth=4, random_state=42)
         clf.fit(X_train, y_train)
 
         accuracy = clf.score(X_test, y_test)
@@ -285,18 +248,11 @@ class TestRandomForestClassifier:
             n_informative=5,
             n_classes=3,
             n_clusters_per_class=1,
-            random_state=42
+            random_state=42,
         )
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.2, random_state=42
-        )
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-        clf = RandomForestClassifier(
-            n_estimators=10,
-            max_depth=3,
-            n_classes=3,
-            random_state=42
-        )
+        clf = RandomForestClassifier(n_estimators=10, max_depth=3, n_classes=3, random_state=42)
         clf.fit(X_train, y_train)
 
         predictions = clf.predict(X_test)
@@ -313,11 +269,7 @@ class TestRandomForestRegressor:
     def regression_data(self):
         """Generate regression data."""
         X, y = make_regression(
-            n_samples=100,
-            n_features=10,
-            n_informative=5,
-            noise=0.1,
-            random_state=42
+            n_samples=100, n_features=10, n_informative=5, noise=0.1, random_state=42
         )
         return train_test_split(X, y, test_size=0.2, random_state=42)
 
@@ -327,11 +279,7 @@ class TestRandomForestRegressor:
 
         X_train, X_test, y_train, y_test = regression_data
 
-        reg = RandomForestRegressor(
-            n_estimators=10,
-            max_depth=4,
-            random_state=42
-        )
+        reg = RandomForestRegressor(n_estimators=10, max_depth=4, random_state=42)
         reg.fit(X_train, y_train)
 
         predictions = reg.predict(X_test)
@@ -343,11 +291,7 @@ class TestRandomForestRegressor:
 
         X_train, X_test, y_train, y_test = regression_data
 
-        reg = RandomForestRegressor(
-            n_estimators=20,
-            max_depth=5,
-            random_state=42
-        )
+        reg = RandomForestRegressor(n_estimators=20, max_depth=5, random_state=42)
         reg.fit(X_train, y_train)
 
         r2 = reg.score(X_test, y_test)
@@ -361,11 +305,7 @@ class TestRandomForestRegressor:
         X_train, X_test, y_train, y_test = regression_data
 
         reg = RandomForestRegressor(
-            n_estimators=5,
-            max_depth=2,
-            max_features='log2',
-            bootstrap=False,
-            random_state=123
+            n_estimators=5, max_depth=2, max_features="log2", bootstrap=False, random_state=123
         )
         reg.fit(X_train, y_train)
 
@@ -379,12 +319,7 @@ class TestAggregationMethods:
     @pytest.fixture
     def data(self):
         """Generate test data."""
-        X, y = make_regression(
-            n_samples=100,
-            n_features=5,
-            noise=0.1,
-            random_state=42
-        )
+        X, y = make_regression(n_samples=100, n_features=5, noise=0.1, random_state=42)
         return train_test_split(X, y, test_size=0.2, random_state=42)
 
     def test_average_aggregation(self, data):
@@ -398,9 +333,7 @@ class TestAggregationMethods:
         X_train, X_test, y_train, _ = data
 
         config = RandomForestConfig(
-            n_estimators=5,
-            aggregation=AggregationMethod.AVERAGE,
-            random_state=42
+            n_estimators=5, aggregation=AggregationMethod.AVERAGE, random_state=42
         )
         forest = RandomForest(config=config)
         forest.fit(X_train, y_train)
@@ -419,9 +352,7 @@ class TestAggregationMethods:
         X_train, X_test, y_train, _ = data
 
         config = RandomForestConfig(
-            n_estimators=5,
-            aggregation=AggregationMethod.WEIGHTED,
-            random_state=42
+            n_estimators=5, aggregation=AggregationMethod.WEIGHTED, random_state=42
         )
         forest = RandomForest(config=config)
         forest.fit(X_train, y_train)
@@ -472,7 +403,7 @@ class TestEdgeCases:
             n_estimators=5,
             max_depth=2,
             max_features=None,  # Use all (1) feature
-            random_state=42
+            random_state=42,
         )
         reg.fit(X, y)
 

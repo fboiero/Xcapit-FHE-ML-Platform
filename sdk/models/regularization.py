@@ -15,6 +15,7 @@ from .base import BaseFHEModel, ModelConfig, ModelState
 
 class RegularizationType(Enum):
     """Type of regularization."""
+
     L1 = "l1"  # Lasso
     L2 = "l2"  # Ridge
     ELASTICNET = "elasticnet"  # Combination
@@ -23,6 +24,7 @@ class RegularizationType(Enum):
 @dataclass
 class RidgeConfig(ModelConfig):
     """Configuration for Ridge regression."""
+
     alpha: float = 1.0  # Regularization strength
     fit_intercept: bool = True
     normalize: bool = False
@@ -34,6 +36,7 @@ class RidgeConfig(ModelConfig):
 @dataclass
 class LassoConfig(ModelConfig):
     """Configuration for Lasso regression."""
+
     alpha: float = 1.0  # Regularization strength
     fit_intercept: bool = True
     normalize: bool = False
@@ -46,6 +49,7 @@ class LassoConfig(ModelConfig):
 @dataclass
 class ElasticNetConfig(ModelConfig):
     """Configuration for Elastic Net regression."""
+
     alpha: float = 1.0  # Regularization strength
     l1_ratio: float = 0.5  # Balance between L1 and L2
     fit_intercept: bool = True
@@ -164,7 +168,7 @@ class Ridge(BaseFHEModel):
         elif solver == "svd":
             # SVD-based solution
             U, s, Vt = np.linalg.svd(X_proc, full_matrices=False)
-            d = s / (s ** 2 + self.config.alpha)
+            d = s / (s**2 + self.config.alpha)
             self.coef_ = Vt.T @ (d * (U.T @ y_proc))
 
         elif solver == "lsqr":
@@ -297,7 +301,7 @@ class Lasso(BaseFHEModel):
             # Using polynomial tanh: tanh(x) ≈ x - x^3/3 + 2x^5/15 for small x
             # Or smooth approximation: x / sqrt(x^2 + eps)
             eps = 1e-6
-            sign_approx = x / np.sqrt(x ** 2 + eps)
+            sign_approx = x / np.sqrt(x**2 + eps)
             magnitude = np.maximum(np.abs(x) - threshold, 0)
             return sign_approx * magnitude
         else:
@@ -343,13 +347,13 @@ class Lasso(BaseFHEModel):
             coef = np.zeros(n_features)
 
         # Precompute X'X diagonal and X'y
-        X_sq_sum = np.sum(X ** 2, axis=0)
+        X_sq_sum = np.sum(X**2, axis=0)
         Xy = X.T @ y
 
         # Coordinate descent
         alpha = self.config.alpha * n_samples  # Scale alpha
 
-        for iteration in range(self.config.max_iter):
+        for iteration in range(self.config.max_iter):  # noqa: B007
             coef_old = coef.copy()
 
             # Coordinate selection
@@ -366,10 +370,7 @@ class Lasso(BaseFHEModel):
                 residual_j = Xy[j] - np.dot(X[:, j], X @ coef) + X_sq_sum[j] * coef[j]
 
                 # Soft thresholding update
-                coef[j] = self._soft_threshold(
-                    residual_j / X_sq_sum[j],
-                    alpha / X_sq_sum[j]
-                )
+                coef[j] = self._soft_threshold(residual_j / X_sq_sum[j], alpha / X_sq_sum[j])
 
             # Check convergence
             max_change = np.max(np.abs(coef - coef_old))
@@ -455,7 +456,7 @@ class ElasticNet(BaseFHEModel):
         """Soft thresholding with polynomial approximation for FHE."""
         if self.fhe_compatible:
             eps = 1e-6
-            sign_approx = x / np.sqrt(x ** 2 + eps)
+            sign_approx = x / np.sqrt(x**2 + eps)
             magnitude = np.maximum(np.abs(x) - threshold, 0)
             return sign_approx * magnitude
         else:
@@ -501,7 +502,7 @@ class ElasticNet(BaseFHEModel):
             coef = np.zeros(n_features)
 
         # Precompute
-        X_sq_sum = np.sum(X ** 2, axis=0)
+        X_sq_sum = np.sum(X**2, axis=0)
         Xy = X.T @ y
 
         # Regularization parameters
@@ -510,7 +511,7 @@ class ElasticNet(BaseFHEModel):
         l2_reg = alpha * (1 - self.config.l1_ratio)
 
         # Coordinate descent
-        for iteration in range(self.config.max_iter):
+        for iteration in range(self.config.max_iter):  # noqa: B007
             coef_old = coef.copy()
 
             coords = (
@@ -528,10 +529,7 @@ class ElasticNet(BaseFHEModel):
 
                 # Elastic net update with both L1 and L2
                 denominator = X_sq_sum[j] + l2_reg
-                coef[j] = self._soft_threshold(
-                    residual_j / denominator,
-                    l1_reg / denominator
-                )
+                coef[j] = self._soft_threshold(residual_j / denominator, l1_reg / denominator)
 
             # Convergence check
             if np.max(np.abs(coef - coef_old)) < self.config.tol:
@@ -645,9 +643,7 @@ class RidgeClassifier(BaseFHEModel):
         if len(self.classes_) == 2:
             return self._ridge_models[0].predict(X)
         else:
-            scores = np.column_stack([
-                model.predict(X) for model in self._ridge_models
-            ])
+            scores = np.column_stack([model.predict(X) for model in self._ridge_models])
             return scores
 
     def predict(self, X: np.ndarray) -> np.ndarray:
@@ -746,7 +742,7 @@ class SGDRegressor(BaseFHEModel):
         """Soft thresholding for L1 regularization."""
         if self.fhe_compatible:
             eps = 1e-6
-            sign_approx = x / np.sqrt(x ** 2 + eps)
+            sign_approx = x / np.sqrt(x**2 + eps)
             magnitude = max(abs(x) - threshold, 0)
             return sign_approx * magnitude
         else:
@@ -796,17 +792,13 @@ class SGDRegressor(BaseFHEModel):
                     self.coef_ = self.coef_ - eta * grad_loss * X[i]
                     # Apply L1 proximal step
                     for j in range(n_features):
-                        self.coef_[j] = self._soft_threshold(
-                            self.coef_[j], eta * self.alpha
-                        )
+                        self.coef_[j] = self._soft_threshold(self.coef_[j], eta * self.alpha)
                 elif self.penalty == "elasticnet":
                     l2_term = (1 - self.l1_ratio) * self.alpha
                     l1_term = self.l1_ratio * self.alpha
                     self.coef_ = (1 - eta * l2_term) * self.coef_ - eta * grad_loss * X[i]
                     for j in range(n_features):
-                        self.coef_[j] = self._soft_threshold(
-                            self.coef_[j], eta * l1_term
-                        )
+                        self.coef_[j] = self._soft_threshold(self.coef_[j], eta * l1_term)
 
                 # Update intercept
                 if self.fit_intercept:

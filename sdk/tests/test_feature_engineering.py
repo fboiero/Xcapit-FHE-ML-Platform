@@ -3,19 +3,18 @@ Tests for the feature engineering module.
 """
 
 import numpy as np
-import pytest
 
 from sdk.feature_engineering import (
-    PolynomialFeatures,
-    InteractionFeatures,
-    KBinsDiscretizer,
     Binarizer,
     FunctionTransformer,
-    TargetEncoder,
-    OrdinalEncoder,
+    InteractionFeatures,
+    KBinsDiscretizer,
     OneHotEncoder,
-    QuantileTransformer,
+    OrdinalEncoder,
+    PolynomialFeatures,
     PowerTransformer,
+    QuantileTransformer,
+    TargetEncoder,
 )
 
 
@@ -192,7 +191,7 @@ class TestFunctionTransformer:
         """Test custom transformation function."""
 
         def custom_func(X):
-            return X ** 2 + 1
+            return X**2 + 1
 
         X = np.array([[1], [2], [3]])
         transformer = FunctionTransformer(func=custom_func)
@@ -207,7 +206,7 @@ class TestFunctionTransformer:
         X = np.array([[1], [4], [9]])
         transformer = FunctionTransformer(
             func=np.sqrt,
-            inverse_func=lambda x: x ** 2,
+            inverse_func=lambda x: x**2,
         )
 
         X_transformed = transformer.fit_transform(X)

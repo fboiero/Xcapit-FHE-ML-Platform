@@ -2,29 +2,28 @@
 Tests for the preprocessing module.
 """
 
-import json
 import tempfile
-import pytest
+
 import numpy as np
+import pytest
 
 from sdk.preprocessing import (
-    # Scalers
-    StandardScaler,
+    FeatureSelector,
     MinMaxScaler,
-    RobustScaler,
+    # Handlers
+    MissingValueHandler,
     # Encoders
     OneHotEncoder,
     OrdinalEncoder,
-    # Handlers
-    MissingValueHandler,
     OutlierHandler,
-    FeatureSelector,
+    PipelineState,
     # Pipeline
     PreprocessingPipeline,
-    create_standard_pipeline,
+    RobustScaler,
+    # Scalers
+    StandardScaler,
     create_categorical_pipeline,
-    TransformerState,
-    PipelineState,
+    create_standard_pipeline,
 )
 
 
@@ -158,7 +157,7 @@ class TestMissingValueHandler:
     def test_mean_imputation(self):
         """Test mean imputation strategy."""
         X = np.array([[1, np.nan], [2, 4], [np.nan, 6]])
-        handler = MissingValueHandler(strategy='mean')
+        handler = MissingValueHandler(strategy="mean")
 
         X_filled = handler.fit_transform(X)
 
@@ -171,7 +170,7 @@ class TestMissingValueHandler:
     def test_median_imputation(self):
         """Test median imputation strategy."""
         X = np.array([[1, np.nan], [2, 4], [3, 6], [np.nan, 8]])
-        handler = MissingValueHandler(strategy='median')
+        handler = MissingValueHandler(strategy="median")
 
         X_filled = handler.fit_transform(X)
 
@@ -182,7 +181,7 @@ class TestMissingValueHandler:
     def test_constant_imputation(self):
         """Test constant imputation strategy."""
         X = np.array([[1, np.nan], [np.nan, 4]])
-        handler = MissingValueHandler(strategy='constant', fill_value=-999)
+        handler = MissingValueHandler(strategy="constant", fill_value=-999)
 
         X_filled = handler.fit_transform(X)
 
@@ -196,7 +195,7 @@ class TestOutlierHandler:
     def test_iqr_clip(self):
         """Test IQR method with clipping."""
         X = np.array([[1], [2], [3], [4], [100]])  # 100 is outlier
-        handler = OutlierHandler(method='iqr', strategy='clip')
+        handler = OutlierHandler(method="iqr", strategy="clip")
 
         X_handled = handler.fit_transform(X)
 
@@ -206,7 +205,7 @@ class TestOutlierHandler:
     def test_zscore_nan(self):
         """Test Z-score method with NaN replacement."""
         X = np.array([[1], [2], [3], [4], [100]])
-        handler = OutlierHandler(method='zscore', threshold=2, strategy='nan')
+        handler = OutlierHandler(method="zscore", threshold=2, strategy="nan")
 
         X_handled = handler.fit_transform(X)
 
@@ -257,10 +256,10 @@ class TestOneHotEncoder:
         encoder = OneHotEncoder(columns=[0])
         encoder.fit(X)
 
-        names = encoder.get_feature_names_out(['category'])
+        names = encoder.get_feature_names_out(["category"])
 
         assert len(names) == 3
-        assert all('category_' in name for name in names)
+        assert all("category_" in name for name in names)
 
 
 class TestOrdinalEncoder:
@@ -296,7 +295,7 @@ class TestFeatureSelector:
         """Test variance-based feature selection."""
         # First column has no variance, second has variance
         X = np.array([[1, 1], [1, 2], [1, 3], [1, 4]])
-        selector = FeatureSelector(method='variance', threshold=0.1)
+        selector = FeatureSelector(method="variance", threshold=0.1)
 
         X_selected = selector.fit_transform(X)
 
@@ -308,7 +307,7 @@ class TestFeatureSelector:
         """Test correlation-based feature selection."""
         # Columns 0 and 1 are highly correlated
         X = np.array([[1, 2, 10], [2, 4, 20], [3, 6, 30], [4, 8, 40]])
-        selector = FeatureSelector(method='correlation', threshold=0.9)
+        selector = FeatureSelector(method="correlation", threshold=0.9)
 
         X_selected = selector.fit_transform(X)
 
@@ -324,8 +323,8 @@ class TestPreprocessingPipeline:
         X = np.array([[1, np.nan], [2, 4], [3, 6]])
 
         pipeline = PreprocessingPipeline()
-        pipeline.add_step('impute', MissingValueHandler(strategy='mean'))
-        pipeline.add_step('scale', StandardScaler())
+        pipeline.add_step("impute", MissingValueHandler(strategy="mean"))
+        pipeline.add_step("scale", StandardScaler())
 
         X_processed = pipeline.fit_transform(X)
 
@@ -340,7 +339,7 @@ class TestPreprocessingPipeline:
         X_test = np.array([[2, 3], [4, 5]])
 
         pipeline = PreprocessingPipeline()
-        pipeline.add_step('scale', StandardScaler())
+        pipeline.add_step("scale", StandardScaler())
 
         pipeline.fit(X_train)
         X_test_processed = pipeline.transform(X_test)
@@ -352,7 +351,7 @@ class TestPreprocessingPipeline:
         X = np.array([[1, 2], [3, 4], [5, 6]])
 
         pipeline = PreprocessingPipeline()
-        pipeline.add_step('scale', StandardScaler())
+        pipeline.add_step("scale", StandardScaler())
 
         X_processed = pipeline.fit_transform(X)
         X_recovered = pipeline.inverse_transform(X_processed)
@@ -362,8 +361,8 @@ class TestPreprocessingPipeline:
     def test_get_params(self):
         """Test parameter retrieval."""
         pipeline = PreprocessingPipeline(name="test_pipeline")
-        pipeline.add_step('impute', MissingValueHandler())
-        pipeline.add_step('scale', StandardScaler())
+        pipeline.add_step("impute", MissingValueHandler())
+        pipeline.add_step("scale", StandardScaler())
 
         X = np.array([[1, 2], [3, 4]])
         pipeline.fit(X)
@@ -379,10 +378,10 @@ class TestPreprocessingPipeline:
         X = np.array([[1, 2], [3, 4], [5, 6]])
 
         pipeline = PreprocessingPipeline()
-        pipeline.add_step('scale', StandardScaler())
+        pipeline.add_step("scale", StandardScaler())
         pipeline.fit(X)
 
-        with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as f:
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
             pipeline.save(f.name)
 
             loaded = PreprocessingPipeline.load(f.name)
@@ -396,8 +395,8 @@ class TestPreprocessingPipeline:
     def test_summary(self):
         """Test pipeline summary."""
         pipeline = PreprocessingPipeline(name="test")
-        pipeline.add_step('step1', StandardScaler())
-        pipeline.add_step('step2', MinMaxScaler())
+        pipeline.add_step("step1", StandardScaler())
+        pipeline.add_step("step2", MinMaxScaler())
 
         summary = pipeline.summary()
 
@@ -408,23 +407,23 @@ class TestPreprocessingPipeline:
     def test_remove_step(self):
         """Test removing a step."""
         pipeline = PreprocessingPipeline()
-        pipeline.add_step('a', StandardScaler())
-        pipeline.add_step('b', MinMaxScaler())
+        pipeline.add_step("a", StandardScaler())
+        pipeline.add_step("b", MinMaxScaler())
 
         assert len(pipeline.steps) == 2
 
-        pipeline.remove_step('a')
+        pipeline.remove_step("a")
 
         assert len(pipeline.steps) == 1
-        assert pipeline.steps[0].name == 'b'
+        assert pipeline.steps[0].name == "b"
 
     def test_duplicate_step_name_error(self):
         """Test that duplicate step names raise error."""
         pipeline = PreprocessingPipeline()
-        pipeline.add_step('scale', StandardScaler())
+        pipeline.add_step("scale", StandardScaler())
 
         with pytest.raises(ValueError, match="already exists"):
-            pipeline.add_step('scale', MinMaxScaler())
+            pipeline.add_step("scale", MinMaxScaler())
 
 
 class TestConvenienceFunctions:
@@ -433,9 +432,7 @@ class TestConvenienceFunctions:
     def test_create_standard_pipeline(self):
         """Test standard pipeline creation."""
         pipeline = create_standard_pipeline(
-            handle_missing=True,
-            handle_outliers=True,
-            scaling='minmax'
+            handle_missing=True, handle_outliers=True, scaling="minmax"
         )
 
         assert pipeline.state == PipelineState.CONFIGURED
@@ -450,9 +447,7 @@ class TestConvenienceFunctions:
     def test_create_categorical_pipeline(self):
         """Test categorical pipeline creation."""
         pipeline = create_categorical_pipeline(
-            categorical_columns=[1],
-            encoding='onehot',
-            scaling='standard'
+            categorical_columns=[1], encoding="onehot", scaling="standard"
         )
 
         assert len(pipeline.steps) == 3
@@ -517,9 +512,9 @@ class TestIntegrationWithFHE:
 
         # Create comprehensive pipeline
         pipeline = PreprocessingPipeline(name="fhe_prep")
-        pipeline.add_step('impute', MissingValueHandler(strategy='mean'))
-        pipeline.add_step('outliers', OutlierHandler(method='iqr', strategy='clip'))
-        pipeline.add_step('scale', MinMaxScaler(feature_range=(-1, 1)))
+        pipeline.add_step("impute", MissingValueHandler(strategy="mean"))
+        pipeline.add_step("outliers", OutlierHandler(method="iqr", strategy="clip"))
+        pipeline.add_step("scale", MinMaxScaler(feature_range=(-1, 1)))
 
         X_processed = pipeline.fit_transform(X)
 
@@ -542,10 +537,10 @@ class TestIntegrationWithFHE:
         X_train = np.random.randn(80, 3)
         X_test = np.random.randn(20, 3)
 
-        pipeline = create_standard_pipeline(scaling='standard')
+        pipeline = create_standard_pipeline(scaling="standard")
 
         # Fit on train
-        X_train_processed = pipeline.fit_transform(X_train)
+        pipeline.fit_transform(X_train)
 
         # Transform test with same params
         X_test_processed = pipeline.transform(X_test)

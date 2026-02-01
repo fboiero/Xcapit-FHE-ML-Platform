@@ -6,7 +6,7 @@ encrypted data using polynomial approximations for FHE compatibility.
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Callable, List, Optional, Union
+from typing import Any, Callable, Optional, Union
 
 import numpy as np
 
@@ -15,6 +15,7 @@ from .base import BaseFHEModel, ModelConfig, ModelState
 
 class ScoreFunc(Enum):
     """Score functions for feature selection."""
+
     F_CLASSIF = "f_classif"
     F_REGRESSION = "f_regression"
     MUTUAL_INFO_CLASSIF = "mutual_info_classif"
@@ -26,6 +27,7 @@ class ScoreFunc(Enum):
 @dataclass
 class SelectKBestConfig(ModelConfig):
     """Configuration for SelectKBest."""
+
     k: int = 10
     score_func: ScoreFunc = ScoreFunc.F_CLASSIF
 
@@ -33,12 +35,14 @@ class SelectKBestConfig(ModelConfig):
 @dataclass
 class VarianceThresholdConfig(ModelConfig):
     """Configuration for VarianceThreshold."""
+
     threshold: float = 0.0
 
 
 @dataclass
 class RFEConfig(ModelConfig):
     """Configuration for Recursive Feature Elimination."""
+
     n_features_to_select: Optional[int] = None
     step: Union[int, float] = 1
     verbose: int = 0
@@ -108,8 +112,8 @@ def f_regression(X: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     y_centered = y - np.mean(y)
 
     # Correlation coefficients
-    ss_x = np.sum(X_centered ** 2, axis=0)
-    ss_y = np.sum(y_centered ** 2)
+    ss_x = np.sum(X_centered**2, axis=0)
+    ss_y = np.sum(y_centered**2)
     cross = X_centered.T @ y_centered
 
     # Avoid division by zero
@@ -119,7 +123,7 @@ def f_regression(X: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     correlation = cross / np.sqrt(ss_x * ss_y)
 
     # F-statistic: F = r^2 * (n-2) / (1 - r^2)
-    r_squared = correlation ** 2
+    r_squared = correlation**2
     r_squared = np.minimum(r_squared, 1 - 1e-10)  # Avoid division by zero
 
     f_scores = r_squared * (n_samples - 2) / (1 - r_squared)
@@ -229,12 +233,12 @@ def mutual_info_regression(
 
         # MI approximation: -0.5 * log(1 - r^2)
         # For FHE, use polynomial approximation
-        r_squared = corr ** 2
+        r_squared = corr**2
         r_squared = min(r_squared, 0.999)  # Avoid log(0)
 
         # Polynomial approximation of -0.5 * log(1 - x)
         # log(1-x) ≈ -x - x^2/2 - x^3/3 - ...
-        mi_scores[j] = 0.5 * (r_squared + r_squared ** 2 / 2 + r_squared ** 3 / 3)
+        mi_scores[j] = 0.5 * (r_squared + r_squared**2 / 2 + r_squared**3 / 3)
 
     return mi_scores
 
@@ -506,9 +510,7 @@ class RFE(BaseFHEModel):
                 coef = np.mean(np.abs(coef), axis=0)
             return np.abs(coef)
         else:
-            raise ValueError(
-                "Estimator must have feature_importances_ or coef_ attribute"
-            )
+            raise ValueError("Estimator must have feature_importances_ or coef_ attribute")
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> "RFE":
         """Fit RFE.
@@ -548,6 +550,7 @@ class RFE(BaseFHEModel):
 
             # Fit estimator
             import copy
+
             estimator = copy.deepcopy(self.estimator)
             estimator.fit(X_current, y)
 
@@ -575,6 +578,7 @@ class RFE(BaseFHEModel):
 
         X_final = X[:, support]
         import copy
+
         self.estimator_ = copy.deepcopy(self.estimator)
         self.estimator_.fit(X_final, y)
 
@@ -658,9 +662,7 @@ class SelectFromModel(BaseFHEModel):
                 coef = np.mean(np.abs(coef), axis=0)
             return np.abs(coef)
         else:
-            raise ValueError(
-                "Estimator must have feature_importances_ or coef_ attribute"
-            )
+            raise ValueError("Estimator must have feature_importances_ or coef_ attribute")
 
     def fit(self, X: np.ndarray, y: np.ndarray = None) -> "SelectFromModel":
         """Fit the selector.
@@ -679,6 +681,7 @@ class SelectFromModel(BaseFHEModel):
             self.estimator_ = self.estimator
         else:
             import copy
+
             self.estimator_ = copy.deepcopy(self.estimator)
             self.estimator_.fit(X, y)
 
@@ -691,7 +694,7 @@ class SelectFromModel(BaseFHEModel):
             # Limit to max_features
             n_selected = np.sum(self.support_mask_)
             if n_selected > self.max_features:
-                top_indices = np.argsort(importances)[-self.max_features:]
+                top_indices = np.argsort(importances)[-self.max_features :]
                 self.support_mask_ = np.zeros(len(importances), dtype=bool)
                 self.support_mask_[top_indices] = True
 

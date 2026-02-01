@@ -6,14 +6,16 @@ All transformers follow scikit-learn's fit/transform API pattern.
 """
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
-from typing import Optional, Union, Any
+from typing import Any, Optional
+
 import numpy as np
 
 
 class TransformerState(Enum):
     """State of a transformer in its lifecycle."""
+
     INITIALIZED = "initialized"
     FITTED = "fitted"
 
@@ -21,6 +23,7 @@ class TransformerState(Enum):
 @dataclass
 class TransformerParams:
     """Base class for transformer parameters."""
+
     pass
 
 
@@ -41,7 +44,7 @@ class BaseTransformer(ABC):
         self._params: dict = {}
 
     @abstractmethod
-    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> 'BaseTransformer':
+    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> "BaseTransformer":
         """Fit transformer to data. Returns self for chaining."""
         pass
 
@@ -64,7 +67,7 @@ class BaseTransformer(ABC):
             "name": self.name,
             "type": self.__class__.__name__,
             "state": self.state.value,
-            "params": self._params.copy()
+            "params": self._params.copy(),
         }
 
     def _check_fitted(self):
@@ -104,7 +107,7 @@ class StandardScaler(BaseTransformer):
         self._mean: Optional[np.ndarray] = None
         self._std: Optional[np.ndarray] = None
 
-    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> 'StandardScaler':
+    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> "StandardScaler":
         X = self._validate_input(X)
 
         if self.with_mean:
@@ -122,7 +125,7 @@ class StandardScaler(BaseTransformer):
         self._params = {
             "mean": self._mean.tolist(),
             "std": self._std.tolist(),
-            "n_features": X.shape[1]
+            "n_features": X.shape[1],
         }
         self.state = TransformerState.FITTED
         return self
@@ -158,7 +161,7 @@ class MinMaxScaler(BaseTransformer):
         self._max: Optional[np.ndarray] = None
         self._data_range: Optional[np.ndarray] = None
 
-    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> 'MinMaxScaler':
+    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> "MinMaxScaler":
         X = self._validate_input(X)
 
         self._min = np.min(X, axis=0)
@@ -172,7 +175,7 @@ class MinMaxScaler(BaseTransformer):
             "max": self._max.tolist(),
             "data_range": self._data_range.tolist(),
             "feature_range": list(self.feature_range),
-            "n_features": X.shape[1]
+            "n_features": X.shape[1],
         }
         self.state = TransformerState.FITTED
         return self
@@ -221,7 +224,7 @@ class RobustScaler(BaseTransformer):
         with_centering: bool = True,
         with_scaling: bool = True,
         quantile_range: tuple = (25.0, 75.0),
-        name: Optional[str] = None
+        name: Optional[str] = None,
     ):
         super().__init__(name)
         self.with_centering = with_centering
@@ -230,7 +233,7 @@ class RobustScaler(BaseTransformer):
         self._center: Optional[np.ndarray] = None
         self._scale: Optional[np.ndarray] = None
 
-    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> 'RobustScaler':
+    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> "RobustScaler":
         X = self._validate_input(X)
 
         if self.with_centering:
@@ -251,7 +254,7 @@ class RobustScaler(BaseTransformer):
             "center": self._center.tolist(),
             "scale": self._scale.tolist(),
             "quantile_range": list(self.quantile_range),
-            "n_features": X.shape[1]
+            "n_features": X.shape[1],
         }
         self.state = TransformerState.FITTED
         return self
@@ -287,8 +290,8 @@ class OneHotEncoder(BaseTransformer):
         self,
         columns: Optional[list] = None,
         drop_first: bool = False,
-        handle_unknown: str = 'error',
-        name: Optional[str] = None
+        handle_unknown: str = "error",
+        name: Optional[str] = None,
     ):
         super().__init__(name)
         self.columns = columns
@@ -298,7 +301,7 @@ class OneHotEncoder(BaseTransformer):
         self._n_features_in: int = 0
         self._feature_indices: list = []
 
-    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> 'OneHotEncoder':
+    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> "OneHotEncoder":
         X = self._validate_input(X)
         self._n_features_in = X.shape[1]
 
@@ -325,7 +328,7 @@ class OneHotEncoder(BaseTransformer):
             "categories": self._categories,
             "feature_indices": self._feature_indices,
             "drop_first": self.drop_first,
-            "n_features_in": self._n_features_in
+            "n_features_in": self._n_features_in,
         }
         self.state = TransformerState.FITTED
         return self
@@ -351,15 +354,17 @@ class OneHotEncoder(BaseTransformer):
                 # Handle unknown categories
                 known_mask = np.isin(X[:, col_idx], categories)
                 if not np.all(known_mask):
-                    if self.handle_unknown == 'error':
+                    if self.handle_unknown == "error":
                         unknown = X[~known_mask, col_idx]
-                        raise ValueError(f"Unknown categories in column {col_idx}: {np.unique(unknown)}")
+                        raise ValueError(
+                            f"Unknown categories in column {col_idx}: {np.unique(unknown)}"
+                        )
                     # 'ignore' - leave as all zeros
 
                 result_parts.append(encoded)
             else:
                 # Keep original column
-                result_parts.append(X[:, col_idx:col_idx+1])
+                result_parts.append(X[:, col_idx : col_idx + 1])
 
         return np.hstack(result_parts)
 
@@ -400,9 +405,9 @@ class OrdinalEncoder(BaseTransformer):
     def __init__(
         self,
         columns: Optional[list] = None,
-        handle_unknown: str = 'error',
+        handle_unknown: str = "error",
         unknown_value: float = -1,
-        name: Optional[str] = None
+        name: Optional[str] = None,
     ):
         super().__init__(name)
         self.columns = columns
@@ -413,7 +418,7 @@ class OrdinalEncoder(BaseTransformer):
         self._n_features_in: int = 0
         self._feature_indices: list = []
 
-    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> 'OrdinalEncoder':
+    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> "OrdinalEncoder":
         X = self._validate_input(X)
         self._n_features_in = X.shape[1]
 
@@ -432,10 +437,11 @@ class OrdinalEncoder(BaseTransformer):
             self._inverse_mappings[col_idx] = {v: k for k, v in mapping.items()}
 
         self._params = {
-            "mappings": {k: {str(kk): vv for kk, vv in v.items()}
-                        for k, v in self._mappings.items()},
+            "mappings": {
+                k: {str(kk): vv for kk, vv in v.items()} for k, v in self._mappings.items()
+            },
             "feature_indices": self._feature_indices,
-            "n_features_in": self._n_features_in
+            "n_features_in": self._n_features_in,
         }
         self.state = TransformerState.FITTED
         return self
@@ -451,7 +457,7 @@ class OrdinalEncoder(BaseTransformer):
                 val = X[i, col_idx]
                 if val in mapping:
                     X_encoded[i, col_idx] = mapping[val]
-                elif self.handle_unknown == 'error':
+                elif self.handle_unknown == "error":
                     raise ValueError(f"Unknown value {val} in column {col_idx}")
                 else:
                     X_encoded[i, col_idx] = self.unknown_value
@@ -486,19 +492,16 @@ class MissingValueHandler(BaseTransformer):
     """
 
     def __init__(
-        self,
-        strategy: str = 'mean',
-        fill_value: Optional[float] = None,
-        name: Optional[str] = None
+        self, strategy: str = "mean", fill_value: Optional[float] = None, name: Optional[str] = None
     ):
         super().__init__(name)
-        if strategy not in ('mean', 'median', 'most_frequent', 'constant'):
+        if strategy not in ("mean", "median", "most_frequent", "constant"):
             raise ValueError(f"Invalid strategy: {strategy}")
         self.strategy = strategy
         self.fill_value = fill_value
         self._fill_values: Optional[np.ndarray] = None
 
-    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> 'MissingValueHandler':
+    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> "MissingValueHandler":
         X = self._validate_input(X)
 
         self._fill_values = np.zeros(X.shape[1])
@@ -510,20 +513,20 @@ class MissingValueHandler(BaseTransformer):
 
             if len(valid_values) == 0:
                 self._fill_values[col_idx] = 0.0
-            elif self.strategy == 'mean':
+            elif self.strategy == "mean":
                 self._fill_values[col_idx] = np.mean(valid_values)
-            elif self.strategy == 'median':
+            elif self.strategy == "median":
                 self._fill_values[col_idx] = np.median(valid_values)
-            elif self.strategy == 'most_frequent':
+            elif self.strategy == "most_frequent":
                 values, counts = np.unique(valid_values, return_counts=True)
                 self._fill_values[col_idx] = values[np.argmax(counts)]
-            elif self.strategy == 'constant':
+            elif self.strategy == "constant":
                 self._fill_values[col_idx] = self.fill_value or 0.0
 
         self._params = {
             "strategy": self.strategy,
             "fill_values": self._fill_values.tolist(),
-            "n_features": X.shape[1]
+            "n_features": X.shape[1],
         }
         self.state = TransformerState.FITTED
         return self
@@ -557,15 +560,15 @@ class OutlierHandler(BaseTransformer):
 
     def __init__(
         self,
-        method: str = 'iqr',
+        method: str = "iqr",
         threshold: float = 1.5,
-        strategy: str = 'clip',
-        name: Optional[str] = None
+        strategy: str = "clip",
+        name: Optional[str] = None,
     ):
         super().__init__(name)
-        if method not in ('iqr', 'zscore'):
+        if method not in ("iqr", "zscore"):
             raise ValueError(f"Invalid method: {method}")
-        if strategy not in ('clip', 'nan'):
+        if strategy not in ("clip", "nan"):
             raise ValueError(f"Invalid strategy: {strategy}")
 
         self.method = method
@@ -574,7 +577,7 @@ class OutlierHandler(BaseTransformer):
         self._lower_bounds: Optional[np.ndarray] = None
         self._upper_bounds: Optional[np.ndarray] = None
 
-    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> 'OutlierHandler':
+    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> "OutlierHandler":
         X = self._validate_input(X)
 
         self._lower_bounds = np.zeros(X.shape[1])
@@ -583,7 +586,7 @@ class OutlierHandler(BaseTransformer):
         for col_idx in range(X.shape[1]):
             col = X[:, col_idx]
 
-            if self.method == 'iqr':
+            if self.method == "iqr":
                 q1 = np.percentile(col, 25)
                 q3 = np.percentile(col, 75)
                 iqr = q3 - q1
@@ -601,7 +604,7 @@ class OutlierHandler(BaseTransformer):
             "strategy": self.strategy,
             "lower_bounds": self._lower_bounds.tolist(),
             "upper_bounds": self._upper_bounds.tolist(),
-            "n_features": X.shape[1]
+            "n_features": X.shape[1],
         }
         self.state = TransformerState.FITTED
         return self
@@ -615,7 +618,7 @@ class OutlierHandler(BaseTransformer):
             lower = self._lower_bounds[col_idx]
             upper = self._upper_bounds[col_idx]
 
-            if self.strategy == 'clip':
+            if self.strategy == "clip":
                 X_handled[:, col_idx] = np.clip(X_handled[:, col_idx], lower, upper)
             else:  # nan
                 mask = (X_handled[:, col_idx] < lower) | (X_handled[:, col_idx] > upper)
@@ -638,13 +641,10 @@ class FeatureSelector(BaseTransformer):
     """
 
     def __init__(
-        self,
-        method: str = 'variance',
-        threshold: float = 0.0,
-        name: Optional[str] = None
+        self, method: str = "variance", threshold: float = 0.0, name: Optional[str] = None
     ):
         super().__init__(name)
-        if method not in ('variance', 'correlation'):
+        if method not in ("variance", "correlation"):
             raise ValueError(f"Invalid method: {method}")
 
         self.method = method
@@ -652,11 +652,11 @@ class FeatureSelector(BaseTransformer):
         self._selected_indices: Optional[list] = None
         self._n_features_in: int = 0
 
-    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> 'FeatureSelector':
+    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> "FeatureSelector":
         X = self._validate_input(X)
         self._n_features_in = X.shape[1]
 
-        if self.method == 'variance':
+        if self.method == "variance":
             variances = np.var(X, axis=0)
             self._selected_indices = np.where(variances > self.threshold)[0].tolist()
         else:  # correlation - remove highly correlated features
@@ -679,7 +679,7 @@ class FeatureSelector(BaseTransformer):
             "threshold": self.threshold,
             "selected_indices": self._selected_indices,
             "n_features_in": self._n_features_in,
-            "n_features_out": len(self._selected_indices)
+            "n_features_out": len(self._selected_indices),
         }
         self.state = TransformerState.FITTED
         return self
@@ -737,7 +737,7 @@ class PolynomialFeatures(BaseTransformer):
 
     def _generate_powers(self, n_features: int) -> list:
         """Generate power combinations for polynomial features."""
-        from itertools import combinations_with_replacement, combinations
+        from itertools import combinations, combinations_with_replacement
 
         powers = []
 
@@ -761,7 +761,7 @@ class PolynomialFeatures(BaseTransformer):
 
         return powers
 
-    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> 'PolynomialFeatures':
+    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> "PolynomialFeatures":
         X = self._validate_input(X)
         self._n_features_in = X.shape[1]
         self._powers = self._generate_powers(self._n_features_in)
@@ -784,7 +784,7 @@ class PolynomialFeatures(BaseTransformer):
 
         result = np.zeros((n_samples, self._n_output_features))
         for i, power in enumerate(self._powers):
-            result[:, i] = np.prod(X ** power, axis=1)
+            result[:, i] = np.prod(X**power, axis=1)
 
         return result
 
@@ -866,7 +866,7 @@ class PowerTransformer(BaseTransformer):
         if np.any(x <= 0):
             raise ValueError("Box-Cox requires positive data.")
         if lmbda != 0:
-            return (x ** lmbda - 1) / lmbda
+            return (x**lmbda - 1) / lmbda
         else:
             return np.log(x)
 
@@ -890,12 +890,12 @@ class PowerTransformer(BaseTransformer):
                     if ll > best_ll:
                         best_ll = ll
                         best_lambda = lmbda
-            except:
+            except Exception:
                 continue
 
         return best_lambda
 
-    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> 'PowerTransformer':
+    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> "PowerTransformer":
         X = self._validate_input(X)
         self._n_features_in = X.shape[1]
 
@@ -971,7 +971,7 @@ class QuantileTransformer(BaseTransformer):
         self._references: Optional[np.ndarray] = None
         self._n_features_in: int = 0
 
-    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> 'QuantileTransformer':
+    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> "QuantileTransformer":
         X = self._validate_input(X)
         self._n_features_in = X.shape[1]
 
@@ -991,14 +991,35 @@ class QuantileTransformer(BaseTransformer):
 
     def _inverse_normal_cdf(self, p: np.ndarray) -> np.ndarray:
         """Polynomial approximation of inverse normal CDF."""
-        a = [-3.969683028665376e+01, 2.209460984245205e+02, -2.759285104469687e+02,
-             1.383577518672690e+02, -3.066479806614716e+01, 2.506628277459239e+00]
-        b = [-5.447609879822406e+01, 1.615858368580409e+02, -1.556989798598866e+02,
-             6.680131188771972e+01, -1.328068155288572e+01]
-        c = [-7.784894002430293e-03, -3.223964580411365e-01, -2.400758277161838e+00,
-             -2.549732539343734e+00, 4.374664141464968e+00, 2.938163982698783e+00]
-        d = [7.784695709041462e-03, 3.224671290700398e-01, 2.445134137142996e+00,
-             3.754408661907416e+00]
+        a = [
+            -3.969683028665376e01,
+            2.209460984245205e02,
+            -2.759285104469687e02,
+            1.383577518672690e02,
+            -3.066479806614716e01,
+            2.506628277459239e00,
+        ]
+        b = [
+            -5.447609879822406e01,
+            1.615858368580409e02,
+            -1.556989798598866e02,
+            6.680131188771972e01,
+            -1.328068155288572e01,
+        ]
+        c = [
+            -7.784894002430293e-03,
+            -3.223964580411365e-01,
+            -2.400758277161838e00,
+            -2.549732539343734e00,
+            4.374664141464968e00,
+            2.938163982698783e00,
+        ]
+        d = [
+            7.784695709041462e-03,
+            3.224671290700398e-01,
+            2.445134137142996e00,
+            3.754408661907416e00,
+        ]
 
         p_low = 0.02425
         p_high = 1 - p_low
@@ -1007,18 +1028,26 @@ class QuantileTransformer(BaseTransformer):
         mask_low = p < p_low
         if np.any(mask_low):
             q = np.sqrt(-2 * np.log(p[mask_low]))
-            result[mask_low] = (((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) / ((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1)
+            result[mask_low] = (
+                ((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]
+            ) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1)
 
         mask_central = (p >= p_low) & (p <= p_high)
         if np.any(mask_central):
             q = p[mask_central] - 0.5
             r = q * q
-            result[mask_central] = (((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q / (((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1)
+            result[mask_central] = (
+                (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5])
+                * q
+                / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1)
+            )
 
         mask_high = p > p_high
         if np.any(mask_high):
             q = np.sqrt(-2 * np.log(1 - p[mask_high]))
-            result[mask_high] = -(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) / ((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1)
+            result[mask_high] = -(
+                ((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]
+            ) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1)
 
         return result
 
@@ -1068,7 +1097,7 @@ class FunctionTransformer(BaseTransformer):
         self.inverse_func = inverse_func
         self._n_features_in: int = 0
 
-    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> 'FunctionTransformer':
+    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> "FunctionTransformer":
         X = self._validate_input(X)
         self._n_features_in = X.shape[1]
 
@@ -1103,7 +1132,7 @@ class Normalizer(BaseTransformer):
         super().__init__(name)
         self.norm = norm
 
-    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> 'Normalizer':
+    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> "Normalizer":
         X = self._validate_input(X)
         self._params = {"norm": self.norm}
         self.state = TransformerState.FITTED
@@ -1137,7 +1166,7 @@ class MaxAbsScaler(BaseTransformer):
         self._max_abs: Optional[np.ndarray] = None
         self._n_features_in: int = 0
 
-    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> 'MaxAbsScaler':
+    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> "MaxAbsScaler":
         X = self._validate_input(X)
         self._n_features_in = X.shape[1]
         self._max_abs = np.max(np.abs(X), axis=0)

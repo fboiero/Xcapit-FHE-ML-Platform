@@ -375,9 +375,7 @@ class GovernanceClient:
         Returns:
             Commitment hash (bytes32).
         """
-        return self.contract.functions.computeVoteCommitment(
-            proposal_id, support, salt
-        ).call()
+        return self.contract.functions.computeVoteCommitment(proposal_id, support, salt).call()
 
     def commit_vote(self, proposal_id: bytes, commitment: bytes) -> str:
         """Commit a vote during the commit phase.
@@ -391,9 +389,7 @@ class GovernanceClient:
         Returns:
             Transaction hash.
         """
-        tx = self.contract.functions.commitVote(
-            proposal_id, commitment
-        ).build_transaction(
+        tx = self.contract.functions.commitVote(proposal_id, commitment).build_transaction(
             {
                 "from": self.connector.address,
                 "nonce": self.connector.get_nonce(),
@@ -424,9 +420,7 @@ class GovernanceClient:
         Returns:
             Transaction hash.
         """
-        tx = self.contract.functions.revealVote(
-            proposal_id, support, salt
-        ).build_transaction(
+        tx = self.contract.functions.revealVote(proposal_id, support, salt).build_transaction(
             {
                 "from": self.connector.address,
                 "nonce": self.connector.get_nonce(),
@@ -498,6 +492,7 @@ class GovernanceClient:
         if wait_for_reveal:
             # Wait for reveal phase
             import time
+
             phase = self.get_proposal_phase(proposal_id)
             while phase["is_commit_phase"]:
                 time.sleep(10)

@@ -175,7 +175,7 @@ class SVM(BaseFHEModel):
 
         elif self._svm_config.kernel == KernelType.QUADRATIC:
             linear = X1 @ X2.T
-            return linear ** 2
+            return linear**2
 
         elif self._svm_config.kernel == KernelType.POLYNOMIAL:
             linear = X1 @ X2.T
@@ -247,8 +247,18 @@ class SVM(BaseFHEModel):
         alpha_i_new = alpha_i + s * (alpha_j - alpha_j_new)
 
         # Update bias
-        b1 = self._bias - E_i - y_i * (alpha_i_new - alpha_i) * K[i, i] - y_j * (alpha_j_new - alpha_j) * K[i, j]
-        b2 = self._bias - E_j - y_i * (alpha_i_new - alpha_i) * K[i, j] - y_j * (alpha_j_new - alpha_j) * K[j, j]
+        b1 = (
+            self._bias
+            - E_i
+            - y_i * (alpha_i_new - alpha_i) * K[i, i]
+            - y_j * (alpha_j_new - alpha_j) * K[i, j]
+        )
+        b2 = (
+            self._bias
+            - E_j
+            - y_i * (alpha_i_new - alpha_i) * K[i, j]
+            - y_j * (alpha_j_new - alpha_j) * K[j, j]
+        )
 
         if 0 < alpha_i_new < C:
             self._bias = b1
@@ -349,9 +359,9 @@ class SVM(BaseFHEModel):
                 r_i = E_i * y_train[i]
 
                 # Check KKT conditions
-                if (r_i < -self._svm_config.tol and alphas[i] < self._svm_config.C) or \
-                   (r_i > self._svm_config.tol and alphas[i] > 0):
-
+                if (r_i < -self._svm_config.tol and alphas[i] < self._svm_config.C) or (
+                    r_i > self._svm_config.tol and alphas[i] > 0
+                ):
                     # Select j using heuristic
                     if E_i > 0:
                         j = np.argmin(E)
@@ -486,18 +496,24 @@ class SVM(BaseFHEModel):
     def get_params(self) -> dict[str, Any]:
         """Get model parameters."""
         params = super().get_params()
-        params.update({
-            "kernel": self._svm_config.kernel.value,
-            "C": self._svm_config.C,
-            "degree": self._svm_config.degree,
-            "gamma": self._gamma,
-            "coef0": self._svm_config.coef0,
-            "n_support": self._n_support,
-            "support_vectors": self._support_vectors.tolist() if self._support_vectors is not None else None,
-            "support_labels": self._support_labels.tolist() if self._support_labels is not None else None,
-            "alphas": self._alphas.tolist() if self._alphas is not None else None,
-            "bias": self._bias,
-        })
+        params.update(
+            {
+                "kernel": self._svm_config.kernel.value,
+                "C": self._svm_config.C,
+                "degree": self._svm_config.degree,
+                "gamma": self._gamma,
+                "coef0": self._svm_config.coef0,
+                "n_support": self._n_support,
+                "support_vectors": self._support_vectors.tolist()
+                if self._support_vectors is not None
+                else None,
+                "support_labels": self._support_labels.tolist()
+                if self._support_labels is not None
+                else None,
+                "alphas": self._alphas.tolist() if self._alphas is not None else None,
+                "bias": self._bias,
+            }
+        )
         return params
 
     def __repr__(self) -> str:

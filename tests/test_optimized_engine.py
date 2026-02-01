@@ -5,20 +5,21 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-import numpy as np
-import pytest
 import threading
 
+import numpy as np
+import pytest
+
+from sdk.encryption.context_manager import CKKSParameters
 from sdk.encryption.optimized_engine import (
-    OptimizationProfile,
-    ProfileConfig,
     PROFILE_CONFIGS,
     ContextPool,
-    OptimizedFHEEngine,
-    LazyEncryptedVector,
     EncryptionStats,
+    LazyEncryptedVector,
+    OptimizationProfile,
+    OptimizedFHEEngine,
+    ProfileConfig,
 )
-from sdk.encryption.context_manager import CKKSParameters, SecurityLevel
 
 
 class TestOptimizationProfile:
@@ -189,7 +190,7 @@ class TestContextPool:
         """Test tracking of contexts in use."""
         pool = ContextPool(params, pool_size=2)
         assert pool.in_use == 0
-        ctx = pool.acquire()
+        pool.acquire()
         # in_use uses weak references, may vary
 
 
@@ -305,7 +306,6 @@ class TestOptimizedFHEEngine:
         data = [1.0, 2.0, 3.0]
         # First encryption
         engine.encrypt(data, use_cache=True)
-        initial_misses = engine.stats.cache_misses
 
         # Second encryption of same data should hit cache
         engine.encrypt(data, use_cache=True)
@@ -397,9 +397,7 @@ class TestEdgeCases:
         decrypted = engine.decrypt(encrypted)
         # Large values may have larger absolute error
         np.testing.assert_array_almost_equal(
-            np.array(decrypted) / 1e6,
-            np.array(data) / 1e6,
-            decimal=1
+            np.array(decrypted) / 1e6, np.array(data) / 1e6, decimal=1
         )
 
     def test_negative_values(self):

@@ -14,10 +14,9 @@ import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
 
 import numpy as np
-
 
 # =============================================================================
 # Validation Results
@@ -65,7 +64,7 @@ class ValidationResult:
         """Add a warning (doesn't affect validity)."""
         self.warnings.append(warning)
 
-    def merge(self, other: "ValidationResult") -> "ValidationResult":
+    def merge(self, other: ValidationResult) -> ValidationResult:
         """Merge another validation result."""
         return ValidationResult(
             is_valid=self.is_valid and other.is_valid,
@@ -238,9 +237,7 @@ class InSet(Constraint):
         self.allowed_values = allowed_values
         self.case_sensitive = case_sensitive
         if not case_sensitive:
-            self._normalized = {
-                str(v).lower() if isinstance(v, str) else v for v in allowed_values
-            }
+            self._normalized = {str(v).lower() if isinstance(v, str) else v for v in allowed_values}
         else:
             self._normalized = allowed_values
 
@@ -562,7 +559,7 @@ class DataSchema:
     def __post_init__(self):
         self._column_map = {col.name: col for col in self.columns}
 
-    def add_column(self, column: ColumnSchema) -> "DataSchema":
+    def add_column(self, column: ColumnSchema) -> DataSchema:
         """Add a column schema."""
         self.columns.append(column)
         self._column_map[column.name] = column
@@ -607,19 +604,23 @@ class DataSchema:
         if data_dict:
             n_rows = len(list(data_dict.values())[0])
             if self.min_rows is not None and n_rows < self.min_rows:
-                result.add_error(ValidationError(
-                    column=None,
-                    row=None,
-                    constraint="min_rows",
-                    message=f"Dataset has {n_rows} rows, minimum is {self.min_rows}",
-                ))
+                result.add_error(
+                    ValidationError(
+                        column=None,
+                        row=None,
+                        constraint="min_rows",
+                        message=f"Dataset has {n_rows} rows, minimum is {self.min_rows}",
+                    )
+                )
             if self.max_rows is not None and n_rows > self.max_rows:
-                result.add_error(ValidationError(
-                    column=None,
-                    row=None,
-                    constraint="max_rows",
-                    message=f"Dataset has {n_rows} rows, maximum is {self.max_rows}",
-                ))
+                result.add_error(
+                    ValidationError(
+                        column=None,
+                        row=None,
+                        constraint="max_rows",
+                        message=f"Dataset has {n_rows} rows, maximum is {self.max_rows}",
+                    )
+                )
 
         # Check for missing columns
         schema_columns = set(self._column_map.keys())
@@ -629,23 +630,27 @@ class DataSchema:
         for col in missing:
             col_schema = self._column_map[col]
             if not col_schema.nullable:
-                result.add_error(ValidationError(
-                    column=col,
-                    row=None,
-                    constraint="required_column",
-                    message=f"Required column '{col}' is missing",
-                ))
+                result.add_error(
+                    ValidationError(
+                        column=col,
+                        row=None,
+                        constraint="required_column",
+                        message=f"Required column '{col}' is missing",
+                    )
+                )
 
         # Check for unknown columns
         if self.strict:
             unknown = data_columns - schema_columns
             for col in unknown:
-                result.add_warning(ValidationError(
-                    column=col,
-                    row=None,
-                    constraint="unknown_column",
-                    message=f"Unknown column '{col}' not in schema",
-                ))
+                result.add_warning(
+                    ValidationError(
+                        column=col,
+                        row=None,
+                        constraint="unknown_column",
+                        message=f"Unknown column '{col}' not in schema",
+                    )
+                )
 
         # Validate each column
         for col_name, values in data_dict.items():
@@ -683,29 +688,35 @@ class DatasetValidator:
     def __init__(self):
         self.checks: List[Tuple[str, Callable]] = []
 
-    def add_check(self, name: str, check_func: Callable[[np.ndarray], bool]) -> "DatasetValidator":
+    def add_check(self, name: str, check_func: Callable[[np.ndarray], bool]) -> DatasetValidator:
         """Add a custom check function."""
         self.checks.append((name, check_func))
         return self
 
-    def check_no_missing(self) -> "DatasetValidator":
+    def check_no_missing(self) -> DatasetValidator:
         """Add check for no missing values."""
+
         def check(X):
             return not np.any(np.isnan(X.astype(float)))
+
         self.checks.append(("no_missing", check))
         return self
 
-    def check_no_duplicates(self) -> "DatasetValidator":
+    def check_no_duplicates(self) -> DatasetValidator:
         """Add check for no duplicate rows."""
+
         def check(X):
             return len(X) == len(np.unique(X, axis=0))
+
         self.checks.append(("no_duplicates", check))
         return self
 
-    def check_finite(self) -> "DatasetValidator":
+    def check_finite(self) -> DatasetValidator:
         """Add check for finite values."""
+
         def check(X):
             return np.all(np.isfinite(X.astype(float)))
+
         self.checks.append(("finite_values", check))
         return self
 
@@ -715,8 +726,9 @@ class DatasetValidator:
         max_rows: Optional[int] = None,
         min_cols: Optional[int] = None,
         max_cols: Optional[int] = None,
-    ) -> "DatasetValidator":
+    ) -> DatasetValidator:
         """Add check for dataset shape."""
+
         def check(X):
             n_rows, n_cols = X.shape
             if min_rows is not None and n_rows < min_rows:
@@ -728,6 +740,7 @@ class DatasetValidator:
             if max_cols is not None and n_cols > max_cols:
                 return False
             return True
+
         self.checks.append(("valid_shape", check))
         return self
 
@@ -740,19 +753,23 @@ class DatasetValidator:
             try:
                 passed = check_func(X)
                 if not passed:
-                    result.add_error(ValidationError(
+                    result.add_error(
+                        ValidationError(
+                            column=None,
+                            row=None,
+                            constraint=name,
+                            message=f"Check '{name}' failed",
+                        )
+                    )
+            except Exception as e:
+                result.add_error(
+                    ValidationError(
                         column=None,
                         row=None,
                         constraint=name,
-                        message=f"Check '{name}' failed",
-                    ))
-            except Exception as e:
-                result.add_error(ValidationError(
-                    column=None,
-                    row=None,
-                    constraint=name,
-                    message=f"Check '{name}' raised error: {e}",
-                ))
+                        message=f"Check '{name}' raised error: {e}",
+                    )
+                )
 
         return result
 
@@ -791,46 +808,54 @@ def validate_features(
 
     # Check dimensions
     if X.ndim != 2:
-        result.add_error(ValidationError(
-            column=None,
-            row=None,
-            constraint="dimensions",
-            message=f"Expected 2D array, got {X.ndim}D",
-        ))
+        result.add_error(
+            ValidationError(
+                column=None,
+                row=None,
+                constraint="dimensions",
+                message=f"Expected 2D array, got {X.ndim}D",
+            )
+        )
         return result
 
     # Check feature count
     if n_features is not None and X.shape[1] != n_features:
-        result.add_error(ValidationError(
-            column=None,
-            row=None,
-            constraint="n_features",
-            message=f"Expected {n_features} features, got {X.shape[1]}",
-        ))
+        result.add_error(
+            ValidationError(
+                column=None,
+                row=None,
+                constraint="n_features",
+                message=f"Expected {n_features} features, got {X.shape[1]}",
+            )
+        )
 
     # Check for NaN
     if not allow_nan:
         nan_mask = np.isnan(X)
         if np.any(nan_mask):
             nan_count = np.sum(nan_mask)
-            result.add_error(ValidationError(
-                column=None,
-                row=None,
-                constraint="no_nan",
-                message=f"Found {nan_count} NaN values",
-            ))
+            result.add_error(
+                ValidationError(
+                    column=None,
+                    row=None,
+                    constraint="no_nan",
+                    message=f"Found {nan_count} NaN values",
+                )
+            )
 
     # Check for infinite
     if not allow_inf:
         inf_mask = np.isinf(X)
         if np.any(inf_mask):
             inf_count = np.sum(inf_mask)
-            result.add_error(ValidationError(
-                column=None,
-                row=None,
-                constraint="no_inf",
-                message=f"Found {inf_count} infinite values",
-            ))
+            result.add_error(
+                ValidationError(
+                    column=None,
+                    row=None,
+                    constraint="no_inf",
+                    message=f"Found {inf_count} infinite values",
+                )
+            )
 
     return result
 
@@ -864,43 +889,51 @@ def validate_labels(
 
     # Check dimensions
     if y.ndim != 1:
-        result.add_error(ValidationError(
-            column=None,
-            row=None,
-            constraint="dimensions",
-            message=f"Expected 1D array, got {y.ndim}D",
-        ))
+        result.add_error(
+            ValidationError(
+                column=None,
+                row=None,
+                constraint="dimensions",
+                message=f"Expected 1D array, got {y.ndim}D",
+            )
+        )
         return result
 
     # Check sample count
     if n_samples is not None and len(y) != n_samples:
-        result.add_error(ValidationError(
-            column=None,
-            row=None,
-            constraint="n_samples",
-            message=f"Expected {n_samples} samples, got {len(y)}",
-        ))
+        result.add_error(
+            ValidationError(
+                column=None,
+                row=None,
+                constraint="n_samples",
+                message=f"Expected {n_samples} samples, got {len(y)}",
+            )
+        )
 
     # Check class count
     unique_labels = np.unique(y)
     if n_classes is not None and len(unique_labels) != n_classes:
-        result.add_error(ValidationError(
-            column=None,
-            row=None,
-            constraint="n_classes",
-            message=f"Expected {n_classes} classes, got {len(unique_labels)}",
-        ))
+        result.add_error(
+            ValidationError(
+                column=None,
+                row=None,
+                constraint="n_classes",
+                message=f"Expected {n_classes} classes, got {len(unique_labels)}",
+            )
+        )
 
     # Check class labels
     if class_labels is not None:
         unexpected = set(unique_labels) - class_labels
         if unexpected:
-            result.add_error(ValidationError(
-                column=None,
-                row=None,
-                constraint="class_labels",
-                message=f"Unexpected class labels: {unexpected}",
-            ))
+            result.add_error(
+                ValidationError(
+                    column=None,
+                    row=None,
+                    constraint="class_labels",
+                    message=f"Unexpected class labels: {unexpected}",
+                )
+            )
 
     return result
 
@@ -914,20 +947,24 @@ def validate_sample_weights(
     result = ValidationResult(is_valid=True)
 
     if len(sample_weight) != n_samples:
-        result.add_error(ValidationError(
-            column=None,
-            row=None,
-            constraint="length",
-            message=f"Sample weight length {len(sample_weight)} != {n_samples}",
-        ))
+        result.add_error(
+            ValidationError(
+                column=None,
+                row=None,
+                constraint="length",
+                message=f"Sample weight length {len(sample_weight)} != {n_samples}",
+            )
+        )
 
     if np.any(sample_weight < 0):
-        result.add_error(ValidationError(
-            column=None,
-            row=None,
-            constraint="non_negative",
-            message="Sample weights must be non-negative",
-        ))
+        result.add_error(
+            ValidationError(
+                column=None,
+                row=None,
+                constraint="non_negative",
+                message="Sample weights must be non-negative",
+            )
+        )
 
     return result
 
@@ -982,11 +1019,13 @@ def infer_schema(
             max_val = np.nanmax(values)
             constraints.append(InRange(min_val, max_val))
 
-        columns.append(ColumnSchema(
-            name=name,
-            dtype=dtype,
-            nullable=nullable,
-            constraints=constraints,
-        ))
+        columns.append(
+            ColumnSchema(
+                name=name,
+                dtype=dtype,
+                nullable=nullable,
+                constraints=constraints,
+            )
+        )
 
     return DataSchema(columns=columns)

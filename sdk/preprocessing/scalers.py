@@ -4,8 +4,9 @@ Data Scalers for FHE-ML Platform.
 Implements scaling transformations compatible with encrypted data.
 """
 
+from typing import Optional
+
 import numpy as np
-from typing import Optional, Union
 
 
 class StandardScaler:

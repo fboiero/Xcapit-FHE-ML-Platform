@@ -8,11 +8,12 @@ to single decision trees, while maintaining FHE compatibility through
 polynomial approximations.
 """
 
-from dataclasses import dataclass, field
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Optional, Union
+
 import numpy as np
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from ..encryption.ckks_wrapper import (
     CKKSEncryptor,
@@ -26,6 +27,7 @@ from .decision_tree import DecisionTree, DecisionTreeClassifier, TreeConfig, Tre
 
 class AggregationMethod(Enum):
     """Method for aggregating tree predictions."""
+
     AVERAGE = "average"  # Mean of predictions (regression)
     VOTING = "voting"  # Majority vote (classification)
     SOFT_VOTING = "soft_voting"  # Average probabilities (classification)
@@ -53,9 +55,10 @@ class RandomForestConfig(ModelConfig):
         random_state: Random seed for reproducibility.
         tree_config: Configuration passed to individual trees.
     """
+
     n_estimators: int = 10
     max_depth: int = 3
-    max_features: Union[str, int, float, None] = 'sqrt'
+    max_features: Union[str, int, float, None] = "sqrt"
     min_samples_split: int = 2
     bootstrap: bool = True
     bootstrap_ratio: float = 1.0
@@ -176,9 +179,9 @@ class RandomForest(BaseFHEModel):
         if max_features is None:
             return n_features
         elif isinstance(max_features, str):
-            if max_features == 'sqrt':
+            if max_features == "sqrt":
                 return max(1, int(np.sqrt(n_features)))
-            elif max_features == 'log2':
+            elif max_features == "log2":
                 return max(1, int(np.log2(n_features)))
             else:
                 raise ValueError(f"Unknown max_features string: {max_features}")
@@ -238,9 +241,7 @@ class RandomForest(BaseFHEModel):
 
         # Select random feature subset
         all_features = np.arange(X.shape[1])
-        feature_subset = self._rng.choice(
-            all_features, size=n_max_features, replace=False
-        )
+        feature_subset = self._rng.choice(all_features, size=n_max_features, replace=False)
         feature_subset.sort()  # Keep consistent ordering
 
         # Subset the features
@@ -323,9 +324,7 @@ class RandomForest(BaseFHEModel):
         if self._forest_config.n_jobs == 1:
             # Sequential training
             for i in range(self.n_estimators):
-                tree, features, oob = self._train_single_tree(
-                    i, X_train, y_train, n_max_features
-                )
+                tree, features, oob = self._train_single_tree(i, X_train, y_train, n_max_features)
                 self._trees.append(tree)
                 self._feature_subsets.append(features)
                 oob_scores.append(oob)
@@ -340,9 +339,7 @@ class RandomForest(BaseFHEModel):
 
             with ThreadPoolExecutor(max_workers=n_jobs) as executor:
                 futures = {
-                    executor.submit(
-                        self._train_single_tree, i, X_train, y_train, n_max_features
-                    ): i
+                    executor.submit(self._train_single_tree, i, X_train, y_train, n_max_features): i
                     for i in range(self.n_estimators)
                 }
 
@@ -464,17 +461,21 @@ class RandomForest(BaseFHEModel):
     def get_params(self) -> dict[str, Any]:
         """Get model parameters as dictionary."""
         params = super().get_params()
-        params.update({
-            "n_estimators": self._forest_config.n_estimators,
-            "max_depth": self._forest_config.max_depth,
-            "max_features": self._forest_config.max_features,
-            "bootstrap": self._forest_config.bootstrap,
-            "aggregation": self._forest_config.aggregation.value,
-            "n_features": self._n_features,
-            "tree_weights": self._tree_weights.tolist() if self._tree_weights is not None else None,
-            "feature_subsets": [fs.tolist() for fs in self._feature_subsets],
-            "trees": [tree.get_params() for tree in self._trees],
-        })
+        params.update(
+            {
+                "n_estimators": self._forest_config.n_estimators,
+                "max_depth": self._forest_config.max_depth,
+                "max_features": self._forest_config.max_features,
+                "bootstrap": self._forest_config.bootstrap,
+                "aggregation": self._forest_config.aggregation.value,
+                "n_features": self._n_features,
+                "tree_weights": self._tree_weights.tolist()
+                if self._tree_weights is not None
+                else None,
+                "feature_subsets": [fs.tolist() for fs in self._feature_subsets],
+                "trees": [tree.get_params() for tree in self._trees],
+            }
+        )
         return params
 
     def __repr__(self) -> str:
@@ -502,7 +503,7 @@ class RandomForestClassifier(RandomForest):
         self,
         n_estimators: int = 10,
         max_depth: int = 3,
-        max_features: Union[str, int, float, None] = 'sqrt',
+        max_features: Union[str, int, float, None] = "sqrt",
         n_classes: int = 2,
         bootstrap: bool = True,
         random_state: Optional[int] = None,
@@ -547,9 +548,7 @@ class RandomForestClassifier(RandomForest):
 
         # Select random feature subset
         all_features = np.arange(X.shape[1])
-        feature_subset = self._rng.choice(
-            all_features, size=n_max_features, replace=False
-        )
+        feature_subset = self._rng.choice(all_features, size=n_max_features, replace=False)
         feature_subset.sort()
 
         X_subset = X_sample[:, feature_subset]
@@ -611,7 +610,7 @@ class RandomForestClassifier(RandomForest):
         if self._forest_config.aggregation == AggregationMethod.WEIGHTED:
             # Weighted average
             avg_probs = np.zeros_like(all_probs[0])
-            for i, (probs, weight) in enumerate(zip(all_probs, self._tree_weights)):
+            for _i, (probs, weight) in enumerate(zip(all_probs, self._tree_weights)):
                 avg_probs += weight * probs
         else:
             avg_probs = np.mean(all_probs, axis=0)
@@ -670,7 +669,7 @@ class RandomForestRegressor(RandomForest):
         self,
         n_estimators: int = 10,
         max_depth: int = 3,
-        max_features: Union[str, int, float, None] = 'sqrt',
+        max_features: Union[str, int, float, None] = "sqrt",
         bootstrap: bool = True,
         random_state: Optional[int] = None,
         encryptor: Optional[CKKSEncryptor] = None,

@@ -6,14 +6,14 @@ import numpy as np
 import pytest
 
 from sdk.outlier import (
+    EllipticEnvelope,
     IsolationForest,
     LocalOutlierFactor,
-    EllipticEnvelope,
     OneClassSVM,
-    detect_outliers_zscore,
+    detect_outliers_dbscan,
     detect_outliers_iqr,
     detect_outliers_mad,
-    detect_outliers_dbscan,
+    detect_outliers_zscore,
     get_outlier_scores,
 )
 
@@ -197,10 +197,12 @@ class TestStatisticalDetection:
     def test_zscore_detection(self):
         """Test Z-score based outlier detection."""
         # Normal data with clear outliers
-        data = np.concatenate([
-            np.random.randn(100) * 0.5,  # Normal data
-            np.array([10, -10, 15])  # Outliers
-        ])
+        data = np.concatenate(
+            [
+                np.random.randn(100) * 0.5,  # Normal data
+                np.array([10, -10, 15]),  # Outliers
+            ]
+        )
         X = data.reshape(-1, 1)
 
         outliers = detect_outliers_zscore(X, threshold=3.0)
@@ -212,10 +214,7 @@ class TestStatisticalDetection:
 
     def test_iqr_detection(self):
         """Test IQR based outlier detection."""
-        data = np.concatenate([
-            np.random.randn(100) * 0.5,
-            np.array([10, -10])
-        ])
+        data = np.concatenate([np.random.randn(100) * 0.5, np.array([10, -10])])
         X = data.reshape(-1, 1)
 
         outliers = detect_outliers_iqr(X, multiplier=1.5)
@@ -225,10 +224,7 @@ class TestStatisticalDetection:
 
     def test_mad_detection(self):
         """Test MAD (Median Absolute Deviation) based outlier detection."""
-        data = np.concatenate([
-            np.random.randn(100) * 0.5,
-            np.array([10, -10])
-        ])
+        data = np.concatenate([np.random.randn(100) * 0.5, np.array([10, -10])])
         X = data.reshape(-1, 1)
 
         outliers = detect_outliers_mad(X, threshold=3.0)
