@@ -390,7 +390,8 @@ class TestBlockchainConnectorGas:
 
         gas_price = connector.get_gas_price()
 
-        assert gas_price == 20000000000
+        # get_gas_price adds 20% buffer: 20 Gwei * 1.2 = 24 Gwei
+        assert gas_price == 24000000000
 
 
 class TestBlockchainConnectorTransaction:

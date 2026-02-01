@@ -112,7 +112,7 @@ class GovernanceClient:
         receipt = self.connector.web3.eth.wait_for_transaction_receipt(tx_hash)
 
         # Check transaction status
-        if receipt.status != 1:
+        if receipt["status"] != 1:
             raise RuntimeError(f"Transaction reverted. Hash: {tx_hash.hex()}")
 
         # Extract consortium ID from event logs
@@ -257,7 +257,7 @@ class GovernanceClient:
         receipt = self.connector.web3.eth.wait_for_transaction_receipt(tx_hash)
 
         # Check transaction status
-        if receipt.status != 1:
+        if receipt["status"] != 1:
             raise RuntimeError(f"Transaction reverted. Hash: {tx_hash.hex()}")
 
         # Extract contribution ID from event
