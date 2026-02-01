@@ -1,3 +1,5 @@
+> **DEPRECATED**: Replaced by [ROADMAP.md](ROADMAP.md) (Feb 2026). Kept as historical reference.
+
 # Xcapit FHE-ML Platform - Evolution Roadmap
 
 ## Executive Summary

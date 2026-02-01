@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { getCurrentCompany, clearApiKey, isDemoMode } from '../api/client'
+import { Sentry } from '../lib/sentry'
 import { useDemo } from '../context/DemoContext'
 import { SparklesIcon, Bars3Icon } from '@heroicons/react/24/outline'
 import LanguageSwitcher from './LanguageSwitcher'
@@ -28,7 +29,7 @@ export default function Navbar({ onMenuClick }) {
     } else {
       getCurrentCompany()
         .then(setCompany)
-        .catch(console.error)
+        .catch((err) => Sentry.captureException(err))
     }
   }, [isDemo])
 
@@ -143,7 +144,7 @@ export default function Navbar({ onMenuClick }) {
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
-                    {currentLang === 'es' ? 'Soluciones por industria' : 'Industry Solutions'}
+                    {t('nav.industrySolutions')}
                   </a>
                 </div>
                 <div className="border-t border-slate-100 pt-1">

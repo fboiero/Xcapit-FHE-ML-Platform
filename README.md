@@ -1,6 +1,6 @@
-# Xcapit FHE-ML Platform
+# Xcapit Privacy — Data Consortium Platform
 
-Privacy-preserving machine learning platform using Fully Homomorphic Encryption (FHE).
+The platform where companies collaborate on data without sharing it. Form data consortiums, train joint ML models, and preserve total privacy with Fully Homomorphic Encryption (FHE).
 
 [![CI](https://github.com/xcapit/Xcapit-FHE-ML-Platform/actions/workflows/ci.yml/badge.svg)](https://github.com/xcapit/Xcapit-FHE-ML-Platform/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/xcapit/Xcapit-FHE-ML-Platform/actions/workflows/codeql.yml/badge.svg)](https://github.com/xcapit/Xcapit-FHE-ML-Platform/actions/workflows/codeql.yml)
@@ -15,7 +15,7 @@ Privacy-preserving machine learning platform using Fully Homomorphic Encryption 
 
 ## Overview
 
-Xcapit FHE-ML enables machine learning on encrypted data. Train models and make predictions without ever exposing the underlying data - perfect for healthcare, finance, and any sensitive data applications.
+Xcapit Privacy enables organizations to form data consortiums where multiple companies train joint ML models without exposing their data to each other. Powered by Fully Homomorphic Encryption (FHE), the platform ensures cryptographic privacy throughout the entire lifecycle — from data contribution to model training to prediction.
 
 ```python
 from sdk import FHEModel, SecureDataLoader, FHEContextManager
@@ -38,15 +38,14 @@ predictions = model.predict(encrypted_test)
 
 ## Key Features
 
-- **4 ML Models**: LinearRegression, LogisticRegression, DecisionTree, KMeans
-- **CKKS Encryption**: 128/192/256-bit security levels with optimized FHE engine
-- **Blockchain Audit**: Arbitrum integration for model verification and governance
-- **Multi-Party Learning**: Consortium-based federated learning with contribution tracking
+- **Data Consortiums**: Multi-party collaboration with governance, voting, and contribution tracking
+- **Cryptographic Privacy**: CKKS homomorphic encryption (128/192/256-bit security levels)
+- **Blockchain Governance**: Arbitrum integration for audit trails, proposals, and verification
+- **4 ML Models**: LinearRegression, LogisticRegression, DecisionTree, KMeans on encrypted data
+- **Compliance**: Built-in GDPR, HIPAA, SOC2, PCI-DSS automated verification
 - **REST API**: Django REST Framework with OpenAPI 3.0 documentation
-- **TypeScript SDK**: Full-featured SDK for web applications
 - **CLI Tool**: Command-line interface for all operations
 - **Docker Ready**: Multi-stage builds for dev/prod
-- **Compliance**: Built-in GDPR, HIPAA, SOC2, PCI-DSS verification
 
 ## Live Demo
 
@@ -185,7 +184,7 @@ curl -X POST http://localhost:8000/api/v2/models/ \
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                        Xcapit FHE-ML Platform                           │
+│                  Xcapit Privacy — Data Consortium Platform               │
 ├─────────────────────────────────────────────────────────────────────────┤
 │   CLI (xcapit-fhe)  │  REST API (Django)   │  TypeScript SDK  │ Python │
 ├─────────────────────────────────────────────────────────────────────────┤

@@ -1,5 +1,6 @@
 {
   "name": "xcapit-privacy-dashboard",
+  "description": "Xcapit Privacy - Data Consortium Platform with Cryptographic Privacy",
   "private": true,
   "version": "1.0.0",
   "type": "module",

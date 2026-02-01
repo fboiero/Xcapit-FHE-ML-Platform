@@ -17,6 +17,7 @@ import {
 } from '@heroicons/react/24/outline'
 import * as dataQualityApi from '../api/dataQuality'
 import { isDemoMode } from '../api/client'
+import { Sentry } from '../lib/sentry'
 
 // Metric configuration
 const MetricConfig = {
@@ -456,7 +457,6 @@ export default function DataQuality() {
       setHistory(historyData.history || historyData || [])
       setUsingMockData(false)
     } catch (error) {
-      console.warn('Error fetching quality data, using mock:', error)
       setDashboard(MOCK_DASHBOARD)
       setAlerts(MOCK_ALERTS)
       setRules(MOCK_RULES)
@@ -484,7 +484,7 @@ export default function DataQuality() {
       await dataQualityApi.acknowledgeAlert(alertId)
       await fetchQualityData() // Refresh data
     } catch (error) {
-      console.error('Error acknowledging alert:', error)
+      Sentry.captureException(error)
       // Still update locally on error
       setAlerts(alerts.map(a =>
         a.id === alertId ? { ...a, status: 'acknowledged' } : a
@@ -512,7 +512,7 @@ export default function DataQuality() {
         enabled: !rule.enabled,
       })
     } catch (error) {
-      console.error('Error toggling rule:', error)
+      Sentry.captureException(error)
       // Revert on error
       setRules(rules.map(r =>
         r.id === ruleId ? { ...r, enabled: rule.enabled } : r
@@ -532,7 +532,7 @@ export default function DataQuality() {
       await dataQualityApi.assessQuality({ consortium_id: consortiumId })
       await fetchQualityData() // Refresh data
     } catch (error) {
-      console.error('Error running assessment:', error)
+      Sentry.captureException(error)
       alert('Error ejecutando evaluacion: ' + error.message)
     } finally {
       setLoading(false)

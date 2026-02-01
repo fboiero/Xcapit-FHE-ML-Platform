@@ -27,6 +27,31 @@ export const isAuthenticated = () => !!getApiKey();
 // Check if in demo mode
 export const isDemoMode = () => getApiKey() === DEMO_API_KEY;
 
+// Fetch with retry logic for network errors and 5xx responses
+const fetchWithRetry = async (url, options = {}, retries = 3) => {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 30000)
+
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      const response = await fetch(url, { ...options, signal: controller.signal })
+      clearTimeout(timeout)
+      if (response.status >= 500 && attempt < retries - 1) {
+        await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt)))
+        continue
+      }
+      return response
+    } catch (err) {
+      clearTimeout(timeout)
+      if (attempt < retries - 1 && err.name !== 'AbortError') {
+        await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt)))
+        continue
+      }
+      throw err
+    }
+  }
+}
+
 // Base fetch with auth
 const apiFetch = async (endpoint, options = {}) => {
   const apiKey = getApiKey();
@@ -40,7 +65,7 @@ const apiFetch = async (endpoint, options = {}) => {
     headers['X-API-Key'] = apiKey;
   }
 
-  const response = await fetch(`${API_BASE}${endpoint}`, {
+  const response = await fetchWithRetry(`${API_BASE}${endpoint}`, {
     ...options,
     headers,
   });
@@ -140,7 +165,7 @@ export const uploadEncryptedData = async (consortiumId, file, metadata = {}) => 
   formData.append('file', file);
   formData.append('metadata', JSON.stringify(metadata));
 
-  const response = await fetch(`${API_BASE}/${consortiumId}/data`, {
+  const response = await fetchWithRetry(`${API_BASE}/${consortiumId}/data`, {
     method: 'POST',
     headers: {
       'X-API-Key': apiKey,
@@ -173,7 +198,7 @@ export const getTrainingStatus = async (consortiumId) => {
 export const downloadResults = async (consortiumId) => {
   const apiKey = getApiKey();
 
-  const response = await fetch(`${API_BASE}/${consortiumId}/results`, {
+  const response = await fetchWithRetry(`${API_BASE}/${consortiumId}/results`, {
     headers: {
       'X-API-Key': apiKey,
     },

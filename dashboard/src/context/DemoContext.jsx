@@ -202,7 +202,7 @@ export const ACME_CORP = {
   email: 'demo@acme-corp.com',
   logo: 'AC',
   industry: 'Technology & Finance',
-  description: 'Leading fintech company exploring privacy-preserving ML',
+  description: 'Leading fintech company participating in data consortiums',
   employees: '500+',
   region: 'Global',
   plan: 'Enterprise',

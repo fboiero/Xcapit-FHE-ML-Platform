@@ -41,12 +41,12 @@
       "register": "Registrarse"
     },
     "hero": {
-      "title": "Machine Learning sobre",
-      "titleHighlight": "Datos Cifrados",
-      "subtitle": "La primera plataforma que permite a empresas colaborar y entrenar modelos de ML sin exponer sus datos. Usa Fully Homomorphic Encryption (FHE) para procesar informacion que permanece siempre cifrada.",
+      "title": "Colabora con Datos",
+      "titleHighlight": "Sin Compartirlos",
+      "subtitle": "La plataforma donde empresas forman consorcios de datos para entrenar modelos de ML juntas — sin exponer sus datos. Impulsada por Fully Homomorphic Encryption (FHE).",
       "watchDemo": "Ver Demo Interactiva",
       "startFree": "Comenzar Gratis",
-      "badge": "Plataforma FHE-ML Lista para Produccion",
+      "badge": "Plataforma de Consorcios de Datos",
       "trustedBy": "Tecnologia de nivel empresarial:",
       "fheEncryption": "Cifrado FHE",
       "gdprCompliant": "Compatible GDPR",
@@ -57,19 +57,19 @@
       "companies": "Empresas pueden colaborar"
     },
     "features": {
-      "title": "Como funciona Xcapit Privacy",
-      "subtitle": "Nuestra tecnologia permite procesamiento de datos sin que nadie - ni siquiera el servidor - pueda ver la informacion original.",
+      "title": "Como funcionan los Consorcios de Datos",
+      "subtitle": "Las organizaciones contribuyen datos cifrados a un consorcio compartido. Los modelos de ML se entrenan con todos los datos sin que nadie vea la informacion original.",
       "encrypted": {
-        "title": "Datos Siempre Cifrados",
-        "description": "Tus datos permanecen encriptados en todo momento, incluso durante el procesamiento. Nadie puede ver tu informacion original."
+        "title": "Privacidad Criptografica",
+        "description": "Tus datos permanecen cifrados en todo momento usando Fully Homomorphic Encryption. Nadie puede ver tu informacion original — ni siquiera la plataforma."
       },
       "privateML": {
-        "title": "Machine Learning Privado",
-        "description": "Ejecuta modelos de ML sobre datos cifrados. Obtiene predicciones sin exponer informacion sensible."
+        "title": "Modelos ML Colaborativos",
+        "description": "Multiples organizaciones entrenan modelos de ML conjuntos sobre sus datos cifrados combinados. Mejores predicciones, cero exposicion de datos."
       },
       "secureCollab": {
-        "title": "Colaboracion Segura",
-        "description": "Multiples empresas pueden colaborar y entrenar modelos conjuntos sin revelar sus datos entre si."
+        "title": "Gobernanza Blockchain",
+        "description": "Cada decision del consorcio se gobierna con votaciones respaldadas por blockchain, seguimiento de contribuciones y audit trails inmutables."
       }
     },
     "useCases": {
@@ -86,16 +86,16 @@
       }
     },
     "phases": {
-      "title": "Lo que hemos construido",
-      "subtitle": "Un SDK completo y una plataforma lista para produccion.",
+      "title": "Capacidades de la Plataforma",
+      "subtitle": "Una plataforma lista para produccion para consorcios de datos.",
       "ready": "Listo",
       "sdk": {
-        "title": "SDK de Cifrado FHE",
-        "description": "Implementacion completa del esquema CKKS para cifrado homomorfico."
+        "title": "Motor de Privacidad Criptografica",
+        "description": "Implementacion completa de cifrado homomorfico CKKS que permite computacion sobre datos cifrados."
       },
       "ml": {
-        "title": "Modelos ML sobre FHE",
-        "description": "Regresion lineal y logistica ejecutandose sobre datos cifrados."
+        "title": "Modelos ML Colaborativos",
+        "description": "Regresion lineal, regresion logistica, arboles de decision y KMeans ejecutandose sobre datos cifrados del consorcio."
       },
       "api": {
         "title": "API REST y Dashboard",
@@ -183,7 +183,7 @@
       "contactUs": "Contactanos"
     },
     "footer": {
-      "copyright": "2024 Xcapit Privacy. Tecnologia de privacidad para el futuro."
+      "copyright": "2026 Xcapit Privacy. Tecnologia de consorcios de datos para el futuro."
     }
   },
   "auth": {
@@ -606,10 +606,10 @@
       "description": "Capacidades unicas que no existen en el mercado actual"
     },
     "clientsDemo": {
-      "title": "Demo Multi-Cliente FHE",
-      "description": "Experimenta como dos empresas competidoras colaboran en entrenamiento ML sin exponer sus datos sensibles. Observa el proceso completo de cifrado FHE y aprendizaje federado en accion.",
+      "title": "Demo de Consorcio Multi-Organizacion",
+      "description": "Experimenta como dos empresas competidoras colaboran en entrenamiento ML a traves de un consorcio de datos sin exponer sus datos sensibles.",
       "cta": "Ejecutar Demo Interactiva",
-      "feature1": "Cifrado FHE Real",
+      "feature1": "Privacidad Criptografica",
       "feature2": "Colaboracion Multi-Parte",
       "feature3": "ML Random Forest"
     },
@@ -644,11 +644,12 @@
     "needHelp": "Necesitas ayuda?",
     "helpDescription": "Lee nuestra documentacion o contactanos.",
     "contactUs": "Contactanos",
-    "closeSession": "Cerrar sesion"
+    "closeSession": "Cerrar sesion",
+    "industrySolutions": "Soluciones por industria"
   },
   "modelBuilder": {
-    "title": "Constructor de Modelos FHE",
-    "subtitle": "Configura y entrena modelos de machine learning sobre datos cifrados",
+    "title": "Constructor de Modelos de Consorcio",
+    "subtitle": "Configura y entrena modelos de machine learning sobre datos cifrados del consorcio",
     "selectModel": "Seleccionar Modelo",
     "allModels": "Todos los Modelos",
     "classification": "Clasificacion",
@@ -679,8 +680,8 @@
     }
   },
   "dataUpload": {
-    "title": "Carga de Datos y Cifrado",
-    "subtitle": "Sube tu dataset y preparalo para cifrado FHE",
+    "title": "Contribucion de Datos y Cifrado",
+    "subtitle": "Sube tu dataset y contribuyelo a un consorcio con cifrado FHE",
     "uploadFile": "Subir Archivo",
     "dropzone": "Haz clic para subir o arrastra y suelta",
     "dataStats": "Estadisticas de Datos",
@@ -733,7 +734,7 @@
   },
   "onboarding": {
     "title": "Bienvenido a Xcapit Privacy",
-    "subtitle": "Comienza explorando las funcionalidades clave de la plataforma.",
+    "subtitle": "Comienza creando o uniendote a un consorcio de datos.",
     "createConsortium": "Crear consorcio",
     "exploreSandbox": "Explorar sandbox",
     "uploadData": "Subir datos",

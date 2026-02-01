@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Sentry } from '../lib/sentry';
 
 export default function DataUpload() {
   const { t } = useTranslation();
@@ -59,7 +60,7 @@ export default function DataUpload() {
       setDataStats(stats);
       setUploadStatus('ready');
     } catch (error) {
-      console.error('Error parsing file:', error);
+      Sentry.captureException(error);
       setUploadStatus('error');
     }
   };

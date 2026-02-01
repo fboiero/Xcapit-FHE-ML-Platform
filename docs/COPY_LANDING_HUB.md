@@ -21,18 +21,18 @@ Página principal minimalista que dirige a cada visitante a su landing vertical 
 ### Headline
 
 **ES:**
-> Entrena modelos con datos que no puedes ver.
+> La plataforma donde empresas competidoras colaboran con datos sin compartirlos.
 
 **EN:**
-> Train models on data you can't see.
+> The platform where competing companies collaborate on data without sharing it.
 
 ### Subheadline
 
 **ES:**
-> Múltiples organizaciones entrenan UN modelo. Nadie ve los datos del otro.
+> Forma consorcios de datos, entrena modelos de ML conjuntos y preserva la privacidad total con cifrado homomorfico.
 
 **EN:**
-> Multiple organizations train ONE model. No one sees each other's data.
+> Form data consortiums, train joint ML models, and preserve total privacy with homomorphic encryption.
 
 ---
 
@@ -287,7 +287,7 @@ utm_source=google&utm_medium=cpc&utm_campaign=gobierno_argentina
 ## NOTAS DE IMPLEMENTACIÓN
 
 ### SEO
-- Title: "Xcapit Privacy - ML Colaborativo con Cifrado Homomórfico"
+- Title: "Xcapit Privacy - Plataforma de Consorcios de Datos con Privacidad Criptografica"
 - Meta description diferente por idioma
 - Structured data para organización
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
+import { Sentry } from '../lib/sentry'
 import {
   getConsortium,
   getConsortiumStats,
@@ -87,7 +88,7 @@ export default function ConsortiumDetail() {
         loadData() // Refresh all data
       }
     } catch (err) {
-      console.error('Error loading training status:', err)
+      Sentry.captureException(err)
     }
   }
 

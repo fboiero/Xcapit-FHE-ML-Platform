@@ -17,6 +17,7 @@ import {
 } from '@heroicons/react/24/outline'
 import * as complianceApi from '../api/compliance'
 import { isDemoMode } from '../api/client'
+import { Sentry } from '../lib/sentry'
 
 // Framework icons and colors
 const FrameworkConfig = {
@@ -335,7 +336,6 @@ export default function Compliance() {
       setAttestations(attestationsData.attestations || attestationsData || [])
       setUsingMockData(false)
     } catch (error) {
-      console.warn('Error fetching compliance data, using mock:', error)
       setDashboard(MOCK_DASHBOARD)
       setChecks(MOCK_CHECKS)
       setReports(MOCK_REPORTS)
@@ -372,7 +372,7 @@ export default function Compliance() {
       await complianceApi.runAutomatedChecks(consortiumId, null) // null = all frameworks
       await fetchComplianceData() // Refresh data
     } catch (error) {
-      console.error('Error running checks:', error)
+      Sentry.captureException(error)
       alert('Error ejecutando verificaciones: ' + error.message)
     } finally {
       setLoading(false)
@@ -391,7 +391,7 @@ export default function Compliance() {
       await complianceApi.generateReport(consortiumId, frameworkId)
       await fetchComplianceData() // Refresh data
     } catch (error) {
-      console.error('Error generating report:', error)
+      Sentry.captureException(error)
       alert('Error generando reporte: ' + error.message)
     } finally {
       setLoading(false)

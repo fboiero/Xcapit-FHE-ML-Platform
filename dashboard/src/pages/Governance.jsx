@@ -16,6 +16,7 @@ import {
 } from '@heroicons/react/24/outline'
 import * as governanceApi from '../api/governance'
 import { isDemoMode } from '../api/client'
+import { Sentry } from '../lib/sentry'
 
 // Mock data for demo mode (fallback when API is unavailable)
 const MOCK_CONTRIBUTIONS = [
@@ -307,7 +308,7 @@ export default function Governance() {
         setAuditEvents(MOCK_AUDIT)
       }
     } catch (err) {
-      console.error('Error loading governance data:', err)
+      Sentry.captureException(err)
       // Fallback to mock data
       setContributions(MOCK_CONTRIBUTIONS)
       setProposals(MOCK_PROPOSALS)

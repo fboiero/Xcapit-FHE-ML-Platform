@@ -1,226 +1,124 @@
-# Xcapit Privacy - Product Roadmap
+# Xcapit Privacy — Roadmap 2026
 
-## Vision
-La plataforma donde empresas colaboran con datos sin compartirlos.
+> **Last updated:** February 2026
+>
+> **Previous roadmap:** See [PLATFORM_ROADMAP.md](PLATFORM_ROADMAP.md) for the feature-tier roadmap (completed, kept as historical reference).
 
-## Tiers de Desarrollo
-
----
-
-### TIER 1: Core Platform (MVP)
-**Status:** Completed
-**Objetivo:** Flujo completo de consorcio funcionando
-
-| Feature | Descripcion | Status |
-|---------|-------------|--------|
-| Consortium Dashboard | Crear consorcio, invitar empresas, ver miembros y estado | Done |
-| Encrypted Data Upload | Cada empresa sube datos encriptados localmente con su clave | Done |
-| Model Training Pipeline | Entrenar modelo ML con datos combinados de N empresas | Done |
-| Results Download | Cada empresa descarga predicciones encriptadas para su clave | Done |
-
-**Entregable:** Una empresa puede crear un consorcio, invitar otras, todas suben datos, entrenan un modelo compartido, y cada una baja sus predicciones.
-
-**Archivos principales:**
-- Backend API: `sdk/api/consortium.py`, `sdk/api/consortium_routes.py`
-- Frontend Dashboard: `dashboard/src/`
-- FHE Encryption: `sdk/encryption/ckks_wrapper.py`
+12-month roadmap (Feb 2026 - Jan 2027) for evolving from MVP to production-grade Data Consortium Platform.
 
 ---
 
-### TIER 2: Trust & Governance
-**Status:** Completed
-**Objetivo:** Confianza entre participantes sin intermediario central
+## Q1 2026 (Feb-Mar): Foundation
 
-| Feature | Descripcion | Status |
-|---------|-------------|--------|
-| Contribution Proof | Registro blockchain de aportes (cantidad, no contenido) | Done |
-| Voting System | Decisiones por votacion: agregar/remover miembros, cambiar modelo | Done |
-| Audit Trail | Log inmutable de todas las operaciones del consorcio | Done |
-| Fair Revenue Split | Distribucion automatica de valor segun contribucion | Done |
+**Goal:** Production-harden the frontend, reposition messaging, and validate technical foundation.
 
-**Entregable:** Gobernanza descentralizada del consorcio con pruebas criptograficas de participacion.
+| Item | Status | Notes |
+|------|--------|-------|
+| Frontend production hardening | In Progress | Replace console.* with Sentry, retry logic, meta tags |
+| Messaging repositioning | In Progress | Consortium-first positioning across all copy |
+| Deploy contracts to Arbitrum Sepolia | Planned | ConsortiumGovernanceV2, ModelRegistryV2, ComputationVerifierV2 |
+| Evaluate FHE library migration | Planned | TenSEAL vs Concrete ML vs OpenFHE — benchmark latency, model support, maintenance |
+| Document real FHE limitations per model | Planned | Throughput, latency, precision loss by model type |
 
-**Archivos principales:**
-- Smart Contract: `contracts/ConsortiumGovernance.sol`
-- Blockchain Client: `sdk/blockchain/governance.py`
-- API Routes: `sdk/api/governance_routes.py`
-- Backend Methods: `sdk/api/consortium.py` (governance methods)
-- Frontend Dashboard: `dashboard/src/pages/Governance.jsx`
-- Tests: `tests/test_governance.py` (31 tests)
+**Metrics:**
+- 0 console.log/warn/error in frontend
+- Contracts deployed and verified on Sepolia
+- FHE evaluation document published
 
 ---
 
-### TIER 3: Enterprise Features
-**Status:** Completed
-**Objetivo:** Features que desbloquean ventas enterprise
+## Q2 2026 (Apr-Jun): First Pilots
 
-| Feature | Descripcion | Status |
-|---------|-------------|--------|
-| Compliance Dashboard | Verificacion automatica GDPR/HIPAA/SOC2/PCI-DSS | Done |
-| Data Quality Score | Metricas de calidad de datos sin acceso al contenido | Done |
-| Model Marketplace | Modelos pre-entrenados por industria (fraude, credit, salud) | Done |
-| Sandbox Mode | Ambiente de prueba con datos sinteticos | Done |
+**Goal:** Land 2-3 fintech pilot customers in LATAM for fraud detection consortium.
 
-**Entregable:** Suite enterprise-ready con compliance automatico y onboarding simplificado.
+| Item | Status | Notes |
+|------|--------|-------|
+| Pilot: 2-3 fintechs LATAM (fraud detection) | Planned | Focus on logistic regression model |
+| Dashboard connected to real API | Planned | Eliminate demo mode for pilot users |
+| End-to-end FHE pipeline for 2 models | Planned | Logistic Regression + KMeans validated |
+| Prometheus/Grafana monitoring | Planned | Backend observability stack |
+| LinkedIn Ads validation | Planned | $1,500 budget, 3 verticals (fintech, healthcare, government) |
+| API rate limiting + abuse prevention | Planned | Production-grade throttling |
 
-**Archivos principales (Compliance):**
-- Backend Schema: `sdk/api/consortium.py` (compliance methods)
-- API Routes: `sdk/api/compliance_routes.py`
-- Frontend Dashboard: `dashboard/src/pages/Compliance.jsx`
-- Tests: `tests/test_compliance.py` (27 tests)
+**Metrics:**
+- 2+ pilot agreements signed
+- End-to-end FHE working for 2 model types
+- Ad campaign: measure CTR by vertical, CPC < $5
 
-**Archivos principales (Data Quality):**
-- Backend Schema: `sdk/api/consortium.py` (data quality methods)
-- API Routes: `sdk/api/data_quality_routes.py`
-- Frontend Dashboard: `dashboard/src/pages/DataQuality.jsx`
-- Tests: `tests/test_data_quality.py` (20 tests)
-
-**Archivos principales (Model Marketplace):**
-- Backend Schema: `sdk/api/consortium.py` (marketplace methods)
-- API Routes: `sdk/api/marketplace_routes.py`
-- Frontend Dashboard: `dashboard/src/pages/Marketplace.jsx`
-- Tests: `tests/test_marketplace.py` (34 tests)
-
-**Archivos principales (Sandbox Mode):**
-- Backend Schema: `sdk/api/consortium.py` (sandbox methods)
-- API Routes: `sdk/api/sandbox_routes.py`
-- Frontend Dashboard: `dashboard/src/pages/Sandbox.jsx`
-- Tests: `tests/test_sandbox.py` (34 tests)
+**Budget:** ~$3,000 (ads + infrastructure)
 
 ---
 
-### TIER 4: Diferenciadores
-**Status:** Completed
-**Objetivo:** Ventajas competitivas unicas en el mercado
+## Q3 2026 (Jul-Sep): Mainnet & Enterprise
 
-| Feature | Descripcion | Status |
-|---------|-------------|--------|
-| Federated Inference | Predicciones sin mover datos a la nube | Done |
-| Model Explainability | Explicar decisiones ML sin revelar datos de training | Done |
-| Competitive Insights | Benchmarks anonimos vs industria | Done |
-| Multi-Model Ensemble | Combinar multiples modelos de diferentes consorcios | Done |
+**Goal:** Go to mainnet, add enterprise features, prepare for compliance.
 
-**Entregable:** Capacidades unicas que no existen en el mercado actual.
+| Item | Status | Notes |
+|------|--------|-------|
+| Arbitrum One mainnet deployment | Planned | Multi-sig governance, gas optimization |
+| Enterprise SSO (SAML/OIDC) | Planned | Azure AD, Okta integration |
+| SOC 2 Type I preparation | Planned | Policies, procedures, evidence collection |
+| SDK v1.0 stable release | Planned | Public API freeze, semantic versioning |
+| Data residency controls | Planned | Region-locked encryption contexts |
+| Pilot results published | Planned | Case study with anonymized pilot data |
 
-**Archivos principales (Federated Inference):**
-- Backend Schema: `sdk/api/consortium.py` (federated inference methods)
-- API Routes: `sdk/api/federated_routes.py`
-- Frontend Dashboard: `dashboard/src/pages/FederatedInference.jsx`
-- Tests: `tests/test_federated.py`
+**Metrics:**
+- Mainnet contracts live with multi-sig
+- SSO working with at least 1 IdP
+- SOC 2 readiness assessment > 80%
 
-**Archivos principales (Model Explainability):**
-- Backend Schema: `sdk/api/consortium.py` (explainability methods)
-- API Routes: `sdk/api/explainability_routes.py`
-- Frontend Dashboard: `dashboard/src/pages/ModelExplainability.jsx`
-- Tests: `tests/test_explainability.py` (34 tests)
-
-**Archivos principales (Competitive Insights):**
-- Backend Schema: `sdk/api/consortium.py` (competitive insights methods)
-- API Routes: `sdk/api/competitive_routes.py`
-- Frontend Dashboard: `dashboard/src/pages/CompetitiveInsights.jsx`
-
-**Archivos principales (Multi-Model Ensemble):**
-- Backend Schema: `sdk/api/consortium.py` (ensemble methods)
-- API Routes: `sdk/api/ensemble_routes.py`
-- Frontend Dashboard: `dashboard/src/pages/MultiModelEnsemble.jsx`
+**Team needed:** +1 security engineer (part-time or contractor)
 
 ---
 
-## Arquitectura Tier 1
+## Q4 2026 - Q1 2027 (Oct-Jan): Scale
 
-```
-+------------------+     +------------------+     +------------------+
-|    Empresa A     |     |    Empresa B     |     |    Empresa C     |
-|                  |     |                  |     |                  |
-| datos.csv        |     | datos.csv        |     | datos.csv        |
-|      |           |     |      |           |     |      |           |
-|      v           |     |      v           |     |      v           |
-| [Encrypt FHE]    |     | [Encrypt FHE]    |     | [Encrypt FHE]    |
-| (clave privada)  |     | (clave privada)  |     | (clave privada)  |
-|      |           |     |      |           |     |      |           |
-+------|----------+     +------|----------+     +------|----------+
-       |                       |                       |
-       v                       v                       v
-+------------------------------------------------------------------+
-|                     XCAPIT PRIVACY PLATFORM                       |
-|                                                                   |
-|  +--------------------+  +--------------------+                   |
-|  | Consortium Manager |  | Encrypted Storage  |                   |
-|  | - Create/Join      |  | - enc_a.fhe        |                   |
-|  | - Invite members   |  | - enc_b.fhe        |                   |
-|  | - View status      |  | - enc_c.fhe        |                   |
-|  +--------------------+  +--------------------+                   |
-|                                  |                                |
-|                                  v                                |
-|                    +------------------------+                     |
-|                    | FHE Training Engine    |                     |
-|                    | - Linear Regression    |                     |
-|                    | - Logistic Regression  |                     |
-|                    | - K-Means Clustering   |                     |
-|                    | - Decision Trees       |                     |
-|                    +------------------------+                     |
-|                                  |                                |
-|                                  v                                |
-|                    +------------------------+                     |
-|                    | Encrypted Model        |                     |
-|                    | (shared weights)       |                     |
-|                    +------------------------+                     |
-|                                  |                                |
-+----------------------------------|-------------------------------+
-                                   |
-       +---------------------------+---------------------------+
-       |                           |                           |
-       v                           v                           v
-+------------------+     +------------------+     +------------------+
-|    Empresa A     |     |    Empresa B     |     |    Empresa C     |
-|                  |     |                  |     |                  |
-| [Decrypt FHE]    |     | [Decrypt FHE]    |     | [Decrypt FHE]    |
-| (su clave)       |     | (su clave)       |     | (su clave)       |
-|      |           |     |      |           |     |      |           |
-|      v           |     |      v           |     |      v           |
-| predictions.csv  |     | predictions.csv  |     | predictions.csv  |
-+------------------+     +------------------+     +------------------+
-```
+**Goal:** Scale to 10+ active consortiums, build billing, complete SOC 2.
 
-## Stack Tecnico
+| Item | Status | Notes |
+|------|--------|-------|
+| Kubernetes auto-scaling | Planned | Handle variable FHE compute load |
+| Billing/metering system | Planned | Per-consortium, per-compute pricing |
+| SOC 2 Type II audit | Planned | 3-month observation window |
+| Partner program | Planned | System integrators, consulting firms |
+| SDK ecosystem (Python, JS, Go) | Planned | Community contributions |
+| Advanced models (Random Forest on FHE) | Planned | Pending FHE library evaluation results |
 
-- **Frontend:** React + TypeScript + TailwindCSS
-- **Backend:** FastAPI (Python)
-- **FHE Engine:** TenSEAL (CKKS scheme)
-- **Storage:** PostgreSQL + S3-compatible (encrypted blobs)
-- **Blockchain:** Arbitrum (contribution proofs)
-- **Auth:** API Keys + OAuth2 (enterprise SSO)
+**Metrics:**
+- 10+ active consortiums
+- $50-100K ARR
+- SOC 2 Type II report issued
+- 3+ partner integrations
 
-## Metricas de Exito
-
-### Tier 1
-- [ ] Tiempo de setup de consorcio < 5 minutos
-- [ ] Upload de datos encriptados < 30 segundos (1GB)
-- [ ] Training time comparable a cleartext (+20% max overhead)
-- [ ] 0 datos en claro en servidor (verificable)
-
-### Tier 2
-- [ ] Proof of contribution en < 1 minuto post-training
-- [ ] Votaciones resueltas en < 24hs
-- [ ] Audit trail queryable por reguladores
-
-### Tier 3
-- [ ] Compliance check automatico < 5 minutos
-- [ ] Data quality score sin false positives
-- [ ] Onboarding con sandbox < 1 hora
+**Budget:** ~$15,000-25,000 (audit + infrastructure + partners)
 
 ---
 
-## Changelog
+## Risk Matrix
 
-| Fecha | Version | Cambios |
-|-------|---------|---------|
-| 2024-12-08 | 0.1.0 | Roadmap inicial creado |
-| 2024-12-09 | 0.2.0 | TIER 2 completado: Governance system con voting, audit trail, contribution proofs y rewards |
-| 2024-12-09 | 0.3.0 | TIER 3 iniciado: Compliance Dashboard con GDPR/HIPAA/SOC2/PCI-DSS verificacion automatica |
-| 2024-12-09 | 0.4.0 | TIER 3 continuado: Data Quality Score con metricas de calidad sin acceso al contenido |
-| 2024-12-10 | 0.5.0 | TIER 3 continuado: Model Marketplace con modelos pre-entrenados por industria, deploy a consorcios, reviews y estadisticas |
-| 2024-12-10 | 0.6.0 | TIER 3 completado: Sandbox Mode con ambientes de prueba, generacion de datos sinteticos, experimentos y templates por industria |
-| 2024-12-10 | 0.7.0 | TIER 4 iniciado: Federated Inference con endpoints de inferencia, modelos federados, edge nodes y predicciones encriptadas |
-| 2024-12-10 | 0.8.0 | TIER 4 continuado: Model Explainability con explicaciones privacy-preserving (feature importance, SHAP, decision path, counterfactual, summary) |
-| 2024-12-10 | 0.9.0 | TIER 4 completado: Competitive Insights con benchmarks anonimos por industria y Multi-Model Ensemble para combinar modelos de diferentes consorcios |
+| Risk | Impact | Probability | Mitigation |
+|------|--------|-------------|------------|
+| FHE performance too slow for production | High | Medium | Evaluate Concrete ML/OpenFHE; offer hybrid mode (FHE + TEE) |
+| No pilot customers by Q2 | High | Low | Expand to healthcare vertical; offer free pilot period |
+| TenSEAL maintenance abandoned | Medium | Medium | Migration plan to OpenFHE/Concrete ML ready by Q2 |
+| Competitor launches similar product | Medium | Low | Speed to market; deep LATAM relationships; consortium governance as moat |
+| SOC 2 audit delays | Medium | Medium | Start preparation Q2; hire security contractor |
+
+---
+
+## Team Requirements
+
+| Phase | Role | Type |
+|-------|------|------|
+| Q1-Q2 | Full-stack developer | Core team |
+| Q2-Q3 | Security engineer | Contractor (part-time) |
+| Q2+ | Sales/BD (LATAM fintech) | Core team or contractor |
+| Q3+ | DevOps engineer | Contractor or part-time |
+
+---
+
+## Key Decisions Pending
+
+1. **FHE Library:** TenSEAL vs Concrete ML vs OpenFHE — decide by end of Q1 2026
+2. **Pricing Model:** Per-consortium flat fee vs per-compute metering — decide by Q3 2026
+3. **Open Source Strategy:** Which components to open source for community growth — decide by Q2 2026
