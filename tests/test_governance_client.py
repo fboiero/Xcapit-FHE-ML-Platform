@@ -237,7 +237,7 @@ class TestGovernanceClientConsortium:
         mock_tx_builder.build_transaction.return_value = {}
         connected_client._contract.functions.createConsortium.return_value = mock_tx_builder
 
-        mock_receipt = {"logs": []}
+        mock_receipt = {"status": 1, "logs": []}
         connected_client._mock_connector.web3.eth.send_raw_transaction.return_value = b"tx_hash"
         connected_client._mock_connector.web3.eth.wait_for_transaction_receipt.return_value = (
             mock_receipt
@@ -262,7 +262,7 @@ class TestGovernanceClientConsortium:
         mock_tx_builder.build_transaction.return_value = {}
         connected_client._contract.functions.createConsortium.return_value = mock_tx_builder
 
-        mock_receipt = {"logs": []}
+        mock_receipt = {"status": 1, "logs": []}
         connected_client._mock_connector.web3.eth.send_raw_transaction.return_value = b"tx_hash"
         connected_client._mock_connector.web3.eth.wait_for_transaction_receipt.return_value = (
             mock_receipt
@@ -285,7 +285,7 @@ class TestGovernanceClientConsortium:
         connected_client._mock_connector.web3.eth.send_raw_transaction.return_value = (
             b"0x" + b"a" * 64
         )
-        connected_client._mock_connector.web3.eth.wait_for_transaction_receipt.return_value = {}
+        connected_client._mock_connector.web3.eth.wait_for_transaction_receipt.return_value = {"status": 1}
 
         result = connected_client.add_member(b"consortium_id", "0x" + "3" * 40)
 
@@ -384,7 +384,7 @@ class TestGovernanceClientContributions:
         mock_tx_builder.build_transaction.return_value = {}
         connected_client._contract.functions.recordContribution.return_value = mock_tx_builder
 
-        mock_receipt = {}
+        mock_receipt = {"status": 1}
         connected_client._mock_connector.web3.eth.send_raw_transaction.return_value = b"tx_hash"
         connected_client._mock_connector.web3.eth.wait_for_transaction_receipt.return_value = (
             mock_receipt
@@ -408,7 +408,7 @@ class TestGovernanceClientContributions:
         mock_tx_builder.build_transaction.return_value = {}
         connected_client._contract.functions.recordContribution.return_value = mock_tx_builder
 
-        mock_receipt = {}
+        mock_receipt = {"status": 1}
         connected_client._mock_connector.web3.eth.send_raw_transaction.return_value = b"tx_hash"
         connected_client._mock_connector.web3.eth.wait_for_transaction_receipt.return_value = (
             mock_receipt
@@ -436,7 +436,7 @@ class TestGovernanceClientContributions:
         connected_client._mock_connector.web3.eth.send_raw_transaction.return_value = (
             b"0x" + b"a" * 64
         )
-        connected_client._mock_connector.web3.eth.wait_for_transaction_receipt.return_value = {}
+        connected_client._mock_connector.web3.eth.wait_for_transaction_receipt.return_value = {"status": 1}
 
         result = connected_client.verify_contribution(b"contribution_id")
 
@@ -496,7 +496,7 @@ class TestGovernanceClientVoting:
         mock_tx_builder.build_transaction.return_value = {}
         connected_client._contract.functions.createProposal.return_value = mock_tx_builder
 
-        mock_receipt = {"logs": [{"topics": [b"event", b"consortium", b"proposal_id"]}]}
+        mock_receipt = {"status": 1, "logs": [{"topics": [b"event", b"consortium", b"proposal_id"]}]}
         connected_client._mock_connector.web3.eth.send_raw_transaction.return_value = b"tx_hash"
         connected_client._mock_connector.web3.eth.wait_for_transaction_receipt.return_value = (
             mock_receipt
@@ -516,7 +516,7 @@ class TestGovernanceClientVoting:
         mock_tx_builder.build_transaction.return_value = {}
         connected_client._contract.functions.createProposal.return_value = mock_tx_builder
 
-        mock_receipt = {"logs": [{"topics": [b"event", b"consortium", b"proposal_id"]}]}
+        mock_receipt = {"status": 1, "logs": [{"topics": [b"event", b"consortium", b"proposal_id"]}]}
         connected_client._mock_connector.web3.eth.send_raw_transaction.return_value = b"tx_hash"
         connected_client._mock_connector.web3.eth.wait_for_transaction_receipt.return_value = (
             mock_receipt
@@ -538,7 +538,7 @@ class TestGovernanceClientVoting:
         connected_client._mock_connector.web3.eth.send_raw_transaction.return_value = (
             b"0x" + b"a" * 64
         )
-        connected_client._mock_connector.web3.eth.wait_for_transaction_receipt.return_value = {}
+        connected_client._mock_connector.web3.eth.wait_for_transaction_receipt.return_value = {"status": 1}
 
         commitment = b"0x" + b"c" * 32
         result = connected_client.commit_vote(b"proposal_id", commitment)
@@ -557,7 +557,7 @@ class TestGovernanceClientVoting:
         connected_client._mock_connector.web3.eth.send_raw_transaction.return_value = (
             b"0x" + b"b" * 64
         )
-        connected_client._mock_connector.web3.eth.wait_for_transaction_receipt.return_value = {}
+        connected_client._mock_connector.web3.eth.wait_for_transaction_receipt.return_value = {"status": 1}
 
         salt = b"0x" + b"s" * 32
         result = connected_client.reveal_vote(b"proposal_id", support=True, salt=salt)
@@ -610,7 +610,7 @@ class TestGovernanceClientVoting:
         connected_client._mock_connector.web3.eth.send_raw_transaction.return_value = (
             b"0x" + b"c" * 64
         )
-        connected_client._mock_connector.web3.eth.wait_for_transaction_receipt.return_value = {}
+        connected_client._mock_connector.web3.eth.wait_for_transaction_receipt.return_value = {"status": 1}
 
         # Mock get_proposal to return a passed proposal
         connected_client._contract.functions.getProposal.return_value.call.return_value = (
@@ -778,7 +778,7 @@ class TestGovernanceClientRewards:
         connected_client._mock_connector.web3.eth.send_raw_transaction.return_value = (
             b"0x" + b"d" * 64
         )
-        connected_client._mock_connector.web3.eth.wait_for_transaction_receipt.return_value = {}
+        connected_client._mock_connector.web3.eth.wait_for_transaction_receipt.return_value = {"status": 1}
 
         result = connected_client.distribute_rewards(
             b"consortium_id",
