@@ -256,8 +256,8 @@ class TestGovernanceClientConsortium:
         assert result == b"consortium_123"
         connected_client._contract.functions.createConsortium.assert_called_once()
 
-    def test_create_consortium_raises_on_missing_event(self, connected_client):
-        """Test create_consortium raises when event not found."""
+    def test_create_consortium_fallback_on_missing_event(self, connected_client):
+        """Test create_consortium falls back to tx_hash when event not found."""
         mock_tx_builder = MagicMock()
         mock_tx_builder.build_transaction.return_value = {}
         connected_client._contract.functions.createConsortium.return_value = mock_tx_builder
@@ -271,10 +271,9 @@ class TestGovernanceClientConsortium:
         # Empty logs - no event
         connected_client._contract.events.ConsortiumCreated.return_value.process_receipt.return_value = []
 
-        with pytest.raises(RuntimeError) as exc_info:
-            connected_client.create_consortium("Test")
-
-        assert "Failed to get consortium ID" in str(exc_info.value)
+        # Should fall back to returning tx_hash instead of raising
+        result = connected_client.create_consortium("Test")
+        assert result == b"tx_hash"
 
     def test_add_member(self, connected_client):
         """Test add_member sends transaction."""
