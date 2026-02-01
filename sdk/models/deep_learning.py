@@ -9,6 +9,8 @@ import numpy as np
 from typing import Optional, List, Tuple, Union, Callable
 from dataclasses import dataclass
 
+from .base import FHELevel
+
 
 @dataclass
 class LayerConfig:
@@ -130,6 +132,8 @@ class MLPClassifier:
     >>> clf.fit(X_train, y_train)
     >>> predictions = clf.predict(X_test)
     """
+
+    fhe_level = FHELevel.NONE
 
     def __init__(
         self,

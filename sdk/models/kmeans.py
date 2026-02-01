@@ -20,7 +20,7 @@ from ..encryption.ckks_wrapper import (
     EncryptedVector,
 )
 from ..utils.data_loader import EncryptedDataset
-from .base import BaseFHEModel, ModelConfig, ModelState
+from .base import BaseFHEModel, FHELevel, ModelConfig, ModelState
 
 
 class InitMethod(Enum):
@@ -91,6 +91,8 @@ class KMeans(BaseFHEModel):
         centroids: Cluster centroids of shape (n_clusters, n_features).
         inertia: Sum of squared distances to nearest centroid.
     """
+
+    fhe_level = FHELevel.TRANSPORT
 
     def __init__(
         self,

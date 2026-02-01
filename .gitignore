@@ -50,6 +50,9 @@ data/*.csv
 data/*.npy
 .env
 
+# Contracts environment (private keys)
+contracts/.env
+
 # Foundry (Solidity)
 contracts/cache/
 contracts/out/

@@ -19,6 +19,25 @@ from ..encryption.ckks_wrapper import (
 from ..utils.data_loader import EncryptedDataset
 
 
+class FHELevel(Enum):
+    """FHE support level for a model.
+
+    Describes how much of the computation happens on encrypted data.
+
+    Levels:
+        FULL: All inference operations use CKKS arithmetic on encrypted data.
+        PARTIAL: Some operations require temporary decryption (e.g., sigmoid).
+        TRANSPORT: Accepts encrypted input but decrypts internally for computation.
+            Provides data-in-transit/at-rest encryption, not computation encryption.
+        NONE: All computation on plaintext. No encrypted inference path.
+    """
+
+    FULL = "full"
+    PARTIAL = "partial"
+    TRANSPORT = "transport"
+    NONE = "none"
+
+
 class ModelState(Enum):
     """Model lifecycle states."""
 
@@ -86,10 +105,13 @@ class BaseFHEModel(ABC):
     following a scikit-learn-like API for familiarity.
 
     Attributes:
+        fhe_level: FHE support level for this model type.
         config: Model training configuration.
         state: Current model state.
         history: Training history with losses and metrics.
     """
+
+    fhe_level: FHELevel = FHELevel.NONE
 
     def __init__(
         self,

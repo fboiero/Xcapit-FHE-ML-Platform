@@ -14,7 +14,7 @@ from ..encryption.ckks_wrapper import (
     EncryptedVector,
 )
 from ..utils.data_loader import EncryptedDataset
-from .base import BaseFHEModel, ModelConfig, ModelState
+from .base import BaseFHEModel, FHELevel, ModelConfig, ModelState
 
 
 class LinearRegression(BaseFHEModel):
@@ -38,6 +38,8 @@ class LinearRegression(BaseFHEModel):
         weights: Model weights (plaintext after training).
         bias: Model bias term (plaintext after training).
     """
+
+    fhe_level = FHELevel.FULL
 
     def __init__(
         self,

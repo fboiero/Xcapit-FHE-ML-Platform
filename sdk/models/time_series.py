@@ -10,7 +10,7 @@ from typing import Any, Optional, List, Tuple
 
 import numpy as np
 
-from .base import BaseFHEModel, ModelConfig, ModelState
+from .base import BaseFHEModel, FHELevel, ModelConfig, ModelState
 
 
 class SeasonalityMode(Enum):
@@ -84,6 +84,8 @@ class ARIMA(BaseFHEModel):
         >>> model.fit(y_train)
         >>> forecast = model.predict(steps=10)
     """
+
+    fhe_level = FHELevel.NONE
 
     def __init__(
         self,

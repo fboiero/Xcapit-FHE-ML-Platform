@@ -19,7 +19,7 @@ from ..encryption.ckks_wrapper import (
     EncryptedVector,
 )
 from ..utils.data_loader import EncryptedDataset
-from .base import BaseFHEModel, ModelConfig, ModelState
+from .base import BaseFHEModel, FHELevel, ModelConfig, ModelState
 
 
 class NaiveBayesType(Enum):
@@ -74,6 +74,8 @@ class GaussianNaiveBayes(BaseFHEModel):
         >>> predictions = gnb.predict(X_test)
         >>> probabilities = gnb.predict_proba(X_test)
     """
+
+    fhe_level = FHELevel.NONE
 
     def __init__(
         self,

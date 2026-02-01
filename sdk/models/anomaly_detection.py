@@ -10,7 +10,7 @@ from typing import Any, Optional, Union
 
 import numpy as np
 
-from .base import BaseFHEModel, ModelConfig, ModelState
+from .base import BaseFHEModel, FHELevel, ModelConfig, ModelState
 
 
 class AnomalyMethod(Enum):
@@ -90,6 +90,8 @@ class IsolationForest(BaseFHEModel):
         >>> predictions = model.predict(X_test)  # 1 for inliers, -1 for outliers
         >>> scores = model.decision_function(X_test)  # Anomaly scores
     """
+
+    fhe_level = FHELevel.NONE
 
     def __init__(
         self,

@@ -20,7 +20,7 @@ from ..encryption.ckks_wrapper import (
     EncryptedVector,
 )
 from ..utils.data_loader import EncryptedDataset
-from .base import BaseFHEModel, ModelConfig, ModelState
+from .base import BaseFHEModel, FHELevel, ModelConfig, ModelState
 
 
 @dataclass
@@ -73,6 +73,8 @@ class PCA(BaseFHEModel):
         >>> X_reduced = pca.fit_transform(X_train)
         >>> X_reconstructed = pca.inverse_transform(X_reduced)
     """
+
+    fhe_level = FHELevel.NONE
 
     def __init__(
         self,

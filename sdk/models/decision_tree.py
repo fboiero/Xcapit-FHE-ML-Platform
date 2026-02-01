@@ -21,7 +21,7 @@ from ..encryption.ckks_wrapper import (
     EncryptedVector,
 )
 from ..utils.data_loader import EncryptedDataset
-from .base import BaseFHEModel, ModelConfig, ModelState
+from .base import BaseFHEModel, FHELevel, ModelConfig, ModelState
 
 
 class TreeType(Enum):
@@ -96,6 +96,8 @@ class DecisionTree(BaseFHEModel):
         temperatures: Split sharpness for each internal node.
         leaf_values: Prediction value at each leaf.
     """
+
+    fhe_level = FHELevel.TRANSPORT
 
     def __init__(
         self,

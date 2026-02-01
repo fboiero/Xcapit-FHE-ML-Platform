@@ -15,7 +15,7 @@ from ..encryption.ckks_wrapper import (
     EncryptedVector,
 )
 from ..utils.data_loader import EncryptedDataset
-from .base import BaseFHEModel, ModelConfig, ModelState
+from .base import BaseFHEModel, FHELevel, ModelConfig, ModelState
 
 
 class VotingType(Enum):
@@ -57,6 +57,8 @@ class VotingClassifier(BaseFHEModel):
         >>> ensemble.fit(X_train, y_train)
         >>> predictions = ensemble.predict(X_test)
     """
+
+    fhe_level = FHELevel.NONE
 
     def __init__(
         self,

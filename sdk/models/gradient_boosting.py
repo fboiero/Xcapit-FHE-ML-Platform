@@ -22,7 +22,7 @@ from ..encryption.ckks_wrapper import (
     EncryptedVector,
 )
 from ..utils.data_loader import EncryptedDataset
-from .base import BaseFHEModel, ModelConfig, ModelState
+from .base import BaseFHEModel, FHELevel, ModelConfig, ModelState
 from .decision_tree import DecisionTree, DecisionTreeRegressor, TreeConfig
 
 
@@ -200,6 +200,8 @@ class GradientBoosting(BaseFHEModel):
         >>> clf.fit(X_train, y_train)
         >>> probs = clf.predict_proba(X_test)
     """
+
+    fhe_level = FHELevel.TRANSPORT
 
     def __init__(
         self,

@@ -15,7 +15,7 @@ from ..encryption.ckks_wrapper import (
     EncryptedVector,
 )
 from ..utils.data_loader import EncryptedDataset
-from .base import BaseFHEModel, ModelConfig, ModelState
+from .base import BaseFHEModel, FHELevel, ModelConfig, ModelState
 
 
 class SigmoidApproximation(Enum):
@@ -65,6 +65,8 @@ class LogisticRegression(BaseFHEModel):
         bias: Model bias term (plaintext after training).
         sigmoid_approx: Sigmoid approximation method used.
     """
+
+    fhe_level = FHELevel.PARTIAL
 
     # Polynomial coefficients for sigmoid approximations
     SIGMOID_COEFFS = {
