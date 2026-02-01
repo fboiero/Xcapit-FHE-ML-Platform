@@ -85,7 +85,9 @@ test-django:
 
 test-contracts:
   stage: test
-  image: ghcr.io/foundry-rs/foundry:latest
+  image:
+    name: ghcr.io/foundry-rs/foundry:latest
+    entrypoint: [""]
   variables:
     GIT_SUBMODULE_STRATEGY: recursive
   script:
