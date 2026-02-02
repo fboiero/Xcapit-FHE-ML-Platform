@@ -102,10 +102,10 @@ test-typescript:
   image: node:18-slim
   rules:
     - exists:
-        - sdk-ts/package.json
+        - sdk-typescript/package.json
   script:
-    - cd sdk-ts
-    - npm ci
+    - cd sdk-typescript
+    - npm install
     - npm run build
     - npm run lint
 
