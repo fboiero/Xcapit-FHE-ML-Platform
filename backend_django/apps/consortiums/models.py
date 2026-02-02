@@ -104,6 +104,7 @@ class ConsortiumMember(models.Model):
         PENDING = "pending", "Pending"
         ACTIVE = "active", "Active"
         SUSPENDED = "suspended", "Suspended"
+        REJECTED = "rejected", "Rejected"
         LEFT = "left", "Left"
         REMOVED = "removed", "Removed"
 
@@ -316,6 +317,7 @@ class ConsortiumInvitation(models.Model):
         ACCEPTED = "accepted", "Accepted"
         DECLINED = "declined", "Declined"
         EXPIRED = "expired", "Expired"
+        CANCELLED = "cancelled", "Cancelled"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 

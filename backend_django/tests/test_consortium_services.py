@@ -115,15 +115,10 @@ class TestMemberServiceApprove:
 @pytest.mark.django_db
 class TestMemberServiceReject:
     def test_reject_pending_member(self, member_svc, pending_member):
-        # Patch REJECTED since it's not in the model choices
-        ConsortiumMember.Status.REJECTED = "rejected"
-        try:
-            result = member_svc.reject_member(pending_member, reason="Low quality data")
-            assert result.success
-            pending_member.refresh_from_db()
-            assert pending_member.status == "rejected"
-        finally:
-            del ConsortiumMember.Status.REJECTED
+        result = member_svc.reject_member(pending_member, reason="Low quality data")
+        assert result.success
+        pending_member.refresh_from_db()
+        assert pending_member.status == ConsortiumMember.Status.REJECTED
 
     def test_reject_already_active(self, member_svc, active_member):
         result = member_svc.reject_member(active_member)
@@ -398,15 +393,10 @@ class TestInvitationServiceCancel:
     def test_cancel_invitation_success(
         self, invitation_svc, pending_invitation, company
     ):
-        # Patch CANCELLED status since it doesn't exist in the model
-        ConsortiumInvitation.Status.CANCELLED = "cancelled"
-        try:
-            result = invitation_svc.cancel_invitation(pending_invitation, company)
-            assert result.success
-            pending_invitation.refresh_from_db()
-            assert pending_invitation.status == "cancelled"
-        finally:
-            del ConsortiumInvitation.Status.CANCELLED
+        result = invitation_svc.cancel_invitation(pending_invitation, company)
+        assert result.success
+        pending_invitation.refresh_from_db()
+        assert pending_invitation.status == ConsortiumInvitation.Status.CANCELLED
 
 
 @pytest.mark.django_db

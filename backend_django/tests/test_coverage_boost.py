@@ -126,13 +126,9 @@ class TestMemberServiceAudit:
             role=ConsortiumMember.Role.CONTRIBUTOR,
             status=ConsortiumMember.Status.PENDING,
         )
-        ConsortiumMember.Status.REJECTED = "rejected"
-        try:
-            with patch("apps.core.services.AuditService.log_from_request"):
-                result = svc.reject_member(member, reason="Bad data")
-            assert result.success
-        finally:
-            del ConsortiumMember.Status.REJECTED
+        with patch("apps.core.services.AuditService.log_from_request"):
+            result = svc.reject_member(member, reason="Bad data")
+        assert result.success
 
     def test_remove_with_audit(self, user, company, consortium, other_company):
         ctx = _make_context_with_request(user, company)

@@ -216,7 +216,7 @@ class ContributionService(BaseService):
 
         contribution.verified = True
         contribution.verified_at = timezone.now()
-        contribution.save(update_fields=["verified", "verified_at", "updated_at"])
+        contribution.save(update_fields=["verified", "verified_at"])
 
         logger.info(f"Contribution {contribution.id} verified")
 

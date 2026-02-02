@@ -384,17 +384,17 @@ La migración de FastAPI a Django está **100% completada**.
 - `sdk-typescript/src/client.ts`: Fix TS18046 (`data` de type `unknown` en strict mode)
 - `sdk-typescript/src/index.ts`: Reemplazado `require()` con ES import
 
-### Bugs Pre-existentes Descubiertos en Source Code (NO corregidos)
-Estos bugs están en el código fuente de los services, NO en tests:
-- `ConsortiumMember.Status.REJECTED` no existe (solo PENDING, ACTIVE, SUSPENDED, LEFT, REMOVED)
-- `ConsortiumInvitation.Status.CANCELLED` no existe (solo PENDING, ACCEPTED, DECLINED, EXPIRED)
-- `ContributionProof` no tiene campo `updated_at` pero el service lo referencia en `update_fields`
-- `ConsortiumService.get_stats()` usa `ContributionProof.Status.VERIFIED` pero `ContributionProof` no tiene clase `Status`
-- `ConsortiumService.get_member_rankings()` referencia campo `contributor` que es `company` en el modelo
-- `InvitationService.create_invitation()` no setea el campo requerido `expires_at`
+### Bugs Pre-existentes en Consortium Services (CORREGIDOS - 2 Feb 2026)
+Los 6 bugs en los services de consortium fueron corregidos:
+- `ConsortiumMember.Status.REJECTED` agregado al modelo (migración 0004)
+- `ConsortiumInvitation.Status.CANCELLED` agregado al modelo (migración 0004)
+- `ContributionProof` update_fields: eliminado `updated_at` inexistente en `ContributionService.verify_contribution()`
+- `ConsortiumService.get_stats()`: corregido `ContributionProof.Status.VERIFIED` → `ContributionProof.VerificationStatus.VERIFIED` y campo `status` → `verification_status`
+- `ConsortiumService.get_member_rankings()`: corregido campo `contributor` → `company` y mismo fix de VerificationStatus
+- `InvitationService.create_invitation()`: agregado `expires_at=timezone.now() + timedelta(days=7)`
+- Tests actualizados: eliminado monkey-patching de REJECTED/CANCELLED en test_consortium_services.py y test_coverage_boost.py
 
 ### Próximos Pasos Posibles
 - Subir `--cov-fail-under` de 75 a 80 en CI
-- Corregir los bugs pre-existentes en los services de consortium
-- Agregar tests para los módulos con 0% coverage: `blockchain/services.py` (30%), `blockchain/views.py` (27%), `consortiums/tasks.py` (18%), `consortiums/services/blockchain.py` (19%), `consortiums/services/training.py` (38%)
+- Agregar tests para los módulos con bajo coverage: `blockchain/services.py` (30%), `blockchain/views.py` (27%), `consortiums/tasks.py` (18%), `consortiums/services/blockchain.py` (19%), `consortiums/services/training.py` (38%)
 - Actualizar CodeQL action de v3 a v4 (deprecation en Dec 2026)

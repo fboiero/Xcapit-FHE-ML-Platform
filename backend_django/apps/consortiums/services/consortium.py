@@ -58,7 +58,7 @@ class ConsortiumService(BaseService):
         members = ConsortiumMember.objects.filter(consortium=consortium)
         contributions = ContributionProof.objects.filter(
             consortium=consortium,
-            status=ContributionProof.Status.VERIFIED,
+            verification_status=ContributionProof.VerificationStatus.VERIFIED,
         )
 
         # Aggregate contribution stats
@@ -188,8 +188,8 @@ class ConsortiumService(BaseService):
         for member in members:
             contributions = ContributionProof.objects.filter(
                 consortium=consortium,
-                contributor=member.company,
-                status=ContributionProof.Status.VERIFIED,
+                company=member.company,
+                verification_status=ContributionProof.VerificationStatus.VERIFIED,
             ).aggregate(
                 total_records=Sum("record_count"),
                 contribution_count=Count("id"),

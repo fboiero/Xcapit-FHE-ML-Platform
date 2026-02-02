@@ -7,6 +7,7 @@ Encapsulates business logic for consortium invitation operations.
 from __future__ import annotations
 
 import logging
+from datetime import timedelta
 from typing import TYPE_CHECKING, Any
 
 from django.db import transaction
@@ -99,13 +100,14 @@ class InvitationService(BaseService):
                 error_code="already_member",
             )
 
-        # Create invitation
+        # Create invitation (expires in 7 days by default)
         invitation = ConsortiumInvitation.objects.create(
             consortium=consortium,
             inviter=inviter,
             invitee_email=invitee_email,
             role=role,
             message=message,
+            expires_at=timezone.now() + timedelta(days=7),
         )
 
         logger.info(
