@@ -7,6 +7,7 @@
  */
 
 // Client
+import { XcapitClient } from './client';
 export { XcapitClient, XcapitSDKError } from './client';
 export { default } from './client';
 
@@ -144,8 +145,7 @@ export type {
  * console.log('Prediction:', prediction.result);
  * ```
  */
-export function createClient(config: import('./types').SDKConfig): import('./client').XcapitClient {
-  const { XcapitClient } = require('./client');
+export function createClient(config: import('./types').SDKConfig): XcapitClient {
   return new XcapitClient(config);
 }
 
