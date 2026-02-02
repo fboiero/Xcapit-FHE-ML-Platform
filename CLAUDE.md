@@ -13,7 +13,7 @@ Privacy-preserving machine learning platform using Fully Homomorphic Encryption 
 - **Blockchain**: Arbitrum integration for audit trails (Web3.py)
 - **Authentication**: JWT (djangorestframework-simplejwt) with token blacklist
 - **Security**: django-axes (brute-force protection), django-ratelimit
-- **Testing**: pytest-django (1,155+ tests, 91% coverage)
+- **Testing**: pytest-django (1,258+ tests, 93% coverage)
 - **Deployment**: Docker + docker-compose, Gunicorn + WhiteNoise
 
 ### Frontend (React/Vite)
@@ -272,7 +272,7 @@ Each vertical landing page follows this structure:
 ## Notes for Future Sessions
 
 - Backend migrated from FastAPI to Django 5.2 LTS (January 2026)
-- 1,155 Django tests passing, 91% coverage
+- 1,258 Django tests passing, 93% coverage
 - Docker build produces ~654MB image, uses multi-stage build
 - Build takes ~3 minutes, produces warning about chunk size >500KB (acceptable)
 - Vercel deployment is automatic on push to main
@@ -328,7 +328,7 @@ La migración de FastAPI a Django está **~95% completada**.
 #### Fase 6: Documentación (25 Enero 2026)
 - [x] Actualizar README.md principal (Django en lugar de FastAPI)
 - [x] Actualizar CHANGELOG.md con versión 2.0.0
-- [x] Ejecutar suite completa de tests (1,155 pasando, 91% coverage)
+- [x] Ejecutar suite completa de tests (1,258 pasando, 93% coverage)
 
 ### Estructura Final del SDK
 ```
@@ -351,7 +351,7 @@ sdk/
 La migración de FastAPI a Django está **100% completada**.
 
 - SDK versión 0.2.0 (librería pura)
-- Django backend con 1,155 tests pasando (91% coverage)
+- Django backend con 1,258 tests pasando (93% coverage)
 - Documentación actualizada (README, CHANGELOG)
 
 ---
@@ -364,18 +364,19 @@ La migración de FastAPI a Django está **100% completada**.
 - **GitHub remote**: `github` → `https://github.com/fboiero/Xcapit-FHE-ML-Platform.git`
 - **GitLab remote**: `origin` → `git@gitlab.com:xcapit/privacy-platform.git`
 - Ambos pipelines corren en push a main
-- `--cov-fail-under` subido de 75 a **80** en ambos pipelines
+- `--cov-fail-under` subido de 75 → 80 → **90** en ambos pipelines
 - CodeQL action actualizado de v3 a **v4** en ci.yml y codeql.yml
 
 ### Tests y Coverage
-- **Django tests**: 1,155 tests pasando, **91% coverage** (`--cov-fail-under=80` en CI)
+- **Django tests**: 1,258 tests pasando, **93% coverage** (`--cov-fail-under=90` en CI)
 - **SDK tests root** (`tests/` + `sdk/tests/`): ~620 tests pasando
-- **Total**: ~1,775 tests
+- **Total**: ~1,878 tests
 
 ### Historial de Coverage
 - **77% → 80%**: 115 tests (consortium services, quality assessment, competitive emails, coverage boost)
 - **80% → 84%**: 116 tests (FHE training, blockchain services/views, Celery tasks)
 - **84% → 91%**: 191 tests (models views, core views, ensemble views, competitive insights views, explainability views, consortiums views)
+- **91% → 93%**: 103 tests (cache, audit, json_schemas, permissions, blockchain services, consortium services)
 
 ### Tests por archivo
 - `test_consortium_services.py` — 53 tests (MemberService, InvitationService, ContributionService, ConsortiumService)
@@ -386,6 +387,7 @@ La migración de FastAPI a Django está **100% completada**.
 - `test_blockchain_services_views.py` — 67 tests (BlockchainService, ConsortiumService, ModelRegistryService, ComputationVerifierService, todas las views)
 - `test_models_views.py` — 124 tests (MLModelViewSet actions, TrainingRunViewSet, BatchPredictionJobViewSet, ModelVersionViewSet, ModelExportViewSet, ModelShareViewSet, ModelShareRequestViewSet, PredictionLogViewSet)
 - `test_views_extended.py` — 67 tests (WebhookViewSet, WebhookDeliveryViewSet, UsageStatsViewSet, ReportViewSet, WorkflowViewSet, WorkflowRunViewSet, ScheduledTaskViewSet, EnsembleViewSet, IndustryBenchmarkViewSet, CompanyMetricViewSet, CompetitiveReportViewSet, ExplanationRequestViewSet, ModelInsightViewSet, ExplainabilityDashboardView, ConsortiumViewSet, ConsortiumMemberViewSet, ContributionProofViewSet, ConsortiumInvitationViewSet)
+- `test_coverage_modules.py` — 103 tests (LRUMemoryCache, ResilientCache, cached decorator, AuditService, JSONSchemaValidator, ProposalDataField, QualityRuleConditionField, 8 permission classes, ConsortiumService stats/rankings, BlockchainService connection)
 
 ### Coverage por módulo (evolución completa)
 - `models/views.py`: 37% → **96%**
@@ -398,16 +400,24 @@ La migración de FastAPI a Django está **100% completada**.
 - `consortiums/tasks.py`: 18% → **100%**
 - `blockchain/services.py`: 30% → **67%**
 - `explainability/views.py`: 69% → **80%**
+- `core/cache.py`: 56% → **97%**
+- `core/validators/json_schemas.py`: 61% → **94%**
+- `core/permissions.py`: 63% → **~100%**
+- `core/services/audit.py`: 58% → **~100%**
+- `consortiums/services/consortium.py`: 69% → **~100%**
 
-### Módulos con coverage restante más bajo
-- `core/cache.py`: 56%
-- `core/services/audit.py`: 58%
-- `core/validators/json_schemas.py`: 61%
-- `core/permissions.py`: 63%
-- `blockchain/services.py`: 67%
-- `consortiums/services/consortium.py`: 69%
-- `core/logging.py`: 75%
-- `core/exceptions.py`: 76%
+### Módulos con coverage restante más bajo (<85%)
+- `blockchain/services.py`: **67%** (72 líneas — requiere Web3/blockchain mocking complejo)
+- `core/logging.py`: **75%** (19 líneas)
+- `blockchain/secrets.py`: **75%** (26 líneas)
+- `core/exceptions.py`: **76%** (24 líneas)
+- `core/authentication.py`: **78%** (35 líneas)
+- `consortiums/signals.py`: **79%** (16 líneas)
+- `data_quality/views.py`: **80%** (18 líneas)
+- `explainability/views.py`: **80%** (23 líneas)
+- `core/healthchecks.py`: **81%** (23 líneas)
+- `models/models.py`: **82%** (80 líneas)
+- `core/serializers.py`: **84%** (49 líneas)
 
 ### Fixes de CI
 - `.github/workflows/ci.yml`: Corregido `sdk-ts` → `sdk-typescript`, `npm ci` → `npm install`
@@ -432,5 +442,7 @@ La migración de FastAPI a Django está **100% completada**.
 - `FHETrainingService._fail_training()`: mismo import faltante de `TrainingResult`
 
 ### Próximos Pasos Posibles
-- Subir `--cov-fail-under` de 80 a 90 en ambos pipelines CI
-- Subir coverage de módulos restantes con <70%: `core/cache.py`, `core/services/audit.py`, `core/validators/json_schemas.py`, `core/permissions.py`, `blockchain/services.py`, `consortiums/services/consortium.py`
+- Subir coverage a **95%+** cubriendo los 11 módulos que están entre 67-84%
+- Agregar integration tests end-to-end para flujos completos (auth → create consortium → train → predict)
+- Configurar Codecov/Coveralls para tracking de coverage en PRs
+- Agregar tests de performance/load con locust o similar
