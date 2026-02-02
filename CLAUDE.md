@@ -353,3 +353,48 @@ La migración de FastAPI a Django está **100% completada**.
 - SDK versión 0.2.0 (librería pura)
 - Django backend con 465 tests pasando
 - Documentación actualizada (README, CHANGELOG)
+
+---
+
+## Estado Actual (1 Febrero 2026)
+
+### CI/CD
+- **GitLab CI**: Pipeline verde (9/9 jobs)
+- **GitHub Actions**: Pipeline verde (10/10 jobs) — repo: `fboiero/Xcapit-FHE-ML-Platform`
+- **GitHub remote**: `github` → `https://github.com/fboiero/Xcapit-FHE-ML-Platform.git`
+- **GitLab remote**: `origin` → `git@gitlab.com:xcapit/privacy-platform.git`
+- Ambos pipelines corren en push a main
+
+### Tests y Coverage
+- **Django tests**: 848 tests pasando, **80% coverage** (`--cov-fail-under=75` en CI)
+- **SDK tests root** (`tests/` + `sdk/tests/`): ~620 tests pasando
+- **Total**: ~1,468 tests
+
+### Tests Agregados en Esta Sesión (77% → 80% coverage)
+- `backend_django/tests/test_consortium_services.py` — 53 tests (MemberService, InvitationService, ContributionService, ConsortiumService)
+- `backend_django/tests/test_quality_assessment_service.py` — 30 tests (scores, quality rules, dashboard)
+- `backend_django/tests/test_competitive_emails.py` — 16 tests (competitive tasks + email service)
+- `backend_django/tests/test_coverage_boost.py` — 16 tests (audit log branches, BaseService, weakness paths)
+
+### Fixes de CI en Esta Sesión
+- `.github/workflows/ci.yml`: Corregido `sdk-ts` → `sdk-typescript`, `npm ci` → `npm install`
+- `.github/workflows/ci.yml`: Agregado `permissions: security-events: write` para SARIF upload
+- `sdk-typescript/.eslintrc.json`: Creado (faltaba config de ESLint)
+- `sdk-typescript/package.json`: Agregado `@typescript-eslint/parser` y `eslint-plugin`
+- `sdk-typescript/src/client.ts`: Fix TS18046 (`data` de type `unknown` en strict mode)
+- `sdk-typescript/src/index.ts`: Reemplazado `require()` con ES import
+
+### Bugs Pre-existentes Descubiertos en Source Code (NO corregidos)
+Estos bugs están en el código fuente de los services, NO en tests:
+- `ConsortiumMember.Status.REJECTED` no existe (solo PENDING, ACTIVE, SUSPENDED, LEFT, REMOVED)
+- `ConsortiumInvitation.Status.CANCELLED` no existe (solo PENDING, ACCEPTED, DECLINED, EXPIRED)
+- `ContributionProof` no tiene campo `updated_at` pero el service lo referencia en `update_fields`
+- `ConsortiumService.get_stats()` usa `ContributionProof.Status.VERIFIED` pero `ContributionProof` no tiene clase `Status`
+- `ConsortiumService.get_member_rankings()` referencia campo `contributor` que es `company` en el modelo
+- `InvitationService.create_invitation()` no setea el campo requerido `expires_at`
+
+### Próximos Pasos Posibles
+- Subir `--cov-fail-under` de 75 a 80 en CI
+- Corregir los bugs pre-existentes en los services de consortium
+- Agregar tests para los módulos con 0% coverage: `blockchain/services.py` (30%), `blockchain/views.py` (27%), `consortiums/tasks.py` (18%), `consortiums/services/blockchain.py` (19%), `consortiums/services/training.py` (38%)
+- Actualizar CodeQL action de v3 a v4 (deprecation en Dec 2026)
