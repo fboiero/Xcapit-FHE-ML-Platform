@@ -11,9 +11,9 @@ Use this checklist for every production release. Copy this checklist to your rel
   cd backend_django && pytest --cov=apps
   ```
 
-- [ ] Test coverage meets threshold (>80%)
+- [ ] Test coverage meets threshold (>90%)
   ```bash
-  pytest --cov=apps --cov-report=term-missing --cov-fail-under=80
+  pytest --cov=apps --cov-report=term-missing --cov-fail-under=90
   ```
 
 - [ ] Linting passes

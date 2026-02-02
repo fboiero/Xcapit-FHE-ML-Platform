@@ -106,7 +106,7 @@ jobs:
       - name: Run Django tests
         working-directory: backend_django
         run: |
-          DJANGO_SETTINGS_MODULE=config.settings_test pytest --cov=apps --cov-report=xml --cov-fail-under=80 -v --tb=short
+          DJANGO_SETTINGS_MODULE=config.settings_test pytest --cov=apps --cov-report=xml --cov-fail-under=90 -v --tb=short
 
       - name: Upload Django coverage
         uses: codecov/codecov-action@v4
