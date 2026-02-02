@@ -9,6 +9,7 @@ import {
   ApiError,
   SDKConfig,
   PaginationParams,
+  ResponseMeta,
   Model,
   CreateModelRequest,
   TrainModelRequest,
@@ -162,20 +163,20 @@ class HttpClient {
   }
 
   private async handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
-    const data = await response.json();
+    const data = (await response.json()) as Record<string, unknown>;
 
     if (!response.ok) {
       throw new XcapitSDKError({
-        code: data.code || `HTTP_${response.status}`,
-        message: data.message || response.statusText,
-        details: data.details,
+        code: (data.code as string) || `HTTP_${response.status}`,
+        message: (data.message as string) || response.statusText,
+        details: data.details as Record<string, unknown> | undefined,
       });
     }
 
     return {
       success: true,
-      data: data.data ?? data,
-      meta: data.meta,
+      data: (data.data ?? data) as T,
+      meta: data.meta as ResponseMeta | undefined,
     };
   }
 }
