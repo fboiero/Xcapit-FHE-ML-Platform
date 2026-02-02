@@ -2,7 +2,7 @@
 # Multi-stage build for optimized image size
 
 # ============ Build Stage ============
-FROM python:3.11-slim as builder
+FROM python:3.14-slim as builder
 
 WORKDIR /build
 
@@ -36,7 +36,7 @@ RUN pip install --no-cache-dir \
     pydantic>=2.5.0
 
 # ============ Production Stage ============
-FROM python:3.11-slim as production
+FROM python:3.14-slim as production
 
 WORKDIR /app
 
