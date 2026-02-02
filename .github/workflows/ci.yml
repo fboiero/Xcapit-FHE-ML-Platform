@@ -143,19 +143,17 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "18"
-          cache: "npm"
-          cache-dependency-path: sdk-ts/package-lock.json
 
       - name: Install dependencies
-        working-directory: sdk-ts
-        run: npm ci
+        working-directory: sdk-typescript
+        run: npm install
 
       - name: Build
-        working-directory: sdk-ts
+        working-directory: sdk-typescript
         run: npm run build
 
       - name: Lint
-        working-directory: sdk-ts
+        working-directory: sdk-typescript
         run: npm run lint
 
   build-dashboard:
