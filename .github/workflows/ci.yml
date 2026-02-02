@@ -106,7 +106,7 @@ jobs:
       - name: Run Django tests
         working-directory: backend_django
         run: |
-          DJANGO_SETTINGS_MODULE=config.settings_test pytest --cov=apps --cov-report=xml --cov-fail-under=75 -v --tb=short
+          DJANGO_SETTINGS_MODULE=config.settings_test pytest --cov=apps --cov-report=xml --cov-fail-under=80 -v --tb=short
 
       - name: Upload Django coverage
         uses: codecov/codecov-action@v4
@@ -244,7 +244,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: trivy-results.sarif
@@ -260,7 +260,7 @@ jobs:
           output-format: sarif
 
       - name: Upload Grype results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: ${{ steps.grype-scan.outputs.sarif }}

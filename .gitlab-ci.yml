@@ -76,7 +76,7 @@ test-django:
     - python -m pip install --upgrade pip
     - pip install -r requirements.txt
   script:
-    - DJANGO_SETTINGS_MODULE=config.settings_test pytest --cov=apps --cov-report=xml --cov-fail-under=75 -v --tb=short
+    - DJANGO_SETTINGS_MODULE=config.settings_test pytest --cov=apps --cov-report=xml --cov-fail-under=80 -v --tb=short
   artifacts:
     reports:
       coverage_report:

@@ -134,7 +134,7 @@ class FHETrainingService(BaseService):
         Returns:
             ServiceResult with training metrics
         """
-        from apps.consortiums.models import ContributionProof
+        from apps.consortiums.models import ContributionProof, TrainingResult
 
         consortium = training_result.consortium
 
@@ -348,6 +348,8 @@ class FHETrainingService(BaseService):
         Returns:
             ServiceResult with failure
         """
+        from apps.consortiums.models import TrainingResult
+
         training_result.status = TrainingResult.Status.FAILED
         training_result.error_message = error_message
         training_result.completed_at = timezone.now()

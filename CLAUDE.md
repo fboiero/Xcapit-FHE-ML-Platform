@@ -356,7 +356,7 @@ La migración de FastAPI a Django está **100% completada**.
 
 ---
 
-## Estado Actual (1 Febrero 2026)
+## Estado Actual (2 Febrero 2026)
 
 ### CI/CD
 - **GitLab CI**: Pipeline verde (9/9 jobs)
@@ -364,19 +364,32 @@ La migración de FastAPI a Django está **100% completada**.
 - **GitHub remote**: `github` → `https://github.com/fboiero/Xcapit-FHE-ML-Platform.git`
 - **GitLab remote**: `origin` → `git@gitlab.com:xcapit/privacy-platform.git`
 - Ambos pipelines corren en push a main
+- `--cov-fail-under` subido de 75 a **80** en ambos pipelines
+- CodeQL action actualizado de v3 a **v4** en ci.yml y codeql.yml
 
 ### Tests y Coverage
-- **Django tests**: 848 tests pasando, **80% coverage** (`--cov-fail-under=75` en CI)
+- **Django tests**: 964 tests pasando, **84% coverage** (`--cov-fail-under=80` en CI)
 - **SDK tests root** (`tests/` + `sdk/tests/`): ~620 tests pasando
-- **Total**: ~1,468 tests
+- **Total**: ~1,584 tests
 
-### Tests Agregados en Esta Sesión (77% → 80% coverage)
+### Tests Agregados Sesión Anterior (77% → 80% coverage)
 - `backend_django/tests/test_consortium_services.py` — 53 tests (MemberService, InvitationService, ContributionService, ConsortiumService)
 - `backend_django/tests/test_quality_assessment_service.py` — 30 tests (scores, quality rules, dashboard)
 - `backend_django/tests/test_competitive_emails.py` — 16 tests (competitive tasks + email service)
 - `backend_django/tests/test_coverage_boost.py` — 16 tests (audit log branches, BaseService, weakness paths)
 
-### Fixes de CI en Esta Sesión
+### Tests Agregados Esta Sesión (80% → 84% coverage)
+- `backend_django/tests/test_consortium_tasks_training.py` — 49 tests (FHETrainingService, BlockchainRegistrationService, Celery tasks, email helper)
+- `backend_django/tests/test_blockchain_services_views.py` — 67 tests (BlockchainService, ConsortiumService, ModelRegistryService, ComputationVerifierService, todas las views)
+
+### Coverage por módulo objetivo (antes → después)
+- `consortiums/services/training.py`: 38% → **99%**
+- `consortiums/services/blockchain.py`: 19% → **89%**
+- `consortiums/tasks.py`: 18% → **100%** (cubierto)
+- `blockchain/services.py`: 30% → **67%**
+- `blockchain/views.py`: 27% → **cubierto** (no aparece en missing)
+
+### Fixes de CI Sesión Anterior
 - `.github/workflows/ci.yml`: Corregido `sdk-ts` → `sdk-typescript`, `npm ci` → `npm install`
 - `.github/workflows/ci.yml`: Agregado `permissions: security-events: write` para SARIF upload
 - `sdk-typescript/.eslintrc.json`: Creado (faltaba config de ESLint)
@@ -384,17 +397,20 @@ La migración de FastAPI a Django está **100% completada**.
 - `sdk-typescript/src/client.ts`: Fix TS18046 (`data` de type `unknown` en strict mode)
 - `sdk-typescript/src/index.ts`: Reemplazado `require()` con ES import
 
-### Bugs Pre-existentes en Consortium Services (CORREGIDOS - 2 Feb 2026)
-Los 6 bugs en los services de consortium fueron corregidos:
+### Bugs Corregidos (2 Feb 2026)
+
+#### 6 Bugs en Consortium Services
 - `ConsortiumMember.Status.REJECTED` agregado al modelo (migración 0004)
 - `ConsortiumInvitation.Status.CANCELLED` agregado al modelo (migración 0004)
 - `ContributionProof` update_fields: eliminado `updated_at` inexistente en `ContributionService.verify_contribution()`
 - `ConsortiumService.get_stats()`: corregido `ContributionProof.Status.VERIFIED` → `ContributionProof.VerificationStatus.VERIFIED` y campo `status` → `verification_status`
 - `ConsortiumService.get_member_rankings()`: corregido campo `contributor` → `company` y mismo fix de VerificationStatus
 - `InvitationService.create_invitation()`: agregado `expires_at=timezone.now() + timedelta(days=7)`
-- Tests actualizados: eliminado monkey-patching de REJECTED/CANCELLED en test_consortium_services.py y test_coverage_boost.py
+
+#### 2 Bugs adicionales descubiertos en training.py
+- `FHETrainingService.train()`: faltaba `from apps.consortiums.models import TrainingResult` (NameError en runtime)
+- `FHETrainingService._fail_training()`: mismo import faltante de `TrainingResult`
 
 ### Próximos Pasos Posibles
-- Subir `--cov-fail-under` de 75 a 80 en CI
-- Agregar tests para los módulos con bajo coverage: `blockchain/services.py` (30%), `blockchain/views.py` (27%), `consortiums/tasks.py` (18%), `consortiums/services/blockchain.py` (19%), `consortiums/services/training.py` (38%)
-- Actualizar CodeQL action de v3 a v4 (deprecation en Dec 2026)
+- Subir coverage: `blockchain/services.py` (67%), `competitive_insights/views.py` (53%), `core/views.py` (66%), `models/views.py` (37%)
+- Correr pipelines CI para verificar que todo pasa en ambos remotes
