@@ -192,7 +192,8 @@ class TestFHETrainingServiceStartTraining:
 class TestFHETrainingServiceTrain:
     def test_train_success(self, training_result, verified_contribution):
         svc = FHETrainingService()
-        with patch.object(svc, "_get_fhe_model", return_value=MockFHEModel("logistic_regression")):
+        with patch.object(svc, "_get_fhe_model", return_value=MockFHEModel("logistic_regression")), \
+             patch("apps.consortiums.tasks.register_training_result_blockchain") as mock_task:
             result = svc.train(training_result)
 
         assert result.success
