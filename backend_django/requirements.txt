@@ -29,7 +29,7 @@ hiredis>=3.0.0
 celery>=5.4.0
 
 # ML (TenSEAL added optionally in FHE stage)
-numpy>=1.24.0,<2.0.0
+numpy>=1.24.0,<3.0.0
 scikit-learn>=1.5.0
 
 # Blockchain (Arbitrum)
