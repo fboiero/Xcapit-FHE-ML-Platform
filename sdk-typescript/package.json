@@ -1,0 +1,62 @@
+{
+  "name": "@xcapit/fhe-ml-sdk",
+  "version": "1.0.0",
+  "description": "TypeScript SDK for Xcapit FHE-ML Platform - Privacy-Preserving Machine Learning",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "lint": "eslint src --ext .ts",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "fhe",
+    "homomorphic-encryption",
+    "machine-learning",
+    "privacy",
+    "xcapit",
+    "ai",
+    "ml",
+    "encryption",
+    "blockchain"
+  ],
+  "author": "Xcapit Team",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xcapit/fhe-ml-platform.git"
+  },
+  "homepage": "https://xcapit.io/fhe-ml",
+  "bugs": {
+    "url": "https://github.com/xcapit/fhe-ml-platform/issues"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "eslint": "^8.55.0",
+    "tsup": "^8.0.1",
+    "typescript": "^5.3.2",
+    "vitest": "^1.0.0"
+  },
+  "dependencies": {
+    "ethers": "^6.9.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
