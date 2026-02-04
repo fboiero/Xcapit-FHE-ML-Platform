@@ -548,9 +548,6 @@ class TestAuthentication:
         assert "tokens" in response.data
 
     def test_register_with_company(self):
-        # BUG: RegisterSerializer.create() calls Company.objects.create(name=...)
-        # without setting Company.email (which is unique+required), causing IntegrityError.
-        # This test documents the pre-existing bug — expects 500 instead of 201.
         response = self.client.post("/api/v2/auth/register/", {
             "email": "new2@test.com",
             "password": "StrongPass123!",
@@ -559,7 +556,12 @@ class TestAuthentication:
             "last_name": "User",
             "company_name": "New Co",
         }, format="json")
-        assert response.status_code == 500
+        assert response.status_code == 201
+        # Verify company was created with user's email
+        user = User.objects.get(email="new2@test.com")
+        assert user.company is not None
+        assert user.company.name == "New Co"
+        assert user.company.email == "new2@test.com"
 
     def test_register_duplicate_email(self):
         response = self.client.post("/api/v2/auth/register/", {
@@ -649,12 +651,12 @@ class TestAuthentication:
         assert response.status_code == 200
 
     def test_create_api_key(self):
-        # BUG: CreateAPIKeyView.post() passes created_by and prefix to APIKey.objects.create()
-        # but the APIKey model has neither field, causing TypeError.
-        # This test documents the pre-existing bug — expects 500 instead of 201.
         self.client.force_authenticate(user=self.user)
         response = self.client.post("/api/v2/auth/api-keys/create/", {"name": "test-key"}, format="json")
-        assert response.status_code == 500
+        assert response.status_code == 201
+        assert "key" in response.data["api_key"]
+        assert response.data["api_key"]["name"] == "test-key"
+        assert "prefix" in response.data["api_key"]
 
     def test_create_api_key_no_company(self):
         user_no_co = User.objects.create_user(

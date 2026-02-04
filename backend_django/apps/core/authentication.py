@@ -56,7 +56,10 @@ class RegisterSerializer(serializers.Serializer):
         # Create company if provided
         company = None
         if company_name:
-            company = Company.objects.create(name=company_name)
+            company = Company.objects.create(
+                name=company_name,
+                email=validated_data["email"],
+            )
 
         # Create user
         user = User.objects.create_user(

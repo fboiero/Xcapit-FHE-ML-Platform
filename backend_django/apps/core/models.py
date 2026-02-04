@@ -244,6 +244,16 @@ class APIKey(models.Model):
         on_delete=models.CASCADE,
         related_name="api_keys",
     )
+    created_by = models.ForeignKey(
+        "User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="created_api_keys",
+    )
+
+    # Key prefix (first 8 chars, for identification without exposing the full key)
+    prefix = models.CharField(max_length=20, blank=True, default="")
 
     # Permissions
     PERMISSION_CHOICES = [
