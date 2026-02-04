@@ -13,7 +13,7 @@ Privacy-preserving machine learning platform using Fully Homomorphic Encryption 
 - **Blockchain**: Arbitrum integration for audit trails (Web3.py)
 - **Authentication**: JWT (djangorestframework-simplejwt) with token blacklist
 - **Security**: django-axes (brute-force protection), django-ratelimit
-- **Testing**: pytest-django (1,258+ tests, 93% coverage)
+- **Testing**: pytest-django (1,442+ tests, 95% coverage)
 - **Deployment**: Docker + docker-compose, Gunicorn + WhiteNoise
 
 ### Frontend (React/Vite)
@@ -272,7 +272,7 @@ Each vertical landing page follows this structure:
 ## Notes for Future Sessions
 
 - Backend migrated from FastAPI to Django 5.2 LTS (January 2026)
-- 1,258 Django tests passing, 93% coverage
+- 1,442 Django tests passing, 95% coverage
 - Docker build produces ~654MB image, uses multi-stage build
 - Build takes ~3 minutes, produces warning about chunk size >500KB (acceptable)
 - Vercel deployment is automatic on push to main
@@ -328,7 +328,7 @@ La migración de FastAPI a Django está **~95% completada**.
 #### Fase 6: Documentación (25 Enero 2026)
 - [x] Actualizar README.md principal (Django en lugar de FastAPI)
 - [x] Actualizar CHANGELOG.md con versión 2.0.0
-- [x] Ejecutar suite completa de tests (1,258 pasando, 93% coverage)
+- [x] Ejecutar suite completa de tests (1,442 pasando, 95.12% coverage)
 
 ### Estructura Final del SDK
 ```
@@ -351,7 +351,7 @@ sdk/
 La migración de FastAPI a Django está **100% completada**.
 
 - SDK versión 0.2.0 (librería pura)
-- Django backend con 1,258 tests pasando (93% coverage)
+- Django backend con 1,442 tests pasando (95.12% coverage)
 - Documentación actualizada (README, CHANGELOG)
 
 ---
@@ -368,9 +368,9 @@ La migración de FastAPI a Django está **100% completada**.
 - CodeQL action actualizado de v3 a **v4** en ci.yml y codeql.yml
 
 ### Tests y Coverage
-- **Django tests**: 1,437 tests pasando, **95.10% coverage** (`--cov-fail-under=90` en CI)
+- **Django tests**: 1,442 tests pasando, **95.12% coverage** (`--cov-fail-under=90` en CI)
 - **SDK tests root** (`tests/` + `sdk/tests/`): ~620 tests pasando
-- **Total**: ~2,057 tests
+- **Total**: ~2,062 tests
 
 ### Historial de Coverage
 - **77% → 80%**: 115 tests (consortium services, quality assessment, competitive emails, coverage boost)
@@ -378,6 +378,7 @@ La migración de FastAPI a Django está **100% completada**.
 - **84% → 91%**: 191 tests (models views, core views, ensemble views, competitive insights views, explainability views, consortiums views)
 - **91% → 93%**: 103 tests (cache, audit, json_schemas, permissions, blockchain services, consortium services)
 - **93% → 95.10%**: 179 tests (blockchain secrets/services, core logging/exceptions/auth/healthchecks/serializers, consortium signals, data_quality/explainability views, ML models)
+- **95.10% → 95.12%**: 5 E2E integration tests (ML model lifecycle, model sharing & marketplace, federated learning, data quality → training, governance proposal → vote → execute)
 
 ### Tests por archivo
 - `test_consortium_services.py` — 53 tests (MemberService, InvitationService, ContributionService, ConsortiumService)
@@ -390,6 +391,7 @@ La migración de FastAPI a Django está **100% completada**.
 - `test_views_extended.py` — 67 tests (WebhookViewSet, WebhookDeliveryViewSet, UsageStatsViewSet, ReportViewSet, WorkflowViewSet, WorkflowRunViewSet, ScheduledTaskViewSet, EnsembleViewSet, IndustryBenchmarkViewSet, CompanyMetricViewSet, CompetitiveReportViewSet, ExplanationRequestViewSet, ModelInsightViewSet, ExplainabilityDashboardView, ConsortiumViewSet, ConsortiumMemberViewSet, ContributionProofViewSet, ConsortiumInvitationViewSet)
 - `test_coverage_modules.py` — 103 tests (LRUMemoryCache, ResilientCache, cached decorator, AuditService, JSONSchemaValidator, ProposalDataField, QualityRuleConditionField, 8 permission classes, ConsortiumService stats/rankings, BlockchainService connection)
 - `test_coverage_95.py` — 179 tests (healthchecks, auth views, consortium signals, ML models lifecycle, core serializers validation, data quality views, explainability views, exception handler, logging, blockchain secrets/services)
+- `integration/test_e2e_flows.py` — 5 tests (ML model lifecycle, model sharing & marketplace, federated learning, data quality → consortium → training, governance proposal → vote → execute)
 
 ### Coverage por módulo (evolución completa)
 - `models/views.py`: 37% → **96%**
@@ -450,9 +452,13 @@ La migración de FastAPI a Django está **100% completada**.
 - `CreateAPIKeyView.post()`: usa `created_by` y `prefix` en `APIKey.objects.create()` pero el modelo no tiene esos campos → TypeError
 - `APIKeyAuthentication.authenticate()`: hace `select_related("company", "created_by")` pero `APIKey` no tiene campo `created_by`
 
+### Bugs Pre-existentes Documentados (adicionales)
+- `federated/views.py:140`: `endpoint.model.version` — `MLModel` no tiene campo `version` (tiene `current_version`) → AttributeError en predict de InferenceEndpointViewSet
+
 ### Próximos Pasos Posibles
 - ~~Subir coverage a **95%+** cubriendo los 11 módulos que están entre 67-84%~~ ✅ (95.10%)
-- Agregar integration tests end-to-end para flujos completos (auth → create consortium → train → predict)
+- ~~Agregar integration tests end-to-end para flujos completos (auth → create consortium → train → predict)~~ ✅ (5 flujos E2E)
 - Configurar Codecov/Coveralls para tracking de coverage en PRs
 - Agregar tests de performance/load con locust o similar
 - Corregir los 3 bugs pre-existentes documentados en authentication.py
+- Corregir bug `endpoint.model.version` → `endpoint.model.current_version` en federated/views.py
