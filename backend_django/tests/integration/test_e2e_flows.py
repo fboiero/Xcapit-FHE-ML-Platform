@@ -539,15 +539,20 @@ class TestFederatedLearning:
         assert response.data["status"] == "deployed"
 
         # ----- STEP 7: Create inference endpoint -----
-        # Note: endpoint.model FK is optional. We skip assigning an MLModel
-        # because the predict view references model.version which is a known
-        # bug (MLModel has current_version, not version).
+        ml_model = MLModel.objects.create(
+            name="Inference Backend Model",
+            model_type="logistic_regression",
+            status=MLModel.Status.TRAINED,
+            owner=company,
+        )
+
         response = api_client.post(
             "/api/v2/federated/endpoints/",
             data={
                 "consortium": str(consortium.id),
                 "name": "Real-time Fraud Endpoint",
                 "description": "Production fraud detection",
+                "model": str(ml_model.id),
                 "endpoint_type": "realtime",
                 "config": {"max_batch_size": 100},
             },

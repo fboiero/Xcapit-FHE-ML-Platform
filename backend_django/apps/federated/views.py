@@ -137,7 +137,7 @@ class InferenceEndpointViewSet(viewsets.ModelViewSet):
             encrypted_output=encrypted_output,
             output_metadata={
                 "n_samples": n_samples,
-                "model_version": endpoint.model.version if endpoint.model else "1.0.0",
+                "model_version": endpoint.model.current_version if endpoint.model else "1.0.0",
             },
             confidence_scores=[0.95] * n_samples,
         )
