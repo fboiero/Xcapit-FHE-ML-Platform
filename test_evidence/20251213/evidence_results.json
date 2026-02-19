@@ -1,0 +1,111 @@
+{
+  "timestamp": "2025-12-13T18:27:29.923236",
+  "platform": "Xcapit FHE-ML Platform",
+  "version": "1.0.0",
+  "tests": [
+    {
+      "name": "Linear Regression - Initialization",
+      "status": false,
+      "details": {
+        "error": "'SecureDataLoader' object has no attribute 'prepare_data'"
+      }
+    },
+    {
+      "name": "Logistic Regression - Initialization",
+      "status": false,
+      "details": {
+        "error": "'SecureDataLoader' object has no attribute 'prepare_data'"
+      }
+    },
+    {
+      "name": "Decision Tree Classifier",
+      "status": false,
+      "details": {
+        "error": "TreeConfig.__init__() got an unexpected keyword argument 'min_samples_split'"
+      }
+    },
+    {
+      "name": "KMeans Clustering",
+      "status": true,
+      "details": {
+        "n_clusters": 3,
+        "unique_labels": 3,
+        "n_samples": 90
+      }
+    },
+    {
+      "name": "Model Serialization",
+      "status": true,
+      "details": {
+        "model_type": "LinearRegression",
+        "saved_successfully": true
+      }
+    },
+    {
+      "name": "Data Validation",
+      "status": false,
+      "details": {
+        "error": "No module named 'sdk.utils.validation'"
+      }
+    },
+    {
+      "name": "Training History",
+      "status": true,
+      "details": {
+        "epochs": 10,
+        "final_loss": "0.1000",
+        "final_accuracy": "95.00%"
+      }
+    },
+    {
+      "name": "FHE Model Factory",
+      "status": true,
+      "details": {
+        "linear_regression_created": true,
+        "logistic_regression_created": true,
+        "lr_learning_rate": 0.1,
+        "log_learning_rate": 0.05
+      }
+    },
+    {
+      "name": "Data Quality Calculator",
+      "status": false,
+      "details": {
+        "error": "'DataQualityCalculator' object has no attribute 'calculate'"
+      }
+    },
+    {
+      "name": "Governance Module",
+      "status": false,
+      "details": {
+        "error": "No module named 'sdk.api.governance'"
+      }
+    },
+    {
+      "name": "Compliance Module",
+      "status": true,
+      "details": {
+        "available_frameworks": [
+          "framework_gdpr",
+          "framework_hipaa",
+          "framework_soc2",
+          "framework_pci_dss"
+        ],
+        "n_frameworks": 4
+      }
+    },
+    {
+      "name": "Sandbox Module",
+      "status": false,
+      "details": {
+        "error": "No module named 'sdk.api.sandbox'"
+      }
+    }
+  ],
+  "summary": {
+    "total": 12,
+    "passed": 5,
+    "failed": 7,
+    "pass_rate": "41.7%"
+  }
+}

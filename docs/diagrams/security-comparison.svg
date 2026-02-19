@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="500" viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGrad3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0c1929"/>
+      <stop offset="100%" style="stop-color:#1a365d"/>
+    </linearGradient>
+    <linearGradient id="greenGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#10B981"/>
+      <stop offset="100%" style="stop-color:#059669"/>
+    </linearGradient>
+    <linearGradient id="redGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#EF4444"/>
+      <stop offset="100%" style="stop-color:#DC2626"/>
+    </linearGradient>
+    <linearGradient id="orangeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#F59E0B"/>
+      <stop offset="100%" style="stop-color:#D97706"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="500" fill="url(#bgGrad3)" rx="15"/>
+
+  <!-- Title -->
+  <text x="400" y="35" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="20" font-weight="bold">
+    Comparación de Seguridad: FHE vs Métodos Tradicionales
+  </text>
+
+  <!-- Column Headers -->
+  <rect x="50" y="60" width="200" height="35" fill="rgba(139,92,246,0.2)" rx="8"/>
+  <text x="150" y="83" text-anchor="middle" fill="#8B5CF6" font-family="Arial, sans-serif" font-size="13" font-weight="bold">Característica</text>
+
+  <rect x="260" y="60" width="160" height="35" fill="rgba(239,68,68,0.2)" rx="8"/>
+  <text x="340" y="83" text-anchor="middle" fill="#EF4444" font-family="Arial, sans-serif" font-size="13" font-weight="bold">Sin Encriptar</text>
+
+  <rect x="430" y="60" width="160" height="35" fill="rgba(245,158,11,0.2)" rx="8"/>
+  <text x="510" y="83" text-anchor="middle" fill="#F59E0B" font-family="Arial, sans-serif" font-size="13" font-weight="bold">TLS/En Reposo</text>
+
+  <rect x="600" y="60" width="160" height="35" fill="rgba(16,185,129,0.2)" rx="8"/>
+  <text x="680" y="83" text-anchor="middle" fill="#10B981" font-family="Arial, sans-serif" font-size="13" font-weight="bold">FHE (Xcapit)</text>
+
+  <!-- Row 1: Datos en tránsito -->
+  <rect x="50" y="105" width="200" height="45" fill="rgba(255,255,255,0.03)" rx="5"/>
+  <text x="150" y="132" text-anchor="middle" fill="#E0E7FF" font-family="Arial, sans-serif" font-size="12">Datos en tránsito</text>
+
+  <rect x="260" y="105" width="160" height="45" fill="rgba(239,68,68,0.1)" rx="5"/>
+  <text x="340" y="125" text-anchor="middle" fill="#EF4444" font-family="Arial, sans-serif" font-size="20">✗</text>
+  <text x="340" y="142" text-anchor="middle" fill="#94A3B8" font-family="Arial, sans-serif" font-size="9">Expuestos</text>
+
+  <rect x="430" y="105" width="160" height="45" fill="rgba(16,185,129,0.1)" rx="5"/>
+  <text x="510" y="125" text-anchor="middle" fill="#10B981" font-family="Arial, sans-serif" font-size="20">✓</text>
+  <text x="510" y="142" text-anchor="middle" fill="#94A3B8" font-family="Arial, sans-serif" font-size="9">TLS protegido</text>
+
+  <rect x="600" y="105" width="160" height="45" fill="rgba(16,185,129,0.1)" rx="5"/>
+  <text x="680" y="125" text-anchor="middle" fill="#10B981" font-family="Arial, sans-serif" font-size="20">✓</text>
+  <text x="680" y="142" text-anchor="middle" fill="#94A3B8" font-family="Arial, sans-serif" font-size="9">Encriptado E2E</text>
+
+  <!-- Row 2: Datos en reposo -->
+  <rect x="50" y="160" width="200" height="45" fill="rgba(255,255,255,0.05)" rx="5"/>
+  <text x="150" y="187" text-anchor="middle" fill="#E0E7FF" font-family="Arial, sans-serif" font-size="12">Datos en reposo</text>
+
+  <rect x="260" y="160" width="160" height="45" fill="rgba(239,68,68,0.1)" rx="5"/>
+  <text x="340" y="180" text-anchor="middle" fill="#EF4444" font-family="Arial, sans-serif" font-size="20">✗</text>
+  <text x="340" y="197" text-anchor="middle" fill="#94A3B8" font-family="Arial, sans-serif" font-size="9">Expuestos</text>
+
+  <rect x="430" y="160" width="160" height="45" fill="rgba(16,185,129,0.1)" rx="5"/>
+  <text x="510" y="180" text-anchor="middle" fill="#10B981" font-family="Arial, sans-serif" font-size="20">✓</text>
+  <text x="510" y="197" text-anchor="middle" fill="#94A3B8" font-family="Arial, sans-serif" font-size="9">AES protegido</text>
+
+  <rect x="600" y="160" width="160" height="45" fill="rgba(16,185,129,0.1)" rx="5"/>
+  <text x="680" y="180" text-anchor="middle" fill="#10B981" font-family="Arial, sans-serif" font-size="20">✓</text>
+  <text x="680" y="197" text-anchor="middle" fill="#94A3B8" font-family="Arial, sans-serif" font-size="9">Siempre cifrado</text>
+
+  <!-- Row 3: Datos durante procesamiento -->
+  <rect x="50" y="215" width="200" height="45" fill="rgba(255,255,255,0.03)" rx="5"/>
+  <text x="150" y="235" text-anchor="middle" fill="#E0E7FF" font-family="Arial, sans-serif" font-size="12">Durante</text>
+  <text x="150" y="250" text-anchor="middle" fill="#E0E7FF" font-family="Arial, sans-serif" font-size="12">procesamiento</text>
+
+  <rect x="260" y="215" width="160" height="45" fill="rgba(239,68,68,0.1)" rx="5"/>
+  <text x="340" y="235" text-anchor="middle" fill="#EF4444" font-family="Arial, sans-serif" font-size="20">✗</text>
+  <text x="340" y="252" text-anchor="middle" fill="#94A3B8" font-family="Arial, sans-serif" font-size="9">Texto plano</text>
+
+  <rect x="430" y="215" width="160" height="45" fill="rgba(239,68,68,0.1)" rx="5"/>
+  <text x="510" y="235" text-anchor="middle" fill="#EF4444" font-family="Arial, sans-serif" font-size="20">✗</text>
+  <text x="510" y="252" text-anchor="middle" fill="#94A3B8" font-family="Arial, sans-serif" font-size="9">Debe descifrar</text>
+
+  <rect x="600" y="215" width="160" height="45" fill="rgba(16,185,129,0.15)" rx="5" stroke="#10B981" stroke-width="2"/>
+  <text x="680" y="235" text-anchor="middle" fill="#10B981" font-family="Arial, sans-serif" font-size="20">✓</text>
+  <text x="680" y="252" text-anchor="middle" fill="#10B981" font-family="Arial, sans-serif" font-size="9" font-weight="bold">NUNCA descifra</text>
+
+  <!-- Row 4: Servidor ve datos -->
+  <rect x="50" y="270" width="200" height="45" fill="rgba(255,255,255,0.05)" rx="5"/>
+  <text x="150" y="297" text-anchor="middle" fill="#E0E7FF" font-family="Arial, sans-serif" font-size="12">Servidor ve datos</text>
+
+  <rect x="260" y="270" width="160" height="45" fill="rgba(239,68,68,0.1)" rx="5"/>
+  <text x="340" y="290" text-anchor="middle" fill="#EF4444" font-family="Arial, sans-serif" font-size="20">✗</text>
+  <text x="340" y="307" text-anchor="middle" fill="#94A3B8" font-family="Arial, sans-serif" font-size="9">Acceso total</text>
+
+  <rect x="430" y="270" width="160" height="45" fill="rgba(239,68,68,0.1)" rx="5"/>
+  <text x="510" y="290" text-anchor="middle" fill="#EF4444" font-family="Arial, sans-serif" font-size="20">✗</text>
+  <text x="510" y="307" text-anchor="middle" fill="#94A3B8" font-family="Arial, sans-serif" font-size="9">Ve al procesar</text>
+
+  <rect x="600" y="270" width="160" height="45" fill="rgba(16,185,129,0.15)" rx="5" stroke="#10B981" stroke-width="2"/>
+  <text x="680" y="290" text-anchor="middle" fill="#10B981" font-family="Arial, sans-serif" font-size="20">✓</text>
+  <text x="680" y="307" text-anchor="middle" fill="#10B981" font-family="Arial, sans-serif" font-size="9" font-weight="bold">Solo ve ruido</text>
+
+  <!-- Row 5: Resistencia quantum -->
+  <rect x="50" y="325" width="200" height="45" fill="rgba(255,255,255,0.03)" rx="5"/>
+  <text x="150" y="352" text-anchor="middle" fill="#E0E7FF" font-family="Arial, sans-serif" font-size="12">Resistencia Quantum</text>
+
+  <rect x="260" y="325" width="160" height="45" fill="rgba(239,68,68,0.1)" rx="5"/>
+  <text x="340" y="345" text-anchor="middle" fill="#EF4444" font-family="Arial, sans-serif" font-size="20">✗</text>
+  <text x="340" y="362" text-anchor="middle" fill="#94A3B8" font-family="Arial, sans-serif" font-size="9">N/A</text>
+
+  <rect x="430" y="325" width="160" height="45" fill="rgba(245,158,11,0.1)" rx="5"/>
+  <text x="510" y="345" text-anchor="middle" fill="#F59E0B" font-family="Arial, sans-serif" font-size="20">~</text>
+  <text x="510" y="362" text-anchor="middle" fill="#94A3B8" font-family="Arial, sans-serif" font-size="9">Parcial</text>
+
+  <rect x="600" y="325" width="160" height="45" fill="rgba(16,185,129,0.15)" rx="5" stroke="#10B981" stroke-width="2"/>
+  <text x="680" y="345" text-anchor="middle" fill="#10B981" font-family="Arial, sans-serif" font-size="20">✓</text>
+  <text x="680" y="362" text-anchor="middle" fill="#10B981" font-family="Arial, sans-serif" font-size="9" font-weight="bold">128-bit PQ</text>
+
+  <!-- Row 6: Compliance -->
+  <rect x="50" y="380" width="200" height="45" fill="rgba(255,255,255,0.05)" rx="5"/>
+  <text x="150" y="407" text-anchor="middle" fill="#E0E7FF" font-family="Arial, sans-serif" font-size="12">HIPAA/GDPR/LGPD</text>
+
+  <rect x="260" y="380" width="160" height="45" fill="rgba(239,68,68,0.1)" rx="5"/>
+  <text x="340" y="400" text-anchor="middle" fill="#EF4444" font-family="Arial, sans-serif" font-size="20">✗</text>
+  <text x="340" y="417" text-anchor="middle" fill="#94A3B8" font-family="Arial, sans-serif" font-size="9">No cumple</text>
+
+  <rect x="430" y="380" width="160" height="45" fill="rgba(245,158,11,0.1)" rx="5"/>
+  <text x="510" y="400" text-anchor="middle" fill="#F59E0B" font-family="Arial, sans-serif" font-size="20">~</text>
+  <text x="510" y="417" text-anchor="middle" fill="#94A3B8" font-family="Arial, sans-serif" font-size="9">Depende config</text>
+
+  <rect x="600" y="380" width="160" height="45" fill="rgba(16,185,129,0.15)" rx="5" stroke="#10B981" stroke-width="2"/>
+  <text x="680" y="400" text-anchor="middle" fill="#10B981" font-family="Arial, sans-serif" font-size="20">✓</text>
+  <text x="680" y="417" text-anchor="middle" fill="#10B981" font-family="Arial, sans-serif" font-size="9" font-weight="bold">Automático</text>
+
+  <!-- Footer -->
+  <rect x="50" y="440" width="710" height="50" fill="rgba(16,185,129,0.1)" rx="10"/>
+  <text x="400" y="460" text-anchor="middle" fill="#10B981" font-family="Arial, sans-serif" font-size="13" font-weight="bold">
+    FHE es la ÚNICA tecnología que protege datos DURANTE el procesamiento
+  </text>
+  <text x="400" y="480" text-anchor="middle" fill="#94A3B8" font-family="Arial, sans-serif" font-size="11">
+    El servidor nunca tiene acceso a los datos originales - solo opera sobre ciphertexts
+  </text>
+</svg>

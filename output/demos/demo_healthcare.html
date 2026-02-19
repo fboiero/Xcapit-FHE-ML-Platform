@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo: Diagnóstico Médico HIPAA - Xcapit FHE-ML</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #0c1929 0%, #1a365d 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 30px;
+        }
+        .container { max-width: 1100px; margin: 0 auto; }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .header h1 {
+            font-size: 2.2em;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+        .header .subtitle {
+            color: #94A3B8;
+            font-size: 1.1em;
+        }
+        .compliance-badges {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .compliance-badge {
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid #10B981;
+            color: #10B981;
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-weight: 600;
+        }
+        .main-content {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 30px;
+        }
+        .patient-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .patient-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .patient-avatar {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, #3B82F6, #8B5CF6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+        }
+        .patient-info h3 {
+            font-size: 1.3em;
+            margin-bottom: 5px;
+        }
+        .patient-info p {
+            color: #64748B;
+            font-size: 0.9em;
+        }
+        .phi-label {
+            background: #DC2626;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+        .vital-signs {
+            display: grid;
+            gap: 15px;
+        }
+        .vital-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+        }
+        .vital-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .vital-icon {
+            font-size: 1.3em;
+        }
+        .vital-value {
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+        .vital-value.high { color: #EF4444; }
+        .vital-value.normal { color: #10B981; }
+        .vital-value.elevated { color: #F59E0B; }
+        .process-panel {
+            background: rgba(255,255,255,0.03);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .process-title {
+            font-size: 1.3em;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .process-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .process-step {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+        .step-indicator {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 40px;
+        }
+        .step-dot {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        .step-dot.hospital { background: #3B82F6; }
+        .step-dot.encrypt { background: #8B5CF6; }
+        .step-dot.server { background: #10B981; }
+        .step-dot.result { background: #F59E0B; }
+        .step-line {
+            width: 3px;
+            height: 40px;
+            background: rgba(255,255,255,0.2);
+            margin: 5px 0;
+        }
+        .step-content {
+            flex: 1;
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            padding: 18px;
+        }
+        .step-content h4 {
+            margin-bottom: 10px;
+            color: #fff;
+        }
+        .step-content p {
+            color: #94A3B8;
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+        .code-snippet {
+            background: #0a0a14;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 12px;
+            font-family: monospace;
+            font-size: 0.85em;
+            color: #10B981;
+        }
+        .result-panel {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.1));
+            border: 2px solid #EF4444;
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 30px;
+            text-align: center;
+        }
+        .result-panel.low-risk {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.1));
+            border-color: #10B981;
+        }
+        .risk-indicator {
+            font-size: 4em;
+            margin-bottom: 15px;
+        }
+        .risk-percentage {
+            font-size: 3em;
+            font-weight: bold;
+            color: #EF4444;
+        }
+        .risk-label {
+            font-size: 1.5em;
+            color: #fff;
+            margin-top: 10px;
+        }
+        .recommendation {
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            text-align: left;
+        }
+        .recommendation h4 {
+            color: #F59E0B;
+            margin-bottom: 10px;
+        }
+        .privacy-footer {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 30px;
+            text-align: center;
+        }
+        .privacy-footer h3 {
+            color: #10B981;
+            margin-bottom: 15px;
+        }
+        .privacy-points {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+        .privacy-point {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #94A3B8;
+        }
+        .privacy-point .check {
+            color: #10B981;
+            font-size: 1.3em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏥 Sistema de Diagnóstico con Privacidad Total</h1>
+            <p class="subtitle">Predicción de Riesgo Cardiovascular sobre Datos Encriptados</p>
+            <div class="compliance-badges">
+                <span class="compliance-badge">✓ HIPAA Compliant</span>
+                <span class="compliance-badge">✓ GDPR Compliant</span>
+                <span class="compliance-badge">✓ Zero-Knowledge</span>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- Patient Card -->
+            <div class="patient-card">
+                <div class="patient-header">
+                    <div class="patient-avatar">👤</div>
+                    <div class="patient-info">
+                        <h3>Paciente #4521</h3>
+                        <p>Masculino, 58 años</p>
+                        <span class="phi-label">PHI Protegido</span>
+                    </div>
+                </div>
+
+                <div class="vital-signs">
+                    <div class="vital-row">
+                        <div class="vital-label">
+                            <span class="vital-icon">❤️</span>
+                            <span>Presión Arterial</span>
+                        </div>
+                        <span class="vital-value elevated">145/92 mmHg</span>
+                    </div>
+                    <div class="vital-row">
+                        <div class="vital-label">
+                            <span class="vital-icon">🩸</span>
+                            <span>Colesterol Total</span>
+                        </div>
+                        <span class="vital-value high">248 mg/dL</span>
+                    </div>
+                    <div class="vital-row">
+                        <div class="vital-label">
+                            <span class="vital-icon">📊</span>
+                            <span>Glucosa</span>
+                        </div>
+                        <span class="vital-value elevated">118 mg/dL</span>
+                    </div>
+                    <div class="vital-row">
+                        <div class="vital-label">
+                            <span class="vital-icon">⚖️</span>
+                            <span>IMC</span>
+                        </div>
+                        <span class="vital-value elevated">28.5</span>
+                    </div>
+                    <div class="vital-row">
+                        <div class="vital-label">
+                            <span class="vital-icon">🚬</span>
+                            <span>Fumador</span>
+                        </div>
+                        <span class="vital-value high">Sí (15 años)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Process Panel -->
+            <div class="process-panel">
+                <h2 class="process-title">
+                    <span>🔐</span> Proceso de Diagnóstico Seguro
+                </h2>
+
+                <div class="process-steps">
+                    <div class="process-step">
+                        <div class="step-indicator">
+                            <div class="step-dot hospital">1</div>
+                            <div class="step-line"></div>
+                        </div>
+                        <div class="step-content">
+                            <h4>🏥 Hospital: Preparar Datos</h4>
+                            <p>Los datos del paciente se normalizan localmente. Nunca salen del hospital en texto plano.</p>
+                            <div class="code-snippet">
+                                X = [edad, presion, colesterol, glucosa, imc, fumador]
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="process-step">
+                        <div class="step-indicator">
+                            <div class="step-dot encrypt">2</div>
+                            <div class="step-line"></div>
+                        </div>
+                        <div class="step-content">
+                            <h4>🔒 Encriptar con CKKS</h4>
+                            <p>Datos convertidos a ciphertext. El servidor ML no puede ver los valores originales.</p>
+                            <div class="code-snippet">
+                                E(X) = CKKS.encrypt(X, pk) → [ct₀, ct₁]
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="process-step">
+                        <div class="step-indicator">
+                            <div class="step-dot server">3</div>
+                            <div class="step-line"></div>
+                        </div>
+                        <div class="step-content">
+                            <h4>🖥️ Servidor: Predicción FHE</h4>
+                            <p>El modelo de ML procesa datos encriptados. Solo ve ruido criptográfico.</p>
+                            <div class="code-snippet">
+                                E(riesgo) = LogisticRegression.predict(E(X))
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="process-step">
+                        <div class="step-indicator">
+                            <div class="step-dot result">4</div>
+                        </div>
+                        <div class="step-content">
+                            <h4>📋 Hospital: Descifrar Resultado</h4>
+                            <p>Solo el hospital puede descifrar el diagnóstico usando su clave privada.</p>
+                            <div class="code-snippet">
+                                riesgo = CKKS.decrypt(E(riesgo), sk) → 78.3%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Result Panel -->
+        <div class="result-panel">
+            <div class="risk-indicator">⚠️</div>
+            <div class="risk-percentage">78.3%</div>
+            <div class="risk-label">RIESGO CARDIOVASCULAR ALTO</div>
+
+            <div class="recommendation">
+                <h4>📋 Recomendaciones del Sistema:</h4>
+                <ul style="margin-left: 20px; margin-top: 10px; line-height: 1.8; color: #CBD5E1;">
+                    <li>Consulta prioritaria con cardiología</li>
+                    <li>Iniciar programa de cesación tabáquica</li>
+                    <li>Evaluación de medicación antihipertensiva</li>
+                    <li>Control dietético para reducir colesterol</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Privacy Footer -->
+        <div class="privacy-footer">
+            <h3>🛡️ Garantías de Privacidad</h3>
+            <div class="privacy-points">
+                <div class="privacy-point">
+                    <span class="check">✓</span>
+                    <span>Datos PHI nunca expuestos</span>
+                </div>
+                <div class="privacy-point">
+                    <span class="check">✓</span>
+                    <span>Servidor no accede a información médica</span>
+                </div>
+                <div class="privacy-point">
+                    <span class="check">✓</span>
+                    <span>Encriptación 128-bit post-quantum</span>
+                </div>
+                <div class="privacy-point">
+                    <span class="check">✓</span>
+                    <span>Auditoría en blockchain</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

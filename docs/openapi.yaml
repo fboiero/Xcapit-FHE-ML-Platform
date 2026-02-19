@@ -1,0 +1,1105 @@
+openapi: 3.1.0
+info:
+  title: Xcapit FHE-ML Platform API
+  description: |
+    Privacy-Preserving Machine Learning Platform API.
+
+    This API enables:
+    - Training ML models on encrypted data (FHE)
+    - Making predictions without revealing input data
+    - Consortium-based collaborative learning
+    - Blockchain-verified audit trails
+    - GDPR/HIPAA/SOC2 compliant operations
+
+    ## Authentication
+    All endpoints require Bearer token authentication:
+    ```
+    Authorization: Bearer <your-api-key>
+    ```
+
+    ## Rate Limits
+    - Free tier: 100 requests/minute
+    - Pro tier: 1,000 requests/minute
+    - Enterprise: Custom limits
+
+    ## Encryption
+    All data is encrypted using CKKS homomorphic encryption scheme.
+    Use the `/encryption/context` endpoint to get encryption parameters.
+
+  version: 1.0.0
+  contact:
+    name: Xcapit Support
+    email: support@xcapit.io
+    url: https://xcapit.io/support
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+
+servers:
+  - url: https://api.xcapit.io/v1
+    description: Production server
+  - url: https://sandbox.xcapit.io/v1
+    description: Sandbox server
+  - url: http://localhost:8000
+    description: Local development
+
+tags:
+  - name: Models
+    description: ML model management
+  - name: Predictions
+    description: Encrypted predictions
+  - name: Encryption
+    description: FHE context and key management
+  - name: Consortiums
+    description: Collaborative learning consortiums
+  - name: Governance
+    description: Proposal voting and audit trail
+  - name: Compliance
+    description: Regulatory compliance reports
+  - name: Data Quality
+    description: Dataset quality analysis
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      description: Check API health status
+      operationId: healthCheck
+      tags:
+        - System
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+                  version:
+                    type: string
+                    example: 1.0.0
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /models:
+    get:
+      summary: List models
+      description: Get all models for the authenticated user
+      operationId: listModels
+      tags:
+        - Models
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/pageParam'
+        - $ref: '#/components/parameters/limitParam'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/ModelStatus'
+        - name: type
+          in: query
+          schema:
+            $ref: '#/components/schemas/ModelType'
+      responses:
+        '200':
+          description: List of models
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Model'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      summary: Create model
+      description: Create a new ML model
+      operationId: createModel
+      tags:
+        - Models
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateModelRequest'
+      responses:
+        '201':
+          description: Model created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Model'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /models/{modelId}:
+    get:
+      summary: Get model
+      description: Get model by ID
+      operationId: getModel
+      tags:
+        - Models
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/modelIdParam'
+      responses:
+        '200':
+          description: Model details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Model'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      summary: Delete model
+      description: Delete a model
+      operationId: deleteModel
+      tags:
+        - Models
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/modelIdParam'
+      responses:
+        '204':
+          description: Model deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /models/{modelId}/train:
+    post:
+      summary: Train model
+      description: Start training on encrypted data
+      operationId: trainModel
+      tags:
+        - Models
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/modelIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrainModelRequest'
+      responses:
+        '202':
+          description: Training started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainingResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /predict:
+    post:
+      summary: Make prediction
+      description: Make encrypted prediction
+      operationId: predict
+      tags:
+        - Predictions
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PredictionRequest'
+      responses:
+        '200':
+          description: Prediction result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PredictionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /predict/batch:
+    post:
+      summary: Batch predictions
+      description: Make multiple predictions in batch
+      operationId: predictBatch
+      tags:
+        - Predictions
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchPredictionRequest'
+      responses:
+        '200':
+          description: Batch prediction results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchPredictionResponse'
+
+  /encryption/context:
+    post:
+      summary: Create encryption context
+      description: Create new FHE encryption context
+      operationId: createContext
+      tags:
+        - Encryption
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                polyModulusDegree:
+                  type: integer
+                  enum: [4096, 8192, 16384]
+                  default: 8192
+                scaleBits:
+                  type: integer
+                  default: 40
+      responses:
+        '201':
+          description: Context created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EncryptionContext'
+
+  /encryption/context/{contextId}:
+    get:
+      summary: Get encryption context
+      description: Get public encryption context
+      operationId: getContext
+      tags:
+        - Encryption
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: contextId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Encryption context
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EncryptionContext'
+
+  /encryption/encrypt:
+    post:
+      summary: Encrypt data
+      description: Encrypt data using FHE
+      operationId: encryptData
+      tags:
+        - Encryption
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - data
+              properties:
+                data:
+                  type: array
+                  items:
+                    type: number
+                contextId:
+                  type: string
+      responses:
+        '200':
+          description: Encrypted data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EncryptedData'
+
+  /consortiums:
+    get:
+      summary: List consortiums
+      description: Get all consortiums
+      operationId: listConsortiums
+      tags:
+        - Consortiums
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of consortiums
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Consortium'
+
+    post:
+      summary: Create consortium
+      description: Create new collaborative learning consortium
+      operationId: createConsortium
+      tags:
+        - Consortiums
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateConsortiumRequest'
+      responses:
+        '201':
+          description: Consortium created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Consortium'
+
+  /consortiums/{consortiumId}/contributions:
+    post:
+      summary: Record contribution
+      description: Record encrypted data contribution
+      operationId: recordContribution
+      tags:
+        - Consortiums
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: consortiumId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordContributionRequest'
+      responses:
+        '201':
+          description: Contribution recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contribution'
+
+  /governance/proposals:
+    post:
+      summary: Create proposal
+      description: Create governance proposal
+      operationId: createProposal
+      tags:
+        - Governance
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProposalRequest'
+      responses:
+        '201':
+          description: Proposal created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Proposal'
+
+  /governance/proposals/{proposalId}/vote:
+    post:
+      summary: Vote on proposal
+      description: Cast vote on proposal
+      operationId: voteOnProposal
+      tags:
+        - Governance
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: proposalId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - support
+              properties:
+                support:
+                  type: boolean
+      responses:
+        '200':
+          description: Vote recorded
+
+  /governance/audit-trail:
+    get:
+      summary: Get audit trail
+      description: Get immutable audit trail
+      operationId: getAuditTrail
+      tags:
+        - Governance
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: consortiumId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Audit events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AuditEvent'
+
+  /compliance/reports:
+    post:
+      summary: Generate compliance report
+      description: Generate regulatory compliance report
+      operationId: generateComplianceReport
+      tags:
+        - Compliance
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateReportRequest'
+      responses:
+        '201':
+          description: Report generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComplianceReport'
+
+  /data-quality/analyze:
+    post:
+      summary: Analyze data quality
+      description: Analyze encrypted dataset quality
+      operationId: analyzeDataQuality
+      tags:
+        - Data Quality
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - datasetId
+              properties:
+                datasetId:
+                  type: string
+                encryptedSample:
+                  type: string
+      responses:
+        '200':
+          description: Quality report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataQualityReport'
+
+  /explainability/explain:
+    post:
+      summary: Explain prediction
+      description: Get model explanation for prediction
+      operationId: explainPrediction
+      tags:
+        - Explainability
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExplanationRequest'
+      responses:
+        '200':
+          description: Explanation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Explanation'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    pageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    limitParam:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    modelIdParam:
+      name: modelId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+
+    PaginationMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        hasMore:
+          type: boolean
+
+    ModelType:
+      type: string
+      enum:
+        - linear_regression
+        - logistic_regression
+        - decision_tree
+        - kmeans
+        - ensemble
+
+    ModelStatus:
+      type: string
+      enum:
+        - draft
+        - training
+        - ready
+        - deployed
+        - archived
+
+    Model:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/ModelType'
+        status:
+          $ref: '#/components/schemas/ModelStatus'
+        version:
+          type: string
+        owner:
+          type: string
+        weightsHash:
+          type: string
+        accuracy:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateModelRequest:
+      type: object
+      required:
+        - name
+        - type
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        type:
+          $ref: '#/components/schemas/ModelType'
+        version:
+          type: string
+          default: "1.0.0"
+        metadata:
+          type: object
+
+    TrainModelRequest:
+      type: object
+      properties:
+        encryptedData:
+          type: string
+          description: Base64 encoded encrypted training data
+        epochs:
+          type: integer
+          minimum: 1
+          maximum: 1000
+          default: 100
+        batchSize:
+          type: integer
+          minimum: 1
+          maximum: 1024
+          default: 32
+        hyperparameters:
+          type: object
+
+    TrainingResult:
+      type: object
+      properties:
+        modelId:
+          type: string
+        accuracy:
+          type: number
+        loss:
+          type: number
+        epochs:
+          type: integer
+        trainingTime:
+          type: number
+        weightsHash:
+          type: string
+
+    PredictionRequest:
+      type: object
+      required:
+        - modelId
+        - encryptedInput
+      properties:
+        modelId:
+          type: string
+        encryptedInput:
+          type: string
+        returnEncrypted:
+          type: boolean
+          default: false
+
+    PredictionResponse:
+      type: object
+      properties:
+        predictionId:
+          type: string
+        modelId:
+          type: string
+        result:
+          oneOf:
+            - type: array
+              items:
+                type: number
+            - type: string
+        encryptedResult:
+          type: string
+        confidence:
+          type: number
+        latencyMs:
+          type: number
+        proofHash:
+          type: string
+
+    BatchPredictionRequest:
+      type: object
+      required:
+        - modelId
+        - encryptedInputs
+      properties:
+        modelId:
+          type: string
+        encryptedInputs:
+          type: array
+          items:
+            type: string
+        returnEncrypted:
+          type: boolean
+
+    BatchPredictionResponse:
+      type: object
+      properties:
+        batchId:
+          type: string
+        modelId:
+          type: string
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PredictionResponse'
+        totalLatencyMs:
+          type: number
+
+    EncryptionContext:
+      type: object
+      properties:
+        contextId:
+          type: string
+        publicKey:
+          type: string
+        scheme:
+          type: string
+          enum: [ckks, bfv]
+        polyModulusDegree:
+          type: integer
+        scale:
+          type: number
+
+    EncryptedData:
+      type: object
+      properties:
+        ciphertext:
+          type: string
+        shape:
+          type: array
+          items:
+            type: integer
+        contextId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    Consortium:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        owner:
+          type: string
+        status:
+          type: string
+          enum: [active, paused, completed, dissolved]
+        memberCount:
+          type: integer
+        totalContributions:
+          type: integer
+        minVotingQuorum:
+          type: integer
+        votingDuration:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateConsortiumRequest:
+      type: object
+      required:
+        - name
+        - minVotingQuorum
+        - votingDuration
+      properties:
+        name:
+          type: string
+        minVotingQuorum:
+          type: integer
+          minimum: 1
+          maximum: 100
+        votingDuration:
+          type: integer
+          minimum: 3600
+          description: Duration in seconds
+
+    RecordContributionRequest:
+      type: object
+      required:
+        - recordCount
+        - featureCount
+        - encryptedData
+      properties:
+        recordCount:
+          type: integer
+          minimum: 1
+        featureCount:
+          type: integer
+          minimum: 1
+        encryptedData:
+          type: string
+
+    Contribution:
+      type: object
+      properties:
+        id:
+          type: string
+        consortiumId:
+          type: string
+        contributor:
+          type: string
+        recordCount:
+          type: integer
+        featureCount:
+          type: integer
+        dataHash:
+          type: string
+        verified:
+          type: boolean
+        timestamp:
+          type: string
+          format: date-time
+
+    CreateProposalRequest:
+      type: object
+      required:
+        - consortiumId
+        - type
+      properties:
+        consortiumId:
+          type: string
+        type:
+          type: string
+          enum:
+            - add_member
+            - remove_member
+            - change_model
+            - start_training
+            - distribute_rewards
+            - update_config
+            - dissolve
+        data:
+          type: string
+        description:
+          type: string
+
+    Proposal:
+      type: object
+      properties:
+        id:
+          type: string
+        consortiumId:
+          type: string
+        type:
+          type: string
+        proposer:
+          type: string
+        status:
+          type: string
+          enum: [active, passed, rejected, executed, cancelled]
+        yesVotes:
+          type: integer
+        noVotes:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+        executed:
+          type: boolean
+
+    AuditEvent:
+      type: object
+      properties:
+        id:
+          type: string
+        consortiumId:
+          type: string
+        eventType:
+          type: string
+        actor:
+          type: string
+        targetId:
+          type: string
+        data:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        previousEventHash:
+          type: string
+
+    GenerateReportRequest:
+      type: object
+      required:
+        - framework
+      properties:
+        framework:
+          type: string
+          enum: [gdpr, hipaa, soc2, pci_dss, lgpd]
+        modelIds:
+          type: array
+          items:
+            type: string
+        dateRange:
+          type: object
+          properties:
+            start:
+              type: string
+              format: date-time
+            end:
+              type: string
+              format: date-time
+
+    ComplianceReport:
+      type: object
+      properties:
+        id:
+          type: string
+        framework:
+          type: string
+        status:
+          type: string
+          enum: [compliant, non_compliant, pending]
+        score:
+          type: number
+        findings:
+          type: array
+          items:
+            type: object
+            properties:
+              severity:
+                type: string
+              description:
+                type: string
+              recommendation:
+                type: string
+        generatedAt:
+          type: string
+          format: date-time
+
+    DataQualityReport:
+      type: object
+      properties:
+        datasetId:
+          type: string
+        overallScore:
+          type: number
+        dimensions:
+          type: object
+          properties:
+            completeness:
+              type: number
+            accuracy:
+              type: number
+            consistency:
+              type: number
+            timeliness:
+              type: number
+            uniqueness:
+              type: number
+        issues:
+          type: array
+          items:
+            type: object
+        generatedAt:
+          type: string
+          format: date-time
+
+    ExplanationRequest:
+      type: object
+      required:
+        - predictionId
+      properties:
+        predictionId:
+          type: string
+        method:
+          type: string
+          enum: [shap, lime, integrated_gradients]
+          default: shap
+        numFeatures:
+          type: integer
+          default: 10
+
+    Explanation:
+      type: object
+      properties:
+        predictionId:
+          type: string
+        method:
+          type: string
+        featureImportances:
+          type: array
+          items:
+            type: object
+            properties:
+              feature:
+                type: string
+              importance:
+                type: number
+              direction:
+                type: string
+                enum: [positive, negative]
+        generatedAt:
+          type: string
+          format: date-time

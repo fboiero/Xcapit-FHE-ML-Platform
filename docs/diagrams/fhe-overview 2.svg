@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500">
+  <defs>
+    <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4F46E5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7C3AED;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="greenGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10B981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="orangeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F59E0B;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#D97706;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="2" dy="4" stdDeviation="4" flood-opacity="0.2"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="500" fill="#F8FAFC"/>
+
+  <!-- Title -->
+  <text x="450" y="40" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#1E293B" text-anchor="middle">
+    Encriptación Homomórfica Completa (FHE)
+  </text>
+  <text x="450" y="65" font-family="Arial, sans-serif" font-size="14" fill="#64748B" text-anchor="middle">
+    Computación sobre datos encriptados sin descifrarlos
+  </text>
+
+  <!-- Client Side -->
+  <rect x="30" y="100" width="200" height="300" rx="10" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="2"/>
+  <text x="130" y="130" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#4338CA" text-anchor="middle">CLIENTE</text>
+  <text x="130" y="150" font-family="Arial, sans-serif" font-size="12" fill="#6366F1" text-anchor="middle">(Dueño de los datos)</text>
+
+  <!-- Original Data -->
+  <rect x="50" y="170" width="160" height="60" rx="8" fill="url(#blueGrad)" filter="url(#shadow)"/>
+  <text x="130" y="195" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle">Datos Originales</text>
+  <text x="130" y="215" font-family="Arial, sans-serif" font-size="18" fill="white" text-anchor="middle" font-weight="bold">[42, 17, 93]</text>
+
+  <!-- Keys -->
+  <rect x="50" y="250" width="70" height="50" rx="5" fill="#FEF3C7" stroke="#FCD34D" stroke-width="2"/>
+  <text x="85" y="270" font-family="Arial, sans-serif" font-size="10" fill="#92400E" text-anchor="middle">🔑 Pública</text>
+  <text x="85" y="285" font-family="Arial, sans-serif" font-size="8" fill="#B45309" text-anchor="middle">(compartida)</text>
+
+  <rect x="140" y="250" width="70" height="50" rx="5" fill="#FEE2E2" stroke="#FCA5A5" stroke-width="2"/>
+  <text x="175" y="270" font-family="Arial, sans-serif" font-size="10" fill="#991B1B" text-anchor="middle">🔐 Privada</text>
+  <text x="175" y="285" font-family="Arial, sans-serif" font-size="8" fill="#B91C1C" text-anchor="middle">(secreta)</text>
+
+  <!-- Decrypted Result -->
+  <rect x="50" y="320" width="160" height="60" rx="8" fill="url(#greenGrad)" filter="url(#shadow)"/>
+  <text x="130" y="345" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle">Resultado Descifrado</text>
+  <text x="130" y="365" font-family="Arial, sans-serif" font-size="18" fill="white" text-anchor="middle" font-weight="bold">[0.85, 0.12]</text>
+
+  <!-- Server Side -->
+  <rect x="350" y="100" width="220" height="300" rx="10" fill="#F0FDF4" stroke="#BBF7D0" stroke-width="2"/>
+  <text x="460" y="130" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#166534" text-anchor="middle">SERVIDOR ML</text>
+  <text x="460" y="150" font-family="Arial, sans-serif" font-size="12" fill="#22C55E" text-anchor="middle">(No puede ver datos)</text>
+
+  <!-- Encrypted Data Received -->
+  <rect x="370" y="170" width="180" height="50" rx="8" fill="#D1D5DB" stroke="#9CA3AF" stroke-width="2"/>
+  <text x="460" y="190" font-family="Arial, sans-serif" font-size="11" fill="#374151" text-anchor="middle">Datos Encriptados</text>
+  <text x="460" y="208" font-family="monospace" font-size="14" fill="#6B7280" text-anchor="middle">🔒 @#$%&amp;*!...</text>
+
+  <!-- ML Model -->
+  <rect x="370" y="240" width="180" height="80" rx="8" fill="url(#orangeGrad)" filter="url(#shadow)"/>
+  <text x="460" y="265" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle">Modelo ML</text>
+  <text x="460" y="285" font-family="Arial, sans-serif" font-size="10" fill="white" text-anchor="middle">Procesa sin descifrar</text>
+  <text x="460" y="305" font-family="Arial, sans-serif" font-size="20" fill="white" text-anchor="middle">⚙️ 🧠 📊</text>
+
+  <!-- Encrypted Result -->
+  <rect x="370" y="340" width="180" height="50" rx="8" fill="#D1D5DB" stroke="#9CA3AF" stroke-width="2"/>
+  <text x="460" y="360" font-family="Arial, sans-serif" font-size="11" fill="#374151" text-anchor="middle">Predicción Encriptada</text>
+  <text x="460" y="378" font-family="Arial, sans-serif" font-size="14" fill="#6B7280" text-anchor="middle" font-family="monospace">🔒 *&amp;^%$#@...</text>
+
+  <!-- Arrows -->
+  <!-- Encrypt arrow -->
+  <path d="M 230 200 L 280 200 L 280 195 L 350 195" stroke="#4F46E5" stroke-width="3" fill="none" marker-end="url(#arrowBlue)"/>
+  <rect x="255" y="175" width="70" height="20" rx="3" fill="#EEF2FF"/>
+  <text x="290" y="189" font-family="Arial, sans-serif" font-size="10" fill="#4338CA" text-anchor="middle">Encriptar</text>
+
+  <!-- Return arrow -->
+  <path d="M 350 365 L 280 365 L 280 350 L 230 350" stroke="#10B981" stroke-width="3" fill="none" marker-end="url(#arrowGreen)"/>
+  <rect x="255" y="330" width="70" height="20" rx="3" fill="#F0FDF4"/>
+  <text x="290" y="344" font-family="Arial, sans-serif" font-size="10" fill="#166534" text-anchor="middle">Retornar</text>
+
+  <!-- Arrow markers -->
+  <defs>
+    <marker id="arrowBlue" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#4F46E5"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M9,0 L9,6 L0,3 z" fill="#10B981"/>
+    </marker>
+  </defs>
+
+  <!-- Key Points Box -->
+  <rect x="600" y="100" width="280" height="300" rx="10" fill="white" stroke="#E2E8F0" stroke-width="2" filter="url(#shadow)"/>
+  <text x="740" y="130" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#1E293B" text-anchor="middle">Puntos Clave</text>
+
+  <circle cx="625" cy="165" r="8" fill="#10B981"/>
+  <text x="645" y="170" font-family="Arial, sans-serif" font-size="12" fill="#1E293B">Datos NUNCA descifrados</text>
+  <text x="645" y="185" font-family="Arial, sans-serif" font-size="10" fill="#64748B">en el servidor</text>
+
+  <circle cx="625" cy="215" r="8" fill="#10B981"/>
+  <text x="645" y="220" font-family="Arial, sans-serif" font-size="12" fill="#1E293B">Servidor solo ve "ruido"</text>
+  <text x="645" y="235" font-family="Arial, sans-serif" font-size="10" fill="#64748B">criptográfico</text>
+
+  <circle cx="625" cy="265" r="8" fill="#10B981"/>
+  <text x="645" y="270" font-family="Arial, sans-serif" font-size="12" fill="#1E293B">Solo el cliente puede</text>
+  <text x="645" y="285" font-family="Arial, sans-serif" font-size="10" fill="#64748B">descifrar resultados</text>
+
+  <circle cx="625" cy="315" r="8" fill="#10B981"/>
+  <text x="645" y="320" font-family="Arial, sans-serif" font-size="12" fill="#1E293B">Computación correcta</text>
+  <text x="645" y="335" font-family="Arial, sans-serif" font-size="10" fill="#64748B">matemáticamente garantizada</text>
+
+  <circle cx="625" cy="365" r="8" fill="#10B981"/>
+  <text x="645" y="370" font-family="Arial, sans-serif" font-size="12" fill="#1E293B">HIPAA/GDPR compliant</text>
+  <text x="645" y="385" font-family="Arial, sans-serif" font-size="10" fill="#64748B">por diseño</text>
+
+  <!-- Footer -->
+  <text x="450" y="480" font-family="Arial, sans-serif" font-size="12" fill="#94A3B8" text-anchor="middle">
+    Xcapit FHE-ML Platform - Fully Homomorphic Encryption for Machine Learning
+  </text>
+</svg>

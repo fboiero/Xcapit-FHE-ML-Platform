@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 550">
+  <defs>
+    <linearGradient id="clientGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4F46E5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7C3AED;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="serverGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10B981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="dataGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F59E0B;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#D97706;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="2" dy="4" stdDeviation="4" flood-opacity="0.15"/>
+    </filter>
+    <marker id="arrowPurple" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#7C3AED"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#10B981"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="550" fill="#FAFAFA"/>
+
+  <!-- Title -->
+  <text x="450" y="35" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#1E293B" text-anchor="middle">
+    Regresión Lineal sobre Datos Encriptados
+  </text>
+  <text x="450" y="58" font-family="Arial, sans-serif" font-size="13" fill="#64748B" text-anchor="middle">
+    y = X · w + b ejecutado en FHE sin exponer datos
+  </text>
+
+  <!-- Client Section -->
+  <rect x="30" y="85" width="260" height="440" rx="15" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="2"/>
+  <text x="160" y="115" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#4338CA" text-anchor="middle">CLIENTE</text>
+  <text x="160" y="135" font-family="Arial, sans-serif" font-size="11" fill="#6366F1" text-anchor="middle">(Tiene datos sensibles + clave privada)</text>
+
+  <!-- Original Data -->
+  <rect x="50" y="160" width="220" height="80" rx="10" fill="url(#clientGrad)" filter="url(#shadow)"/>
+  <text x="160" y="185" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle">Datos Originales (Features)</text>
+  <text x="160" y="210" font-family="monospace" font-size="16" fill="white" text-anchor="middle" font-weight="bold">X = [1.5, 2.3, 0.7, 3.1]</text>
+  <text x="160" y="228" font-family="Arial, sans-serif" font-size="10" fill="#E0E7FF" text-anchor="middle">Datos que el servidor NUNCA verá</text>
+
+  <!-- Encrypt Step -->
+  <rect x="50" y="260" width="220" height="55" rx="8" fill="white" stroke="#A5B4FC" stroke-width="2"/>
+  <text x="160" y="283" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#4338CA" text-anchor="middle">1. Encriptar con CKKS</text>
+  <text x="160" y="302" font-family="monospace" font-size="10" fill="#6366F1" text-anchor="middle">E(X) = CKKS.encrypt(X, pk)</text>
+
+  <!-- Keys -->
+  <g transform="translate(50, 335)">
+    <rect x="0" y="0" width="100" height="45" rx="6" fill="#FEF3C7" stroke="#FCD34D" stroke-width="2"/>
+    <text x="50" y="20" font-family="Arial, sans-serif" font-size="10" fill="#92400E" text-anchor="middle">Clave Pública</text>
+    <text x="50" y="35" font-family="Arial, sans-serif" font-size="16" fill="#B45309" text-anchor="middle">pk</text>
+  </g>
+  <g transform="translate(170, 335)">
+    <rect x="0" y="0" width="100" height="45" rx="6" fill="#FEE2E2" stroke="#FCA5A5" stroke-width="2"/>
+    <text x="50" y="20" font-family="Arial, sans-serif" font-size="10" fill="#991B1B" text-anchor="middle">Clave Privada</text>
+    <text x="50" y="35" font-family="Arial, sans-serif" font-size="16" fill="#B91C1C" text-anchor="middle">sk</text>
+  </g>
+
+  <!-- Decrypt Step -->
+  <rect x="50" y="400" width="220" height="55" rx="8" fill="white" stroke="#A5B4FC" stroke-width="2"/>
+  <text x="160" y="423" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#4338CA" text-anchor="middle">4. Descifrar resultado</text>
+  <text x="160" y="442" font-family="monospace" font-size="10" fill="#6366F1" text-anchor="middle">y = CKKS.decrypt(E(y), sk)</text>
+
+  <!-- Final Result -->
+  <rect x="50" y="470" width="220" height="45" rx="8" fill="url(#dataGrad)" filter="url(#shadow)"/>
+  <text x="160" y="493" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle">Predicción: y = </text>
+  <text x="160" y="508" font-family="monospace" font-size="14" fill="white" text-anchor="middle" font-weight="bold">0.847</text>
+
+  <!-- Server Section -->
+  <rect x="350" y="85" width="280" height="340" rx="15" fill="#F0FDF4" stroke="#BBF7D0" stroke-width="2"/>
+  <text x="490" y="115" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#166534" text-anchor="middle">SERVIDOR ML</text>
+  <text x="490" y="135" font-family="Arial, sans-serif" font-size="11" fill="#22C55E" text-anchor="middle">(Tiene modelo, NO puede ver datos)</text>
+
+  <!-- Encrypted Data Received -->
+  <rect x="370" y="155" width="240" height="60" rx="8" fill="#D1D5DB" stroke="#9CA3AF" stroke-width="2"/>
+  <text x="490" y="180" font-family="Arial, sans-serif" font-size="11" fill="#374151" text-anchor="middle">Datos Encriptados Recibidos</text>
+  <text x="490" y="200" font-family="monospace" font-size="13" fill="#6B7280" text-anchor="middle">E(X) = [c₀, c₁] (polinomios)</text>
+
+  <!-- Model Weights -->
+  <rect x="370" y="230" width="240" height="70" rx="8" fill="url(#serverGrad)" filter="url(#shadow)"/>
+  <text x="490" y="255" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle">Pesos del Modelo (texto plano)</text>
+  <text x="490" y="278" font-family="monospace" font-size="11" fill="#D1FAE5" text-anchor="middle">w = [0.3, -0.2, 0.5, 0.1]</text>
+  <text x="490" y="293" font-family="monospace" font-size="11" fill="#D1FAE5" text-anchor="middle">b = 0.05</text>
+
+  <!-- Computation -->
+  <rect x="370" y="315" width="240" height="95" rx="8" fill="white" stroke="#86EFAC" stroke-width="2"/>
+  <text x="490" y="338" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#166534" text-anchor="middle">2. Computación FHE</text>
+
+  <text x="390" y="360" font-family="monospace" font-size="10" fill="#374151">
+    z = E(X) ⊙ w    // mult elemento
+  </text>
+  <text x="390" y="378" font-family="monospace" font-size="10" fill="#374151">
+    s = sum(z)      // rotaciones
+  </text>
+  <text x="390" y="396" font-family="monospace" font-size="10" fill="#374151">
+    E(y) = s + b    // sumar bias
+  </text>
+
+  <!-- Arrows -->
+  <!-- Client to Server (encrypted data) -->
+  <path d="M 270 287 L 310 287 L 310 185 L 360 185" stroke="#7C3AED" stroke-width="2.5" fill="none" marker-end="url(#arrowPurple)"/>
+  <rect x="300" y="200" width="60" height="20" rx="3" fill="white"/>
+  <text x="330" y="214" font-family="Arial, sans-serif" font-size="9" fill="#7C3AED" text-anchor="middle">E(X)</text>
+
+  <!-- Server back to Client -->
+  <path d="M 360 380 L 310 380 L 310 427 L 280 427" stroke="#10B981" stroke-width="2.5" fill="none" marker-end="url(#arrowGreen)"/>
+  <rect x="300" y="350" width="60" height="20" rx="3" fill="white"/>
+  <text x="330" y="364" font-family="Arial, sans-serif" font-size="9" fill="#10B981" text-anchor="middle">E(y)</text>
+
+  <!-- Math Explanation -->
+  <rect x="660" y="85" width="220" height="340" rx="12" fill="white" stroke="#E2E8F0" stroke-width="2" filter="url(#shadow)"/>
+  <text x="770" y="115" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#1E293B" text-anchor="middle">Matemática FHE</text>
+
+  <!-- Step by step -->
+  <g transform="translate(680, 135)">
+    <circle cx="12" cy="12" r="12" fill="#4F46E5"/>
+    <text x="12" y="16" font-family="Arial, sans-serif" font-size="11" fill="white" text-anchor="middle">1</text>
+    <text x="35" y="17" font-family="Arial, sans-serif" font-size="11" fill="#374151">Producto elemento:</text>
+    <text x="35" y="35" font-family="monospace" font-size="10" fill="#6366F1">E(X) ⊙ w = E(X·w)</text>
+  </g>
+
+  <g transform="translate(680, 190)">
+    <circle cx="12" cy="12" r="12" fill="#4F46E5"/>
+    <text x="12" y="16" font-family="Arial, sans-serif" font-size="11" fill="white" text-anchor="middle">2</text>
+    <text x="35" y="17" font-family="Arial, sans-serif" font-size="11" fill="#374151">Suma con rotaciones:</text>
+    <text x="35" y="35" font-family="monospace" font-size="10" fill="#6366F1">sum(E(X·w))</text>
+  </g>
+
+  <g transform="translate(680, 245)">
+    <circle cx="12" cy="12" r="12" fill="#4F46E5"/>
+    <text x="12" y="16" font-family="Arial, sans-serif" font-size="11" fill="white" text-anchor="middle">3</text>
+    <text x="35" y="17" font-family="Arial, sans-serif" font-size="11" fill="#374151">Agregar bias:</text>
+    <text x="35" y="35" font-family="monospace" font-size="10" fill="#6366F1">E(y) = E(X·w) + b</text>
+  </g>
+
+  <g transform="translate(680, 300)">
+    <circle cx="12" cy="12" r="12" fill="#10B981"/>
+    <text x="12" y="16" font-family="Arial, sans-serif" font-size="11" fill="white" text-anchor="middle">4</text>
+    <text x="35" y="17" font-family="Arial, sans-serif" font-size="11" fill="#374151">Cliente descifra:</text>
+    <text x="35" y="35" font-family="monospace" font-size="10" fill="#10B981">y = D(E(y))</text>
+  </g>
+
+  <!-- Key insight -->
+  <rect x="680" y="350" width="180" height="60" rx="6" fill="#FEF3C7" stroke="#FCD34D" stroke-width="1"/>
+  <text x="770" y="372" font-family="Arial, sans-serif" font-size="10" fill="#92400E" text-anchor="middle">El servidor opera sobre</text>
+  <text x="770" y="388" font-family="Arial, sans-serif" font-size="10" fill="#92400E" text-anchor="middle">E(X) sin conocer X.</text>
+  <text x="770" y="404" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#B45309" text-anchor="middle">Privacy by Design</text>
+
+  <!-- Footer -->
+  <text x="450" y="535" font-family="Arial, sans-serif" font-size="11" fill="#94A3B8" text-anchor="middle">
+    Xcapit FHE-ML Platform - Regresión Lineal Preservando Privacidad
+  </text>
+</svg>
