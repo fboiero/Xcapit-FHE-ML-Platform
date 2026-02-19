@@ -1,0 +1,92 @@
+
+============================================================
+TEST 1: Linear Regression Model
+============================================================
+FAILED: Linear Regression - Initialization
+  error: 'SecureDataLoader' object has no attribute 'prepare_data'
+
+============================================================
+TEST 2: Logistic Regression Model
+============================================================
+FAILED: Logistic Regression - Initialization
+  error: 'SecureDataLoader' object has no attribute 'prepare_data'
+
+============================================================
+TEST 3: Decision Tree Classifier
+============================================================
+FAILED: Decision Tree Classifier
+  error: TreeConfig.__init__() got an unexpected keyword argument 'min_samples_split'
+
+============================================================
+TEST 4: KMeans Clustering
+============================================================
+PASSED: KMeans Clustering
+  n_clusters: 3
+  unique_labels: 3
+  n_samples: 90
+
+============================================================
+TEST 5: Model Serialization
+============================================================
+PASSED: Model Serialization
+  model_type: LinearRegression
+  saved_successfully: True
+
+============================================================
+TEST 6: Data Validation
+============================================================
+FAILED: Data Validation
+  error: No module named 'sdk.utils.validation'
+
+============================================================
+TEST 7: Training History
+============================================================
+PASSED: Training History
+  epochs: 10
+  final_loss: 0.1000
+  final_accuracy: 95.00%
+
+============================================================
+TEST 8: FHE Model Factory
+============================================================
+PASSED: FHE Model Factory
+  linear_regression_created: True
+  logistic_regression_created: True
+  lr_learning_rate: 0.1
+  log_learning_rate: 0.05
+
+============================================================
+TEST 9: Data Quality Calculator
+============================================================
+FAILED: Data Quality Calculator
+  error: 'DataQualityCalculator' object has no attribute 'calculate'
+
+============================================================
+TEST 10: Governance Module
+============================================================
+FAILED: Governance Module
+  error: No module named 'sdk.api.governance'
+
+============================================================
+TEST 11: Compliance Module
+============================================================
+PASSED: Compliance Module
+  available_frameworks: ['framework_gdpr', 'framework_hipaa', 'framework_soc2', 'framework_pci_dss']
+  n_frameworks: 4
+
+============================================================
+TEST 12: Sandbox Module
+============================================================
+FAILED: Sandbox Module
+  error: No module named 'sdk.api.sandbox'
+
+============================================================
+SUMMARY
+============================================================
+
+Total Tests: 12
+Passed: 5
+Failed: 7
+Pass Rate: 41.7%
+
+Results saved to: /Users/fboiero/Documents/GitHub/Xcapit-FHE-ML-Platform/test_evidence/20251213/evidence_results.json

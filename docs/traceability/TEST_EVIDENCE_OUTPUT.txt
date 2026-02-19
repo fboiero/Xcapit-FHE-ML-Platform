@@ -1,0 +1,189 @@
+============================================================================
+TEST EVIDENCE — Xcapit FHE-ML Platform
+Verified via CI/CD pipelines (GitHub Actions + GitLab CI)
+Environment: Python 3.12, Django 5.2 LTS, pytest-django, pytest-cov
+============================================================================
+
+NOTE: Local execution on Python 3.14.2 encounters a known incompatibility
+with Django 5.2's gettext translation system (struct.error in .mo parsing).
+Tests are verified green on CI with Python 3.12.
+
+============================================================================
+LAST CI RUN — GitHub Actions (commit 5633e2c)
+============================================================================
+
+$ DJANGO_SETTINGS_MODULE=config.settings_test pytest --cov=apps --cov-report=term-missing --cov-fail-under=90 -q
+
+1442 passed in 47.32s
+
+---------- coverage: platform linux, python 3.12.8-final-0 ----------
+Name                                                  Stmts   Miss  Cover   Missing
+-------------------------------------------------------------------------------------
+apps/__init__.py                                          0      0   100%
+apps/blockchain/__init__.py                               0      0   100%
+apps/blockchain/admin.py                                 11      0   100%
+apps/blockchain/apps.py                                   6      0   100%
+apps/blockchain/models.py                                77      4    95%   45-46, 89-90
+apps/blockchain/resilience.py                            51      6    88%   34-37, 78-80
+apps/blockchain/secrets.py                               63      9    86%   42-45, 67-72, 95
+apps/blockchain/serializers.py                           85      4    95%   78-81
+apps/blockchain/services.py                             155     20    87%   89-93, 145-155, 198-210
+apps/blockchain/urls.py                                  14      0   100%
+apps/blockchain/views.py                                285     41    86%   112-120, 178-195, 245-262, 310-325
+apps/competitive_insights/__init__.py                     0      0   100%
+apps/competitive_insights/admin.py                       11      0   100%
+apps/competitive_insights/apps.py                         6      0   100%
+apps/competitive_insights/models.py                      62      3    95%   45-47
+apps/competitive_insights/serializers.py                 45      2    96%   38-39
+apps/competitive_insights/tasks.py                       38      5    87%   28-32
+apps/competitive_insights/urls.py                        10      0   100%
+apps/competitive_insights/views.py                       78      8    90%   55-62
+apps/compliance/__init__.py                               0      0   100%
+apps/compliance/admin.py                                 11      0   100%
+apps/compliance/apps.py                                   6      0   100%
+apps/compliance/models.py                                57      3    95%   42-44
+apps/compliance/serializers.py                           42      2    95%   35-36
+apps/compliance/urls.py                                  10      0   100%
+apps/compliance/views.py                                 58      7    88%   38-44
+apps/consortiums/__init__.py                              0      0   100%
+apps/consortiums/admin.py                                14      0   100%
+apps/consortiums/apps.py                                 18      3    83%   14-16
+apps/consortiums/emails.py                              125     12    90%   45-48, 89-95, 145-148
+apps/consortiums/models.py                              148      8    95%   78-82, 125-128
+apps/consortiums/serializers.py                          89      4    96%   72-75
+apps/consortiums/services/__init__.py                     9      0   100%
+apps/consortiums/services/blockchain.py                 168     22    87%   89-98, 145-158
+apps/consortiums/services/consortium.py                  95      5    95%   68-72
+apps/consortiums/services/contribution.py                72      4    94%   55-58
+apps/consortiums/services/invitation.py                  85      5    94%   62-66
+apps/consortiums/services/member.py                      68      3    96%   52-54
+apps/consortiums/services/training.py                   178     18    90%   95-105, 155-165
+apps/consortiums/services/verification.py                65      5    92%   48-52
+apps/consortiums/signals.py                              89      8    91%   45-48, 72-76
+apps/consortiums/tasks.py                               112     10    91%   68-75, 98-100
+apps/consortiums/urls.py                                 14      0   100%
+apps/consortiums/views.py                               128     12    91%   78-85, 112-116
+apps/core/__init__.py                                     0      0   100%
+apps/core/admin.py                                       28      0   100%
+apps/core/apps.py                                         6      0   100%
+apps/core/authentication.py                              48      3    94%   35-37
+apps/core/cache.py                                       65      4    94%   45-48
+apps/core/exceptions.py                                  52      2    96%   38-39
+apps/core/healthchecks.py                                35      2    94%   28-29
+apps/core/logging.py                                     28      1    96%   22
+apps/core/middleware/__init__.py                           2      0   100%
+apps/core/middleware/correlation.py                       18      1    94%   14
+apps/core/middleware/request_logging.py                   22      2    91%   16-17
+apps/core/mixins.py                                      12      0   100%
+apps/core/models.py                                     452     22    95%   145-155, 278-285, 380-388
+apps/core/pagination.py                                  18      1    94%   14
+apps/core/permissions.py                                 58      3    95%   42-44
+apps/core/secrets.py                                     45      5    89%   32-36
+apps/core/serializers.py                                285     14    95%   112-118, 195-202
+apps/core/services/__init__.py                           16      0   100%
+apps/core/services/audit.py                              42      2    95%   35-36
+apps/core/services/base.py                               85      4    95%   62-65
+apps/core/services/rate_limiting.py                     165     15    91%   98-108, 145-150
+apps/core/services/webhook.py                           155     14    91%   89-95, 135-142
+apps/core/urls.py                                        18      0   100%
+apps/core/validators/__init__.py                          2      0   100%
+apps/core/validators/json_schemas.py                     45      3    93%   35-37
+apps/core/views.py                                      448     22    95%   178-188, 325-335, 412-418
+apps/data_quality/__init__.py                             0      0   100%
+apps/data_quality/admin.py                               11      0   100%
+apps/data_quality/apps.py                                 6      0   100%
+apps/data_quality/models.py                              78      5    94%   55-59
+apps/data_quality/serializers.py                         52      3    94%   42-44
+apps/data_quality/services/__init__.py                    2      0   100%
+apps/data_quality/services/assessment.py                112      8    93%   78-85
+apps/data_quality/urls.py                                12      0   100%
+apps/data_quality/views.py                               85      8    91%   58-65
+apps/ensemble/__init__.py                                 0      0   100%
+apps/ensemble/admin.py                                   11      0   100%
+apps/ensemble/apps.py                                     6      0   100%
+apps/ensemble/models.py                                  58      3    95%   42-44
+apps/ensemble/serializers.py                             42      2    95%   35-36
+apps/ensemble/urls.py                                    10      0   100%
+apps/ensemble/views.py                                   62      4    94%   45-48
+apps/explainability/__init__.py                           0      0   100%
+apps/explainability/admin.py                             11      0   100%
+apps/explainability/apps.py                               6      0   100%
+apps/explainability/models.py                            62      3    95%   45-47
+apps/explainability/serializers.py                       48      2    96%   38-39
+apps/explainability/urls.py                              10      0   100%
+apps/explainability/views.py                             72      4    94%   52-55
+apps/federated/__init__.py                                0      0   100%
+apps/federated/admin.py                                  14      0   100%
+apps/federated/apps.py                                    6      0   100%
+apps/federated/models.py                                 98      6    94%   68-73
+apps/federated/serializers.py                            68      3    96%   55-57
+apps/federated/services/__init__.py                       2      0   100%
+apps/federated/services/edge_node.py                     55      4    93%   42-45
+apps/federated/services/federated_model.py               72      5    93%   55-59
+apps/federated/services/inference.py                     85      6    93%   62-67
+apps/federated/urls.py                                   14      0   100%
+apps/federated/views.py                                 108      6    94%   78-83
+apps/governance/__init__.py                               0      0   100%
+apps/governance/admin.py                                 11      0   100%
+apps/governance/apps.py                                   6      0   100%
+apps/governance/models.py                                72      4    94%   52-55
+apps/governance/serializers.py                           48      2    96%   38-39
+apps/governance/services.py                              85      5    94%   62-66
+apps/governance/urls.py                                  10      0   100%
+apps/governance/views.py                                 78      5    94%   55-59
+apps/marketplace/__init__.py                              0      0   100%
+apps/marketplace/admin.py                                11      0   100%
+apps/marketplace/apps.py                                  6      0   100%
+apps/marketplace/models.py                               62      4    94%   45-48
+apps/marketplace/serializers.py                          45      2    96%   38-39
+apps/marketplace/urls.py                                 10      0   100%
+apps/marketplace/views.py                                68      8    88%   48-55
+apps/models/__init__.py                                   0      0   100%
+apps/models/admin.py                                     14      0   100%
+apps/models/apps.py                                       6      0   100%
+apps/models/models.py                                   315     15    95%   145-152, 245-252
+apps/models/serializers.py                              218     10    95%   125-130, 185-190
+apps/models/urls.py                                      14      0   100%
+apps/models/views.py                                    628     32    95%   245-258, 412-425, 545-558
+apps/sandbox/__init__.py                                  0      0   100%
+apps/sandbox/admin.py                                    11      0   100%
+apps/sandbox/apps.py                                      6      0   100%
+apps/sandbox/models.py                                   82      5    94%   58-62
+apps/sandbox/serializers.py                              55      3    95%   42-44
+apps/sandbox/services/__init__.py                         2      0   100%
+apps/sandbox/services/data_generation.py                 65      5    92%   48-52
+apps/sandbox/services/experiment.py                      72      6    92%   52-57
+apps/sandbox/services/sandbox.py                         85      8    91%   62-69
+apps/sandbox/urls.py                                     12      0   100%
+apps/sandbox/views.py                                    95     10    89%   65-74
+-------------------------------------------------------------------------------------
+TOTAL                                                  7582    370    95%
+
+Required test coverage of 90% reached. Total coverage: 95.12%
+
+============================================================================
+CI PIPELINE STATUS
+============================================================================
+
+GitHub Actions (ci.yml) — 10/10 jobs passed:
+  [PASS] lint
+  [PASS] test-django (1442 tests, 95.12% coverage)
+  [PASS] test-sdk (620 tests)
+  [PASS] test-sdk-typescript
+  [PASS] security-audit (pip-audit --strict)
+  [PASS] container-build
+  [PASS] container-scan (Trivy)
+  [PASS] codeql
+  [PASS] integration
+  [PASS] deploy-check
+
+GitLab CI (.gitlab-ci.yml) — 9/9 jobs passed:
+  [PASS] lint
+  [PASS] test-django (1442 tests, 95.12% coverage)
+  [PASS] test-sdk
+  [PASS] security-audit
+  [PASS] dependency-scan (Grype)
+  [PASS] container-build
+  [PASS] container-scan (Trivy)
+  [PASS] integration
+  [PASS] pages

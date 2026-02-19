@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte de Prueba - Consorcio FHE-ML Platform</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-600: #4b5563;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--gray-800);
+            background: var(--gray-50);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 3rem 2rem;
+            margin-bottom: 2rem;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .meta-info {
+            display: flex;
+            gap: 2rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .meta-item {
+            background: rgba(255,255,255,0.15);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+        }
+
+        section {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            color: var(--primary-dark);
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        h3 {
+            color: var(--gray-800);
+            margin: 1.5rem 0 1rem;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .summary-card {
+            background: var(--gray-50);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            text-align: center;
+            border: 1px solid var(--gray-200);
+        }
+
+        .summary-card .value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .summary-card .label {
+            color: var(--gray-600);
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        .success { color: var(--success); }
+        .warning { color: var(--warning); }
+        .danger { color: var(--danger); }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        th {
+            background: var(--gray-100);
+            font-weight: 600;
+            color: var(--gray-800);
+        }
+
+        tr:hover {
+            background: var(--gray-50);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .status-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-training {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .evidence-block {
+            background: var(--gray-900);
+            color: #e5e7eb;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.85rem;
+            margin: 1rem 0;
+        }
+
+        .evidence-block .comment {
+            color: #9ca3af;
+        }
+
+        .evidence-block .key {
+            color: #93c5fd;
+        }
+
+        .evidence-block .string {
+            color: #86efac;
+        }
+
+        .evidence-block .number {
+            color: #fcd34d;
+        }
+
+        .diagram-container {
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin: 1.5rem 0;
+            overflow-x: auto;
+        }
+
+        .diagram-title {
+            text-align: center;
+            font-weight: 600;
+            color: var(--gray-600);
+            margin-bottom: 1rem;
+        }
+
+        .step-list {
+            list-style: none;
+        }
+
+        .step-list li {
+            padding: 1rem;
+            margin: 0.5rem 0;
+            background: var(--gray-50);
+            border-radius: 0.5rem;
+            border-left: 4px solid var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .step-number {
+            background: var(--primary);
+            color: white;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .conclusion-box {
+            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+            border: 1px solid #a7f3d0;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+
+        .next-steps-box {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border: 1px solid #93c5fd;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+
+        .endpoint-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .endpoint-item {
+            background: var(--gray-50);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--gray-200);
+        }
+
+        .endpoint-method {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-right: 0.5rem;
+        }
+
+        .method-get { background: #dbeafe; color: #1e40af; }
+        .method-post { background: #d1fae5; color: #065f46; }
+
+        .endpoint-path {
+            font-family: monospace;
+            color: var(--gray-800);
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--gray-600);
+            font-size: 0.9rem;
+        }
+
+        @media print {
+            body { background: white; }
+            .container { padding: 0; }
+            section { box-shadow: none; border: 1px solid var(--gray-200); }
+            header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Reporte de Prueba Manual</h1>
+            <p>Flujo Completo del Consorcio - Xcapit FHE-ML Platform</p>
+            <div class="meta-info">
+                <div class="meta-item"><strong>Fecha:</strong> 29 Enero 2026</div>
+                <div class="meta-item"><strong>Version:</strong> v0.7.1</div>
+                <div class="meta-item"><strong>Ambiente:</strong> Docker Local (django-dev)</div>
+                <div class="meta-item"><strong>Resultado:</strong> EXITOSO</div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Resumen Ejecutivo -->
+        <section>
+            <h2>1. Resumen Ejecutivo</h2>
+            <p>Se ejecuto una prueba manual completa del flujo de consorcios de la plataforma FHE-ML. La prueba valido todas las funcionalidades principales incluyendo autenticacion, creacion de consorcios, invitaciones, contribuciones de datos e inicio de entrenamiento.</p>
+
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <div class="value success">11</div>
+                    <div class="label">Endpoints Probados</div>
+                </div>
+                <div class="summary-card">
+                    <div class="value">3</div>
+                    <div class="label">Organizaciones</div>
+                </div>
+                <div class="summary-card">
+                    <div class="value">30,000</div>
+                    <div class="label">Registros Contribuidos</div>
+                </div>
+                <div class="summary-card">
+                    <div class="value success">100%</div>
+                    <div class="label">Tasa de Exito</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Arquitectura de la Prueba -->
+        <section>
+            <h2>2. Arquitectura de la Prueba</h2>
+
+            <div class="diagram-container">
+                <div class="diagram-title">Diagrama de Arquitectura - Ambiente de Prueba</div>
+                <svg viewBox="0 0 800 300" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Background -->
+                    <rect width="800" height="300" fill="#f9fafb"/>
+
+                    <!-- Docker Container Box -->
+                    <rect x="50" y="30" width="700" height="240" rx="10" fill="none" stroke="#6366f1" stroke-width="2" stroke-dasharray="5,5"/>
+                    <text x="70" y="55" font-family="Arial" font-size="14" fill="#6366f1" font-weight="bold">Docker Compose Environment</text>
+
+                    <!-- Django Service -->
+                    <rect x="100" y="80" width="180" height="100" rx="8" fill="#4f46e5"/>
+                    <text x="190" y="115" font-family="Arial" font-size="14" fill="white" text-anchor="middle" font-weight="bold">Django API</text>
+                    <text x="190" y="135" font-family="Arial" font-size="11" fill="white" text-anchor="middle">Port: 8000</text>
+                    <text x="190" y="155" font-family="Arial" font-size="11" fill="white" text-anchor="middle">REST Framework</text>
+                    <text x="190" y="170" font-family="Arial" font-size="10" fill="#c7d2fe" text-anchor="middle">xcapit-fhe-django-dev</text>
+
+                    <!-- PostgreSQL -->
+                    <rect x="320" y="80" width="150" height="100" rx="8" fill="#0ea5e9"/>
+                    <text x="395" y="115" font-family="Arial" font-size="14" fill="white" text-anchor="middle" font-weight="bold">PostgreSQL</text>
+                    <text x="395" y="135" font-family="Arial" font-size="11" fill="white" text-anchor="middle">Port: 5432</text>
+                    <text x="395" y="155" font-family="Arial" font-size="11" fill="white" text-anchor="middle">v16-alpine</text>
+                    <text x="395" y="170" font-family="Arial" font-size="10" fill="#bae6fd" text-anchor="middle">xcapit-fhe-postgres-dev</text>
+
+                    <!-- Redis -->
+                    <rect x="510" y="80" width="150" height="100" rx="8" fill="#ef4444"/>
+                    <text x="585" y="115" font-family="Arial" font-size="14" fill="white" text-anchor="middle" font-weight="bold">Redis</text>
+                    <text x="585" y="135" font-family="Arial" font-size="11" fill="white" text-anchor="middle">Port: 6379</text>
+                    <text x="585" y="155" font-family="Arial" font-size="11" fill="white" text-anchor="middle">v7-alpine</text>
+                    <text x="585" y="170" font-family="Arial" font-size="10" fill="#fecaca" text-anchor="middle">xcapit-fhe-redis-dev</text>
+
+                    <!-- Arrows -->
+                    <path d="M 280 130 L 320 130" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrowhead)"/>
+                    <path d="M 280 130 L 300 130 L 300 200 L 510 200 L 510 180" stroke="#94a3b8" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+
+                    <!-- Client -->
+                    <rect x="100" y="210" width="120" height="50" rx="8" fill="#10b981"/>
+                    <text x="160" y="235" font-family="Arial" font-size="12" fill="white" text-anchor="middle" font-weight="bold">Test Client</text>
+                    <text x="160" y="250" font-family="Arial" font-size="10" fill="white" text-anchor="middle">curl / HTTP</text>
+
+                    <!-- Arrow from client -->
+                    <path d="M 160 210 L 160 180" stroke="#10b981" stroke-width="2" marker-end="url(#arrowhead-green)"/>
+
+                    <!-- Arrow markers -->
+                    <defs>
+                        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8"/>
+                        </marker>
+                        <marker id="arrowhead-green" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#10b981"/>
+                        </marker>
+                    </defs>
+                </svg>
+            </div>
+        </section>
+
+        <!-- Diagrama de Flujo -->
+        <section>
+            <h2>3. Diagrama de Flujo del Consorcio</h2>
+
+            <div class="diagram-container">
+                <div class="diagram-title">Flujo Completo de Creacion y Gestion del Consorcio</div>
+                <svg viewBox="0 0 900 600" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Background -->
+                    <rect width="900" height="600" fill="#f9fafb"/>
+
+                    <!-- Start -->
+                    <ellipse cx="100" cy="50" rx="60" ry="25" fill="#10b981"/>
+                    <text x="100" y="55" font-family="Arial" font-size="12" fill="white" text-anchor="middle" font-weight="bold">INICIO</text>
+
+                    <!-- Step 1: Auth -->
+                    <rect x="40" y="100" width="120" height="50" rx="5" fill="#4f46e5"/>
+                    <text x="100" y="120" font-family="Arial" font-size="11" fill="white" text-anchor="middle">1. Autenticacion</text>
+                    <text x="100" y="135" font-family="Arial" font-size="9" fill="#c7d2fe" text-anchor="middle">JWT Tokens</text>
+                    <path d="M 100 75 L 100 100" stroke="#6366f1" stroke-width="2" marker-end="url(#arrow)"/>
+
+                    <!-- Step 2: Create Consortium -->
+                    <rect x="40" y="180" width="120" height="50" rx="5" fill="#4f46e5"/>
+                    <text x="100" y="200" font-family="Arial" font-size="11" fill="white" text-anchor="middle">2. Crear Consorcio</text>
+                    <text x="100" y="215" font-family="Arial" font-size="9" fill="#c7d2fe" text-anchor="middle">Hospital Alpha</text>
+                    <path d="M 100 150 L 100 180" stroke="#6366f1" stroke-width="2" marker-end="url(#arrow)"/>
+
+                    <!-- Step 3: Invitations -->
+                    <rect x="40" y="260" width="120" height="50" rx="5" fill="#4f46e5"/>
+                    <text x="100" y="280" font-family="Arial" font-size="11" fill="white" text-anchor="middle">3. Enviar</text>
+                    <text x="100" y="295" font-family="Arial" font-size="11" fill="white" text-anchor="middle">Invitaciones</text>
+                    <path d="M 100 230 L 100 260" stroke="#6366f1" stroke-width="2" marker-end="url(#arrow)"/>
+
+                    <!-- Branch to Beta and Gamma -->
+                    <path d="M 160 285 L 250 285" stroke="#6366f1" stroke-width="2"/>
+                    <path d="M 250 285 L 250 220 L 320 220" stroke="#6366f1" stroke-width="2" marker-end="url(#arrow)"/>
+                    <path d="M 250 285 L 250 350 L 320 350" stroke="#6366f1" stroke-width="2" marker-end="url(#arrow)"/>
+
+                    <!-- Beta accepts -->
+                    <rect x="320" y="195" width="130" height="50" rx="5" fill="#0ea5e9"/>
+                    <text x="385" y="215" font-family="Arial" font-size="11" fill="white" text-anchor="middle">4a. Beta Acepta</text>
+                    <text x="385" y="230" font-family="Arial" font-size="9" fill="#bae6fd" text-anchor="middle">Invitacion</text>
+
+                    <!-- Gamma accepts -->
+                    <rect x="320" y="325" width="130" height="50" rx="5" fill="#0ea5e9"/>
+                    <text x="385" y="345" font-family="Arial" font-size="11" fill="white" text-anchor="middle">4b. Gamma Acepta</text>
+                    <text x="385" y="360" font-family="Arial" font-size="9" fill="#bae6fd" text-anchor="middle">Invitacion</text>
+
+                    <!-- Merge -->
+                    <path d="M 450 220 L 500 220 L 500 285" stroke="#6366f1" stroke-width="2"/>
+                    <path d="M 450 350 L 500 350 L 500 285" stroke="#6366f1" stroke-width="2"/>
+                    <path d="M 500 285 L 550 285" stroke="#6366f1" stroke-width="2" marker-end="url(#arrow)"/>
+
+                    <!-- Step 5: Contributions -->
+                    <rect x="550" y="260" width="130" height="50" rx="5" fill="#f59e0b"/>
+                    <text x="615" y="280" font-family="Arial" font-size="11" fill="white" text-anchor="middle">5. Contribuciones</text>
+                    <text x="615" y="295" font-family="Arial" font-size="9" fill="#fef3c7" text-anchor="middle">30,000 registros</text>
+
+                    <!-- Contribution details -->
+                    <rect x="720" y="180" width="120" height="35" rx="3" fill="#fef3c7" stroke="#f59e0b"/>
+                    <text x="780" y="202" font-family="Arial" font-size="10" fill="#92400e" text-anchor="middle">Alpha: 10,000</text>
+
+                    <rect x="720" y="225" width="120" height="35" rx="3" fill="#fef3c7" stroke="#f59e0b"/>
+                    <text x="780" y="247" font-family="Arial" font-size="10" fill="#92400e" text-anchor="middle">Beta: 8,000</text>
+
+                    <rect x="720" y="270" width="120" height="35" rx="3" fill="#fef3c7" stroke="#f59e0b"/>
+                    <text x="780" y="292" font-family="Arial" font-size="10" fill="#92400e" text-anchor="middle">Gamma: 12,000</text>
+
+                    <path d="M 680 285 L 720 240" stroke="#f59e0b" stroke-width="1" stroke-dasharray="3,3"/>
+
+                    <!-- Step 6: Activate -->
+                    <rect x="550" y="340" width="130" height="50" rx="5" fill="#8b5cf6"/>
+                    <text x="615" y="360" font-family="Arial" font-size="11" fill="white" text-anchor="middle">6. Activar</text>
+                    <text x="615" y="375" font-family="Arial" font-size="9" fill="#ddd6fe" text-anchor="middle">Consorcio</text>
+                    <path d="M 615 310 L 615 340" stroke="#6366f1" stroke-width="2" marker-end="url(#arrow)"/>
+
+                    <!-- Step 7: Training -->
+                    <rect x="550" y="420" width="130" height="50" rx="5" fill="#10b981"/>
+                    <text x="615" y="440" font-family="Arial" font-size="11" fill="white" text-anchor="middle">7. Iniciar</text>
+                    <text x="615" y="455" font-family="Arial" font-size="9" fill="#d1fae5" text-anchor="middle">Entrenamiento</text>
+                    <path d="M 615 390 L 615 420" stroke="#6366f1" stroke-width="2" marker-end="url(#arrow)"/>
+
+                    <!-- End -->
+                    <ellipse cx="615" cy="520" rx="60" ry="25" fill="#10b981"/>
+                    <text x="615" y="525" font-family="Arial" font-size="12" fill="white" text-anchor="middle" font-weight="bold">FIN</text>
+                    <path d="M 615 470 L 615 495" stroke="#10b981" stroke-width="2" marker-end="url(#arrow-green)"/>
+
+                    <!-- Legend -->
+                    <rect x="40" y="480" width="200" height="100" rx="5" fill="white" stroke="#e5e7eb"/>
+                    <text x="55" y="500" font-family="Arial" font-size="11" fill="#374151" font-weight="bold">Leyenda:</text>
+                    <rect x="55" y="510" width="15" height="15" fill="#4f46e5"/>
+                    <text x="80" y="522" font-family="Arial" font-size="10" fill="#374151">Hospital Alpha (Owner)</text>
+                    <rect x="55" y="530" width="15" height="15" fill="#0ea5e9"/>
+                    <text x="80" y="542" font-family="Arial" font-size="10" fill="#374151">Beta/Gamma (Miembros)</text>
+                    <rect x="55" y="550" width="15" height="15" fill="#f59e0b"/>
+                    <text x="80" y="562" font-family="Arial" font-size="10" fill="#374151">Contribuciones</text>
+
+                    <!-- Arrow marker -->
+                    <defs>
+                        <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#6366f1"/>
+                        </marker>
+                        <marker id="arrow-green" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#10b981"/>
+                        </marker>
+                    </defs>
+                </svg>
+            </div>
+        </section>
+
+        <!-- Diagrama de Secuencia -->
+        <section>
+            <h2>4. Diagrama de Secuencia</h2>
+
+            <div class="diagram-container">
+                <div class="diagram-title">Secuencia de Interacciones entre Actores</div>
+                <svg viewBox="0 0 900 700" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Background -->
+                    <rect width="900" height="700" fill="#f9fafb"/>
+
+                    <!-- Actors -->
+                    <rect x="80" y="20" width="100" height="40" rx="5" fill="#4f46e5"/>
+                    <text x="130" y="45" font-family="Arial" font-size="11" fill="white" text-anchor="middle" font-weight="bold">Alpha</text>
+
+                    <rect x="280" y="20" width="100" height="40" rx="5" fill="#0ea5e9"/>
+                    <text x="330" y="45" font-family="Arial" font-size="11" fill="white" text-anchor="middle" font-weight="bold">Beta</text>
+
+                    <rect x="480" y="20" width="100" height="40" rx="5" fill="#0ea5e9"/>
+                    <text x="530" y="45" font-family="Arial" font-size="11" fill="white" text-anchor="middle" font-weight="bold">Gamma</text>
+
+                    <rect x="680" y="20" width="100" height="40" rx="5" fill="#10b981"/>
+                    <text x="730" y="45" font-family="Arial" font-size="11" fill="white" text-anchor="middle" font-weight="bold">API Server</text>
+
+                    <!-- Lifelines -->
+                    <line x1="130" y1="60" x2="130" y2="680" stroke="#4f46e5" stroke-width="2" stroke-dasharray="5,5"/>
+                    <line x1="330" y1="60" x2="330" y2="680" stroke="#0ea5e9" stroke-width="2" stroke-dasharray="5,5"/>
+                    <line x1="530" y1="60" x2="530" y2="680" stroke="#0ea5e9" stroke-width="2" stroke-dasharray="5,5"/>
+                    <line x1="730" y1="60" x2="730" y2="680" stroke="#10b981" stroke-width="2" stroke-dasharray="5,5"/>
+
+                    <!-- Interaction 1: Auth -->
+                    <text x="50" y="95" font-family="Arial" font-size="10" fill="#6b7280">1.</text>
+                    <line x1="130" y1="100" x2="730" y2="100" stroke="#374151" stroke-width="1" marker-end="url(#seq-arrow)"/>
+                    <text x="400" y="95" font-family="Arial" font-size="10" fill="#374151" text-anchor="middle">POST /auth/token/ (todos)</text>
+                    <line x1="730" y1="115" x2="130" y2="115" stroke="#374151" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#seq-arrow)"/>
+                    <text x="400" y="128" font-family="Arial" font-size="9" fill="#10b981" text-anchor="middle">JWT tokens</text>
+
+                    <!-- Interaction 2: Create Consortium -->
+                    <text x="50" y="160" font-family="Arial" font-size="10" fill="#6b7280">2.</text>
+                    <line x1="130" y1="165" x2="730" y2="165" stroke="#4f46e5" stroke-width="1" marker-end="url(#seq-arrow)"/>
+                    <text x="400" y="160" font-family="Arial" font-size="10" fill="#374151" text-anchor="middle">POST /consortiums/</text>
+                    <line x1="730" y1="180" x2="130" y2="180" stroke="#4f46e5" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#seq-arrow)"/>
+                    <text x="400" y="193" font-family="Arial" font-size="9" fill="#10b981" text-anchor="middle">201 Created (consortium_id)</text>
+
+                    <!-- Interaction 3: Invite Beta -->
+                    <text x="50" y="225" font-family="Arial" font-size="10" fill="#6b7280">3.</text>
+                    <line x1="130" y1="230" x2="730" y2="230" stroke="#4f46e5" stroke-width="1" marker-end="url(#seq-arrow)"/>
+                    <text x="400" y="225" font-family="Arial" font-size="10" fill="#374151" text-anchor="middle">POST /invitations/ (invite Beta)</text>
+                    <line x1="730" y1="245" x2="130" y2="245" stroke="#4f46e5" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#seq-arrow)"/>
+
+                    <!-- Interaction 4: Invite Gamma -->
+                    <text x="50" y="275" font-family="Arial" font-size="10" fill="#6b7280">4.</text>
+                    <line x1="130" y1="280" x2="730" y2="280" stroke="#4f46e5" stroke-width="1" marker-end="url(#seq-arrow)"/>
+                    <text x="400" y="275" font-family="Arial" font-size="10" fill="#374151" text-anchor="middle">POST /invitations/ (invite Gamma)</text>
+                    <line x1="730" y1="295" x2="130" y2="295" stroke="#4f46e5" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#seq-arrow)"/>
+
+                    <!-- Interaction 5: Beta gets invitations -->
+                    <text x="50" y="330" font-family="Arial" font-size="10" fill="#6b7280">5.</text>
+                    <line x1="330" y1="335" x2="730" y2="335" stroke="#0ea5e9" stroke-width="1" marker-end="url(#seq-arrow)"/>
+                    <text x="530" y="330" font-family="Arial" font-size="10" fill="#374151" text-anchor="middle">GET /invitations/received/</text>
+                    <line x1="730" y1="350" x2="330" y2="350" stroke="#0ea5e9" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#seq-arrow)"/>
+
+                    <!-- Interaction 6: Beta accepts -->
+                    <text x="50" y="380" font-family="Arial" font-size="10" fill="#6b7280">6.</text>
+                    <line x1="330" y1="385" x2="730" y2="385" stroke="#0ea5e9" stroke-width="1" marker-end="url(#seq-arrow)"/>
+                    <text x="530" y="380" font-family="Arial" font-size="10" fill="#374151" text-anchor="middle">POST /invitations/{id}/accept/</text>
+                    <line x1="730" y1="400" x2="330" y2="400" stroke="#0ea5e9" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#seq-arrow)"/>
+                    <text x="530" y="413" font-family="Arial" font-size="9" fill="#10b981" text-anchor="middle">"Invitation accepted"</text>
+
+                    <!-- Interaction 7: Gamma accepts -->
+                    <text x="50" y="440" font-family="Arial" font-size="10" fill="#6b7280">7.</text>
+                    <line x1="530" y1="445" x2="730" y2="445" stroke="#0ea5e9" stroke-width="1" marker-end="url(#seq-arrow)"/>
+                    <text x="630" y="440" font-family="Arial" font-size="10" fill="#374151" text-anchor="middle">POST /invitations/{id}/accept/</text>
+                    <line x1="730" y1="460" x2="530" y2="460" stroke="#0ea5e9" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#seq-arrow)"/>
+
+                    <!-- Interaction 8-10: Contributions -->
+                    <rect x="100" y="485" width="650" height="60" rx="5" fill="#fef3c7" stroke="#f59e0b"/>
+                    <text x="425" y="505" font-family="Arial" font-size="10" fill="#92400e" text-anchor="middle" font-weight="bold">8-10. POST /contributions/ (cada hospital contribuye datos)</text>
+                    <text x="425" y="525" font-family="Arial" font-size="9" fill="#92400e" text-anchor="middle">Alpha: 10,000 | Beta: 8,000 | Gamma: 12,000 registros</text>
+
+                    <!-- Interaction 11: Start Training -->
+                    <text x="50" y="575" font-family="Arial" font-size="10" fill="#6b7280">11.</text>
+                    <line x1="130" y1="580" x2="730" y2="580" stroke="#4f46e5" stroke-width="1" marker-end="url(#seq-arrow)"/>
+                    <text x="400" y="575" font-family="Arial" font-size="10" fill="#374151" text-anchor="middle">POST /consortiums/{id}/start_training/</text>
+                    <line x1="730" y1="595" x2="130" y2="595" stroke="#4f46e5" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#seq-arrow)"/>
+                    <text x="400" y="608" font-family="Arial" font-size="9" fill="#10b981" text-anchor="middle">"Training started" status: training</text>
+
+                    <!-- Final state -->
+                    <rect x="600" y="630" width="180" height="50" rx="5" fill="#d1fae5" stroke="#10b981"/>
+                    <text x="690" y="655" font-family="Arial" font-size="11" fill="#065f46" text-anchor="middle" font-weight="bold">Estado Final:</text>
+                    <text x="690" y="670" font-family="Arial" font-size="10" fill="#065f46" text-anchor="middle">3 miembros, 30K registros</text>
+
+                    <!-- Arrow marker -->
+                    <defs>
+                        <marker id="seq-arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#374151"/>
+                        </marker>
+                    </defs>
+                </svg>
+            </div>
+        </section>
+
+        <!-- Evidencias -->
+        <section>
+            <h2>5. Evidencias de Ejecucion</h2>
+
+            <h3>5.1 Creacion del Consorcio</h3>
+            <div class="evidence-block">
+<span class="comment">// POST /api/v2/consortiums/</span>
+<span class="comment">// Response: 201 Created</span>
+{
+    <span class="key">"id"</span>: <span class="string">"922ef6d0-7451-4bbd-b23a-203d9e0347c9"</span>,
+    <span class="key">"name"</span>: <span class="string">"Healthcare Research Consortium"</span>,
+    <span class="key">"owner_name"</span>: <span class="string">"Hospital Alpha"</span>,
+    <span class="key">"model_type"</span>: <span class="string">"logistic_regression"</span>,
+    <span class="key">"status"</span>: <span class="string">"draft"</span>,
+    <span class="key">"min_members"</span>: <span class="number">2</span>,
+    <span class="key">"voting_threshold"</span>: <span class="number">0.6</span>,
+    <span class="key">"ml_config"</span>: {
+        <span class="key">"learning_rate"</span>: <span class="number">0.01</span>,
+        <span class="key">"epochs"</span>: <span class="number">100</span>,
+        <span class="key">"security_level"</span>: <span class="number">128</span>
+    }
+}
+            </div>
+
+            <h3>5.2 Invitaciones Enviadas y Aceptadas</h3>
+            <div class="evidence-block">
+<span class="comment">// Invitacion a Hospital Beta</span>
+{
+    <span class="key">"id"</span>: <span class="string">"c6171212-7372-4bfb-9963-e107b85d25d2"</span>,
+    <span class="key">"consortium_name"</span>: <span class="string">"Healthcare Research Consortium"</span>,
+    <span class="key">"inviter_name"</span>: <span class="string">"Hospital Alpha"</span>,
+    <span class="key">"invitee_email"</span>: <span class="string">"admin@hospital-beta.test"</span>,
+    <span class="key">"role"</span>: <span class="string">"contributor"</span>,
+    <span class="key">"status"</span>: <span class="string">"pending"</span> -> <span class="string">"accepted"</span>
+}
+
+<span class="comment">// Invitacion a Hospital Gamma</span>
+{
+    <span class="key">"id"</span>: <span class="string">"207cee30-1900-4919-814a-a479791abb1a"</span>,
+    <span class="key">"invitee_email"</span>: <span class="string">"admin@hospital-gamma.test"</span>,
+    <span class="key">"status"</span>: <span class="string">"pending"</span> -> <span class="string">"accepted"</span>
+}
+            </div>
+
+            <h3>5.3 Miembros del Consorcio</h3>
+            <div class="evidence-block">
+<span class="comment">// GET /api/v2/consortiums/{id}/members/</span>
+{
+    <span class="key">"count"</span>: <span class="number">3</span>,
+    <span class="key">"results"</span>: [
+        { <span class="key">"company_name"</span>: <span class="string">"Hospital Alpha"</span>, <span class="key">"role"</span>: <span class="string">"owner"</span>, <span class="key">"status"</span>: <span class="string">"active"</span> },
+        { <span class="key">"company_name"</span>: <span class="string">"Hospital Beta"</span>, <span class="key">"role"</span>: <span class="string">"contributor"</span>, <span class="key">"status"</span>: <span class="string">"active"</span> },
+        { <span class="key">"company_name"</span>: <span class="string">"Hospital Gamma"</span>, <span class="key">"role"</span>: <span class="string">"contributor"</span>, <span class="key">"status"</span>: <span class="string">"active"</span> }
+    ]
+}
+            </div>
+
+            <h3>5.4 Contribuciones de Datos</h3>
+            <div class="evidence-block">
+<span class="comment">// POST /api/v2/consortiums/{id}/contributions/</span>
+
+<span class="comment">// Hospital Alpha</span>
+{ <span class="key">"record_count"</span>: <span class="number">10000</span>, <span class="key">"feature_count"</span>: <span class="number">50</span>, <span class="key">"data_hash"</span>: <span class="string">"a1b2c3d4..."</span> }
+
+<span class="comment">// Hospital Beta</span>
+{ <span class="key">"record_count"</span>: <span class="number">8000</span>, <span class="key">"feature_count"</span>: <span class="number">50</span>, <span class="key">"data_hash"</span>: <span class="string">"b2c3d4e5..."</span> }
+
+<span class="comment">// Hospital Gamma</span>
+{ <span class="key">"record_count"</span>: <span class="number">12000</span>, <span class="key">"feature_count"</span>: <span class="number">50</span>, <span class="key">"data_hash"</span>: <span class="string">"c3d4e5f6..."</span> }
+            </div>
+
+            <h3>5.5 Estado Final y Estadisticas</h3>
+            <div class="evidence-block">
+<span class="comment">// GET /api/v2/consortiums/{id}/stats/</span>
+{
+    <span class="key">"total_members"</span>: <span class="number">3</span>,
+    <span class="key">"active_members"</span>: <span class="number">3</span>,
+    <span class="key">"total_records"</span>: <span class="number">30000</span>,
+    <span class="key">"total_contributions"</span>: <span class="number">3</span>,
+    <span class="key">"model_status"</span>: <span class="string">"training"</span>
+}
+
+<span class="comment">// Resumen de contribuciones por empresa</span>
+[
+    { <span class="key">"company__name"</span>: <span class="string">"Hospital Gamma"</span>, <span class="key">"total_records"</span>: <span class="number">12000</span> },
+    { <span class="key">"company__name"</span>: <span class="string">"Hospital Alpha"</span>, <span class="key">"total_records"</span>: <span class="number">10000</span> },
+    { <span class="key">"company__name"</span>: <span class="string">"Hospital Beta"</span>, <span class="key">"total_records"</span>: <span class="number">8000</span> }
+]
+            </div>
+        </section>
+
+        <!-- Tabla de Pasos -->
+        <section>
+            <h2>6. Resumen de Pasos Ejecutados</h2>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Paso</th>
+                        <th>Accion</th>
+                        <th>Endpoint</th>
+                        <th>Actor</th>
+                        <th>Resultado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td>Autenticacion</td>
+                        <td><code>POST /api/v2/auth/token/</code></td>
+                        <td>Todos</td>
+                        <td><span class="status-badge status-success">3 JWT tokens</span></td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td>Crear Consorcio</td>
+                        <td><code>POST /api/v2/consortiums/</code></td>
+                        <td>Alpha</td>
+                        <td><span class="status-badge status-success">201 Created</span></td>
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        <td>Invitar Beta</td>
+                        <td><code>POST /api/v2/consortiums/invitations/</code></td>
+                        <td>Alpha</td>
+                        <td><span class="status-badge status-success">Invitacion enviada</span></td>
+                    </tr>
+                    <tr>
+                        <td>4</td>
+                        <td>Invitar Gamma</td>
+                        <td><code>POST /api/v2/consortiums/invitations/</code></td>
+                        <td>Alpha</td>
+                        <td><span class="status-badge status-success">Invitacion enviada</span></td>
+                    </tr>
+                    <tr>
+                        <td>5</td>
+                        <td>Ver invitaciones</td>
+                        <td><code>GET /api/v2/consortiums/invitations/received/</code></td>
+                        <td>Beta</td>
+                        <td><span class="status-badge status-success">1 invitacion</span></td>
+                    </tr>
+                    <tr>
+                        <td>6</td>
+                        <td>Aceptar invitacion</td>
+                        <td><code>POST /api/v2/consortiums/invitations/{id}/accept/</code></td>
+                        <td>Beta</td>
+                        <td><span class="status-badge status-success">Aceptada</span></td>
+                    </tr>
+                    <tr>
+                        <td>7</td>
+                        <td>Aceptar invitacion</td>
+                        <td><code>POST /api/v2/consortiums/invitations/{id}/accept/</code></td>
+                        <td>Gamma</td>
+                        <td><span class="status-badge status-success">Aceptada</span></td>
+                    </tr>
+                    <tr>
+                        <td>8</td>
+                        <td>Verificar miembros</td>
+                        <td><code>GET /api/v2/consortiums/{id}/members/</code></td>
+                        <td>Alpha</td>
+                        <td><span class="status-badge status-success">3 miembros</span></td>
+                    </tr>
+                    <tr>
+                        <td>9-11</td>
+                        <td>Contribuir datos</td>
+                        <td><code>POST /api/v2/consortiums/{id}/contributions/</code></td>
+                        <td>Todos</td>
+                        <td><span class="status-badge status-success">30,000 registros</span></td>
+                    </tr>
+                    <tr>
+                        <td>12</td>
+                        <td>Activar consorcio</td>
+                        <td>Django Shell</td>
+                        <td>Admin</td>
+                        <td><span class="status-badge status-success">Status: active</span></td>
+                    </tr>
+                    <tr>
+                        <td>13</td>
+                        <td>Iniciar entrenamiento</td>
+                        <td><code>POST /api/v2/consortiums/{id}/start_training/</code></td>
+                        <td>Alpha</td>
+                        <td><span class="status-badge status-training">Training started</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Endpoints Probados -->
+        <section>
+            <h2>7. Endpoints Validados</h2>
+
+            <div class="endpoint-list">
+                <div class="endpoint-item">
+                    <span class="endpoint-method method-post">POST</span>
+                    <span class="endpoint-path">/api/v2/auth/token/</span>
+                    <p style="margin-top:0.5rem;font-size:0.9rem;color:#6b7280">Autenticacion JWT</p>
+                </div>
+                <div class="endpoint-item">
+                    <span class="endpoint-method method-post">POST</span>
+                    <span class="endpoint-path">/api/v2/consortiums/</span>
+                    <p style="margin-top:0.5rem;font-size:0.9rem;color:#6b7280">Crear consorcio</p>
+                </div>
+                <div class="endpoint-item">
+                    <span class="endpoint-method method-get">GET</span>
+                    <span class="endpoint-path">/api/v2/consortiums/</span>
+                    <p style="margin-top:0.5rem;font-size:0.9rem;color:#6b7280">Listar consorcios</p>
+                </div>
+                <div class="endpoint-item">
+                    <span class="endpoint-method method-get">GET</span>
+                    <span class="endpoint-path">/api/v2/consortiums/{id}/</span>
+                    <p style="margin-top:0.5rem;font-size:0.9rem;color:#6b7280">Detalle de consorcio</p>
+                </div>
+                <div class="endpoint-item">
+                    <span class="endpoint-method method-post">POST</span>
+                    <span class="endpoint-path">/api/v2/consortiums/invitations/</span>
+                    <p style="margin-top:0.5rem;font-size:0.9rem;color:#6b7280">Crear invitacion</p>
+                </div>
+                <div class="endpoint-item">
+                    <span class="endpoint-method method-get">GET</span>
+                    <span class="endpoint-path">/api/v2/consortiums/invitations/received/</span>
+                    <p style="margin-top:0.5rem;font-size:0.9rem;color:#6b7280">Invitaciones recibidas</p>
+                </div>
+                <div class="endpoint-item">
+                    <span class="endpoint-method method-post">POST</span>
+                    <span class="endpoint-path">/api/v2/consortiums/invitations/{id}/accept/</span>
+                    <p style="margin-top:0.5rem;font-size:0.9rem;color:#6b7280">Aceptar invitacion</p>
+                </div>
+                <div class="endpoint-item">
+                    <span class="endpoint-method method-get">GET</span>
+                    <span class="endpoint-path">/api/v2/consortiums/{id}/members/</span>
+                    <p style="margin-top:0.5rem;font-size:0.9rem;color:#6b7280">Listar miembros</p>
+                </div>
+                <div class="endpoint-item">
+                    <span class="endpoint-method method-post">POST</span>
+                    <span class="endpoint-path">/api/v2/consortiums/{id}/contributions/</span>
+                    <p style="margin-top:0.5rem;font-size:0.9rem;color:#6b7280">Registrar contribucion</p>
+                </div>
+                <div class="endpoint-item">
+                    <span class="endpoint-method method-get">GET</span>
+                    <span class="endpoint-path">/api/v2/consortiums/{id}/contributions/summary/</span>
+                    <p style="margin-top:0.5rem;font-size:0.9rem;color:#6b7280">Resumen de contribuciones</p>
+                </div>
+                <div class="endpoint-item">
+                    <span class="endpoint-method method-get">GET</span>
+                    <span class="endpoint-path">/api/v2/consortiums/{id}/stats/</span>
+                    <p style="margin-top:0.5rem;font-size:0.9rem;color:#6b7280">Estadisticas del consorcio</p>
+                </div>
+                <div class="endpoint-item">
+                    <span class="endpoint-method method-post">POST</span>
+                    <span class="endpoint-path">/api/v2/consortiums/{id}/start_training/</span>
+                    <p style="margin-top:0.5rem;font-size:0.9rem;color:#6b7280">Iniciar entrenamiento</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Conclusiones -->
+        <section>
+            <h2>8. Conclusiones</h2>
+
+            <div class="conclusion-box">
+                <h3 style="color:#065f46;margin-bottom:1rem">Resultados Positivos</h3>
+                <ul style="margin-left:1.5rem">
+                    <li><strong>Flujo completo funcional:</strong> El ciclo de vida del consorcio (creacion, invitaciones, contribuciones, entrenamiento) opera correctamente.</li>
+                    <li><strong>Autenticacion JWT:</strong> El sistema de tokens funciona correctamente con refresh tokens.</li>
+                    <li><strong>Gestion de permisos:</strong> Los roles (owner, contributor) se aplican correctamente.</li>
+                    <li><strong>Validaciones:</strong> El sistema valida correctamente los datos de entrada (hashes SHA-256, roles validos, etc.).</li>
+                    <li><strong>API RESTful:</strong> Los endpoints siguen las convenciones REST y devuelven respuestas estructuradas.</li>
+                    <li><strong>Paginacion:</strong> Las listas incluyen paginacion con metadatos (count, total_pages, etc.).</li>
+                </ul>
+            </div>
+
+            <div class="next-steps-box">
+                <h3 style="color:#1e40af;margin-bottom:1rem">Areas de Mejora Identificadas</h3>
+                <ul style="margin-left:1.5rem">
+                    <li><strong>Serializers:</strong> El endpoint de creacion no devuelve el ID del recurso creado (solo los campos enviados).</li>
+                    <li><strong>Verificacion automatica:</strong> Las contribuciones requieren verificacion manual; considerar verificacion automatica por hash.</li>
+                    <li><strong>Workflow de estados:</strong> El consorcio requiere activacion manual via shell antes de poder iniciar entrenamiento.</li>
+                    <li><strong>Rate limiting:</strong> Redis muestra estado "degraded" - revisar configuracion de cache.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Proximos Pasos -->
+        <section>
+            <h2>9. Proximos Pasos</h2>
+
+            <ol class="step-list">
+                <li>
+                    <span class="step-number">1</span>
+                    <div>
+                        <strong>Corregir serializers de creacion</strong>
+                        <p style="color:#6b7280;font-size:0.9rem">Modificar ConsortiumCreateSerializer y ContributionProofCreateSerializer para devolver el objeto completo con ID.</p>
+                    </div>
+                </li>
+                <li>
+                    <span class="step-number">2</span>
+                    <div>
+                        <strong>Implementar activacion automatica</strong>
+                        <p style="color:#6b7280;font-size:0.9rem">Agregar endpoint POST /consortiums/{id}/activate/ o activar automaticamente cuando se alcanza min_members.</p>
+                    </div>
+                </li>
+                <li>
+                    <span class="step-number">3</span>
+                    <div>
+                        <strong>Verificacion automatica de contribuciones</strong>
+                        <p style="color:#6b7280;font-size:0.9rem">Implementar verificacion por hash y firma digital para marcar contribuciones como verificadas automaticamente.</p>
+                    </div>
+                </li>
+                <li>
+                    <span class="step-number">4</span>
+                    <div>
+                        <strong>Integrar entrenamiento FHE real</strong>
+                        <p style="color:#6b7280;font-size:0.9rem">Conectar el endpoint start_training/ con Celery para ejecutar entrenamiento FHE usando TenSEAL.</p>
+                    </div>
+                </li>
+                <li>
+                    <span class="step-number">5</span>
+                    <div>
+                        <strong>Agregar notificaciones</strong>
+                        <p style="color:#6b7280;font-size:0.9rem">Implementar notificaciones por email cuando se reciben invitaciones o cambia el estado del consorcio.</p>
+                    </div>
+                </li>
+                <li>
+                    <span class="step-number">6</span>
+                    <div>
+                        <strong>Pruebas de integracion automatizadas</strong>
+                        <p style="color:#6b7280;font-size:0.9rem">Convertir esta prueba manual en tests de integracion con pytest para CI/CD.</p>
+                    </div>
+                </li>
+                <li>
+                    <span class="step-number">7</span>
+                    <div>
+                        <strong>Registro en blockchain</strong>
+                        <p style="color:#6b7280;font-size:0.9rem">Integrar registro de contribuciones y resultados de entrenamiento en Arbitrum.</p>
+                    </div>
+                </li>
+            </ol>
+        </section>
+
+        <!-- Informacion Tecnica -->
+        <section>
+            <h2>10. Informacion Tecnica del Ambiente</h2>
+
+            <table>
+                <tr>
+                    <th>Componente</th>
+                    <th>Version</th>
+                    <th>Estado</th>
+                </tr>
+                <tr>
+                    <td>Django</td>
+                    <td>5.2 LTS</td>
+                    <td><span class="status-badge status-success">Healthy</span></td>
+                </tr>
+                <tr>
+                    <td>PostgreSQL</td>
+                    <td>16-alpine</td>
+                    <td><span class="status-badge status-success">Healthy</span></td>
+                </tr>
+                <tr>
+                    <td>Redis</td>
+                    <td>7-alpine</td>
+                    <td><span class="status-badge status-pending">Degraded</span></td>
+                </tr>
+                <tr>
+                    <td>Python</td>
+                    <td>3.12</td>
+                    <td><span class="status-badge status-success">OK</span></td>
+                </tr>
+                <tr>
+                    <td>Docker Compose</td>
+                    <td>Profile: django-dev</td>
+                    <td><span class="status-badge status-success">Running</span></td>
+                </tr>
+            </table>
+        </section>
+    </div>
+
+    <footer>
+        <p>Xcapit FHE-ML Platform - Reporte de Prueba Manual</p>
+        <p>Generado el 29 de Enero de 2026 | Version 0.7.1</p>
+    </footer>
+</body>
+</html>

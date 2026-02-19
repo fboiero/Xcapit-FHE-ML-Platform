@@ -1,0 +1,44 @@
+# AWS CodeBuild buildspec.yml
+# For use with AWS CodePipeline
+
+version: 0.2
+
+env:
+  variables:
+    ECR_REPO_NAME: "xcapit-fhe-api"
+    ECS_CLUSTER_NAME: "xcapit-cluster"
+    ECS_SERVICE_NAME: "xcapit-fhe-api-service"
+    CONTAINER_NAME: "xcapit-fhe-api"
+  secrets-manager:
+    DATABASE_URL: "xcapit/fhe-api:DATABASE_URL"
+    JWT_SECRET: "xcapit/fhe-api:JWT_SECRET"
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+      - REPOSITORY_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$ECR_REPO_NAME
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG=${COMMIT_HASH:=latest}
+
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo Building the Docker image...
+      - docker build -t $REPOSITORY_URI:latest --target production .
+      - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
+
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - echo Pushing the Docker images...
+      - docker push $REPOSITORY_URI:latest
+      - docker push $REPOSITORY_URI:$IMAGE_TAG
+      - echo Writing image definitions file...
+      - printf '[{"name":"%s","imageUri":"%s"}]' $CONTAINER_NAME $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
+
+artifacts:
+  files:
+    - imagedefinitions.json
+    - deploy/aws/task-definition.json

@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"[$(date +%Y-%m-%dT%H:%M:%S)] tool=Bash\" >> /tmp/claude-activity.log 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  }
+}

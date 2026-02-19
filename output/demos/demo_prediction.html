@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo: Predicción ML Encriptada - Xcapit FHE-ML</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 30px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .header h1 {
+            font-size: 2.5em;
+            background: linear-gradient(90deg, #10B981, #06B6D4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        .header p { color: #94A3B8; font-size: 1.2em; }
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        .panel {
+            background: rgba(255,255,255,0.03);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .panel.client {
+            border-color: #8B5CF6;
+            background: linear-gradient(180deg, rgba(139, 92, 246, 0.1) 0%, rgba(0,0,0,0) 100%);
+        }
+        .panel.server {
+            border-color: #10B981;
+            background: linear-gradient(180deg, rgba(16, 185, 129, 0.1) 0%, rgba(0,0,0,0) 100%);
+        }
+        .panel-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .panel-icon {
+            font-size: 2em;
+        }
+        .panel-title {
+            font-size: 1.4em;
+            font-weight: 600;
+        }
+        .panel-subtitle {
+            font-size: 0.9em;
+            color: #64748B;
+        }
+        .step-box {
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 15px;
+        }
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .step-num {
+            width: 28px;
+            height: 28px;
+            background: #8B5CF6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+        .step-num.server { background: #10B981; }
+        .step-label { font-weight: 600; }
+        .code-mini {
+            background: #0f0f1a;
+            border-radius: 8px;
+            padding: 12px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85em;
+            overflow-x: auto;
+        }
+        .arrow-down {
+            text-align: center;
+            padding: 10px;
+            font-size: 1.5em;
+            color: #64748B;
+        }
+        .data-display {
+            background: #1a1a2e;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .data-row:last-child { border: none; }
+        .data-key { color: #94A3B8; }
+        .data-val { color: #10B981; font-family: monospace; }
+        .data-val.encrypted { color: #F59E0B; }
+        .model-diagram {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .model-box {
+            display: inline-block;
+            background: linear-gradient(135deg, #10B981, #059669);
+            border-radius: 12px;
+            padding: 20px 40px;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        .formula {
+            font-family: 'Times New Roman', serif;
+            font-size: 1.3em;
+            color: #E0E7FF;
+            margin: 15px 0;
+            font-style: italic;
+        }
+        .result-box {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.1));
+            border: 2px solid #10B981;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .result-value {
+            font-size: 3em;
+            font-weight: bold;
+            color: #10B981;
+        }
+        .result-label {
+            color: #94A3B8;
+            margin-top: 10px;
+        }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin: 5px;
+        }
+        .badge.success { background: rgba(16, 185, 129, 0.2); color: #10B981; }
+        .badge.secure { background: rgba(139, 92, 246, 0.2); color: #8B5CF6; }
+        .badge.warning { background: rgba(245, 158, 11, 0.2); color: #F59E0B; }
+        .connection-line {
+            position: relative;
+            height: 60px;
+            margin: 20px 0;
+        }
+        .connection-line::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #8B5CF6, #10B981);
+        }
+        .connection-arrow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #1e293b;
+            padding: 5px 20px;
+            color: #64748B;
+            font-size: 1.5em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Predicción ML sobre Datos Encriptados</h1>
+            <p>Regresión Lineal con Privacidad Total - Los datos NUNCA se exponen</p>
+        </div>
+
+        <div class="two-column">
+            <!-- Client Panel -->
+            <div class="panel client">
+                <div class="panel-header">
+                    <span class="panel-icon">👤</span>
+                    <div>
+                        <div class="panel-title">Cliente</div>
+                        <div class="panel-subtitle">Tiene clave privada (sk)</div>
+                    </div>
+                </div>
+
+                <div class="step-box">
+                    <div class="step-header">
+                        <div class="step-num">1</div>
+                        <span class="step-label">Datos Originales</span>
+                    </div>
+                    <div class="data-display">
+                        <div class="data-row">
+                            <span class="data-key">Features (X):</span>
+                            <span class="data-val">[1.5, 2.3, 0.7, 3.1]</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="arrow-down">↓</div>
+
+                <div class="step-box">
+                    <div class="step-header">
+                        <div class="step-num">2</div>
+                        <span class="step-label">Encriptar con CKKS</span>
+                    </div>
+                    <div class="code-mini">
+                        <span style="color: #C792EA">X_enc</span> = <span style="color: #82AAFF">encrypt</span>(context, X)
+                    </div>
+                    <div class="data-display">
+                        <div class="data-row">
+                            <span class="data-key">Ciphertext:</span>
+                            <span class="data-val encrypted">[ct₀, ct₁] (opaco)</span>
+                        </div>
+                    </div>
+                    <span class="badge secure">🔒 Datos protegidos</span>
+                </div>
+
+                <div class="arrow-down">↓</div>
+
+                <div class="step-box">
+                    <div class="step-header">
+                        <div class="step-num">5</div>
+                        <span class="step-label">Descifrar Resultado</span>
+                    </div>
+                    <div class="code-mini">
+                        <span style="color: #C792EA">y</span> = <span style="color: #82AAFF">decrypt</span>(context, y_enc)
+                    </div>
+                    <div class="result-box">
+                        <div class="result-value">7.847</div>
+                        <div class="result-label">Predicción Final</div>
+                    </div>
+                    <span class="badge success">✓ Solo el cliente ve el resultado</span>
+                </div>
+            </div>
+
+            <!-- Server Panel -->
+            <div class="panel server">
+                <div class="panel-header">
+                    <span class="panel-icon">🖥️</span>
+                    <div>
+                        <div class="panel-title">Servidor ML</div>
+                        <div class="panel-subtitle">NO tiene clave privada</div>
+                    </div>
+                </div>
+
+                <div class="step-box">
+                    <div class="step-header">
+                        <div class="step-num server">3</div>
+                        <span class="step-label">Recibe Datos Encriptados</span>
+                    </div>
+                    <div class="data-display">
+                        <div class="data-row">
+                            <span class="data-key">Recibe:</span>
+                            <span class="data-val encrypted">E(X) = ciphertext</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="data-key">Puede ver:</span>
+                            <span class="data-val encrypted">Ruido criptográfico</span>
+                        </div>
+                    </div>
+                    <span class="badge warning">⚠️ No puede descifrar</span>
+                </div>
+
+                <div class="model-diagram">
+                    <div class="model-box">Modelo: Regresión Lineal</div>
+                    <div class="formula">ŷ = X · w + b</div>
+                    <div class="data-display" style="text-align: left; margin-top: 15px;">
+                        <div class="data-row">
+                            <span class="data-key">Pesos (w):</span>
+                            <span class="data-val">[0.8, 1.2, 0.5, 1.5]</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="data-key">Bias (b):</span>
+                            <span class="data-val">0.1</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step-box">
+                    <div class="step-header">
+                        <div class="step-num server">4</div>
+                        <span class="step-label">Computación FHE</span>
+                    </div>
+                    <div class="code-mini">
+<span style="color: #546E7A"># Operaciones sobre ciphertext</span>
+<span style="color: #C792EA">z</span> = X_enc * weights  <span style="color: #546E7A"># mult ct×pt</span>
+<span style="color: #C792EA">s</span> = z.<span style="color: #82AAFF">sum</span>()          <span style="color: #546E7A"># rotaciones</span>
+<span style="color: #C792EA">y_enc</span> = s + bias     <span style="color: #546E7A"># suma ct+pt</span>
+                    </div>
+                    <div class="data-display">
+                        <div class="data-row">
+                            <span class="data-key">Resultado:</span>
+                            <span class="data-val encrypted">E(ŷ) = ciphertext</span>
+                        </div>
+                    </div>
+                    <span class="badge success">✓ Predicción sin ver datos</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="panel" style="margin-top: 30px; text-align: center;">
+            <h2 style="margin-bottom: 20px; color: #10B981;">Resumen de Privacidad</h2>
+            <div style="display: flex; justify-content: center; gap: 30px; flex-wrap: wrap;">
+                <div class="badge success" style="font-size: 1.1em; padding: 15px 25px;">
+                    ✓ Datos del cliente NUNCA expuestos
+                </div>
+                <div class="badge secure" style="font-size: 1.1em; padding: 15px 25px;">
+                    🔒 Encriptación 128-bit (resistente a quantum)
+                </div>
+                <div class="badge success" style="font-size: 1.1em; padding: 15px 25px;">
+                    ✓ Servidor solo ve ruido criptográfico
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

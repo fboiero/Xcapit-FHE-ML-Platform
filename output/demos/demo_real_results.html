@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xcapit FHE-ML - Demo Real</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 30px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .header h1 {
+            font-size: 2.5em;
+            background: linear-gradient(135deg, #8B5CF6 0%, #06B6D4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        .header .subtitle { color: #94A3B8; font-size: 1.1em; }
+        .header .timestamp { color: #64748b; font-size: 0.85em; margin-top: 10px; }
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        .demo-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 25px;
+            position: relative;
+            overflow: hidden;
+        }
+        .demo-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+        }
+        .demo-card.purple::before { background: linear-gradient(90deg, #8B5CF6, #6D28D9); }
+        .demo-card.green::before { background: linear-gradient(90deg, #10B981, #059669); }
+        .demo-card.blue::before { background: linear-gradient(90deg, #3B82F6, #06B6D4); }
+        .demo-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .metric {
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            padding: 15px;
+        }
+        .metric-label {
+            font-size: 0.75em;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+        .metric-value {
+            font-size: 1.4em;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .metric-value.purple { color: #8B5CF6; }
+        .metric-value.green { color: #10B981; }
+        .metric-value.blue { color: #06B6D4; }
+        .metric-value.orange { color: #F59E0B; }
+        .metric-value.red { color: #EF4444; }
+        .data-box {
+            background: rgba(0,0,0,0.4);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85em;
+        }
+        .data-label {
+            color: #8B5CF6;
+            font-size: 0.75em;
+            margin-bottom: 8px;
+            font-family: 'Inter', sans-serif;
+            text-transform: uppercase;
+        }
+        .data-value { color: #10B981; word-break: break-all; }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 500;
+        }
+        .badge.success { background: rgba(16, 185, 129, 0.2); color: #10B981; }
+        .badge.warning { background: rgba(245, 158, 11, 0.2); color: #F59E0B; }
+        .badge.danger { background: rgba(239, 68, 68, 0.2); color: #EF4444; }
+        .result-highlight {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.05) 100%);
+            border: 2px solid rgba(16, 185, 129, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .result-highlight.warning {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(185, 28, 28, 0.05) 100%);
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+        .result-value {
+            font-size: 2.5em;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .result-label { color: #94a3b8; margin-top: 5px; }
+        .footer {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            margin-top: 30px;
+        }
+        .footer h3 { color: #10B981; margin-bottom: 10px; }
+        .footer-items { display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; }
+        .footer-item { display: flex; align-items: center; gap: 8px; color: #94a3b8; font-size: 0.9em; }
+        .check { color: #10B981; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Xcapit FHE-ML Platform</h1>
+            <p class="subtitle">Demostración Real de Machine Learning sobre Datos Encriptados</p>
+            <p class="timestamp">Ejecutado: 2025-12-06 16:50:26 | TenSEAL + CKKS | Seguridad: 128-bit</p>
+        </div>
+
+        <div class="demo-grid">
+            <!-- Demo 1: Encryption -->
+            <div class="demo-card purple">
+                <div class="demo-title">
+                    <span>🔐</span> Encriptación CKKS
+                </div>
+                <div class="metric-grid">
+                    <div class="metric">
+                        <div class="metric-label">Contexto</div>
+                        <div class="metric-value purple">86.2ms</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Encriptar</div>
+                        <div class="metric-value green">3.4ms</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Descifrar</div>
+                        <div class="metric-value blue">0.6ms</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Ciphertext</div>
+                        <div class="metric-value orange">326.7KB</div>
+                    </div>
+                </div>
+                <div class="data-box">
+                    <div class="data-label">Datos Originales</div>
+                    <div class="data-value">[3.14159, 2.71828, 1.41421, 0.57721]</div>
+                </div>
+                <div class="data-box">
+                    <div class="data-label">Datos Descifrados</div>
+                    <div class="data-value">[3.14159000, 2.71828000, 1.41421000, 0.57721000]</div>
+                </div>
+                <div class="result-highlight">
+                    <div class="result-value green">1.31e-09</div>
+                    <div class="result-label">Error Máximo</div>
+                </div>
+                <div style="margin-top: 15px; text-align: center;">
+                    <span class="badge success">✓ Precisión verificada</span>
+                </div>
+            </div>
+
+            <!-- Demo 2: Prediction -->
+            <div class="demo-card green">
+                <div class="demo-title">
+                    <span>🧠</span> Regresión Lineal FHE
+                </div>
+                <div class="metric-grid">
+                    <div class="metric">
+                        <div class="metric-label">Encriptar</div>
+                        <div class="metric-value purple">1.8ms</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Predicción FHE</div>
+                        <div class="metric-value green">1.9ms</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Descifrar</div>
+                        <div class="metric-value blue">0.3ms</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Total</div>
+                        <div class="metric-value orange">3.9ms</div>
+                    </div>
+                </div>
+                <div class="data-box">
+                    <div class="data-label">Input Features</div>
+                    <div class="data-value">X = [1.5, 2.3, 0.7, 3.1]</div>
+                </div>
+                <div class="data-box">
+                    <div class="data-label">Pesos del Modelo</div>
+                    <div class="data-value">W = [0.7560, 1.2452, 0.3406, 1.3026]</div>
+                </div>
+                <div class="result-highlight">
+                    <div class="result-value green">8.3775</div>
+                    <div class="result-label">Predicción FHE (plaintext: 8.3775)</div>
+                </div>
+                <div style="margin-top: 15px; text-align: center;">
+                    <span class="badge success">✓ Error: 1.45e-06</span>
+                </div>
+            </div>
+
+            <!-- Demo 3: Healthcare -->
+            <div class="demo-card blue">
+                <div class="demo-title">
+                    <span>🏥</span> Diagnóstico Cardiovascular
+                </div>
+                <div class="metric-grid">
+                    <div class="metric">
+                        <div class="metric-label">Encriptar PHI</div>
+                        <div class="metric-value purple">1.8ms</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Inferencia FHE</div>
+                        <div class="metric-value green">2.9ms</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Descifrar</div>
+                        <div class="metric-value blue">0.3ms</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Accuracy</div>
+                        <div class="metric-value orange">98.5%</div>
+                    </div>
+                </div>
+                <div class="data-box">
+                    <div class="data-label">Datos del Paciente (PHI)</div>
+                    <div class="data-value" style="font-size: 0.8em;">
+                        Edad: 58 |
+                        PA: 145/92 mmHg |
+                        Colesterol: 248 mg/dL<br>
+                        Glucosa: 118 mg/dL |
+                        IMC: 28.5 |
+                        Fumador: Sí
+                    </div>
+                </div>
+                <div class="result-highlight warning">
+                    <div class="result-value red">99.0%</div>
+                    <div class="result-label">Riesgo Cardiovascular: ALTO</div>
+                </div>
+                <div style="margin-top: 15px; text-align: center;">
+                    <span class="badge danger">
+                        ⚠️ ALTO - PHI nunca expuesto
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <h3>🛡️ Garantías de Privacidad - Datos Reales</h3>
+            <div class="footer-items">
+                <div class="footer-item"><span class="check">✓</span> Encriptación CKKS 128-bit</div>
+                <div class="footer-item"><span class="check">✓</span> Servidor no ve datos originales</div>
+                <div class="footer-item"><span class="check">✓</span> Predicciones sobre ciphertext</div>
+                <div class="footer-item"><span class="check">✓</span> Solo cliente puede descifrar</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

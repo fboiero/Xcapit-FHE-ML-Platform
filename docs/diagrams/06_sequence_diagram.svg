@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1100" height="1000" viewBox="0 0 1100 1000" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bankGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6"/>
+      <stop offset="100%" style="stop-color:#1d4ed8"/>
+    </linearGradient>
+    <linearGradient id="sdkGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#10b981"/>
+      <stop offset="100%" style="stop-color:#059669"/>
+    </linearGradient>
+    <linearGradient id="serverGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#8b5cf6"/>
+      <stop offset="100%" style="stop-color:#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="bcGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#f59e0b"/>
+      <stop offset="100%" style="stop-color:#d97706"/>
+    </linearGradient>
+    <filter id="shadow">
+      <feDropShadow dx="2" dy="3" stdDeviation="2" flood-opacity="0.2"/>
+    </filter>
+    <marker id="arrowRight" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#64748b"/>
+    </marker>
+    <marker id="arrowLeft" markerWidth="8" markerHeight="6" refX="1" refY="3" orient="auto">
+      <polygon points="8 0, 0 3, 8 6" fill="#64748b"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1100" height="1000" fill="#0f172a"/>
+
+  <!-- Title -->
+  <text x="550" y="35" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="22" font-weight="bold">Diagrama de Secuencia: Flujo Detallado</text>
+  <text x="550" y="55" text-anchor="middle" fill="#94a3b8" font-family="Arial, sans-serif" font-size="12">Comunicación entre componentes paso a paso</text>
+
+  <!-- Actor headers -->
+  <rect x="80" y="80" width="120" height="50" rx="8" fill="url(#bankGrad)" filter="url(#shadow)"/>
+  <text x="140" y="110" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="13" font-weight="bold">🏦 Banco</text>
+
+  <rect x="280" y="80" width="120" height="50" rx="8" fill="url(#sdkGrad)" filter="url(#shadow)"/>
+  <text x="340" y="110" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="13" font-weight="bold">🔐 SDK FHE</text>
+
+  <rect x="480" y="80" width="120" height="50" rx="8" fill="url(#serverGrad)" filter="url(#shadow)"/>
+  <text x="540" y="110" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="13" font-weight="bold">☁️ API Server</text>
+
+  <rect x="680" y="80" width="120" height="50" rx="8" fill="url(#sdkGrad)" filter="url(#shadow)"/>
+  <text x="740" y="110" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="13" font-weight="bold">🧠 ML Engine</text>
+
+  <rect x="880" y="80" width="120" height="50" rx="8" fill="url(#bcGrad)" filter="url(#shadow)"/>
+  <text x="940" y="110" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="13" font-weight="bold">⛓️ Blockchain</text>
+
+  <!-- Lifelines -->
+  <line x1="140" y1="130" x2="140" y2="950" stroke="#475569" stroke-width="2" stroke-dasharray="5,5"/>
+  <line x1="340" y1="130" x2="340" y2="950" stroke="#475569" stroke-width="2" stroke-dasharray="5,5"/>
+  <line x1="540" y1="130" x2="540" y2="950" stroke="#475569" stroke-width="2" stroke-dasharray="5,5"/>
+  <line x1="740" y1="130" x2="740" y2="950" stroke="#475569" stroke-width="2" stroke-dasharray="5,5"/>
+  <line x1="940" y1="130" x2="940" y2="950" stroke="#475569" stroke-width="2" stroke-dasharray="5,5"/>
+
+  <!-- PHASE 1: Setup -->
+  <rect x="30" y="150" width="80" height="25" rx="4" fill="#6366f1"/>
+  <text x="70" y="167" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="10" font-weight="bold">FASE 1</text>
+
+  <!-- 1. Generate keys -->
+  <rect x="125" y="170" width="30" height="40" fill="rgba(59, 130, 246, 0.3)"/>
+  <line x1="140" y1="185" x2="340" y2="185" stroke="#10b981" stroke-width="2" marker-end="url(#arrowRight)"/>
+  <rect x="170" y="175" width="140" height="20" rx="4" fill="rgba(16, 185, 129, 0.2)"/>
+  <text x="240" y="189" text-anchor="middle" fill="#10b981" font-family="Arial, sans-serif" font-size="10">1. Generar claves FHE</text>
+
+  <!-- 1b. Return keys -->
+  <rect x="325" y="195" width="30" height="30" fill="rgba(16, 185, 129, 0.3)"/>
+  <line x1="340" y1="215" x2="140" y2="215" stroke="#10b981" stroke-width="2" stroke-dasharray="4,2" marker-end="url(#arrowLeft)"/>
+  <text x="240" y="230" text-anchor="middle" fill="#86efac" font-family="Arial, sans-serif" font-size="9">public_key, secret_key, context</text>
+
+  <!-- Note: FHE -->
+  <rect x="355" y="175" width="100" height="50" rx="4" fill="rgba(16, 185, 129, 0.1)" stroke="#10b981" stroke-width="1"/>
+  <text x="405" y="195" text-anchor="middle" fill="#10b981" font-family="Arial, sans-serif" font-size="9" font-weight="bold">🔐 FHE</text>
+  <text x="405" y="210" text-anchor="middle" fill="#86efac" font-family="Arial, sans-serif" font-size="8">CKKS 128-bit</text>
+  <text x="405" y="222" text-anchor="middle" fill="#86efac" font-family="Arial, sans-serif" font-size="8">poly_degree=8192</text>
+
+  <!-- PHASE 2: Encrypt Data -->
+  <rect x="30" y="250" width="80" height="25" rx="4" fill="#10b981"/>
+  <text x="70" y="267" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="10" font-weight="bold">FASE 2</text>
+
+  <!-- 2. Send plaintext -->
+  <rect x="125" y="280" width="30" height="80" fill="rgba(59, 130, 246, 0.3)"/>
+  <line x1="140" y1="300" x2="340" y2="300" stroke="#10b981" stroke-width="2" marker-end="url(#arrowRight)"/>
+  <rect x="170" y="290" width="140" height="20" rx="4" fill="rgba(16, 185, 129, 0.2)"/>
+  <text x="240" y="304" text-anchor="middle" fill="#10b981" font-family="Arial, sans-serif" font-size="10">2. Encriptar datos</text>
+
+  <!-- Plaintext box -->
+  <rect x="145" y="320" width="80" height="35" rx="4" fill="rgba(239, 68, 68, 0.2)" stroke="#ef4444"/>
+  <text x="185" y="335" text-anchor="middle" fill="#fca5a5" font-family="Arial, sans-serif" font-size="8">PLAINTEXT</text>
+  <text x="185" y="348" text-anchor="middle" fill="#fca5a5" font-family="Courier, monospace" font-size="7">$523.45</text>
+
+  <!-- Arrow to SDK processing -->
+  <rect x="325" y="310" width="30" height="50" fill="rgba(16, 185, 129, 0.3)"/>
+
+  <!-- Ciphertext return -->
+  <line x1="340" y1="350" x2="140" y2="350" stroke="#10b981" stroke-width="2" stroke-dasharray="4,2" marker-end="url(#arrowLeft)"/>
+
+  <!-- Ciphertext box -->
+  <rect x="235" y="325" width="90" height="35" rx="4" fill="rgba(16, 185, 129, 0.2)" stroke="#10b981"/>
+  <text x="280" y="340" text-anchor="middle" fill="#10b981" font-family="Arial, sans-serif" font-size="8">CIPHERTEXT</text>
+  <text x="280" y="353" text-anchor="middle" fill="#86efac" font-family="Courier, monospace" font-size="7">0x7a3f8c2d...</text>
+
+  <!-- Note: Only encrypted leaves bank -->
+  <rect x="30" y="320" width="105" height="40" rx="4" fill="rgba(239, 68, 68, 0.1)" stroke="#ef4444"/>
+  <text x="82" y="335" text-anchor="middle" fill="#fca5a5" font-family="Arial, sans-serif" font-size="8" font-weight="bold">⚠️ IMPORTANTE</text>
+  <text x="82" y="348" text-anchor="middle" fill="#fca5a5" font-family="Arial, sans-serif" font-size="7">Plaintext NUNCA</text>
+  <text x="82" y="358" text-anchor="middle" fill="#fca5a5" font-family="Arial, sans-serif" font-size="7">sale del banco</text>
+
+  <!-- PHASE 3: Send to Server -->
+  <rect x="30" y="380" width="80" height="25" rx="4" fill="#8b5cf6"/>
+  <text x="70" y="397" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="10" font-weight="bold">FASE 3</text>
+
+  <!-- 3. Send encrypted to server -->
+  <rect x="125" y="415" width="30" height="40" fill="rgba(59, 130, 246, 0.3)"/>
+  <line x1="140" y1="430" x2="540" y2="430" stroke="#64748b" stroke-width="2" marker-end="url(#arrowRight)"/>
+  <rect x="270" y="420" width="180" height="20" rx="4" fill="rgba(139, 92, 246, 0.2)"/>
+  <text x="360" y="434" text-anchor="middle" fill="#a78bfa" font-family="Arial, sans-serif" font-size="10">3. Enviar datos cifrados (HTTPS)</text>
+
+  <!-- Server receives -->
+  <rect x="525" y="420" width="30" height="40" fill="rgba(139, 92, 246, 0.3)"/>
+
+  <!-- Note: Network safe -->
+  <rect x="350" y="445" width="100" height="30" rx="4" fill="rgba(16, 185, 129, 0.1)" stroke="#10b981"/>
+  <text x="400" y="458" text-anchor="middle" fill="#10b981" font-family="Arial, sans-serif" font-size="8">✅ Red segura:</text>
+  <text x="400" y="470" text-anchor="middle" fill="#86efac" font-family="Arial, sans-serif" font-size="7">datos ya cifrados</text>
+
+  <!-- PHASE 4: Train -->
+  <rect x="30" y="485" width="80" height="25" rx="4" fill="#10b981"/>
+  <text x="70" y="502" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="10" font-weight="bold">FASE 4</text>
+
+  <!-- 4. Train on encrypted -->
+  <rect x="525" y="515" width="30" height="70" fill="rgba(139, 92, 246, 0.3)"/>
+  <line x1="540" y1="530" x2="740" y2="530" stroke="#10b981" stroke-width="2" marker-end="url(#arrowRight)"/>
+  <rect x="580" y="520" width="140" height="20" rx="4" fill="rgba(16, 185, 129, 0.2)"/>
+  <text x="650" y="534" text-anchor="middle" fill="#10b981" font-family="Arial, sans-serif" font-size="10">4. Entrenar modelo</text>
+
+  <!-- ML Engine processing -->
+  <rect x="725" y="520" width="30" height="60" fill="rgba(16, 185, 129, 0.3)"/>
+
+  <!-- FHE Operations note -->
+  <rect x="760" y="520" width="120" height="60" rx="4" fill="rgba(16, 185, 129, 0.1)" stroke="#10b981"/>
+  <text x="820" y="535" text-anchor="middle" fill="#10b981" font-family="Arial, sans-serif" font-size="9" font-weight="bold">🔐 FHE Operations</text>
+  <text x="820" y="550" text-anchor="middle" fill="#86efac" font-family="Arial, sans-serif" font-size="8">enc_z = enc_X @ W</text>
+  <text x="820" y="562" text-anchor="middle" fill="#86efac" font-family="Arial, sans-serif" font-size="8">enc_pred = σ(enc_z)</text>
+  <text x="820" y="574" text-anchor="middle" fill="#86efac" font-family="Arial, sans-serif" font-size="8">Todo sobre cifrado!</text>
+
+  <!-- Return model -->
+  <line x1="740" y1="570" x2="540" y2="570" stroke="#10b981" stroke-width="2" stroke-dasharray="4,2" marker-end="url(#arrowLeft)"/>
+  <text x="640" y="585" text-anchor="middle" fill="#86efac" font-family="Arial, sans-serif" font-size="9">model_weights (cleartext)</text>
+
+  <!-- PHASE 5: Register on Blockchain -->
+  <rect x="30" y="600" width="80" height="25" rx="4" fill="#f59e0b"/>
+  <text x="70" y="617" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="10" font-weight="bold">FASE 5</text>
+
+  <!-- 5. Register model -->
+  <rect x="525" y="635" width="30" height="40" fill="rgba(139, 92, 246, 0.3)"/>
+  <line x1="540" y1="650" x2="940" y2="650" stroke="#f59e0b" stroke-width="2" marker-end="url(#arrowRight)"/>
+  <rect x="660" y="640" width="180" height="20" rx="4" fill="rgba(245, 158, 11, 0.2)"/>
+  <text x="750" y="654" text-anchor="middle" fill="#f59e0b" font-family="Arial, sans-serif" font-size="10">5. Registrar modelo hash</text>
+
+  <!-- Blockchain processing -->
+  <rect x="925" y="640" width="30" height="50" fill="rgba(245, 158, 11, 0.3)"/>
+
+  <!-- What goes to blockchain -->
+  <rect x="955" y="635" width="130" height="60" rx="4" fill="rgba(245, 158, 11, 0.1)" stroke="#f59e0b"/>
+  <text x="1020" y="650" text-anchor="middle" fill="#f59e0b" font-family="Arial, sans-serif" font-size="9" font-weight="bold">⛓️ On-Chain</text>
+  <text x="1020" y="665" text-anchor="middle" fill="#fde68a" font-family="Arial, sans-serif" font-size="8">• modelHash</text>
+  <text x="1020" y="677" text-anchor="middle" fill="#fde68a" font-family="Arial, sans-serif" font-size="8">• accuracy: 94.5%</text>
+  <text x="1020" y="689" text-anchor="middle" fill="#fde68a" font-family="Arial, sans-serif" font-size="8">• timestamp</text>
+
+  <!-- Tx confirmed -->
+  <line x1="940" y1="685" x2="540" y2="685" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4,2" marker-end="url(#arrowLeft)"/>
+  <text x="740" y="700" text-anchor="middle" fill="#fde68a" font-family="Arial, sans-serif" font-size="9">txHash: 0xabc123...</text>
+
+  <!-- PHASE 6: Governance Vote -->
+  <rect x="30" y="715" width="80" height="25" rx="4" fill="#f59e0b"/>
+  <text x="70" y="732" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="10" font-weight="bold">FASE 6</text>
+
+  <!-- 6a. Commit vote -->
+  <rect x="125" y="750" width="30" height="40" fill="rgba(59, 130, 246, 0.3)"/>
+  <line x1="140" y1="765" x2="940" y2="765" stroke="#f59e0b" stroke-width="2" marker-end="url(#arrowRight)"/>
+  <rect x="450" y="755" width="200" height="20" rx="4" fill="rgba(245, 158, 11, 0.2)"/>
+  <text x="550" y="769" text-anchor="middle" fill="#f59e0b" font-family="Arial, sans-serif" font-size="10">6a. Commit voto: hash(vote+salt)</text>
+
+  <!-- 6b. Reveal vote -->
+  <line x1="140" y1="800" x2="940" y2="800" stroke="#f59e0b" stroke-width="2" marker-end="url(#arrowRight)"/>
+  <rect x="450" y="790" width="200" height="20" rx="4" fill="rgba(245, 158, 11, 0.2)"/>
+  <text x="550" y="804" text-anchor="middle" fill="#f59e0b" font-family="Arial, sans-serif" font-size="10">6b. Reveal: vote=YES, salt=xyz</text>
+
+  <rect x="925" y="755" width="30" height="60" fill="rgba(245, 158, 11, 0.3)"/>
+
+  <!-- Result -->
+  <line x1="940" y1="830" x2="140" y2="830" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4,2" marker-end="url(#arrowLeft)"/>
+  <text x="540" y="845" text-anchor="middle" fill="#fde68a" font-family="Arial, sans-serif" font-size="9">Resultado: APPROVED (3/3 votes)</text>
+
+  <!-- PHASE 7: Get Results -->
+  <rect x="30" y="860" width="80" height="25" rx="4" fill="#10b981"/>
+  <text x="70" y="877" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="10" font-weight="bold">FASE 7</text>
+
+  <!-- 7. Get encrypted results -->
+  <rect x="125" y="895" width="30" height="40" fill="rgba(59, 130, 246, 0.3)"/>
+  <line x1="140" y1="910" x2="540" y2="910" stroke="#64748b" stroke-width="2" marker-end="url(#arrowRight)"/>
+  <text x="340" y="905" text-anchor="middle" fill="#94a3b8" font-family="Arial, sans-serif" font-size="10">7. Solicitar predicciones</text>
+
+  <!-- Return encrypted predictions -->
+  <line x1="540" y1="930" x2="340" y2="930" stroke="#10b981" stroke-width="2" stroke-dasharray="4,2" marker-end="url(#arrowLeft)"/>
+  <text x="440" y="945" text-anchor="middle" fill="#10b981" font-family="Arial, sans-serif" font-size="9">enc_predictions</text>
+
+  <!-- Decrypt at bank -->
+  <rect x="325" y="920" width="30" height="30" fill="rgba(16, 185, 129, 0.3)"/>
+  <line x1="340" y1="945" x2="140" y2="945" stroke="#10b981" stroke-width="2" stroke-dasharray="4,2" marker-end="url(#arrowLeft)"/>
+
+  <!-- Final result -->
+  <rect x="145" y="935" width="100" height="30" rx="4" fill="rgba(16, 185, 129, 0.2)" stroke="#10b981"/>
+  <text x="195" y="950" text-anchor="middle" fill="#10b981" font-family="Arial, sans-serif" font-size="8">DESCIFRADO LOCAL</text>
+  <text x="195" y="962" text-anchor="middle" fill="#86efac" font-family="Arial, sans-serif" font-size="8">fraud_prob: 87%</text>
+
+  <!-- Final note -->
+  <rect x="255" y="935" width="150" height="30" rx="4" fill="rgba(16, 185, 129, 0.1)" stroke="#10b981"/>
+  <text x="330" y="950" text-anchor="middle" fill="#10b981" font-family="Arial, sans-serif" font-size="8" font-weight="bold">✅ Solo el banco puede</text>
+  <text x="330" y="962" text-anchor="middle" fill="#86efac" font-family="Arial, sans-serif" font-size="8">descifrar con su secret_key</text>
+</svg>

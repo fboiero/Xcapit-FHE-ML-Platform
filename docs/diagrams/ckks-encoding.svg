@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600">
+  <defs>
+    <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8B5CF6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#6D28D9;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="cyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#06B6D4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0891B2;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="2" dy="4" stdDeviation="4" flood-opacity="0.2"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="600" fill="#FAFAFA"/>
+
+  <!-- Title -->
+  <text x="450" y="40" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#1E293B" text-anchor="middle">
+    Esquema CKKS: Codificación y Encriptación
+  </text>
+  <text x="450" y="65" font-family="Arial, sans-serif" font-size="14" fill="#64748B" text-anchor="middle">
+    Cómo los números reales se convierten en polinomios encriptados
+  </text>
+
+  <!-- Step 1: Real Numbers -->
+  <rect x="50" y="100" width="180" height="120" rx="10" fill="white" stroke="#E2E8F0" stroke-width="2" filter="url(#shadow)"/>
+  <text x="140" y="125" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#1E293B" text-anchor="middle">1. Números Reales</text>
+  <text x="140" y="150" font-family="Arial, sans-serif" font-size="12" fill="#64748B" text-anchor="middle">Vector de entrada</text>
+  <rect x="70" y="165" width="140" height="40" rx="5" fill="#EEF2FF"/>
+  <text x="140" y="190" font-family="monospace" font-size="14" fill="#4338CA" text-anchor="middle">[3.14, 2.71, 1.41]</text>
+
+  <!-- Arrow 1 -->
+  <path d="M 230 160 L 270 160" stroke="#8B5CF6" stroke-width="2" fill="none" marker-end="url(#arrow1)"/>
+  <defs><marker id="arrow1" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#8B5CF6"/></marker></defs>
+
+  <!-- Step 2: Scale -->
+  <rect x="280" y="100" width="180" height="120" rx="10" fill="white" stroke="#E2E8F0" stroke-width="2" filter="url(#shadow)"/>
+  <text x="370" y="125" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#1E293B" text-anchor="middle">2. Escalar (×Δ)</text>
+  <text x="370" y="150" font-family="Arial, sans-serif" font-size="12" fill="#64748B" text-anchor="middle">Δ = 2^40 (escala)</text>
+  <rect x="300" y="165" width="140" height="40" rx="5" fill="#FEF3C7"/>
+  <text x="370" y="185" font-family="monospace" font-size="11" fill="#92400E" text-anchor="middle">3.14 × 2^40</text>
+  <text x="370" y="198" font-family="monospace" font-size="9" fill="#B45309" text-anchor="middle">≈ 3,452,271,214,387</text>
+
+  <!-- Arrow 2 -->
+  <path d="M 460 160 L 500 160" stroke="#8B5CF6" stroke-width="2" fill="none" marker-end="url(#arrow1)"/>
+
+  <!-- Step 3: Encode -->
+  <rect x="510" y="100" width="180" height="120" rx="10" fill="white" stroke="#E2E8F0" stroke-width="2" filter="url(#shadow)"/>
+  <text x="600" y="125" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#1E293B" text-anchor="middle">3. Codificar</text>
+  <text x="600" y="150" font-family="Arial, sans-serif" font-size="12" fill="#64748B" text-anchor="middle">FFT inversa</text>
+  <rect x="530" y="165" width="140" height="40" rx="5" fill="#DBEAFE"/>
+  <text x="600" y="190" font-family="monospace" font-size="12" fill="#1E40AF" text-anchor="middle">m(X) ∈ R[X]</text>
+
+  <!-- Arrow 3 -->
+  <path d="M 690 160 L 730 160" stroke="#8B5CF6" stroke-width="2" fill="none" marker-end="url(#arrow1)"/>
+
+  <!-- Step 4: Encrypt -->
+  <rect x="740" y="100" width="140" height="120" rx="10" fill="url(#purpleGrad)" filter="url(#shadow)"/>
+  <text x="810" y="125" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle">4. Encriptar</text>
+  <text x="810" y="150" font-family="Arial, sans-serif" font-size="11" fill="#E9D5FF" text-anchor="middle">RLWE + ruido</text>
+  <text x="810" y="180" font-family="Arial, sans-serif" font-size="24" fill="white" text-anchor="middle">🔒</text>
+  <text x="810" y="205" font-family="monospace" font-size="10" fill="#E9D5FF" text-anchor="middle">ct = (c₀, c₁)</text>
+
+  <!-- Polynomial Ring Explanation -->
+  <rect x="50" y="250" width="400" height="180" rx="10" fill="white" stroke="#E2E8F0" stroke-width="2" filter="url(#shadow)"/>
+  <text x="250" y="280" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#1E293B" text-anchor="middle">Anillo de Polinomios R[X]</text>
+
+  <text x="70" y="310" font-family="Arial, sans-serif" font-size="12" fill="#374151">
+    R[X] = Z[X] / (X^N + 1)
+  </text>
+  <text x="70" y="335" font-family="Arial, sans-serif" font-size="11" fill="#64748B">
+    donde N = grado del polinomio (ej: 8192)
+  </text>
+
+  <text x="70" y="365" font-family="Arial, sans-serif" font-size="12" fill="#374151">
+    Ejemplo de polinomio:
+  </text>
+  <rect x="70" y="375" width="360" height="40" rx="5" fill="#F1F5F9"/>
+  <text x="250" y="400" font-family="monospace" font-size="11" fill="#475569" text-anchor="middle">
+    m(X) = 42 + 17X + 93X² + ... + aₙX^(N-1)
+  </text>
+
+  <!-- SIMD Explanation -->
+  <rect x="480" y="250" width="400" height="180" rx="10" fill="white" stroke="#E2E8F0" stroke-width="2" filter="url(#shadow)"/>
+  <text x="680" y="280" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#1E293B" text-anchor="middle">SIMD: Un Ciphertext, Muchos Valores</text>
+
+  <text x="500" y="310" font-family="Arial, sans-serif" font-size="12" fill="#374151">
+    Un solo ciphertext puede contener N/2 valores:
+  </text>
+
+  <!-- SIMD Visual -->
+  <rect x="500" y="330" width="360" height="80" rx="5" fill="#F0FDF4" stroke="#86EFAC" stroke-width="2"/>
+  <text x="680" y="355" font-family="Arial, sans-serif" font-size="11" fill="#166534" text-anchor="middle">
+    Ciphertext ct contiene 4096 "slots"
+  </text>
+  <g transform="translate(520, 365)">
+    <rect x="0" y="0" width="40" height="30" fill="#10B981" rx="3"/>
+    <text x="20" y="20" font-family="monospace" font-size="9" fill="white" text-anchor="middle">v₀</text>
+    <rect x="45" y="0" width="40" height="30" fill="#10B981" rx="3"/>
+    <text x="65" y="20" font-family="monospace" font-size="9" fill="white" text-anchor="middle">v₁</text>
+    <rect x="90" y="0" width="40" height="30" fill="#10B981" rx="3"/>
+    <text x="110" y="20" font-family="monospace" font-size="9" fill="white" text-anchor="middle">v₂</text>
+    <text x="150" y="20" font-family="Arial, sans-serif" font-size="14" fill="#374151">...</text>
+    <rect x="175" y="0" width="40" height="30" fill="#10B981" rx="3"/>
+    <text x="195" y="20" font-family="monospace" font-size="8" fill="white" text-anchor="middle">v₄₀₉₅</text>
+  </g>
+
+  <!-- Operation Flow -->
+  <rect x="50" y="460" width="830" height="120" rx="10" fill="white" stroke="#E2E8F0" stroke-width="2" filter="url(#shadow)"/>
+  <text x="465" y="485" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#1E293B" text-anchor="middle">
+    Operaciones Homomórficas en CKKS
+  </text>
+
+  <!-- Addition -->
+  <g transform="translate(80, 500)">
+    <rect x="0" y="0" width="200" height="60" rx="8" fill="url(#cyanGrad)"/>
+    <text x="100" y="25" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white" text-anchor="middle">Suma</text>
+    <text x="100" y="45" font-family="monospace" font-size="10" fill="#E0F2FE" text-anchor="middle">ct₁ + ct₂ → ct₃</text>
+  </g>
+
+  <!-- Multiplication -->
+  <g transform="translate(310, 500)">
+    <rect x="0" y="0" width="200" height="60" rx="8" fill="url(#purpleGrad)"/>
+    <text x="100" y="25" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white" text-anchor="middle">Multiplicación</text>
+    <text x="100" y="45" font-family="monospace" font-size="10" fill="#E9D5FF" text-anchor="middle">ct₁ × ct₂ → ct₃</text>
+  </g>
+
+  <!-- Rotation -->
+  <g transform="translate(540, 500)">
+    <rect x="0" y="0" width="200" height="60" rx="8" fill="#F59E0B"/>
+    <text x="100" y="25" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white" text-anchor="middle">Rotación</text>
+    <text x="100" y="45" font-family="monospace" font-size="10" fill="#FEF3C7" text-anchor="middle">rotate(ct, k) → ct'</text>
+  </g>
+
+  <!-- Rescale -->
+  <g transform="translate(770, 500)">
+    <rect x="0" y="0" width="90" height="60" rx="8" fill="#EF4444"/>
+    <text x="45" y="25" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="white" text-anchor="middle">Rescale</text>
+    <text x="45" y="45" font-family="monospace" font-size="9" fill="#FEE2E2" text-anchor="middle">÷Δ</text>
+  </g>
+
+</svg>
