@@ -8,7 +8,7 @@ Privacy-preserving machine learning platform using Fully Homomorphic Encryption 
 - **Frontend**: React 18 + Vite 5, TailwindCSS 3, react-i18next (ES/EN), Vercel
 - **FHE**: TenSEAL CKKS scheme (128/192/256-bit security)
 - **Blockchain**: Arbitrum (Web3.py), Solidity/Foundry smart contracts
-- **SDK**: Python v0.2.0 (pure library: encryption, models, blockchain, cli)
+- **SDK**: Python v0.7.0 (pure library: encryption, models, blockchain, cli)
 - **Auth**: JWT (simplejwt) with token blacklist, django-axes, django-ratelimit
 
 ## Quick Start
@@ -63,11 +63,18 @@ Detailed patterns and conventions are in `.claude/skills/`:
 | `ci-cd` | GitHub Actions (10 jobs) + GitLab CI (9 jobs), Docker build |
 | `security-audit` | Security middleware, auth controls, FHE security, container scanning |
 | `code-review` | Architecture, API, testing, and security review checklists |
+| `dashboard-frontend` | React/Vite conventions, components, API client, i18n, theming |
+| `sdk-development` | SDK modules, FHE models, encryption, blockchain, CLI, test patterns |
+| `smart-contracts` | Foundry/Solidity, contract functions, deployment, Django integration |
 
 ## Commands
 
 - `/start-task` — Load context, identify scope, check tests, plan before coding
 - `/finish-task` — Run tests, lint, verify coverage, commit
+- `/fix-bugs` — Resolve the 4 known pre-existing bugs documented in project-overview
+- `/coverage-report` — Run coverage analysis and identify modules below 95%
+- `/deploy-check` — Full pre-deployment checklist (tests, lint, security, Docker, contracts)
+- `/review-app` — Code review a Django app against project standards
 
 ## User Preferences
 
@@ -79,6 +86,6 @@ Detailed patterns and conventions are in `.claude/skills/`:
 
 ## Current Stats
 
-- **Tests**: 1,442 Django + ~620 SDK = ~2,062 total
-- **Coverage**: 95.12% (`--cov-fail-under=90` in CI)
+- **Tests**: 1,443 Django + ~620 SDK = ~2,063 total
+- **Coverage**: 95.22% (`--cov-fail-under=90` in CI)
 - **CI/CD**: GitHub Actions (10 jobs) + GitLab CI (9 jobs), both green
