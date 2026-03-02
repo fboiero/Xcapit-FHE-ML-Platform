@@ -123,6 +123,8 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     # Brute-force protection (must be after auth)
     "axes.middleware.AxesMiddleware",
+    # Tier-based rate limiting (after auth to identify user/company)
+    "apps.core.services.rate_limiting.RateLimitMiddleware",
     # Request logging (after auth to capture user info)
     "apps.core.middleware.RequestLoggingMiddleware",
 ]
@@ -277,7 +279,7 @@ JWT_SIGNING_KEY = os.environ.get("JWT_SIGNING_KEY", SECRET_KEY)
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
     "UPDATE_LAST_LOGIN": True,

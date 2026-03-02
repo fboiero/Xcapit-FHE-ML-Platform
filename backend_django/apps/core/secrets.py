@@ -223,8 +223,9 @@ def get_database_url() -> str:
         password = db.get("password", "")
         return f"postgresql://{user}:{password}@{host}:{port}/{name}"
 
-    # Fallback
-    return "sqlite:///db.sqlite3"
+    raise RuntimeError(
+        "DATABASE_URL is required. Set it via environment variable or Vault."
+    )
 
 
 @lru_cache(maxsize=1)

@@ -524,7 +524,7 @@ class TestHelperFunctions:
                 assert result == "postgresql://vault-user:vault-pass@vault-host:5433/vault-db"
 
     def test_get_database_url_default(self):
-        """Test get_database_url returns sqlite default when not configured."""
+        """Test get_database_url raises when not configured."""
         from apps.core import secrets as secrets_module
 
         secrets_module.get_database_url.cache_clear()
@@ -532,8 +532,8 @@ class TestHelperFunctions:
         env_without_db = {k: v for k, v in os.environ.items() if k != "DATABASE_URL"}
         with patch.dict(os.environ, env_without_db, clear=True):
             with patch.object(secrets_module.secrets, "get_all", return_value={}):
-                result = secrets_module.get_database_url()
-                assert result == "sqlite:///db.sqlite3"
+                with pytest.raises(RuntimeError, match="DATABASE_URL is required"):
+                    secrets_module.get_database_url()
 
     def test_get_redis_url_from_env(self):
         """Test get_redis_url reads from REDIS_URL env var."""

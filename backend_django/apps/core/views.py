@@ -421,6 +421,31 @@ class WebhookViewSet(viewsets.ModelViewSet):
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    @staticmethod
+    def _is_internal_url(url: str) -> bool:
+        """Check if a URL resolves to an internal/private IP address."""
+        import ipaddress
+        from urllib.parse import urlparse
+
+        parsed = urlparse(url)
+        hostname = parsed.hostname or ""
+
+        # Block obvious internal hostnames
+        if hostname in ("localhost", "127.0.0.1", "0.0.0.0", "::1"):
+            return True
+
+        try:
+            import socket
+            resolved = socket.getaddrinfo(hostname, None)
+            for _, _, _, _, addr in resolved:
+                ip = ipaddress.ip_address(addr[0])
+                if ip.is_private or ip.is_loopback or ip.is_link_local:
+                    return True
+        except (socket.gaierror, ValueError):
+            pass
+
+        return False
+
     @action(detail=True, methods=["post"])
     def test(self, request: Request, pk: str | None = None) -> Response:
         """Send a test event to the webhook."""
@@ -430,6 +455,13 @@ class WebhookViewSet(viewsets.ModelViewSet):
         import requests
 
         webhook = self.get_object()
+
+        # SSRF protection: reject internal/private URLs
+        if self._is_internal_url(webhook.url):
+            return Response(
+                {"detail": "Webhook URL must not resolve to an internal address."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         # Create test payload
         test_payload = {

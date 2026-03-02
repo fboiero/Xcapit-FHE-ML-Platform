@@ -16,6 +16,7 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import APIKey, AuditLog, Company, User
@@ -304,6 +305,11 @@ class ChangePasswordView(APIView):
         # Set new password
         user.set_password(serializer.validated_data["new_password"])
         user.save()
+
+        # Invalidate all outstanding refresh tokens for this user
+        outstanding = OutstandingToken.objects.filter(user=user)
+        for token in outstanding:
+            BlacklistedToken.objects.get_or_create(token=token)
 
         # Log password change
         AuditLog.log(
