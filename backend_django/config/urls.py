@@ -4,6 +4,7 @@ URL Configuration for Xcapit FHE-ML Platform.
 API v2 using Django REST Framework.
 """
 
+from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import (
@@ -16,8 +17,6 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from apps.core.healthchecks import HealthCheckView, LivenessCheckView, ReadinessCheckView
 
 urlpatterns = [
-    # Admin
-    path("admin/", admin.site.urls),
     # Health checks (enhanced)
     path("health/", HealthCheckView.as_view(), name="health"),
     path("health/live/", LivenessCheckView.as_view(), name="liveness"),
@@ -61,16 +60,21 @@ urlpatterns = [
             ]
         ),
     ),
-    # API Documentation
-    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
-    path(
-        "api/docs/",
-        SpectacularSwaggerView.as_view(url_name="schema"),
-        name="swagger-ui",
-    ),
-    path(
-        "api/redoc/",
-        SpectacularRedocView.as_view(url_name="schema"),
-        name="redoc",
-    ),
 ]
+
+# Admin and API docs only available in DEBUG mode
+if settings.DEBUG:
+    urlpatterns += [
+        path("admin/", admin.site.urls),
+        path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+        path(
+            "api/docs/",
+            SpectacularSwaggerView.as_view(url_name="schema"),
+            name="swagger-ui",
+        ),
+        path(
+            "api/redoc/",
+            SpectacularRedocView.as_view(url_name="schema"),
+            name="redoc",
+        ),
+    ]

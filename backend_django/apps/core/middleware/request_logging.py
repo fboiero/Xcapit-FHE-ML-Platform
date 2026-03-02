@@ -118,10 +118,9 @@ class RequestLoggingMiddleware:
         metadata["client_ip"] = self._get_client_ip(request)
         metadata["user_agent"] = request.META.get("HTTP_USER_AGENT", "-")[:200]
 
-        # User info (if authenticated)
+        # User info (if authenticated) — no PII logged
         if hasattr(request, "user") and request.user.is_authenticated:
             metadata["user_id"] = str(request.user.id)
-            metadata["user_email"] = request.user.email
 
         # Content type and length
         content_type = request.content_type

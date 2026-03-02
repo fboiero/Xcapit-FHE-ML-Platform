@@ -8,6 +8,8 @@ This module provides:
 - Memory-efficient streaming encryption
 """
 
+from __future__ import annotations
+
 import hashlib
 import threading
 import time
@@ -17,13 +19,16 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from enum import Enum
 from typing import (
+    TYPE_CHECKING,
     Callable,
     Optional,
     Union,
 )
 
 import numpy as np
-import tenseal as ts
+
+if TYPE_CHECKING:
+    import tenseal as ts
 
 from .context_manager import CKKSParameters, SecurityLevel
 
@@ -141,6 +146,8 @@ class ContextPool:
 
     def _create_context(self) -> ts.Context:
         """Create a new CKKS context."""
+        import tenseal as ts
+
         context = ts.context(
             ts.SCHEME_TYPE.CKKS,
             poly_modulus_degree=self._params.poly_modulus_degree,
@@ -390,6 +397,8 @@ class OptimizedFHEEngine:
 
         start_time = time.time()
 
+        import tenseal as ts
+
         # Check cache
         if use_cache:
             cache_key = self._compute_cache_key(data)
@@ -454,6 +463,8 @@ class OptimizedFHEEngine:
         def encrypt_item(
             idx: int, data: Union[list[float], np.ndarray]
         ) -> tuple[int, ts.CKKSVector]:
+            import tenseal as ts
+
             context = self._context_pool.acquire()
             try:
                 if isinstance(data, np.ndarray):

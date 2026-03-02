@@ -35,49 +35,37 @@ const apiFetch = async (endpoint, options = {}) => {
 // ============ Assessments ============
 
 export const assessQuality = async (data) => {
-  return apiFetch('/quality/assess', {
+  return apiFetch('/data-quality/assessments/', {
     method: 'POST',
     body: JSON.stringify(data),
   });
 };
 
 export const getAssessments = async (consortiumId, companyId = null, limit = 50) => {
-  const params = new URLSearchParams();
-  if (companyId) params.append('company_id', companyId);
+  const params = new URLSearchParams({ consortium: consortiumId });
+  if (companyId) params.append('company', companyId);
   if (limit) params.append('limit', limit);
 
-  const queryString = params.toString();
-  return apiFetch(`/quality/assessments/${consortiumId}${queryString ? '?' + queryString : ''}`);
+  return apiFetch(`/data-quality/assessments/?${params}`);
 };
 
 export const getLatestAssessment = async (consortiumId, targetCompanyId = null) => {
-  const params = targetCompanyId ? `?target_company_id=${targetCompanyId}` : '';
-  return apiFetch(`/quality/assessments/${consortiumId}/latest${params}`);
-};
-
-// ============ History ============
-
-export const getQualityHistory = async (consortiumId, metric = null, companyId = null, days = 30) => {
-  const params = new URLSearchParams();
-  if (metric) params.append('metric', metric);
-  if (companyId) params.append('company_id', companyId);
-  if (days) params.append('days', days);
-
-  const queryString = params.toString();
-  return apiFetch(`/quality/history/${consortiumId}${queryString ? '?' + queryString : ''}`);
+  const params = new URLSearchParams({ consortium: consortiumId });
+  if (targetCompanyId) params.append('company', targetCompanyId);
+  return apiFetch(`/data-quality/assessments/summary/?${params}`);
 };
 
 // ============ Rules ============
 
 export const setQualityRule = async (data) => {
-  return apiFetch('/quality/rules', {
+  return apiFetch('/data-quality/rules/', {
     method: 'POST',
     body: JSON.stringify(data),
   });
 };
 
 export const getQualityRules = async (consortiumId) => {
-  return apiFetch(`/quality/rules/${consortiumId}`);
+  return apiFetch(`/data-quality/rules/?consortium=${consortiumId}`);
 };
 
 // ============ Alerts ============
@@ -85,14 +73,14 @@ export const getQualityRules = async (consortiumId) => {
 export const getQualityAlerts = async (consortiumId, severity = null, status = null) => {
   const params = new URLSearchParams();
   if (severity) params.append('severity', severity);
-  if (status) params.append('alert_status', status);
+  if (status) params.append('status', status);
 
   const queryString = params.toString();
-  return apiFetch(`/quality/alerts/${consortiumId}${queryString ? '?' + queryString : ''}`);
+  return apiFetch(`/data-quality/alerts/${queryString ? '?' + queryString : ''}`);
 };
 
 export const acknowledgeAlert = async (alertId, notes = null) => {
-  return apiFetch(`/quality/alerts/${alertId}/acknowledge`, {
+  return apiFetch(`/data-quality/alerts/${alertId}/acknowledge/`, {
     method: 'POST',
     body: JSON.stringify({ notes }),
   });
@@ -101,5 +89,5 @@ export const acknowledgeAlert = async (alertId, notes = null) => {
 // ============ Dashboard ============
 
 export const getQualityDashboard = async (consortiumId) => {
-  return apiFetch(`/quality/dashboard/${consortiumId}`);
+  return apiFetch('/data-quality/dashboard/');
 };

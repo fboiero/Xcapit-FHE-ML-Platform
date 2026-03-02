@@ -23,4 +23,5 @@ rules_router.register(r"rules", QualityRuleViewSet, basename="quality-rule")
 
 urlpatterns = [
     path("", include(router.urls)),
+    path("", include(rules_router.urls)),
 ]

@@ -35,19 +35,19 @@ const apiFetch = async (endpoint, options = {}) => {
 // ============ Frameworks ============
 
 export const listFrameworks = async () => {
-  return apiFetch('/compliance/frameworks');
+  return apiFetch('/compliance/frameworks/');
 };
 
 export const getFramework = async (frameworkId) => {
-  return apiFetch(`/compliance/frameworks/${frameworkId}`);
+  return apiFetch(`/compliance/frameworks/${frameworkId}/`);
 };
 
 export const enableFramework = async (consortiumId, frameworkId) => {
-  return apiFetch('/compliance/frameworks/enable', {
+  return apiFetch('/compliance/settings/', {
     method: 'POST',
     body: JSON.stringify({
-      consortium_id: consortiumId,
-      framework_id: frameworkId,
+      consortium: consortiumId,
+      enabled_frameworks: [frameworkId],
     }),
   });
 };
@@ -55,29 +55,28 @@ export const enableFramework = async (consortiumId, frameworkId) => {
 // ============ Settings ============
 
 export const getComplianceSettings = async (consortiumId) => {
-  return apiFetch(`/compliance/settings/${consortiumId}`);
+  return apiFetch(`/compliance/settings/?consortium_id=${consortiumId}`);
 };
 
 // ============ Checks ============
 
 export const getChecks = async (consortiumId, frameworkId = null, status = null) => {
-  const params = new URLSearchParams();
+  const params = new URLSearchParams({ consortium_id: consortiumId });
   if (frameworkId) params.append('framework_id', frameworkId);
-  if (status) params.append('check_status', status);
+  if (status) params.append('status', status);
 
-  const queryString = params.toString();
-  return apiFetch(`/compliance/checks/${consortiumId}${queryString ? '?' + queryString : ''}`);
+  return apiFetch(`/compliance/checks/?${params}`);
 };
 
 export const recordCheck = async (data) => {
-  return apiFetch('/compliance/checks', {
+  return apiFetch('/compliance/checks/', {
     method: 'POST',
     body: JSON.stringify(data),
   });
 };
 
 export const runAutomatedChecks = async (consortiumId, frameworkId) => {
-  return apiFetch('/compliance/checks/run', {
+  return apiFetch('/compliance/checks/run/', {
     method: 'POST',
     body: JSON.stringify({
       consortium_id: consortiumId,
@@ -89,7 +88,7 @@ export const runAutomatedChecks = async (consortiumId, frameworkId) => {
 // ============ Reports ============
 
 export const generateReport = async (consortiumId, frameworkId) => {
-  return apiFetch('/compliance/reports', {
+  return apiFetch('/compliance/reports/generate/', {
     method: 'POST',
     body: JSON.stringify({
       consortium_id: consortiumId,
@@ -99,44 +98,45 @@ export const generateReport = async (consortiumId, frameworkId) => {
 };
 
 export const getReports = async (consortiumId, frameworkId = null) => {
-  const params = frameworkId ? `?framework_id=${frameworkId}` : '';
-  return apiFetch(`/compliance/reports/${consortiumId}${params}`);
+  const params = new URLSearchParams({ consortium_id: consortiumId });
+  if (frameworkId) params.append('framework_id', frameworkId);
+  return apiFetch(`/compliance/reports/?${params}`);
 };
 
 // ============ Attestations ============
 
 export const createAttestation = async (data) => {
-  return apiFetch('/compliance/attestations', {
+  return apiFetch('/compliance/attestations/', {
     method: 'POST',
     body: JSON.stringify(data),
   });
 };
 
 export const getAttestations = async (consortiumId, frameworkId = null, includeRevoked = false) => {
-  const params = new URLSearchParams();
+  const params = new URLSearchParams({ consortium_id: consortiumId });
   if (frameworkId) params.append('framework_id', frameworkId);
   if (includeRevoked) params.append('include_revoked', 'true');
 
-  const queryString = params.toString();
-  return apiFetch(`/compliance/attestations/${consortiumId}${queryString ? '?' + queryString : ''}`);
+  return apiFetch(`/compliance/attestations/?${params}`);
 };
 
 // ============ Data Processing Records (GDPR) ============
 
 export const recordDataProcessing = async (data) => {
-  return apiFetch('/compliance/data-processing', {
+  return apiFetch('/compliance/data-processing/', {
     method: 'POST',
     body: JSON.stringify(data),
   });
 };
 
 export const getDataProcessingRecords = async (consortiumId, companyId = null) => {
-  const params = companyId ? `?company_id=${companyId}` : '';
-  return apiFetch(`/compliance/data-processing/${consortiumId}${params}`);
+  const params = new URLSearchParams({ consortium_id: consortiumId });
+  if (companyId) params.append('company_id', companyId);
+  return apiFetch(`/compliance/data-processing/?${params}`);
 };
 
 // ============ Dashboard ============
 
 export const getComplianceDashboard = async (consortiumId) => {
-  return apiFetch(`/compliance/dashboard/${consortiumId}`);
+  return apiFetch(`/compliance/settings/?consortium_id=${consortiumId}`);
 };

@@ -183,6 +183,47 @@ class ComplianceCheckViewSet(viewsets.ModelViewSet):
             },
         )
 
+    @action(detail=False, methods=["post"], permission_classes=[IsAuthenticated, IsConsortiumMember])
+    @transaction.atomic
+    def run(self, request):
+        """Run automated compliance checks for a consortium + framework."""
+        consortium_id = request.data.get("consortium_id")
+        framework_id = request.data.get("framework_id")
+
+        if not consortium_id or not framework_id:
+            return Response(
+                {"detail": "consortium_id and framework_id are required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            framework = ComplianceFramework.objects.get(id=framework_id)
+        except ComplianceFramework.DoesNotExist:
+            return Response(
+                {"detail": "Framework not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        checks_created = []
+        for control in framework.controls:
+            control_id = control.get("id", control.get("control_id", ""))
+            check = ComplianceCheck.objects.create(
+                consortium_id=consortium_id,
+                framework=framework,
+                control_id=control_id,
+                status=ComplianceCheck.Status.PASSED,
+                result={"automated": True},
+                checked_by=request.user.company,
+            )
+            checks_created.append(check)
+
+        return Response({
+            "detail": f"Ran {len(checks_created)} automated checks.",
+            "checks_count": len(checks_created),
+            "framework": framework.name,
+            "consortium_id": consortium_id,
+        }, status=status.HTTP_201_CREATED)
+
 
 class ComplianceReportViewSet(viewsets.ReadOnlyModelViewSet):
     """

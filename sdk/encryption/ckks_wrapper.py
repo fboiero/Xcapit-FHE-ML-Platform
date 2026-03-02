@@ -4,10 +4,14 @@ This module provides high-level encryption/decryption operations
 using the CKKS homomorphic encryption scheme via TenSEAL.
 """
 
-from typing import Optional, Union
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Optional, Union
 
 import numpy as np
-import tenseal as ts
+
+if TYPE_CHECKING:
+    import tenseal as ts
 
 from .context_manager import CKKSParameters, FHEContextManager
 
@@ -60,6 +64,8 @@ class EncryptedVector:
         Returns:
             EncryptedVector instance.
         """
+        import tenseal as ts
+
         ciphertext = ts.ckks_vector_from(context, data)
         return cls(ciphertext, shape)
 
@@ -242,6 +248,8 @@ class CKKSEncryptor:
                 f"Data length {len(data)} exceeds max slots {self.max_slots}. "
                 "Consider using encrypt_matrix for larger data."
             )
+
+        import tenseal as ts
 
         ciphertext = ts.ckks_vector(self.context, data)
         return EncryptedVector(ciphertext, (len(data),))

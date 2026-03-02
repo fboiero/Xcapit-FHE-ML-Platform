@@ -33,17 +33,19 @@ const apiFetch = async (endpoint, options = {}) => {
 };
 
 // ============ Contributions ============
+// Contributions live under the consortiums module
 
 export const getContributions = async (consortiumId) => {
-  return apiFetch(`/governance/contributions/${consortiumId}`);
+  return apiFetch(`/consortiums/${consortiumId}/contributions/`);
 };
 
 export const getContributionSummary = async (consortiumId) => {
-  return apiFetch(`/governance/contributions/${consortiumId}/summary`);
+  return apiFetch(`/consortiums/${consortiumId}/contributions/`);
 };
 
 export const recordContribution = async (data) => {
-  return apiFetch('/governance/contributions', {
+  const consortiumId = data.consortium_id || data.consortium;
+  return apiFetch(`/consortiums/${consortiumId}/contributions/`, {
     method: 'POST',
     body: JSON.stringify(data),
   });
@@ -52,26 +54,27 @@ export const recordContribution = async (data) => {
 // ============ Proposals ============
 
 export const getProposals = async (consortiumId, status = null) => {
-  const params = status ? `?status_filter=${status}` : '';
-  return apiFetch(`/governance/proposals/${consortiumId}${params}`);
+  const params = new URLSearchParams({ consortium_id: consortiumId });
+  if (status) params.append('status', status);
+  return apiFetch(`/governance/proposals/?${params}`);
 };
 
 export const getProposal = async (consortiumId, proposalId) => {
-  return apiFetch(`/governance/proposals/${consortiumId}/${proposalId}`);
+  return apiFetch(`/governance/proposals/${proposalId}/`);
 };
 
 export const createProposal = async (data) => {
-  return apiFetch('/governance/proposals', {
+  return apiFetch('/governance/proposals/', {
     method: 'POST',
     body: JSON.stringify(data),
   });
 };
 
 export const castVote = async (proposalId, support, comment = null) => {
-  return apiFetch('/governance/vote', {
+  return apiFetch('/governance/votes/', {
     method: 'POST',
     body: JSON.stringify({
-      proposal_id: proposalId,
+      proposal: proposalId,
       support,
       comment,
     }),
@@ -79,35 +82,34 @@ export const castVote = async (proposalId, support, comment = null) => {
 };
 
 export const executeProposal = async (proposalId) => {
-  return apiFetch(`/governance/proposals/${proposalId}/execute`, {
+  return apiFetch(`/governance/proposals/${proposalId}/execute/`, {
     method: 'POST',
   });
 };
 
 export const getProposalVotes = async (proposalId) => {
-  return apiFetch(`/governance/proposals/${proposalId}/votes`);
+  return apiFetch(`/governance/proposals/${proposalId}/votes/`);
 };
 
 // ============ Audit Trail ============
 
 export const getAuditTrail = async (consortiumId, eventType = null, limit = 100, offset = 0) => {
-  const params = new URLSearchParams();
+  const params = new URLSearchParams({ consortium_id: consortiumId });
   if (eventType) params.append('event_type', eventType);
   if (limit) params.append('limit', limit);
   if (offset) params.append('offset', offset);
 
-  const queryString = params.toString();
-  return apiFetch(`/governance/audit/${consortiumId}${queryString ? '?' + queryString : ''}`);
+  return apiFetch(`/governance/audit-events/?${params}`);
 };
 
 export const verifyAuditTrail = async (consortiumId) => {
-  return apiFetch(`/governance/audit/${consortiumId}/verify`);
+  return apiFetch(`/governance/audit-events/verify/?consortium_id=${consortiumId}`);
 };
 
 // ============ Rewards ============
 
 export const distributeRewards = async (consortiumId, amount) => {
-  return apiFetch('/governance/rewards/distribute', {
+  return apiFetch('/governance/rewards/distribute/', {
     method: 'POST',
     body: JSON.stringify({
       consortium_id: consortiumId,
@@ -117,5 +119,5 @@ export const distributeRewards = async (consortiumId, amount) => {
 };
 
 export const getRewardHistory = async (consortiumId) => {
-  return apiFetch(`/governance/rewards/${consortiumId}`);
+  return apiFetch(`/governance/rewards/?consortium_id=${consortiumId}`);
 };

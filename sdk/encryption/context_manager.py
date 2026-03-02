@@ -4,11 +4,14 @@ This module provides management of CKKS encryption contexts,
 including parameter configuration, serialization, and context lifecycle.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
-import tenseal as ts
+if TYPE_CHECKING:
+    import tenseal as ts
 
 
 class SecurityLevel(Enum):
@@ -119,6 +122,8 @@ class FHEContextManager:
         Returns:
             Configured TenSEAL CKKS context.
         """
+        import tenseal as ts
+
         self._context = ts.context(
             ts.SCHEME_TYPE.CKKS,
             poly_modulus_degree=self._params.poly_modulus_degree,
@@ -179,6 +184,8 @@ class FHEContextManager:
         Returns:
             Loaded TenSEAL context.
         """
+        import tenseal as ts
+
         self._context = ts.context_from(serialized)
         return self._context
 
