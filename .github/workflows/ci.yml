@@ -251,7 +251,7 @@ jobs:
           category: trivy-container
 
       - name: Run Grype vulnerability scanner
-        uses: anchore/scan-action@v4
+        uses: anchore/scan-action@v7
         id: grype-scan
         with:
           image: xcapit-fhe-django:scan
