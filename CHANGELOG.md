@@ -7,6 +7,85 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0-rc.1] - 2026-03-02
+
+First release candidate. All 20 user stories (HU-01 to HU-20) implemented,
+tested, and verified. Platform is feature-complete for v1.0.0.
+
+### Added
+
+#### FHE Encryption Layer (HU-01)
+- CKKS encryption with TenSEAL (128/192/256-bit security levels)
+- `FHEContextManager` for context lifecycle management
+- Lazy TenSEAL import to avoid blocking non-FHE workflows
+
+#### ML Models (HU-02, HU-15)
+- 4 core FHE-compatible models: Linear Regression, Logistic Regression, Decision Tree, KMeans
+- 6 advanced models: Neural Network, Random Forest, Gradient Boosting, SVM, Time Series, PCA
+- Polynomial approximations for encrypted inference
+- Ensemble methods (weighted, stacking, boosting)
+
+#### Blockchain Integration (HU-03, HU-14)
+- Arbitrum smart contracts (V2): ModelRegistry, ComputationVerifier, ConsortiumGovernance
+- Backend blockchain services with OpenBao/Vault secret management
+- Transaction recording and explorer URL generation
+
+#### SDK (HU-04, HU-11)
+- Python SDK v0.7.0 with CLI (`xcapit-fhe` commands)
+- Encryption, training, prediction, blockchain, and API key commands
+- Complete test suite for SDK routes
+
+#### Dashboard (HU-05, HU-06, HU-07)
+- React 18 + Vite 5 dashboard with auth flow and core pages
+- 15+ feature pages: Governance, Compliance, Data Quality, Marketplace, Sandbox, etc.
+- Vertical landing pages with i18n (ES/EN)
+- TailwindCSS 3 with professional dark theme
+
+#### Django Backend (HU-08, HU-09, HU-10, HU-12, HU-13)
+- Django 5.2 LTS + DRF with JWT auth and service layer pattern
+- 15 Django apps: core, consortiums, blockchain, data_quality, compliance, explainability, governance, ensemble, marketplace, federated, models, competitive_insights, sandbox
+- Consortium management with governance, voting, and member lifecycle
+- Compliance audit trails, marketplace, and sandbox experimentation
+- Federated learning coordination and ML model management
+- Data quality assessment, explainability (SHAP), ensemble methods
+
+#### Infrastructure (HU-16, HU-17)
+- Docker containerization with multi-stage builds (Python 3.12)
+- Production-hardened: non-root user, read-only FS, health checks, tmpfs
+- Gunicorn with 4 workers, Celery worker + beat, PostgreSQL 16, Redis 7
+- CI/CD: GitHub Actions (10 jobs) + GitLab CI (9 jobs)
+- Security scanning: pip-audit, safety, TruffleHog, container scanning
+
+#### Security (HU-18)
+- django-axes brute-force protection
+- django-ratelimit API rate limiting
+- JWT token blacklist for secure logout
+- Removed hardcoded secret key fallback (now raises RuntimeError)
+- Password min_length aligned to 12 across all validators
+- MeView uses serializer validation instead of raw setattr
+
+#### Testing & Coverage (HU-19, HU-20)
+- 1,496 Django tests + ~620 SDK tests = ~2,116 total
+- 96% code coverage (threshold: 90%)
+- Full E2E integration test: 3-organization platform simulation across 7 acts
+- Kanban board traceability document
+
+### Fixed
+
+- **Security**: Hardened auth, permissions, and frontend-backend alignment
+- **Config**: Hardened configuration, aligned frontend endpoints
+- **Data Quality**: Aligned rules and alerts endpoints with query param pattern
+- **Frontend**: All API clients updated from `/api/v1` to `/api/v2`
+- **Frontend**: Auth header changed from `X-API-Key` to `Authorization: ApiKey`
+- **SDK**: TenSEAL import made lazy to unblock non-FHE tests
+- **Auth**: RegisterSerializer now includes Company.email
+- **Auth**: CreateAPIKeyView uses correct model fields (`created_by`, `prefix`)
+- **Permissions**: Owner implicitly a member in `IsConsortiumMember`
+
+### Dependencies
+
+- Foundry contract dependencies: forge-std, openzeppelin-contracts v5.6.1
+
 ## [0.8.0] - 2026-01-29
 
 ### Added
@@ -207,7 +286,8 @@ POST /api/v2/auth/token/ -> {"access": "...", "refresh": "..."}
 
 ---
 
-[Unreleased]: https://github.com/xcapit/Xcapit-FHE-ML-Platform/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/xcapit/Xcapit-FHE-ML-Platform/compare/v1.0.0-rc.1...HEAD
+[1.0.0-rc.1]: https://github.com/xcapit/Xcapit-FHE-ML-Platform/compare/v0.8.0...v1.0.0-rc.1
 [0.8.0]: https://github.com/xcapit/Xcapit-FHE-ML-Platform/compare/v2.0.0...v0.8.0
 [2.0.0]: https://github.com/xcapit/Xcapit-FHE-ML-Platform/compare/v1.0.0...v2.0.0
 [1.0.0]: https://github.com/xcapit/Xcapit-FHE-ML-Platform/compare/v0.1.0...v1.0.0

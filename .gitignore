@@ -39,6 +39,9 @@ recordings/*.mp4
 # Allow dashboard src/lib (overrides Python lib/ rule above)
 !dashboard/src/lib/
 
+# Allow Foundry contract dependencies (git submodules)
+!contracts/lib/
+
 # Node modules
 node_modules/
 
