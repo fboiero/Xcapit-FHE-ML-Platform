@@ -58,11 +58,12 @@ services:
   redis:
     image: redis:7-alpine
     container_name: xcapit-fhe-redis
+    command: redis-server --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
     # No port exposed to host in production
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -123,8 +124,6 @@ services:
       target: production
     image: xcapit-fhe-django:latest
     container_name: xcapit-fhe-django
-    ports:
-      - "8000:8000"
     environment:
       - PYTHONUNBUFFERED=1
       - DJANGO_SETTINGS_MODULE=config.settings
@@ -132,7 +131,7 @@ services:
       - DJANGO_DEBUG=False
       - DJANGO_ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}
       - DATABASE_URL=postgresql://${POSTGRES_USER:-xcapit}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-fheml}
-      - REDIS_URL=redis://redis:6379/0
+      - REDIS_URL=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379/0
       - RUN_MIGRATIONS=true
       - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-https://xcapit-privacy.vercel.app}
       - CSRF_TRUSTED_ORIGINS=${CSRF_TRUSTED_ORIGINS:-https://apifhe.xcapit.com}
@@ -191,7 +190,7 @@ services:
       - DJANGO_SETTINGS_MODULE=config.settings
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:?DJANGO_SECRET_KEY is required}
       - DATABASE_URL=postgresql://${POSTGRES_USER:-xcapit}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-fheml}
-      - REDIS_URL=redis://redis:6379/0
+      - REDIS_URL=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379/0
     depends_on:
       postgres:
         condition: service_healthy
@@ -221,7 +220,7 @@ services:
       - DJANGO_SETTINGS_MODULE=config.settings
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:?DJANGO_SECRET_KEY is required}
       - DATABASE_URL=postgresql://${POSTGRES_USER:-xcapit}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-fheml}
-      - REDIS_URL=redis://redis:6379/0
+      - REDIS_URL=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379/0
     depends_on:
       postgres:
         condition: service_healthy

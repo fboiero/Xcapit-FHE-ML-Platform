@@ -5,7 +5,7 @@ Provides endpoints for proposals, voting, audit trail, and rewards.
 """
 
 from apps.consortiums.models import ConsortiumMember, ContributionProof
-from apps.core.permissions import IsConsortiumMember, IsConsortiumOwner
+from apps.core.permissions import IsCompanyMember, IsConsortiumMember, IsConsortiumOwner
 from django.db import transaction
 from django.db.models import Sum
 from django.utils import timezone
@@ -170,6 +170,12 @@ class VoteViewSet(viewsets.ModelViewSet):
                 "proposal", "voter"
             )
         return Vote.objects.none()
+
+    def get_permissions(self):
+        """Vote creation validates consortium membership internally."""
+        if self.action == "create":
+            return [IsAuthenticated(), IsCompanyMember()]
+        return super().get_permissions()
 
     def get_serializer_class(self):
         if self.action == "create":

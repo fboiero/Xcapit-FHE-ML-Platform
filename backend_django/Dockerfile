@@ -95,18 +95,7 @@ ENTRYPOINT ["/app/docker-entrypoint.sh"]
 # - timeout: 30s to prevent hanging workers
 # - graceful-timeout: 10s for clean shutdown
 # - max-requests: restart workers after N requests to prevent memory leaks
-CMD ["gunicorn", "config.wsgi:application", \
-    "--bind", "0.0.0.0:8000", \
-    "--workers", "4", \
-    "--threads", "2", \
-    "--timeout", "30", \
-    "--graceful-timeout", "10", \
-    "--max-requests", "1000", \
-    "--max-requests-jitter", "50", \
-    "--access-logfile", "-", \
-    "--error-logfile", "-", \
-    "--capture-output", \
-    "--enable-stdio-inheritance"]
+CMD ["gunicorn", "--config", "gunicorn.conf.py", "config.wsgi:application"]
 
 # ============ Development Stage ============
 FROM production AS development

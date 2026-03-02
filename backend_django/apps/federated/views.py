@@ -61,6 +61,12 @@ class InferenceEndpointViewSet(viewsets.ModelViewSet):
             ).select_related("company", "consortium", "model")
         return InferenceEndpoint.objects.none()
 
+    def get_permissions(self):
+        """Predict action uses get_object() for access control via queryset."""
+        if self.action == "predict":
+            return [IsAuthenticated(), IsCompanyMember()]
+        return super().get_permissions()
+
     def get_serializer_class(self):
         if self.action == "create":
             return InferenceEndpointCreateSerializer

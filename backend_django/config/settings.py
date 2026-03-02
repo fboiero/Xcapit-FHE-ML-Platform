@@ -65,6 +65,11 @@ SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 # Basic CSP headers for API-only backend
 SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin"
 
+# Field-level encryption key (for django-encrypted-model-fields)
+FIELD_ENCRYPTION_KEY = os.environ.get("FIELD_ENCRYPTION_KEY")
+if not FIELD_ENCRYPTION_KEY and not DEBUG:
+    raise ValueError("FIELD_ENCRYPTION_KEY environment variable is required in production")
+
 # =============================================================================
 # APPLICATION DEFINITION
 # =============================================================================

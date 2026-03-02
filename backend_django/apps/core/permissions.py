@@ -2,6 +2,9 @@
 Custom permissions for Xcapit FHE-ML Platform.
 
 Provides consortium-based access control and role-based permissions.
+
+Security policy: fail-closed for write operations without consortium context.
+Read operations without consortium context defer to view queryset scoping.
 """
 
 from rest_framework import permissions
@@ -25,6 +28,48 @@ def _get_consortium_id(request, view) -> str | None:
     )
 
 
+def _resolve_consortium_from_pk(view) -> str | None:
+    """Resolve consortium_id from view's pk kwarg for direct-consortium views.
+
+    When a view operates directly on a Consortium (e.g. ConsortiumViewSet actions),
+    pk IS the consortium_id. Validates that the pk actually references a Consortium.
+    """
+    pk = view.kwargs.get("pk")
+    if not pk:
+        return None
+    from apps.consortiums.models import Consortium
+
+    if Consortium.objects.filter(id=pk).exists():
+        return pk
+    return None
+
+
+def _check_consortium_context(request, view) -> tuple[str | None, bool]:
+    """Determine consortium context and whether to allow the request.
+
+    Returns (consortium_id, should_continue):
+    - (id, True): consortium found, proceed with membership check
+    - (None, True): no consortium but safe method, defer to queryset scoping
+    - (None, False): no consortium and unsafe method, deny access
+    """
+    consortium_id = _get_consortium_id(request, view)
+    if consortium_id:
+        return consortium_id, True
+
+    # No consortium_id found in standard locations
+    if request.method in permissions.SAFE_METHODS:
+        # Read operations: defer to view's queryset scoping
+        return None, True
+
+    # Unsafe methods: try pk as consortium_id (for ConsortiumViewSet actions)
+    consortium_id = _resolve_consortium_from_pk(view)
+    if consortium_id:
+        return consortium_id, True
+
+    # Fail-closed: deny write operations without consortium context
+    return None, False
+
+
 class IsCompanyMember(permissions.BasePermission):
     """
     Permission that requires user to be a member of the company.
@@ -42,8 +87,8 @@ class IsConsortiumMember(permissions.BasePermission):
     """
     Permission that requires user to be a member of the consortium.
 
-    When consortium_id is present, verifies membership.
-    When absent, defers to the view's queryset scoping.
+    Fail-closed for write operations without consortium context.
+    Read operations without consortium context defer to queryset scoping.
     """
 
     message = "You are not a member of this consortium."
@@ -52,10 +97,13 @@ class IsConsortiumMember(permissions.BasePermission):
         if not request.user.is_authenticated:
             return False
 
-        consortium_id = _get_consortium_id(request, view)
+        consortium_id, should_continue = _check_consortium_context(request, view)
+
+        if not should_continue:
+            return False  # Fail-closed: no consortium context for write operation
 
         if not consortium_id:
-            return True  # Defer to view's queryset scoping by company
+            return True  # Safe method without consortium: defer to queryset scoping
 
         from apps.consortiums.models import Consortium, ConsortiumMember
 
@@ -81,10 +129,13 @@ class IsConsortiumOwner(permissions.BasePermission):
         if not request.user.is_authenticated:
             return False
 
-        consortium_id = _get_consortium_id(request, view)
+        consortium_id, should_continue = _check_consortium_context(request, view)
+
+        if not should_continue:
+            return False  # Fail-closed: no consortium context for write operation
 
         if not consortium_id:
-            return True  # Defer to view's queryset scoping
+            return True  # Safe method without consortium: defer to queryset scoping
 
         from apps.consortiums.models import Consortium
 
@@ -105,10 +156,13 @@ class IsConsortiumAdmin(permissions.BasePermission):
         if not request.user.is_authenticated:
             return False
 
-        consortium_id = _get_consortium_id(request, view)
+        consortium_id, should_continue = _check_consortium_context(request, view)
+
+        if not should_continue:
+            return False  # Fail-closed: no consortium context for write operation
 
         if not consortium_id:
-            return True  # Defer to view's queryset scoping
+            return True  # Safe method without consortium: defer to queryset scoping
 
         from apps.consortiums.models import Consortium, ConsortiumMember
 

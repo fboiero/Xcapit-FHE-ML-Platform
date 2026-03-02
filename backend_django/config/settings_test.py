@@ -10,6 +10,10 @@ import os
 os.environ.setdefault("DJANGO_SECRET_KEY", "test-secret-key-for-testing-only-not-production")
 os.environ.setdefault("DJANGO_DEBUG", "True")
 os.environ.setdefault("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,testserver")
+os.environ.setdefault(
+    "FIELD_ENCRYPTION_KEY",
+    "DuabLX5GaTUmK-QMnxftxbXDBeSb7ZfzMKpbnNrVYtQ=",
+)
 
 # Now import base settings
 from .settings import *  # noqa: F401,F403

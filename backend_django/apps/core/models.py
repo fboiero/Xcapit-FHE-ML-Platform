@@ -10,6 +10,7 @@ import uuid
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 from django.utils import timezone
+from encrypted_model_fields.fields import EncryptedCharField
 
 
 class UserManager(BaseUserManager):
@@ -555,7 +556,7 @@ class Webhook(models.Model):
     # Webhook configuration
     name = models.CharField(max_length=255)
     url = models.URLField(max_length=2000)
-    secret = models.CharField(max_length=255)  # For HMAC signature
+    secret = EncryptedCharField(max_length=255)  # For HMAC signature (encrypted at rest)
 
     # Event filtering
     events = models.JSONField(default=list)  # List of EventType values
