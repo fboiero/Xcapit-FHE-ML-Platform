@@ -3,7 +3,7 @@
  * Connects to the backend compliance endpoints (TIER 3)
  */
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
+const API_BASE = import.meta.env.VITE_API_URL || '/api/v2';
 
 const getApiKey = () => localStorage.getItem('xcapit_api_key');
 
@@ -16,7 +16,7 @@ const apiFetch = async (endpoint, options = {}) => {
   };
 
   if (apiKey) {
-    headers['X-API-Key'] = apiKey;
+    headers['Authorization'] = `ApiKey ${apiKey}`;
   }
 
   const response = await fetch(`${API_BASE}${endpoint}`, {

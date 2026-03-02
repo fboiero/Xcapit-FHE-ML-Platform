@@ -475,8 +475,8 @@ class TestHelperFunctions:
             result = secrets_module.get_django_secret_key()
             assert result == "vault-secret-key"
 
-    def test_get_django_secret_key_default(self):
-        """Test get_django_secret_key returns default when not configured."""
+    def test_get_django_secret_key_raises_when_missing(self):
+        """Test get_django_secret_key raises RuntimeError when not configured."""
         from apps.core import secrets as secrets_module
 
         secrets_module.get_django_secret_key.cache_clear()
@@ -484,8 +484,8 @@ class TestHelperFunctions:
         env_without_key = {k: v for k, v in os.environ.items() if k != "DJANGO_SECRET_KEY"}
         with patch.dict(os.environ, env_without_key, clear=True):
             with patch.object(secrets_module.secrets, "get", return_value=None):
-                result = secrets_module.get_django_secret_key()
-                assert result == "insecure-dev-key-change-in-production"
+                with pytest.raises(RuntimeError, match="DJANGO_SECRET_KEY"):
+                    secrets_module.get_django_secret_key()
 
     def test_get_database_url_from_env(self):
         """Test get_database_url reads from DATABASE_URL env var."""

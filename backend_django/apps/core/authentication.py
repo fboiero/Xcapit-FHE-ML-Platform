@@ -25,7 +25,7 @@ class RegisterSerializer(serializers.Serializer):
     """Serializer for user registration."""
 
     email = serializers.EmailField()
-    password = serializers.CharField(write_only=True, min_length=8)
+    password = serializers.CharField(write_only=True, min_length=12)
     password_confirm = serializers.CharField(write_only=True)
     first_name = serializers.CharField(max_length=150)
     last_name = serializers.CharField(max_length=150)
@@ -100,7 +100,7 @@ class ChangePasswordSerializer(serializers.Serializer):
     """Serializer for password change."""
 
     current_password = serializers.CharField(write_only=True)
-    new_password = serializers.CharField(write_only=True, min_length=8)
+    new_password = serializers.CharField(write_only=True, min_length=12)
     new_password_confirm = serializers.CharField(write_only=True)
 
     def validate_new_password(self, value):
@@ -342,12 +342,24 @@ class MeView(APIView):
         """Update current user info."""
         user = request.user
 
-        allowed_fields = ["first_name", "last_name"]
-        for field in allowed_fields:
-            if field in request.data:
-                setattr(user, field, request.data[field])
+        allowed_fields = {"first_name", "last_name"}
+        update_data = {
+            k: v for k, v in request.data.items() if k in allowed_fields
+        }
 
-        user.save()
+        if update_data:
+            serializer = serializers.Serializer(data=update_data)
+            serializer.fields["first_name"] = serializers.CharField(
+                max_length=150, required=False
+            )
+            serializer.fields["last_name"] = serializers.CharField(
+                max_length=150, required=False
+            )
+            serializer.is_valid(raise_exception=True)
+
+            for field, value in serializer.validated_data.items():
+                setattr(user, field, value)
+            user.save(update_fields=list(serializer.validated_data.keys()))
 
         return Response({
             "detail": "Profile updated.",

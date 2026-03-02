@@ -983,7 +983,7 @@ class TestConsortiumMemberViewSetActions:
 
     def test_leave_not_member(self, other_auth, consortium, membership):
         r = other_auth.post(self._url(consortium.id, "leave/"))
-        assert r.status_code == status.HTTP_404_NOT_FOUND
+        assert r.status_code == status.HTTP_403_FORBIDDEN
 
     def test_leave_owner_fails(self, auth, consortium, membership):
         r = auth.post(self._url(consortium.id, "leave/"))

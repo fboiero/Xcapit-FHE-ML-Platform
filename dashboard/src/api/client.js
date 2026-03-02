@@ -4,7 +4,7 @@
 
 // Use environment variable for API base URL (set in .env or Vercel)
 // In development, Vite proxy handles /api requests to localhost:8000
-const API_BASE = import.meta.env.VITE_API_URL || '/api/v1/consortiums';
+const API_BASE = import.meta.env.VITE_API_URL || '/api/v2/consortiums';
 
 import { DEMO_API_KEY } from '../config/demo';
 export { DEMO_API_KEY };
@@ -62,7 +62,7 @@ const apiFetch = async (endpoint, options = {}) => {
   };
 
   if (apiKey) {
-    headers['X-API-Key'] = apiKey;
+    headers['Authorization'] = `ApiKey ${apiKey}`;
   }
 
   const response = await fetchWithRetry(`${API_BASE}${endpoint}`, {
@@ -168,7 +168,7 @@ export const uploadEncryptedData = async (consortiumId, file, metadata = {}) => 
   const response = await fetchWithRetry(`${API_BASE}/${consortiumId}/data`, {
     method: 'POST',
     headers: {
-      'X-API-Key': apiKey,
+      'Authorization': `ApiKey ${apiKey}`,
     },
     body: formData,
   });
@@ -200,7 +200,7 @@ export const downloadResults = async (consortiumId) => {
 
   const response = await fetchWithRetry(`${API_BASE}/${consortiumId}/results`, {
     headers: {
-      'X-API-Key': apiKey,
+      'Authorization': `ApiKey ${apiKey}`,
     },
   });
 

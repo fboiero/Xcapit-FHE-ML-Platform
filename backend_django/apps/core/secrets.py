@@ -197,7 +197,13 @@ def get_django_secret_key() -> str:
     key = secrets.get("django/config", "secret_key")
     if key:
         return key
-    return os.environ.get("DJANGO_SECRET_KEY", "insecure-dev-key-change-in-production")
+    secret_key = os.environ.get("DJANGO_SECRET_KEY")
+    if not secret_key:
+        raise RuntimeError(
+            "DJANGO_SECRET_KEY environment variable is required. "
+            "Set it in your environment or configure Vault."
+        )
+    return secret_key
 
 
 @lru_cache(maxsize=1)

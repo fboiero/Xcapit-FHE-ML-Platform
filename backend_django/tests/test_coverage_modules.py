@@ -738,7 +738,7 @@ class TestPermissions:
         perm = IsConsortiumMember()
         request = self._make_request(user)
         view = self._make_view(kwargs={})
-        assert perm.has_permission(request, view) is True  # Let view handle
+        assert perm.has_permission(request, view) is True  # Defers to view
 
     def test_is_consortium_member_unauthenticated(self):
         from apps.core.permissions import IsConsortiumMember

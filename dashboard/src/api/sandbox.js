@@ -5,7 +5,7 @@
  */
 
 // API base for sandbox endpoints
-const SANDBOX_API_BASE = import.meta.env.VITE_API_URL?.replace('/api/v1/consortiums', '/api/v2/sandbox') || '/api/v2/sandbox';
+const SANDBOX_API_BASE = import.meta.env.VITE_API_URL?.replace('/api/v2/consortiums', '/api/v2/sandbox') || '/api/v2/sandbox';
 
 // Storage keys
 const SANDBOX_TOKEN_KEY = 'xcapit_sandbox_token';

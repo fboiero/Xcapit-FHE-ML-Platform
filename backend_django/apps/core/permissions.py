@@ -7,6 +7,24 @@ Provides consortium-based access control and role-based permissions.
 from rest_framework import permissions
 
 
+def _get_consortium_id(request, view) -> str | None:
+    """Extract consortium_id from URL kwargs, request data, or query params.
+
+    Checks multiple sources to support:
+    - Direct kwargs (consortium_id)
+    - Nested routers (consortium_pk)
+    - Request data (consortium_id or consortium)
+    - Query params (consortium_id)
+    """
+    return (
+        view.kwargs.get("consortium_id")
+        or view.kwargs.get("consortium_pk")
+        or request.data.get("consortium_id")
+        or request.data.get("consortium")
+        or request.query_params.get("consortium_id")
+    )
+
+
 class IsCompanyMember(permissions.BasePermission):
     """
     Permission that requires user to be a member of the company.
@@ -24,7 +42,8 @@ class IsConsortiumMember(permissions.BasePermission):
     """
     Permission that requires user to be a member of the consortium.
 
-    Requires consortium_id in the URL kwargs or request data.
+    When consortium_id is present, verifies membership.
+    When absent, defers to the view's queryset scoping.
     """
 
     message = "You are not a member of this consortium."
@@ -33,18 +52,16 @@ class IsConsortiumMember(permissions.BasePermission):
         if not request.user.is_authenticated:
             return False
 
-        # Get consortium_id from various sources
-        consortium_id = (
-            view.kwargs.get("consortium_id")
-            or request.data.get("consortium_id")
-            or request.query_params.get("consortium_id")
-        )
+        consortium_id = _get_consortium_id(request, view)
 
         if not consortium_id:
-            return True  # Let view handle missing consortium_id
+            return True  # Defer to view's queryset scoping by company
 
-        # Check membership via the ConsortiumMember model
-        from apps.consortiums.models import ConsortiumMember
+        from apps.consortiums.models import Consortium, ConsortiumMember
+
+        # Owner is implicitly a member
+        if Consortium.objects.filter(id=consortium_id, owner=request.user.company).exists():
+            return True
 
         return ConsortiumMember.objects.filter(
             consortium_id=consortium_id,
@@ -64,14 +81,10 @@ class IsConsortiumOwner(permissions.BasePermission):
         if not request.user.is_authenticated:
             return False
 
-        consortium_id = (
-            view.kwargs.get("consortium_id")
-            or request.data.get("consortium_id")
-            or request.query_params.get("consortium_id")
-        )
+        consortium_id = _get_consortium_id(request, view)
 
         if not consortium_id:
-            return True  # Let view handle missing consortium_id
+            return True  # Defer to view's queryset scoping
 
         from apps.consortiums.models import Consortium
 
@@ -92,14 +105,10 @@ class IsConsortiumAdmin(permissions.BasePermission):
         if not request.user.is_authenticated:
             return False
 
-        consortium_id = (
-            view.kwargs.get("consortium_id")
-            or request.data.get("consortium_id")
-            or request.query_params.get("consortium_id")
-        )
+        consortium_id = _get_consortium_id(request, view)
 
         if not consortium_id:
-            return True  # Let view handle missing consortium_id
+            return True  # Defer to view's queryset scoping
 
         from apps.consortiums.models import Consortium, ConsortiumMember
 

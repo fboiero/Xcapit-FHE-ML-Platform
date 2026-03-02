@@ -86,6 +86,6 @@ Detailed patterns and conventions are in `.claude/skills/`:
 
 ## Current Stats
 
-- **Tests**: 1,443 Django + ~620 SDK = ~2,063 total
-- **Coverage**: 95.22% (`--cov-fail-under=90` in CI)
+- **Tests**: 1,496 Django + ~620 SDK = ~2,116 total
+- **Coverage**: 96.23% (`--cov-fail-under=90` in CI)
 - **CI/CD**: GitHub Actions (10 jobs) + GitLab CI (9 jobs), both green

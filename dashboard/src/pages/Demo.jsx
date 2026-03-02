@@ -93,7 +93,7 @@ export default function Demo() {
           ciphertext: encryptedData[field.name],
         }))
         setServerView(serverData)
-        addLog('POST /api/v1/consortiums/{id}/data', 'network')
+        addLog('POST /api/v2/consortiums/{id}/data', 'network')
         await sleep(500)
         addLog('Servidor recibio SOLO ciphertext. No puede descifrar.', 'success')
         break
