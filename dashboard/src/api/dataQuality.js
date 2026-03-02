@@ -71,12 +71,11 @@ export const getQualityRules = async (consortiumId) => {
 // ============ Alerts ============
 
 export const getQualityAlerts = async (consortiumId, severity = null, status = null) => {
-  const params = new URLSearchParams();
+  const params = new URLSearchParams({ consortium: consortiumId });
   if (severity) params.append('severity', severity);
   if (status) params.append('status', status);
 
-  const queryString = params.toString();
-  return apiFetch(`/data-quality/alerts/${queryString ? '?' + queryString : ''}`);
+  return apiFetch(`/data-quality/alerts/?${params}`);
 };
 
 export const acknowledgeAlert = async (alertId, notes = null) => {

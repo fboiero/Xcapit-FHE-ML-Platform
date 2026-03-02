@@ -98,13 +98,14 @@ class QualityRuleViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Filter rules by consortium."""
-        consortium_id = self.kwargs.get("consortium_pk")
-        return QualityRule.objects.filter(consortium_id=consortium_id)
+        consortium_id = self.request.query_params.get("consortium")
+        if consortium_id:
+            return QualityRule.objects.filter(consortium_id=consortium_id)
+        return QualityRule.objects.none()
 
     def perform_create(self, serializer):
         """Create rule and log event."""
-        consortium_id = self.kwargs.get("consortium_pk")
-        rule = serializer.save(consortium_id=consortium_id)
+        rule = serializer.save()
 
         AuditLog.log(
             self.request,
@@ -130,6 +131,16 @@ class QualityAlertViewSet(viewsets.ModelViewSet):
             return QualityAlert.objects.none()
 
         queryset = QualityAlert.objects.filter(company=user.company)
+
+        # Filter by consortium if provided
+        consortium_id = self.request.query_params.get("consortium")
+        if consortium_id:
+            queryset = queryset.filter(rule__consortium_id=consortium_id)
+
+        # Filter by severity if provided
+        severity = self.request.query_params.get("severity")
+        if severity:
+            queryset = queryset.filter(rule__severity=severity)
 
         # Filter by status if provided
         alert_status = self.request.query_params.get("status")

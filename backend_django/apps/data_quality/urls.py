@@ -15,13 +15,9 @@ from .views import (
 router = DefaultRouter()
 router.register(r"assessments", QualityAssessmentViewSet, basename="quality-assessment")
 router.register(r"alerts", QualityAlertViewSet, basename="quality-alert")
+router.register(r"rules", QualityRuleViewSet, basename="quality-rule")
 router.register(r"dashboard", QualityDashboardView, basename="quality-dashboard")
-
-# Nested router for rules under consortiums
-rules_router = DefaultRouter()
-rules_router.register(r"rules", QualityRuleViewSet, basename="quality-rule")
 
 urlpatterns = [
     path("", include(router.urls)),
-    path("", include(rules_router.urls)),
 ]
