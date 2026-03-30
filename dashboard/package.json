@@ -11,10 +11,10 @@
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
-    "@sentry/react": "^10.38.0",
-    "framer-motion": "^12.29.0",
+    "@sentry/react": "^10.46.0",
+    "framer-motion": "^12.38.0",
     "i18next": "^25.7.2",
-    "i18next-browser-languagedetector": "^8.2.0",
+    "i18next-browser-languagedetector": "^8.2.1",
     "i18next-http-backend": "^3.0.2",
     "lucide-react": "^0.562.0",
     "react": "^18.2.0",
@@ -27,9 +27,9 @@
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "@vitejs/plugin-react": "^4.2.0",
-    "autoprefixer": "^10.4.16",
-    "postcss": "^8.4.32",
-    "puppeteer": "^24.36.0",
+    "autoprefixer": "^10.4.27",
+    "postcss": "^8.5.8",
+    "puppeteer": "^24.40.0",
     "tailwindcss": "^3.3.6",
     "vite": "^5.0.0"
   }
