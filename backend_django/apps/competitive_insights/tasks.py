@@ -53,7 +53,7 @@ def generate_competitive_report(self, report_id: str) -> dict:
         )
 
         # Calculate averages
-        avg_percentile = metrics.aggregate(avg=Avg("percentile_rank"))["avg"] or 50
+        avg_percentile = float(metrics.aggregate(avg=Avg("percentile_rank"))["avg"] or 50)
 
         # Generate summary
         report.summary = {

@@ -1,145 +1,134 @@
 """
 Marketplace models for Xcapit FHE-ML Platform.
 
-Pre-trained model marketplace for consortium deployment.
+Catálogo de modelos ML pre-entrenados para licenciamiento,
+despliegue y revisión por parte de los consorcios.
 """
 
 import uuid
 
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.db.models import Avg
 
 
 class Category(models.Model):
-    """
-    Model category for marketplace browsing.
-    """
+    """Categoría de modelo en el marketplace."""
 
-    id = models.CharField(max_length=50, primary_key=True)  # e.g., "cat_fraud"
-    name = models.CharField(max_length=100)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True)
-    icon = models.CharField(max_length=50, blank=True)  # Icon class name
+    icon = models.CharField(max_length=50, blank=True)
     order = models.IntegerField(default=0)
 
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
     class Meta:
+        ordering = ["order", "name"]
         verbose_name = "category"
         verbose_name_plural = "categories"
-        ordering = ["order", "name"]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
     @property
-    def model_count(self):
+    def model_count(self) -> int:
+        """Cantidad de modelos activos en esta categoría."""
         return self.marketplace_models.filter(is_active=True).count()
 
 
 class MarketplaceModel(models.Model):
-    """
-    Pre-trained model available in the marketplace.
-    """
-
-    class PricingType(models.TextChoices):
-        FREE = "free", "Free"
-        ONE_TIME = "one_time", "One-Time Purchase"
-        SUBSCRIPTION = "subscription", "Subscription"
+    """Modelo ML publicado en el marketplace."""
 
     class ModelType(models.TextChoices):
         LINEAR_REGRESSION = "linear_regression", "Linear Regression"
         LOGISTIC_REGRESSION = "logistic_regression", "Logistic Regression"
         DECISION_TREE = "decision_tree", "Decision Tree"
-        KMEANS = "kmeans", "K-Means Clustering"
+        KMEANS = "kmeans", "K-Means"
+        RANDOM_FOREST = "random_forest", "Random Forest"
+        NEURAL_NETWORK = "neural_network", "Neural Network"
+
+    class PricingType(models.TextChoices):
+        ONE_TIME = "one_time", "One-Time"
+        SUBSCRIPTION = "subscription", "Subscription"
+        PER_INFERENCE = "per_inference", "Per Inference"
+        FREE = "free", "Free"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
-
-    # Categorization
     category = models.ForeignKey(
         Category,
-        on_delete=models.SET_NULL,
-        null=True,
+        on_delete=models.PROTECT,
         related_name="marketplace_models",
     )
-    model_type = models.CharField(
-        max_length=50,
-        choices=ModelType.choices,
-    )
 
-    # Version
+    model_type = models.CharField(max_length=50)
     version = models.CharField(max_length=20, default="1.0.0")
-
-    # Performance metrics
-    accuracy = models.FloatField(
-        null=True,
-        blank=True,
-        validators=[MinValueValidator(0), MaxValueValidator(1)],
+    accuracy = models.DecimalField(
+        max_digits=5, decimal_places=4, null=True, blank=True
     )
-    training_samples = models.IntegerField(null=True, blank=True)
+    training_samples = models.IntegerField(default=0)
+    features = models.JSONField(default=list, blank=True)
+    use_cases = models.JSONField(default=list, blank=True)
 
-    # Features
-    features = models.JSONField(default=list)  # List of feature names
-    use_cases = models.JSONField(default=list)  # List of use case descriptions
-
-    # Pricing
     pricing_type = models.CharField(
         max_length=20,
         choices=PricingType.choices,
         default=PricingType.FREE,
     )
-    price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    price = models.DecimalField(
+        max_digits=12, decimal_places=2, null=True, blank=True
+    )
 
-    # Status
-    is_active = models.BooleanField(default=True)
-    is_featured = models.BooleanField(default=False)
-
-    # Stats
+    is_active = models.BooleanField(default=True, db_index=True)
+    is_featured = models.BooleanField(default=False, db_index=True)
     downloads = models.IntegerField(default=0)
 
-    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        ordering = ["-created_at"]
         verbose_name = "marketplace model"
         verbose_name_plural = "marketplace models"
-        ordering = ["-downloads", "-created_at"]
         indexes = [
-            models.Index(fields=["category"]),
-            models.Index(fields=["model_type"]),
-            models.Index(fields=["is_active"]),
+            models.Index(fields=["category", "is_active"]),
+            models.Index(fields=["pricing_type"]),
             models.Index(fields=["is_featured"]),
-            models.Index(fields=["-downloads"]),
         ]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.name} v{self.version}"
 
     @property
-    def rating(self):
-        avg = self.reviews.aggregate(avg=Avg("rating"))["avg"]
-        return round(avg, 1) if avg else 0
+    def rating(self) -> float:
+        """Calificación promedio del modelo. Retorna 0 si no tiene reseñas."""
+        avg = self.reviews.aggregate(avg=models.Avg("rating"))["avg"]
+        return round(avg, 2) if avg is not None else 0
 
     @property
-    def rating_count(self):
+    def rating_count(self) -> int:
+        """Cantidad de reseñas."""
         return self.reviews.count()
 
     @property
-    def industry(self):
-        return self.category.id if self.category else None
+    def industry(self) -> str:
+        """Industria derivada de la categoría."""
+        return self.category.name if self.category else ""
 
 
 class Deployment(models.Model):
-    """
-    Deployment of marketplace model to consortium.
-    """
+    """Despliegue de un modelo del marketplace en un consorcio."""
 
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"
         ACTIVE = "active", "Active"
-        SUSPENDED = "suspended", "Suspended"
+        PAUSED = "paused", "Paused"
         REMOVED = "removed", "Removed"
+        FAILED = "failed", "Failed"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
@@ -155,43 +144,40 @@ class Deployment(models.Model):
     )
     deployed_by = models.ForeignKey(
         "core.Company",
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name="deployments",
+        on_delete=models.CASCADE,
+        related_name="marketplace_deployments",
     )
 
-    # Status
     status = models.CharField(
         max_length=20,
         choices=Status.choices,
-        default=Status.ACTIVE,
+        default=Status.PENDING,
+        db_index=True,
     )
-
-    # Configuration
     config = models.JSONField(default=dict, blank=True)
 
-    # Timestamps
     deployed_at = models.DateTimeField(auto_now_add=True)
     removed_at = models.DateTimeField(null=True, blank=True)
 
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
     class Meta:
+        ordering = ["-created_at"]
         verbose_name = "deployment"
         verbose_name_plural = "deployments"
-        ordering = ["-deployed_at"]
-        unique_together = ["marketplace_model", "consortium"]
         indexes = [
-            models.Index(fields=["consortium"]),
+            models.Index(fields=["marketplace_model", "consortium"]),
+            models.Index(fields=["deployed_by"]),
             models.Index(fields=["status"]),
         ]
 
-    def __str__(self):
-        return f"{self.marketplace_model.name} -> {self.consortium.name}"
+    def __str__(self) -> str:
+        return f"{self.marketplace_model.name} → {self.consortium.name} ({self.status})"
 
 
 class Review(models.Model):
-    """
-    User review of a marketplace model.
-    """
+    """Reseña de un modelo del marketplace."""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
@@ -203,39 +189,34 @@ class Review(models.Model):
     reviewer = models.ForeignKey(
         "core.Company",
         on_delete=models.CASCADE,
-        related_name="reviews",
+        related_name="marketplace_reviews",
     )
     consortium = models.ForeignKey(
         "consortiums.Consortium",
         on_delete=models.SET_NULL,
+        related_name="marketplace_reviews",
         null=True,
         blank=True,
-        related_name="model_reviews",
     )
 
-    # Review content
     rating = models.IntegerField(
-        validators=[MinValueValidator(1), MaxValueValidator(5)],
+        validators=[MinValueValidator(1), MaxValueValidator(5)]
     )
-    title = models.CharField(max_length=100, blank=True)
-    comment = models.TextField(blank=True, max_length=1000)
-
-    # Engagement
+    title = models.CharField(max_length=255, blank=True)
+    comment = models.TextField(blank=True)
     helpful_count = models.IntegerField(default=0)
 
-    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        ordering = ["-created_at"]
         verbose_name = "review"
         verbose_name_plural = "reviews"
         unique_together = ["marketplace_model", "reviewer"]
-        ordering = ["-created_at"]
         indexes = [
-            models.Index(fields=["marketplace_model"]),
-            models.Index(fields=["rating"]),
+            models.Index(fields=["marketplace_model", "rating"]),
         ]
 
-    def __str__(self):
-        return f"{self.reviewer.name}: {self.rating}/5 for {self.marketplace_model.name}"
+    def __str__(self) -> str:
+        return f"{self.reviewer.name} — {self.rating}/5 on {self.marketplace_model.name}"

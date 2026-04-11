@@ -125,10 +125,12 @@ class ProposalExecutionService(BaseService):
             Proposal.Type.ADD_MEMBER: self._execute_add_member,
             Proposal.Type.REMOVE_MEMBER: self._execute_remove_member,
             Proposal.Type.CHANGE_MODEL: self._execute_change_model,
+            Proposal.Type.CHANGE_PARAMS: self._execute_change_params,
             Proposal.Type.START_TRAINING: self._execute_start_training,
             Proposal.Type.DISTRIBUTE_REWARDS: self._execute_distribute_rewards,
             Proposal.Type.UPDATE_CONFIG: self._execute_update_config,
             Proposal.Type.DISSOLVE: self._execute_dissolve,
+            Proposal.Type.CUSTOM: self._execute_custom,
         }
         return handlers.get(proposal_type)
 
@@ -392,6 +394,39 @@ class ProposalExecutionService(BaseService):
             success=True,
             message=f"Updated {len(updates_applied)} configuration fields",
             data={"updates": updates_applied, "previous_config": old_config},
+        )
+
+    def _execute_change_params(self, proposal: Proposal) -> ExecutionResult:
+        """Execute CHANGE_PARAMS proposal."""
+        data = proposal.data
+        params = data.get("params", {})
+
+        if not params:
+            return ExecutionResult(
+                success=False,
+                message="No parameters provided",
+            )
+
+        consortium = proposal.consortium
+        old_config = consortium.ml_config.copy() if consortium.ml_config else {}
+
+        for key, value in params.items():
+            consortium.ml_config[key] = value
+
+        consortium.save(update_fields=["ml_config", "updated_at"])
+
+        return ExecutionResult(
+            success=True,
+            message=f"Updated {len(params)} model parameters",
+            data={"updates": params, "previous_config": old_config},
+        )
+
+    def _execute_custom(self, proposal: Proposal) -> ExecutionResult:
+        """Execute CUSTOM proposal."""
+        return ExecutionResult(
+            success=True,
+            message="Custom proposal executed",
+            data={"proposal_id": str(proposal.id)},
         )
 
     def _execute_dissolve(self, proposal: Proposal) -> ExecutionResult:

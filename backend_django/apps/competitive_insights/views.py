@@ -30,12 +30,8 @@ class IndustryBenchmarkViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Filter benchmarks by industry and validity."""
-        queryset = IndustryBenchmark.objects.filter(
-            valid_until__isnull=True
-        ) | IndustryBenchmark.objects.filter(
-            valid_until__gt=timezone.now()
-        )
+        """Filter benchmarks by industry and metric type."""
+        queryset = IndustryBenchmark.objects.all()
 
         # Filter by industry if provided
         industry = self.request.query_params.get("industry")

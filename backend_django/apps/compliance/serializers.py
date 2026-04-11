@@ -4,6 +4,8 @@ Compliance serializers for Xcapit FHE-ML Platform.
 
 from rest_framework import serializers
 
+from apps.consortiums.models import ConsortiumMember
+
 from .models import (
     Attestation,
     ComplianceCheck,
@@ -104,6 +106,23 @@ class ComplianceCheckCreateSerializer(serializers.ModelSerializer):
             "evidence",
             "notes",
         ]
+
+    def validate_consortium(self, value):
+        """SECURITY: Verify user is a member of the target consortium."""
+        user = self.context["request"].user
+        company = user.company
+
+        is_owner = value.owner_id == company.id
+        is_member = ConsortiumMember.objects.filter(
+            consortium=value,
+            company=company,
+            status="active",
+        ).exists()
+        if not is_owner and not is_member:
+            raise serializers.ValidationError(
+                "You are not a member of this consortium."
+            )
+        return value
 
     def create(self, validated_data):
         """Create check with checked_by."""

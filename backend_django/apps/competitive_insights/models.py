@@ -1,103 +1,94 @@
 """
 Competitive insights models for Xcapit FHE-ML Platform.
 
-Handles industry benchmarks and anonymized competitive analysis.
+Benchmarks de industria, métricas de empresa y reportes
+comparativos para posicionamiento competitivo.
 """
 
 import uuid
+from decimal import Decimal
 
 from django.db import models
 
 
 class IndustryBenchmark(models.Model):
-    """
-    Anonymized industry benchmark for competitive comparison.
-
-    Stores aggregated metrics across multiple companies without
-    exposing individual company data.
-    """
+    """Benchmark a nivel de industria para comparación."""
 
     class MetricType(models.TextChoices):
         ACCURACY = "accuracy", "Accuracy"
-        PERFORMANCE = "performance", "Performance"
-        EFFICIENCY = "efficiency", "Efficiency"
-        QUALITY = "quality", "Quality"
-        GROWTH = "growth", "Growth"
+        LATENCY = "latency", "Latency"
+        COST = "cost", "Cost"
+        THROUGHPUT = "throughput", "Throughput"
+        PRIVACY_SCORE = "privacy_score", "Privacy Score"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    # Industry classification
     industry = models.CharField(max_length=100, db_index=True)
     sub_industry = models.CharField(max_length=100, blank=True)
-
-    # Metric definition
     metric_name = models.CharField(max_length=100)
     metric_type = models.CharField(
         max_length=20,
         choices=MetricType.choices,
-        default=MetricType.PERFORMANCE,
     )
-    unit = models.CharField(max_length=50, blank=True)  # e.g., "%", "ms", "count"
+    unit = models.CharField(max_length=50, blank=True)
 
-    # Benchmark values (percentiles)
-    p10_value = models.FloatField(help_text="10th percentile")
-    p25_value = models.FloatField(help_text="25th percentile")
-    p50_value = models.FloatField(help_text="Median (50th percentile)")
-    p75_value = models.FloatField(help_text="75th percentile")
-    p90_value = models.FloatField(help_text="90th percentile")
+    p10_value = models.DecimalField(
+        max_digits=12, decimal_places=4, null=True, blank=True
+    )
+    p25_value = models.DecimalField(
+        max_digits=12, decimal_places=4, null=True, blank=True
+    )
+    p50_value = models.DecimalField(
+        max_digits=12, decimal_places=4, null=True, blank=True
+    )
+    p75_value = models.DecimalField(
+        max_digits=12, decimal_places=4, null=True, blank=True
+    )
+    p90_value = models.DecimalField(
+        max_digits=12, decimal_places=4, null=True, blank=True
+    )
 
-    # Sample info (anonymized)
-    sample_size = models.IntegerField(help_text="Number of companies in sample")
-
-    # Validity period
+    sample_size = models.IntegerField(default=0)
     period_start = models.DateField()
     period_end = models.DateField()
-    valid_until = models.DateTimeField(null=True, blank=True)
 
-    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        ordering = ["-created_at"]
         verbose_name = "industry benchmark"
         verbose_name_plural = "industry benchmarks"
-        ordering = ["-period_start"]
+        unique_together = [("industry", "metric_name", "period_start")]
         indexes = [
-            models.Index(fields=["industry"]),
-            models.Index(fields=["metric_name"]),
+            models.Index(fields=["industry", "metric_name"]),
             models.Index(fields=["period_start", "period_end"]),
         ]
-        unique_together = ["industry", "metric_name", "period_start"]
 
-    def __str__(self):
-        return f"{self.industry} - {self.metric_name} ({self.period_start})"
+    def __str__(self) -> str:
+        return f"{self.industry} — {self.metric_name} ({self.period_start}–{self.period_end})"
 
-    def get_percentile_rank(self, value):
-        """Get percentile rank for a given value."""
-        if value <= self.p10_value:
-            return 10
-        elif value <= self.p25_value:
-            return 25
-        elif value <= self.p50_value:
-            return 50
-        elif value <= self.p75_value:
-            return 75
-        elif value <= self.p90_value:
-            return 90
-        else:
+    def get_percentile_rank(self, value: float) -> int:
+        """Return the approximate percentile rank (10-95) for *value*."""
+        from decimal import Decimal
+
+        val = Decimal(str(value))
+        if self.p90_value is not None and val >= self.p90_value:
             return 95
+        if self.p75_value is not None and val >= self.p75_value:
+            return 75
+        if self.p50_value is not None and val >= self.p50_value:
+            return 50
+        if self.p25_value is not None and val >= self.p25_value:
+            return 25
+        return 10
 
 
 class CompanyMetric(models.Model):
-    """
-    Company-specific metric for competitive comparison.
-
-    Stores company metrics that can be compared against industry benchmarks.
-    """
+    """Métrica individual de una empresa para comparación con benchmarks."""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    # Associations
     company = models.ForeignKey(
         "core.Company",
         on_delete=models.CASCADE,
@@ -106,49 +97,59 @@ class CompanyMetric(models.Model):
     benchmark = models.ForeignKey(
         IndustryBenchmark,
         on_delete=models.SET_NULL,
+        related_name="company_metrics",
         null=True,
         blank=True,
-        related_name="company_metrics",
     )
 
-    # Metric data
     metric_name = models.CharField(max_length=100)
-    value = models.FloatField()
+    value = models.DecimalField(max_digits=12, decimal_places=4)
+    percentile_rank = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True
+    )
 
-    # Calculated position
-    percentile_rank = models.FloatField(null=True, blank=True)
-
-    # Period
     period_start = models.DateField()
     period_end = models.DateField()
 
-    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        ordering = ["-created_at"]
         verbose_name = "company metric"
         verbose_name_plural = "company metrics"
-        ordering = ["-created_at"]
         indexes = [
-            models.Index(fields=["company"]),
-            models.Index(fields=["metric_name"]),
-            models.Index(fields=["period_start"]),
+            models.Index(fields=["company", "metric_name"]),
+            models.Index(fields=["benchmark"]),
         ]
 
-    def __str__(self):
-        return f"{self.company.name} - {self.metric_name}: {self.value}"
+    def __str__(self) -> str:
+        return f"{self.company.name} — {self.metric_name}: {self.value}"
 
-    def calculate_percentile(self):
-        """Calculate percentile rank against industry benchmark."""
-        if self.benchmark:
-            self.percentile_rank = self.benchmark.get_percentile_rank(self.value)
-            self.save(update_fields=["percentile_rank"])
+    def calculate_percentile(self) -> None:
+        """Calcula el percentil de la empresa según el benchmark asociado."""
+        if not self.benchmark:
+            return
+
+        bm = self.benchmark
+        percentile_map = [
+            (bm.p10_value, Decimal("10")),
+            (bm.p25_value, Decimal("25")),
+            (bm.p50_value, Decimal("50")),
+            (bm.p75_value, Decimal("75")),
+            (bm.p90_value, Decimal("90")),
+        ]
+
+        self.percentile_rank = Decimal("0")
+        for threshold, pct in percentile_map:
+            if threshold is not None and self.value >= threshold:
+                self.percentile_rank = pct
+
+        self.save(update_fields=["percentile_rank"])
 
 
 class CompetitiveReport(models.Model):
-    """
-    Competitive analysis report for a company.
-    """
+    """Reporte comparativo generado para una empresa."""
 
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"
@@ -158,40 +159,43 @@ class CompetitiveReport(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    # Association
     company = models.ForeignKey(
         "core.Company",
         on_delete=models.CASCADE,
         related_name="competitive_reports",
     )
 
-    # Report details
     title = models.CharField(max_length=255)
     industry = models.CharField(max_length=100)
-    period_start = models.DateField()
-    period_end = models.DateField()
+    period_start = models.DateField(null=True, blank=True)
+    period_end = models.DateField(null=True, blank=True)
 
-    # Analysis results (JSON)
-    summary = models.JSONField(default=dict)
-    strengths = models.JSONField(default=list)
-    weaknesses = models.JSONField(default=list)
-    opportunities = models.JSONField(default=list)
-    recommendations = models.JSONField(default=list)
+    summary = models.JSONField(default=dict, blank=True)
+    strengths = models.JSONField(default=list, blank=True)
+    weaknesses = models.JSONField(default=list, blank=True)
+    opportunities = models.JSONField(default=list, blank=True)
+    recommendations = models.JSONField(default=list, blank=True)
 
     status = models.CharField(
         max_length=20,
         choices=Status.choices,
-        default=Status.PENDING,
+        default=Status.GENERATING,
+        db_index=True,
     )
 
-    # Timestamps
-    created_at = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(null=True, blank=True)
 
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
     class Meta:
+        ordering = ["-created_at"]
         verbose_name = "competitive report"
         verbose_name_plural = "competitive reports"
-        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["company", "industry"]),
+            models.Index(fields=["status"]),
+        ]
 
-    def __str__(self):
-        return f"{self.company.name} - {self.title}"
+    def __str__(self) -> str:
+        return f"{self.title} — {self.company.name} ({self.status})"

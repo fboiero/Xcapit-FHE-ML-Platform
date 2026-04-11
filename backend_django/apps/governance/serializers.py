@@ -7,6 +7,8 @@ from datetime import timedelta
 from django.utils import timezone
 from rest_framework import serializers
 
+from apps.consortiums.models import ConsortiumMember
+
 from .models import AuditEvent, Proposal, RewardDistribution, Vote
 
 
@@ -95,13 +97,31 @@ class ProposalCreateSerializer(serializers.ModelSerializer):
 
         return value
 
+    def validate_consortium(self, value):
+        """SECURITY: Verify proposer is a member of the target consortium."""
+        user = self.context["request"].user
+        company = user.company
+
+        is_owner = value.owner_id == company.id
+        is_member = ConsortiumMember.objects.filter(
+            consortium=value,
+            company=company,
+            status="active",
+        ).exists()
+        if not is_owner and not is_member:
+            raise serializers.ValidationError(
+                "You are not a member of this consortium."
+            )
+        return value
+
     def create(self, validated_data):
-        """Create proposal with expiration."""
+        """Create proposal with expiration and activate it immediately."""
         voting_days = validated_data.pop("voting_days")
         proposer = self.context["request"].user.company
 
         proposal = Proposal.objects.create(
             proposer=proposer,
+            status=Proposal.Status.ACTIVE,
             expires_at=timezone.now() + timedelta(days=voting_days),
             **validated_data,
         )
