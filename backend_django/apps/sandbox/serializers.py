@@ -4,7 +4,15 @@ Sandbox serializers for Xcapit FHE-ML Platform.
 
 from rest_framework import serializers
 
-from .models import Experiment, Sandbox, SandboxLead, SandboxTemplate, SyntheticDataset
+from .models import (
+    DataUpload,
+    Experiment,
+    Sandbox,
+    SandboxLead,
+    SandboxTemplate,
+    Subscription,
+    SyntheticDataset,
+)
 
 
 # =============================================================================
@@ -257,3 +265,96 @@ class GenerateDataSerializer(serializers.Serializer):
         child=serializers.DictField(),
         required=False,
     )
+
+
+# =============================================================================
+# TRIAL / SUBSCRIPTION SERIALIZERS
+# =============================================================================
+
+
+class SubscriptionSerializer(serializers.ModelSerializer):
+    """Read-only subscription info."""
+
+    company_name = serializers.CharField(source="company.name", read_only=True)
+
+    class Meta:
+        model = Subscription
+        fields = [
+            "id",
+            "company",
+            "company_name",
+            "plan",
+            "status",
+            "trial_end",
+            "current_period_start",
+            "current_period_end",
+            "cancel_at_period_end",
+            "created_at",
+        ]
+        read_only_fields = fields
+
+
+class TrialStartSerializer(serializers.Serializer):
+    """Input for starting a trial (no fields needed — uses request.user.company)."""
+
+    pass
+
+
+class TrialUpgradeSerializer(serializers.Serializer):
+    """Input for requesting an upgrade."""
+
+    target_tier = serializers.ChoiceField(
+        choices=["starter", "professional", "enterprise"],
+    )
+
+
+class DataUploadSerializer(serializers.ModelSerializer):
+    """Read-only data upload record."""
+
+    class Meta:
+        model = DataUpload
+        fields = [
+            "id",
+            "company",
+            "consortium",
+            "file_name",
+            "file_size",
+            "record_count",
+            "feature_count",
+            "status",
+            "error_message",
+            "created_at",
+        ]
+        read_only_fields = fields
+
+
+class TrialDataUploadSerializer(serializers.Serializer):
+    """Input for uploading data to a consortium within trial limits."""
+
+    consortium_id = serializers.UUIDField()
+    file = serializers.FileField()
+
+
+class TrialUsageSerializer(serializers.Serializer):
+    """Output for trial usage summary."""
+
+    tier = serializers.CharField()
+    is_trial = serializers.BooleanField()
+    trial_days_remaining = serializers.IntegerField()
+    trial_expired = serializers.BooleanField()
+    usage = serializers.DictField()
+    limits = serializers.DictField()
+
+
+class PlanComparisonSerializer(serializers.Serializer):
+    """Output for plan comparison."""
+
+    tier = serializers.CharField()
+    name = serializers.CharField()
+    rate_limit_rpm = serializers.IntegerField()
+    daily_requests = serializers.IntegerField()
+    max_models = serializers.IntegerField()
+    max_consortiums = serializers.IntegerField()
+    max_upload_mb = serializers.FloatField()
+    training_runs_per_day = serializers.IntegerField()
+    max_sandboxes = serializers.IntegerField()

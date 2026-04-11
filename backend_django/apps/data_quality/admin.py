@@ -1,6 +1,4 @@
-"""
-Data quality admin configuration.
-"""
+"""Django admin configuration for data_quality app."""
 
 from django.contrib import admin
 
@@ -13,36 +11,46 @@ class QualityAssessmentAdmin(admin.ModelAdmin):
 
     list_display = [
         "id",
-        "company",
         "consortium",
+        "company",
         "overall_score",
         "status",
         "created_at",
     ]
-    list_filter = ["status", "consortium", "created_at"]
+    list_filter = ["status", "consortium"]
     search_fields = ["company__name", "consortium__name"]
-    readonly_fields = [
-        "completeness_score",
-        "consistency_score",
-        "accuracy_score",
-        "timeliness_score",
-        "overall_score",
-    ]
+    readonly_fields = ["id", "created_at", "updated_at"]
 
 
 @admin.register(QualityRule)
 class QualityRuleAdmin(admin.ModelAdmin):
     """Admin for QualityRule model."""
 
-    list_display = ["name", "consortium", "rule_type", "severity", "is_active"]
+    list_display = [
+        "id",
+        "name",
+        "rule_type",
+        "severity",
+        "is_active",
+        "created_at",
+    ]
     list_filter = ["rule_type", "severity", "is_active"]
-    search_fields = ["name", "consortium__name"]
+    search_fields = ["name", "description"]
+    readonly_fields = ["id", "created_at", "updated_at"]
 
 
 @admin.register(QualityAlert)
 class QualityAlertAdmin(admin.ModelAdmin):
     """Admin for QualityAlert model."""
 
-    list_display = ["id", "rule", "company", "status", "created_at"]
-    list_filter = ["status", "rule__severity", "created_at"]
-    search_fields = ["company__name", "rule__name"]
+    list_display = [
+        "id",
+        "rule",
+        "company",
+        "status",
+        "message",
+        "created_at",
+    ]
+    list_filter = ["status", "rule__severity"]
+    search_fields = ["message", "company__name", "rule__name"]
+    readonly_fields = ["id", "created_at", "updated_at"]

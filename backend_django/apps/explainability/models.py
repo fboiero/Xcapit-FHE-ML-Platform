@@ -1,29 +1,27 @@
 """
 Explainability models for Xcapit FHE-ML Platform.
 
-Handles explanation requests, feature importance, and model insights.
+Solicitudes de explicabilidad, importancia de features e
+insights generados automáticamente sobre los modelos.
 """
 
 import uuid
 
 from django.db import models
-from django.utils import timezone
 
 
 class ExplanationRequest(models.Model):
-    """
-    Request for model explanation.
-
-    Supports various explanation types: SHAP, feature importance,
-    decision paths, and counterfactuals.
-    """
+    """Solicitud de explicación de un modelo."""
 
     class ExplanationType(models.TextChoices):
         FEATURE_IMPORTANCE = "feature_importance", "Feature Importance"
-        SHAP = "shap", "SHAP Values"
-        DECISION_PATH = "decision_path", "Decision Path"
+        SHAP = "shap", "SHAP"
+        LIME = "lime", "LIME"
         COUNTERFACTUAL = "counterfactual", "Counterfactual"
-        SUMMARY = "summary", "Model Summary"
+        PARTIAL_DEPENDENCE = "partial_dependence", "Partial Dependence"
+        ANCHOR = "anchor", "Anchor"
+        DECISION_PATH = "decision_path", "Decision Path"
+        SUMMARY = "summary", "Summary"
 
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"
@@ -33,7 +31,6 @@ class ExplanationRequest(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    # Associations
     consortium = models.ForeignKey(
         "consortiums.Consortium",
         on_delete=models.CASCADE,
@@ -46,30 +43,19 @@ class ExplanationRequest(models.Model):
     )
     model = models.ForeignKey(
         "models.MLModel",
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name="explanation_requests",
         null=True,
         blank=True,
     )
 
-    # Request configuration
     explanation_type = models.CharField(
-        max_length=20,
+        max_length=30,
         choices=ExplanationType.choices,
-        default=ExplanationType.FEATURE_IMPORTANCE,
     )
-    input_data = models.JSONField(
-        default=dict,
-        blank=True,
-        help_text="Input data for instance-level explanations",
-    )
-    prediction_id = models.CharField(
-        max_length=100,
-        blank=True,
-        help_text="Reference to specific prediction to explain",
-    )
+    input_data = models.JSONField(null=True, blank=True)
+    prediction_id = models.CharField(max_length=255, blank=True)
 
-    # Status
     status = models.CharField(
         max_length=20,
         choices=Status.choices,
@@ -77,52 +63,56 @@ class ExplanationRequest(models.Model):
         db_index=True,
     )
     error_message = models.TextField(blank=True)
+    explanation = models.JSONField(null=True, blank=True)
 
-    # Results
-    explanation = models.JSONField(default=dict, blank=True)
-
-    # Timestamps
-    created_at = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(null=True, blank=True)
 
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
     class Meta:
+        ordering = ["-created_at"]
         verbose_name = "explanation request"
         verbose_name_plural = "explanation requests"
-        ordering = ["-created_at"]
         indexes = [
-            models.Index(fields=["consortium"]),
+            models.Index(fields=["consortium", "status"]),
             models.Index(fields=["requester"]),
-            models.Index(fields=["status"]),
         ]
 
-    def __str__(self):
-        return f"{self.explanation_type} for {self.consortium.name}"
+    def __str__(self) -> str:
+        return f"{self.explanation_type} — {self.status}"
 
-    def mark_completed(self, explanation):
-        """Mark request as completed with results."""
+    def mark_completed(self, explanation: dict) -> None:
+        """Mark this explanation request as completed."""
+        from django.utils import timezone as tz
+
         self.status = self.Status.COMPLETED
         self.explanation = explanation
-        self.completed_at = timezone.now()
-        self.save()
+        self.completed_at = tz.now()
+        self.save(update_fields=["status", "explanation", "completed_at", "updated_at"])
 
-    def mark_failed(self, error_message):
-        """Mark request as failed with error."""
+    def mark_failed(self, error_message: str) -> None:
+        """Mark this explanation request as failed."""
+        from django.utils import timezone as tz
+
         self.status = self.Status.FAILED
         self.error_message = error_message
-        self.completed_at = timezone.now()
-        self.save()
+        self.completed_at = tz.now()
+        self.save(update_fields=["status", "error_message", "completed_at", "updated_at"])
 
 
 class FeatureImportance(models.Model):
-    """
-    Feature importance scores for a model.
+    """Resultado de importancia de feature para un modelo."""
 
-    Stores global feature importance computed across the training data.
-    """
+    class ComputationMethod(models.TextChoices):
+        PERMUTATION = "permutation", "Permutation"
+        SHAP = "shap", "SHAP"
+        GAIN = "gain", "Gain"
+        SPLIT = "split", "Split"
+        CORRELATION = "correlation", "Correlation"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    # Associations
     consortium = models.ForeignKey(
         "consortiums.Consortium",
         on_delete=models.CASCADE,
@@ -130,127 +120,115 @@ class FeatureImportance(models.Model):
     )
     model = models.ForeignKey(
         "models.MLModel",
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name="feature_importances",
         null=True,
         blank=True,
     )
 
-    # Feature data
     feature_name = models.CharField(max_length=255)
-    importance_score = models.FloatField()
+    importance_score = models.DecimalField(max_digits=10, decimal_places=6)
     importance_rank = models.IntegerField()
-
-    # Computation method
     computation_method = models.CharField(
-        max_length=50,
-        default="model_native",
-        help_text="Method used: model_native, permutation, shap",
+        max_length=20,
+        choices=ComputationMethod.choices,
+        default=ComputationMethod.PERMUTATION,
+    )
+    std_deviation = models.DecimalField(
+        max_digits=10, decimal_places=6, null=True, blank=True
     )
 
-    # Additional metrics
-    std_deviation = models.FloatField(
-        null=True,
-        blank=True,
-        help_text="Standard deviation of importance across folds",
-    )
-
-    # Timestamps
     computed_at = models.DateTimeField(auto_now_add=True)
 
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
     class Meta:
+        ordering = ["importance_rank"]
         verbose_name = "feature importance"
         verbose_name_plural = "feature importances"
-        ordering = ["importance_rank"]
         indexes = [
-            models.Index(fields=["consortium"]),
+            models.Index(fields=["consortium", "model"]),
             models.Index(fields=["importance_rank"]),
         ]
 
-    def __str__(self):
-        return f"{self.feature_name}: {self.importance_score:.4f}"
+    def __str__(self) -> str:
+        return f"{self.feature_name} — rank {self.importance_rank} ({self.importance_score})"
 
 
 class ModelInsight(models.Model):
-    """
-    Aggregated model insight for a consortium.
-
-    Provides high-level understanding of model behavior without
-    exposing individual company data.
-    """
+    """Insight generado automáticamente sobre el comportamiento de un modelo."""
 
     class InsightType(models.TextChoices):
-        PERFORMANCE = "performance", "Performance Insight"
-        FEATURE = "feature", "Feature Insight"
-        BIAS = "bias", "Bias Detection"
-        DRIFT = "drift", "Data Drift"
-        ANOMALY = "anomaly", "Anomaly Detection"
+        DRIFT = "drift", "Drift"
+        PERFORMANCE = "performance", "Performance"
+        FAIRNESS = "fairness", "Fairness"
+        FEATURE = "feature", "Feature"
+        DATA_QUALITY = "data_quality", "Data Quality"
+
+    class Severity(models.TextChoices):
+        INFO = "info", "Info"
+        WARNING = "warning", "Warning"
+        CRITICAL = "critical", "Critical"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    # Association
     consortium = models.ForeignKey(
         "consortiums.Consortium",
         on_delete=models.CASCADE,
         related_name="model_insights",
     )
 
-    # Insight details
     insight_type = models.CharField(
         max_length=20,
         choices=InsightType.choices,
+        db_index=True,
     )
     title = models.CharField(max_length=255)
-    description = models.TextField()
-
-    # Severity/Importance
+    description = models.TextField(blank=True)
     severity = models.CharField(
-        max_length=20,
-        choices=[
-            ("info", "Info"),
-            ("warning", "Warning"),
-            ("critical", "Critical"),
-        ],
-        default="info",
+        max_length=10,
+        choices=Severity.choices,
+        default=Severity.INFO,
     )
 
-    # Supporting data (anonymized)
-    data = models.JSONField(default=dict)
+    data = models.JSONField(default=dict, blank=True)
+    recommendations = models.JSONField(default=list, blank=True)
+    is_active = models.BooleanField(default=True, db_index=True)
 
-    # Actionable recommendations
-    recommendations = models.JSONField(default=list)
-
-    # Status
-    is_active = models.BooleanField(default=True)
     acknowledged = models.BooleanField(default=False)
     acknowledged_by = models.ForeignKey(
         "core.User",
         on_delete=models.SET_NULL,
+        related_name="acknowledged_insights",
         null=True,
         blank=True,
     )
     acknowledged_at = models.DateTimeField(null=True, blank=True)
-
-    # Timestamps
-    created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField(null=True, blank=True)
 
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
     class Meta:
+        ordering = ["-created_at"]
         verbose_name = "model insight"
         verbose_name_plural = "model insights"
-        ordering = ["-created_at"]
         indexes = [
-            models.Index(fields=["consortium"]),
-            models.Index(fields=["insight_type"]),
-            models.Index(fields=["severity"]),
+            models.Index(fields=["consortium", "insight_type"]),
+            models.Index(fields=["severity", "is_active"]),
         ]
 
-    def __str__(self):
-        return f"{self.title} ({self.insight_type})"
+    def __str__(self) -> str:
+        return f"[{self.severity}] {self.title}"
 
-    def acknowledge(self, user):
-        """Mark insight as acknowledged."""
+    def acknowledge(self, user) -> None:
+        """Mark this insight as acknowledged by *user*."""
+        from django.utils import timezone as tz
+
         self.acknowledged = True
         self.acknowledged_by = user
-        self.acknowledged_at = timezone.now()
-        self.save()
+        self.acknowledged_at = tz.now()
+        self.save(
+            update_fields=["acknowledged", "acknowledged_by", "acknowledged_at", "updated_at"]
+        )

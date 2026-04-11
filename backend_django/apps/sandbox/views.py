@@ -1,34 +1,44 @@
 """
 Sandbox views for Xcapit FHE-ML Platform.
 
-Provides endpoints for sandbox environments, synthetic data, and experiments.
+Provides endpoints for sandbox environments, synthetic data, experiments,
+trial management, and consortium demo.
 """
 
 import random
 from datetime import timedelta
 
 from apps.core.models import AuditLog
-from apps.core.permissions import IsCompanyMember
+from apps.core.permissions import IsCompanyMember, IsTrialActive
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Experiment, Sandbox, SandboxLead, SandboxTemplate, SyntheticDataset
+from .models import DataUpload, Experiment, Sandbox, SandboxLead, SandboxTemplate, SyntheticDataset
+from .services import ConsortiumDemoService, TrialService
 from .serializers import (
+    DataUploadSerializer,
     ExperimentCreateSerializer,
     ExperimentSerializer,
     GenerateDataSerializer,
+    PlanComparisonSerializer,
     SandboxCreateSerializer,
     SandboxLeadRequestSerializer,
     SandboxLeadResponseSerializer,
     SandboxLeadVerifySerializer,
     SandboxSerializer,
     SandboxTemplateSerializer,
+    SubscriptionSerializer,
     SyntheticDatasetCreateSerializer,
     SyntheticDatasetSerializer,
+    TrialDataUploadSerializer,
+    TrialStartSerializer,
+    TrialUpgradeSerializer,
+    TrialUsageSerializer,
 )
 
 
@@ -184,10 +194,16 @@ class SandboxViewSet(viewsets.ModelViewSet):
         """Extend sandbox expiration."""
         sandbox = self.get_object()
 
-        days = request.data.get("days", 7)
-        if days > 30:
+        try:
+            days = int(request.data.get("days", 7))
+        except (TypeError, ValueError):
             return Response(
-                {"detail": "Maximum extension is 30 days."},
+                {"detail": "days must be a positive integer."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if days < 1 or days > 30:
+            return Response(
+                {"detail": "Extension must be between 1 and 30 days."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -511,3 +527,346 @@ class ExperimentViewSet(viewsets.ModelViewSet):
         experiment.fail("Cancelled by user")
 
         return Response({"detail": "Experiment cancelled."})
+
+
+# =============================================================================
+# CONSORTIUM DEMO (Public with sandbox token)
+# =============================================================================
+
+
+class ConsortiumDemoView(APIView):
+    """
+    Run a consortium demo with FHE.
+
+    POST /api/v2/sandbox/consortium-demo/
+    Accepts sandbox token or authenticated user.
+    """
+
+    permission_classes = [AllowAny]
+    throttle_scope = "sandbox_demo"
+
+    def post(self, request):
+        members = request.data.get("members", [])
+        if not members or not isinstance(members, list):
+            return Response(
+                {"detail": "Se requiere una lista de 'members'."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        tier = "free"
+        # If authenticated, use company tier
+        if request.user and request.user.is_authenticated:
+            company = getattr(request.user, "company", None)
+            if company:
+                tier = company.tier
+
+        service = ConsortiumDemoService()
+        result = service.run_demo(members=members, tier=tier)
+
+        if not result.success:
+            return Response(
+                {"detail": result.error, "error_code": result.error_code},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(result.data)
+
+
+class ConsortiumDemoLimitsView(APIView):
+    """
+    GET /api/v2/sandbox/consortium-demo/limits/
+    Returns tier limits for the consortium demo.
+    """
+
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        tier = "free"
+        if request.user and request.user.is_authenticated:
+            company = getattr(request.user, "company", None)
+            if company:
+                tier = company.tier
+
+        limits = ConsortiumDemoService.get_tier_limits(tier)
+        return Response({"tier": tier, "limits": limits})
+
+
+# =============================================================================
+# TRIAL MANAGEMENT
+# =============================================================================
+
+
+class TrialStartView(APIView):
+    """
+    POST /api/v2/sandbox/trial/start/
+    Start a 14-day trial for the authenticated company.
+    """
+
+    permission_classes = [IsAuthenticated, IsCompanyMember]
+
+    def post(self, request):
+        service = TrialService()
+        result = service.start_trial(request.user.company)
+
+        if not result.success:
+            return Response(
+                {"detail": result.error, "error_code": result.error_code},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        AuditLog.log(
+            request,
+            action="trial_started",
+            resource_type="company",
+            resource_id=request.user.company.id,
+        )
+
+        return Response(result.data, status=status.HTTP_201_CREATED)
+
+
+class TrialStatusView(APIView):
+    """
+    GET /api/v2/sandbox/trial/status/
+    Returns current trial/subscription status.
+    """
+
+    permission_classes = [IsAuthenticated, IsCompanyMember]
+
+    def get(self, request):
+        company = request.user.company
+        service = TrialService()
+        result = service.get_usage_summary(company)
+
+        if not result.success:
+            return Response(
+                {"detail": result.error},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        # Include subscription info if available
+        data = result.data
+        sub = getattr(company, "subscription", None)
+        if sub:
+            data["subscription"] = SubscriptionSerializer(sub).data
+
+        return Response(data)
+
+
+class TrialUsageView(APIView):
+    """
+    GET /api/v2/sandbox/trial/usage/
+    Detailed usage breakdown.
+    """
+
+    permission_classes = [IsAuthenticated, IsCompanyMember]
+
+    def get(self, request):
+        service = TrialService()
+        result = service.get_usage_summary(request.user.company)
+
+        if not result.success:
+            return Response(
+                {"detail": result.error},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        return Response(result.data)
+
+
+class TrialUpgradeView(APIView):
+    """
+    POST /api/v2/sandbox/trial/upgrade/
+    Request an upgrade to a paid tier.
+    """
+
+    permission_classes = [IsAuthenticated, IsCompanyMember]
+
+    def post(self, request):
+        serializer = TrialUpgradeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        service = TrialService()
+        result = service.request_upgrade(
+            request.user.company,
+            serializer.validated_data["target_tier"],
+        )
+
+        if not result.success:
+            return Response(
+                {"detail": result.error, "error_code": result.error_code},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        AuditLog.log(
+            request,
+            action="tier_upgrade_requested",
+            resource_type="company",
+            resource_id=request.user.company.id,
+            extra_data={
+                "current_tier": result.data.get("current_tier", result.data.get("old_tier")),
+                "requested_tier": result.data.get("requested_tier", result.data.get("new_tier")),
+            },
+        )
+
+        return Response(result.data)
+
+
+class TrialUploadDataView(APIView):
+    """
+    POST /api/v2/sandbox/trial/upload-data/
+    Upload data to a consortium (with trial limit enforcement).
+    """
+
+    permission_classes = [IsAuthenticated, IsCompanyMember, IsTrialActive]
+    parser_classes = [MultiPartParser]
+
+    def post(self, request):
+        from apps.consortiums.models import Consortium
+
+        consortium_id = request.data.get("consortium_id")
+        uploaded_file = request.FILES.get("file")
+
+        if not consortium_id or not uploaded_file:
+            return Response(
+                {"detail": "Se requiere 'consortium_id' y 'file'."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Validate consortium access
+        try:
+            consortium = Consortium.objects.get(id=consortium_id)
+        except Consortium.DoesNotExist:
+            return Response(
+                {"detail": "Consorcio no encontrado."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        company = request.user.company
+
+        # SECURITY: Verify user's company is owner or active member
+        from apps.consortiums.models import ConsortiumMember
+
+        is_owner = consortium.owner_id == company.id
+        is_member = ConsortiumMember.objects.filter(
+            consortium=consortium,
+            company=company,
+            status="active",
+        ).exists()
+        if not is_owner and not is_member:
+            return Response(
+                {"detail": "No tienes acceso a este consorcio."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Check upload limits
+        service = TrialService()
+        check = service.check_upload_allowed(company, uploaded_file.size)
+        if not check.success:
+            return Response(
+                {"detail": check.error, "error_code": check.error_code},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Parse the file to extract record/feature counts
+        import csv
+        import hashlib
+        import io
+
+        record_count = 0
+        feature_count = 0
+        data_hash = ""
+        preview_rows = []
+        error_msg = ""
+
+        try:
+            content = uploaded_file.read()
+            data_hash = hashlib.sha256(content).hexdigest()
+
+            if uploaded_file.name.endswith(".csv"):
+                text = content.decode("utf-8")
+                reader = csv.DictReader(io.StringIO(text))
+                rows = list(reader)
+                record_count = len(rows)
+                feature_count = len(reader.fieldnames) if reader.fieldnames else 0
+                preview_rows = rows[:5]
+            elif uploaded_file.name.endswith(".json"):
+                import json
+
+                data = json.loads(content)
+                if isinstance(data, list):
+                    record_count = len(data)
+                    feature_count = len(data[0].keys()) if data else 0
+                    preview_rows = data[:5]
+                else:
+                    record_count = 1
+                    feature_count = len(data.keys())
+                    preview_rows = [data]
+            else:
+                record_count = uploaded_file.size // 100  # Estimate
+                feature_count = 0
+
+            upload_status = "completed"
+        except Exception as e:
+            error_msg = str(e)
+            upload_status = "failed"
+
+        # Record the upload
+        upload = DataUpload.objects.create(
+            company=company,
+            consortium=consortium,
+            file_name=uploaded_file.name,
+            file_size=uploaded_file.size,
+            record_count=record_count,
+            feature_count=feature_count,
+            status=upload_status,
+            error_message=error_msg,
+        )
+
+        # Create ContributionProof if successful
+        if upload_status == "completed":
+            from apps.consortiums.models import ContributionProof
+
+            ContributionProof.objects.create(
+                consortium=consortium,
+                company=company,
+                record_count=record_count,
+                feature_count=feature_count,
+                data_hash=data_hash,
+                checksum=data_hash[:16],
+                verification_status="verified",
+                verification_message="Datos validados automaticamente.",
+            )
+
+        AuditLog.log(
+            request,
+            action="data_uploaded",
+            resource_type="data_upload",
+            resource_id=upload.id,
+            extra_data={
+                "file_name": uploaded_file.name,
+                "file_size": uploaded_file.size,
+                "record_count": record_count,
+                "feature_count": feature_count,
+                "consortium_id": str(consortium_id),
+                "data_hash": data_hash[:16],
+            },
+        )
+
+        response_data = DataUploadSerializer(upload).data
+        response_data["preview"] = preview_rows
+        response_data["data_hash"] = data_hash[:16]
+
+        return Response(response_data, status=status.HTTP_201_CREATED)
+
+
+class PlansComparisonView(APIView):
+    """
+    GET /api/v2/sandbox/plans/
+    Public endpoint showing plan comparison.
+    """
+
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        plans = TrialService.get_plans_comparison()
+        return Response(plans)

@@ -1,6 +1,4 @@
-"""
-Explainability admin configuration.
-"""
+"""Django admin configuration for explainability app."""
 
 from django.contrib import admin
 
@@ -19,8 +17,9 @@ class ExplanationRequestAdmin(admin.ModelAdmin):
         "status",
         "created_at",
     ]
-    list_filter = ["explanation_type", "status", "created_at"]
-    search_fields = ["consortium__name", "requester__name"]
+    list_filter = ["explanation_type", "status"]
+    search_fields = ["requester__name", "consortium__name", "prediction_id"]
+    readonly_fields = ["id", "created_at", "updated_at"]
 
 
 @admin.register(FeatureImportance)
@@ -28,14 +27,16 @@ class FeatureImportanceAdmin(admin.ModelAdmin):
     """Admin for FeatureImportance model."""
 
     list_display = [
+        "id",
         "feature_name",
-        "consortium",
         "importance_score",
         "importance_rank",
-        "computed_at",
+        "computation_method",
+        "created_at",
     ]
-    list_filter = ["consortium", "computation_method"]
-    search_fields = ["feature_name"]
+    list_filter = ["computation_method", "consortium"]
+    search_fields = ["feature_name", "consortium__name"]
+    readonly_fields = ["id", "created_at", "updated_at"]
 
 
 @admin.register(ModelInsight)
@@ -43,12 +44,13 @@ class ModelInsightAdmin(admin.ModelAdmin):
     """Admin for ModelInsight model."""
 
     list_display = [
+        "id",
         "title",
-        "consortium",
         "insight_type",
         "severity",
-        "acknowledged",
+        "is_active",
         "created_at",
     ]
-    list_filter = ["insight_type", "severity", "acknowledged"]
-    search_fields = ["title", "consortium__name"]
+    list_filter = ["insight_type", "severity", "is_active"]
+    search_fields = ["title", "description", "consortium__name"]
+    readonly_fields = ["id", "created_at", "updated_at"]

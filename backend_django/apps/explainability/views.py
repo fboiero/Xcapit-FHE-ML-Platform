@@ -174,13 +174,40 @@ class FeatureImportanceViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated, IsCompanyMember]
 
     def get_queryset(self):
-        """Filter by consortium (query param or nested route)."""
+        """Filter by consortium (membership-scoped)."""
+        from apps.consortiums.models import Consortium, ConsortiumMember
+
+        user = self.request.user
+        company = getattr(user, "company", None)
+        if not company:
+            return FeatureImportance.objects.none()
+
         consortium_id = self.kwargs.get("consortium_pk") or self.request.query_params.get("consortium")
         if consortium_id:
+            # SECURITY: Verify membership before returning data
+            is_owner = Consortium.objects.filter(
+                pk=consortium_id, owner=company,
+            ).exists()
+            is_member = ConsortiumMember.objects.filter(
+                consortium_id=consortium_id,
+                company=company,
+                status="active",
+            ).exists()
+            if not is_owner and not is_member:
+                return FeatureImportance.objects.none()
             return FeatureImportance.objects.filter(
                 consortium_id=consortium_id
             ).order_by("importance_rank")
-        return FeatureImportance.objects.all().order_by("importance_rank")
+
+        # SECURITY: Without consortium filter, only show user's consortiums
+        owned_ids = Consortium.objects.filter(owner=company).values_list("id", flat=True)
+        member_ids = ConsortiumMember.objects.filter(
+            company=company, status="active",
+        ).values_list("consortium_id", flat=True)
+        allowed_ids = set(owned_ids) | set(member_ids)
+        return FeatureImportance.objects.filter(
+            consortium_id__in=allowed_ids
+        ).order_by("importance_rank")
 
     @action(detail=False, methods=["get"])
     def top(self, request, consortium_pk=None):
@@ -199,12 +226,36 @@ class ModelInsightViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsCompanyMember]
 
     def get_queryset(self):
-        """Filter by consortium (query param or nested route)."""
+        """Filter by consortium (membership-scoped)."""
+        from apps.consortiums.models import Consortium, ConsortiumMember
+
+        user = self.request.user
+        company = getattr(user, "company", None)
+        if not company:
+            return ModelInsight.objects.none()
+
         consortium_id = self.kwargs.get("consortium_pk") or self.request.query_params.get("consortium")
         if consortium_id:
+            # SECURITY: Verify membership before returning insights
+            is_owner = Consortium.objects.filter(
+                pk=consortium_id, owner=company,
+            ).exists()
+            is_member = ConsortiumMember.objects.filter(
+                consortium_id=consortium_id,
+                company=company,
+                status="active",
+            ).exists()
+            if not is_owner and not is_member:
+                return ModelInsight.objects.none()
             queryset = ModelInsight.objects.filter(consortium_id=consortium_id)
         else:
-            queryset = ModelInsight.objects.all()
+            # SECURITY: Without consortium filter, only show user's consortiums
+            owned_ids = Consortium.objects.filter(owner=company).values_list("id", flat=True)
+            member_ids = ConsortiumMember.objects.filter(
+                company=company, status="active",
+            ).values_list("consortium_id", flat=True)
+            allowed_ids = set(owned_ids) | set(member_ids)
+            queryset = ModelInsight.objects.filter(consortium_id__in=allowed_ids)
 
         # Filter active only by default
         if self.request.query_params.get("include_inactive") != "true":

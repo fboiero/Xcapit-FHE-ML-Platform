@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, Any
 from django.db import transaction
 from django.utils import timezone
 
-from apps.core.services.base import BaseService, ServiceContext, ServiceResult
+from apps.core.services.base import BaseService, ServiceResult
 
 if TYPE_CHECKING:
     from apps.core.models import Company

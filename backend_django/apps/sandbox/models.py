@@ -2,7 +2,7 @@
 Sandbox models for Xcapit FHE-ML Platform.
 
 Sandbox environments for testing and experimentation
-with synthetic data generation.
+with synthetic data generation, plus subscription management.
 """
 
 import secrets
@@ -11,6 +11,148 @@ from datetime import timedelta
 
 from django.db import models
 from django.utils import timezone
+
+
+# =============================================================================
+# SUBSCRIPTION MODEL
+# =============================================================================
+
+
+class Subscription(models.Model):
+    """
+    Tracks a company's subscription state (trial → paid).
+
+    Lifecycle:  trialing → active → (cancelled | past_due | expired)
+    """
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        TRIALING = "trialing", "Trialing"
+        ACTIVE = "active", "Active"
+        PAST_DUE = "past_due", "Past Due"
+        CANCELLED = "cancelled", "Cancelled"
+        EXPIRED = "expired", "Expired"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    company = models.OneToOneField(
+        "core.Company",
+        on_delete=models.CASCADE,
+        related_name="subscription",
+    )
+
+    plan = models.CharField(
+        max_length=20,
+        choices=[
+            ("free", "Free"),
+            ("starter", "Starter"),
+            ("professional", "Professional"),
+            ("enterprise", "Enterprise"),
+        ],
+        default="free",
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.TRIALING,
+        db_index=True,
+    )
+
+    # Billing period
+    trial_end = models.DateTimeField(null=True, blank=True)
+    current_period_start = models.DateTimeField()
+    current_period_end = models.DateTimeField()
+    cancel_at_period_end = models.BooleanField(default=False)
+
+    # External payment provider reference (e.g. Stripe)
+    external_id = models.CharField(max_length=255, blank=True, db_index=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "subscription"
+        verbose_name_plural = "subscriptions"
+        indexes = [
+            models.Index(fields=["status"]),
+            models.Index(fields=["plan"]),
+        ]
+
+    def __str__(self):
+        return f"{self.company.name} — {self.plan} ({self.status})"
+
+    @property
+    def is_active_or_trialing(self):
+        return self.status in (self.Status.TRIALING, self.Status.ACTIVE)
+
+    def activate(self, plan: str, period_days: int = 30):
+        """Move subscription from trial to active paid plan."""
+        now = timezone.now()
+        self.plan = plan
+        self.status = self.Status.ACTIVE
+        self.current_period_start = now
+        self.current_period_end = now + timedelta(days=period_days)
+        self.save()
+
+    def cancel(self):
+        self.cancel_at_period_end = True
+        self.save(update_fields=["cancel_at_period_end", "updated_at"])
+
+    def expire(self):
+        self.status = self.Status.EXPIRED
+        self.save(update_fields=["status", "updated_at"])
+
+
+# =============================================================================
+# DATA UPLOAD TRACKING
+# =============================================================================
+
+
+class DataUpload(models.Model):
+    """
+    Tracks data uploads per company for quota enforcement.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    company = models.ForeignKey(
+        "core.Company",
+        on_delete=models.CASCADE,
+        related_name="data_uploads",
+    )
+    consortium = models.ForeignKey(
+        "consortiums.Consortium",
+        on_delete=models.CASCADE,
+        related_name="data_uploads",
+        null=True,
+        blank=True,
+    )
+    file_name = models.CharField(max_length=255)
+    file_size = models.BigIntegerField()  # bytes
+    record_count = models.IntegerField(default=0)
+    feature_count = models.IntegerField(default=0)
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ("pending", "Pending"),
+            ("processing", "Processing"),
+            ("completed", "Completed"),
+            ("failed", "Failed"),
+        ],
+        default="pending",
+    )
+    error_message = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "data upload"
+        verbose_name_plural = "data uploads"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["company"]),
+            models.Index(fields=["created_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.file_name} ({self.file_size} bytes)"
 
 
 class SandboxLead(models.Model):

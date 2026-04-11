@@ -1,33 +1,93 @@
 """
-Federated inference models for Xcapit FHE-ML Platform.
+Federated models for Xcapit FHE-ML Platform.
 
-Supports distributed inference across edge nodes
-with encrypted data processing.
+Modelos federados, endpoints de inferencia, nodos edge,
+solicitudes y resultados de inferencia distribuida.
 """
 
-import hashlib
-import json
 import uuid
 
 from django.db import models
 from django.utils import timezone
 
 
-class InferenceEndpoint(models.Model):
-    """
-    Inference endpoint for encrypted predictions.
-    """
+class FederatedModel(models.Model):
+    """Modelo federado entrenado dentro de un consorcio."""
 
-    class EndpointType(models.TextChoices):
-        REALTIME = "realtime", "Real-time"
-        BATCH = "batch", "Batch"
-        STREAMING = "streaming", "Streaming"
+    class ModelType(models.TextChoices):
+        LINEAR_REGRESSION = "linear_regression", "Linear Regression"
+        LOGISTIC_REGRESSION = "logistic_regression", "Logistic Regression"
+        DECISION_TREE = "decision_tree", "Decision Tree"
+        KMEANS = "kmeans", "K-Means"
+        RANDOM_FOREST = "random_forest", "Random Forest"
+        NEURAL_NETWORK = "neural_network", "Neural Network"
 
     class Status(models.TextChoices):
-        PENDING = "pending", "Pending"
+        DRAFT = "draft", "Draft"
+        TRAINING = "training", "Training"
+        READY = "ready", "Ready"
+        DEPLOYED = "deployed", "Deployed"
+        DEPRECATED = "deprecated", "Deprecated"
+        ARCHIVED = "archived", "Archived"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    consortium = models.ForeignKey(
+        "consortiums.Consortium",
+        on_delete=models.CASCADE,
+        related_name="federated_models",
+    )
+
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    model_type = models.CharField(max_length=50)
+    version = models.CharField(max_length=20, default="1.0.0")
+
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.DRAFT,
+        db_index=True,
+    )
+    config = models.JSONField(default=dict, blank=True)
+    metrics = models.JSONField(default=dict, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "federated model"
+        verbose_name_plural = "federated models"
+        indexes = [
+            models.Index(fields=["consortium", "status"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.name} v{self.version} ({self.status})"
+
+    @property
+    def deployment_count(self) -> int:
+        """Cantidad de nodos edge donde este modelo está desplegado."""
+        return self.edge_nodes.count()
+
+
+class InferenceEndpoint(models.Model):
+    """Endpoint de inferencia para un modelo federado."""
+
+    class EndpointType(models.TextChoices):
+        REST = "rest", "REST"
+        GRPC = "grpc", "gRPC"
+        WEBSOCKET = "websocket", "WebSocket"
+        BATCH = "batch", "Batch"
+        REALTIME = "realtime", "Realtime"
+
+    class Status(models.TextChoices):
+        PROVISIONING = "provisioning", "Provisioning"
         ACTIVE = "active", "Active"
         PAUSED = "paused", "Paused"
-        FAILED = "failed", "Failed"
+        ERROR = "error", "Error"
+        DECOMMISSIONED = "decommissioned", "Decommissioned"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
@@ -41,80 +101,71 @@ class InferenceEndpoint(models.Model):
         on_delete=models.CASCADE,
         related_name="inference_endpoints",
     )
-
-    name = models.CharField(max_length=100)
-    description = models.TextField(blank=True)
-
-    # Associated model
     model = models.ForeignKey(
-        "models.MLModel",
+        FederatedModel,
         on_delete=models.SET_NULL,
+        related_name="inference_endpoints",
         null=True,
         blank=True,
-        related_name="endpoints",
     )
 
-    # Type and status
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
     endpoint_type = models.CharField(
         max_length=20,
         choices=EndpointType.choices,
-        default=EndpointType.REALTIME,
+        default=EndpointType.REST,
     )
     status = models.CharField(
         max_length=20,
         choices=Status.choices,
-        default=Status.PENDING,
+        default=Status.PROVISIONING,
+        db_index=True,
     )
-
-    # Configuration
     config = models.JSONField(default=dict, blank=True)
+    url = models.URLField(max_length=500, blank=True)
 
-    # URL (generated after deployment)
-    url = models.URLField(blank=True)
-
-    # Stats
     request_count = models.IntegerField(default=0)
-    total_latency_ms = models.FloatField(default=0)
+    total_latency_ms = models.FloatField(default=0.0)
 
-    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        ordering = ["-created_at"]
         verbose_name = "inference endpoint"
         verbose_name_plural = "inference endpoints"
-        ordering = ["-created_at"]
         indexes = [
-            models.Index(fields=["consortium"]),
+            models.Index(fields=["consortium", "status"]),
             models.Index(fields=["company"]),
-            models.Index(fields=["status"]),
         ]
 
-    def __str__(self):
-        return f"{self.name} ({self.status})"
+    def __str__(self) -> str:
+        return f"{self.name} ({self.endpoint_type} / {self.status})"
 
     @property
-    def avg_latency_ms(self):
-        if self.request_count > 0:
-            return self.total_latency_ms / self.request_count
-        return 0
+    def avg_latency_ms(self) -> float:
+        """Latencia promedio por solicitud en milisegundos."""
+        if self.request_count == 0:
+            return 0
+        return round(self.total_latency_ms / self.request_count, 2)
 
 
 class InferenceRequest(models.Model):
-    """
-    Individual inference request.
-    """
+    """Solicitud de inferencia sobre un endpoint."""
 
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"
         PROCESSING = "processing", "Processing"
         COMPLETED = "completed", "Completed"
         FAILED = "failed", "Failed"
+        CANCELLED = "cancelled", "Cancelled"
 
     class Priority(models.TextChoices):
         LOW = "low", "Low"
         NORMAL = "normal", "Normal"
         HIGH = "high", "High"
+        CRITICAL = "critical", "Critical"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
@@ -129,11 +180,11 @@ class InferenceRequest(models.Model):
         related_name="inference_requests",
     )
 
-    # Request details
     status = models.CharField(
         max_length=20,
         choices=Status.choices,
         default=Status.PENDING,
+        db_index=True,
     )
     priority = models.CharField(
         max_length=10,
@@ -141,44 +192,40 @@ class InferenceRequest(models.Model):
         default=Priority.NORMAL,
     )
 
-    # Input hash (not the actual data)
-    input_hash = models.CharField(max_length=64)
+    input_hash = models.CharField(max_length=66, blank=True)
+    encryption_key_id = models.CharField(max_length=255, blank=True)
+    latency_ms = models.IntegerField(null=True, blank=True)
 
-    # Encryption key reference
-    encryption_key_id = models.CharField(max_length=100, blank=True)
-
-    # Timing
-    latency_ms = models.FloatField(null=True, blank=True)
-
-    # Timestamps
-    created_at = models.DateTimeField(auto_now_add=True)
     started_at = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
 
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
     class Meta:
+        ordering = ["-created_at"]
         verbose_name = "inference request"
         verbose_name_plural = "inference requests"
-        ordering = ["-created_at"]
         indexes = [
-            models.Index(fields=["endpoint"]),
+            models.Index(fields=["endpoint", "status"]),
             models.Index(fields=["requester"]),
-            models.Index(fields=["status"]),
         ]
 
-    def __str__(self):
-        return f"Request {self.id} ({self.status})"
+    def __str__(self) -> str:
+        return f"Request {self.id!s:.8} — {self.status}"
 
     @staticmethod
-    def hash_input(input_data):
-        """Hash input data for storage."""
-        data_str = json.dumps(input_data, sort_keys=True)
-        return hashlib.sha256(data_str.encode()).hexdigest()
+    def hash_input(data: dict) -> str:
+        """Compute a deterministic SHA-256 hash of *data*."""
+        import hashlib
+        import json
+
+        raw = json.dumps(data, sort_keys=True).encode()
+        return hashlib.sha256(raw).hexdigest()
 
 
 class InferenceResult(models.Model):
-    """
-    Result of an inference request.
-    """
+    """Resultado de una solicitud de inferencia."""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
@@ -188,106 +235,38 @@ class InferenceResult(models.Model):
         related_name="result",
     )
 
-    # Encrypted output (JSON, never raw predictions)
-    encrypted_output = models.TextField()
-
-    # Metadata
+    encrypted_output = models.TextField(blank=True)
     output_metadata = models.JSONField(default=dict, blank=True)
-    confidence_scores = models.JSONField(default=list)
+    confidence_scores = models.JSONField(default=list, blank=True)
 
-    # Timestamps
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        verbose_name = "inference result"
-        verbose_name_plural = "inference results"
-
-    def __str__(self):
-        return f"Result for {self.request_id}"
-
-
-class FederatedModel(models.Model):
-    """
-    Federated model for distributed training and inference.
-    """
-
-    class Status(models.TextChoices):
-        DRAFT = "draft", "Draft"
-        TRAINING = "training", "Training"
-        READY = "ready", "Ready"
-        DEPLOYED = "deployed", "Deployed"
-        ARCHIVED = "archived", "Archived"
-
-    class ModelType(models.TextChoices):
-        LINEAR_REGRESSION = "linear_regression", "Linear Regression"
-        LOGISTIC_REGRESSION = "logistic_regression", "Logistic Regression"
-        NEURAL_NETWORK = "neural_network", "Neural Network"
-        XGBOOST = "xgboost", "XGBoost"
-
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-
-    consortium = models.ForeignKey(
-        "consortiums.Consortium",
-        on_delete=models.CASCADE,
-        related_name="federated_models",
-    )
-
-    name = models.CharField(max_length=100)
-    description = models.TextField(blank=True)
-    model_type = models.CharField(
-        max_length=50,
-        choices=ModelType.choices,
-    )
-    version = models.CharField(max_length=20, default="1.0.0")
-
-    # Status
-    status = models.CharField(
-        max_length=20,
-        choices=Status.choices,
-        default=Status.DRAFT,
-    )
-
-    # Configuration
-    config = models.JSONField(default=dict, blank=True)
-
-    # Metrics
-    metrics = models.JSONField(default=dict, blank=True)
-
-    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name = "federated model"
-        verbose_name_plural = "federated models"
         ordering = ["-created_at"]
-        indexes = [
-            models.Index(fields=["consortium"]),
-            models.Index(fields=["status"]),
-        ]
+        verbose_name = "inference result"
+        verbose_name_plural = "inference results"
 
-    def __str__(self):
-        return f"{self.name} v{self.version}"
-
-    @property
-    def deployment_count(self):
-        return self.edge_deployments.count()
+    def __str__(self) -> str:
+        return f"Result for request {self.request_id!s:.8}"
 
 
 class EdgeNode(models.Model):
-    """
-    Edge node for federated inference.
-    """
+    """Nodo edge para ejecución distribuida de inferencia."""
 
     class NodeType(models.TextChoices):
-        ON_PREMISE = "on_premise", "On-Premise"
+        GPU = "gpu", "GPU"
+        CPU = "cpu", "CPU"
+        TPU = "tpu", "TPU"
+        FPGA = "fpga", "FPGA"
         CLOUD = "cloud", "Cloud"
-        HYBRID = "hybrid", "Hybrid"
+        ON_PREMISE = "on_premise", "On Premise"
 
     class Status(models.TextChoices):
-        OFFLINE = "offline", "Offline"
         ONLINE = "online", "Online"
+        OFFLINE = "offline", "Offline"
         MAINTENANCE = "maintenance", "Maintenance"
+        ERROR = "error", "Error"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
@@ -297,59 +276,54 @@ class EdgeNode(models.Model):
         related_name="edge_nodes",
     )
 
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=255)
     node_type = models.CharField(
-        max_length=20,
+        max_length=10,
         choices=NodeType.choices,
-        default=NodeType.ON_PREMISE,
+        default=NodeType.CPU,
     )
-    location = models.CharField(max_length=200, blank=True)
-
-    # Status
+    location = models.CharField(max_length=255, blank=True)
     status = models.CharField(
         max_length=20,
         choices=Status.choices,
         default=Status.OFFLINE,
+        db_index=True,
     )
-
-    # Capabilities
     capabilities = models.JSONField(default=dict, blank=True)
 
-    # Deployed models
     deployed_models = models.ManyToManyField(
         FederatedModel,
-        related_name="edge_deployments",
+        related_name="edge_nodes",
         blank=True,
     )
 
-    # Health
     last_heartbeat = models.DateTimeField(null=True, blank=True)
 
-    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        ordering = ["-created_at"]
         verbose_name = "edge node"
         verbose_name_plural = "edge nodes"
-        ordering = ["-created_at"]
         indexes = [
-            models.Index(fields=["company"]),
-            models.Index(fields=["status"]),
+            models.Index(fields=["company", "status"]),
         ]
 
-    def __str__(self):
-        return f"{self.name} ({self.status})"
+    def __str__(self) -> str:
+        return f"{self.name} ({self.node_type} / {self.status})"
 
-    def update_heartbeat(self):
-        """Update last heartbeat timestamp."""
+    def update_heartbeat(self) -> None:
+        """Record a heartbeat and mark the node as online."""
         self.last_heartbeat = timezone.now()
         self.status = self.Status.ONLINE
-        self.save(update_fields=["last_heartbeat", "status"])
+        self.save(update_fields=["last_heartbeat", "status", "updated_at"])
 
     @property
-    def is_online(self):
-        if not self.last_heartbeat:
+    def is_online(self) -> bool:
+        """Indica si el nodo se reportó en los últimos 5 minutos."""
+        if self.last_heartbeat is None:
             return False
-        # Consider offline if no heartbeat in last 5 minutes
-        return (timezone.now() - self.last_heartbeat).seconds < 300
+        from datetime import timedelta
+
+        return timezone.now() - self.last_heartbeat < timedelta(minutes=5)

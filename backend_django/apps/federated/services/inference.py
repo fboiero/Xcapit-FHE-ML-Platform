@@ -174,7 +174,7 @@ class InferenceService(BaseService):
         ).decode()
 
         model_version = (
-            endpoint.model.current_version if endpoint.model else "1.0.0"
+            endpoint.model.version if endpoint.model else "1.0.0"
         )
 
         output_metadata = {
@@ -270,7 +270,7 @@ class InferenceService(BaseService):
                 {
                     "id": str(endpoint.model.id),
                     "name": endpoint.model.name,
-                    "version": endpoint.model.current_version,
+                    "version": endpoint.model.version,
                 }
                 if endpoint.model
                 else None

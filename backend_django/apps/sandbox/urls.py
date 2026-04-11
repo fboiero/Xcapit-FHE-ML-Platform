@@ -17,6 +17,17 @@ urlpatterns = [
     # Public endpoints (no auth required)
     path("leads/", views.SandboxLeadView.as_view(), name="sandbox-lead"),
     path("leads/verify/", views.SandboxLeadVerifyView.as_view(), name="sandbox-lead-verify"),
+    # Consortium demo (public with sandbox token)
+    path("consortium-demo/", views.ConsortiumDemoView.as_view(), name="consortium-demo"),
+    path("consortium-demo/limits/", views.ConsortiumDemoLimitsView.as_view(), name="consortium-demo-limits"),
+    # Plans comparison (public)
+    path("plans/", views.PlansComparisonView.as_view(), name="plans-comparison"),
+    # Trial management (authenticated)
+    path("trial/start/", views.TrialStartView.as_view(), name="trial-start"),
+    path("trial/status/", views.TrialStatusView.as_view(), name="trial-status"),
+    path("trial/usage/", views.TrialUsageView.as_view(), name="trial-usage"),
+    path("trial/upgrade/", views.TrialUpgradeView.as_view(), name="trial-upgrade"),
+    path("trial/upload-data/", views.TrialUploadDataView.as_view(), name="trial-upload-data"),
     # Authenticated endpoints
     path("", include(router.urls)),
 ]

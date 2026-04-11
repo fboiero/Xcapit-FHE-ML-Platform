@@ -1,7 +1,8 @@
 """
 Ensemble models for Xcapit FHE-ML Platform.
 
-Handles multi-model ensemble creation, aggregation, and predictions.
+Modelos de ensamble, sus componentes individuales,
+predicciones y evaluaciones de rendimiento.
 """
 
 import uuid
@@ -10,38 +11,33 @@ from django.db import models
 
 
 class Ensemble(models.Model):
-    """
-    A multi-model ensemble that aggregates predictions from multiple models.
-    """
+    """Modelo de ensamble compuesto por múltiples modelos base."""
 
     class EnsembleType(models.TextChoices):
-        VOTING = "voting", "Voting (Majority)"
-        AVERAGING = "averaging", "Averaging"
-        WEIGHTED = "weighted", "Weighted Average"
-        STACKING = "stacking", "Stacking"
+        BAGGING = "bagging", "Bagging"
         BOOSTING = "boosting", "Boosting"
+        STACKING = "stacking", "Stacking"
+        VOTING = "voting", "Voting"
+        WEIGHTED = "weighted", "Weighted"
+        CUSTOM = "custom", "Custom"
 
     class Status(models.TextChoices):
         DRAFT = "draft", "Draft"
         ACTIVE = "active", "Active"
         TRAINING = "training", "Training"
-        DEPLOYED = "deployed", "Deployed"
+        READY = "ready", "Ready"
         ARCHIVED = "archived", "Archived"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    # Basic info
-    name = models.CharField(max_length=255)
-    description = models.TextField(blank=True)
-
-    # Ownership
     owner = models.ForeignKey(
         "core.Company",
         on_delete=models.CASCADE,
-        related_name="owned_ensembles",
+        related_name="ensembles",
     )
 
-    # Configuration
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
     ensemble_type = models.CharField(
         max_length=20,
         choices=EnsembleType.choices,
@@ -53,45 +49,40 @@ class Ensemble(models.Model):
         default=Status.DRAFT,
         db_index=True,
     )
-
-    # Aggregation config (for weighted ensembles)
     aggregation_config = models.JSONField(default=dict, blank=True)
 
-    # Performance metrics
-    accuracy = models.FloatField(null=True, blank=True)
-    f1_score = models.FloatField(null=True, blank=True)
-    ensemble_improvement = models.FloatField(
-        null=True,
-        blank=True,
-        help_text="Improvement over best single model (%)",
+    accuracy = models.DecimalField(
+        max_digits=7, decimal_places=4, null=True, blank=True
+    )
+    f1_score = models.DecimalField(
+        max_digits=7, decimal_places=4, null=True, blank=True
+    )
+    ensemble_improvement = models.DecimalField(
+        max_digits=7, decimal_places=4, null=True, blank=True
     )
 
-    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        ordering = ["-created_at"]
         verbose_name = "ensemble"
         verbose_name_plural = "ensembles"
-        ordering = ["-created_at"]
         indexes = [
-            models.Index(fields=["owner"]),
-            models.Index(fields=["status"]),
+            models.Index(fields=["owner", "status"]),
         ]
 
-    def __str__(self):
-        return f"{self.name} ({self.ensemble_type})"
+    def __str__(self) -> str:
+        return f"{self.name} ({self.ensemble_type} / {self.status})"
 
     @property
-    def model_count(self):
-        """Get number of models in ensemble."""
-        return self.ensemble_models.count()
+    def model_count(self) -> int:
+        """Cantidad de modelos activos en el ensamble."""
+        return self.ensemble_models.filter(is_active=True).count()
 
 
 class EnsembleModel(models.Model):
-    """
-    A model that is part of an ensemble.
-    """
+    """Modelo individual dentro de un ensamble."""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
@@ -100,48 +91,44 @@ class EnsembleModel(models.Model):
         on_delete=models.CASCADE,
         related_name="ensemble_models",
     )
-
-    # Model reference
     model = models.ForeignKey(
         "models.MLModel",
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name="ensemble_memberships",
-    )
-
-    # Weight (for weighted ensembles)
-    weight = models.FloatField(default=1.0)
-
-    # Performance contribution
-    individual_accuracy = models.FloatField(null=True, blank=True)
-    contribution_score = models.FloatField(
         null=True,
         blank=True,
-        help_text="Model's contribution to ensemble performance",
     )
 
-    # Status
-    is_active = models.BooleanField(default=True)
+    weight = models.DecimalField(max_digits=7, decimal_places=4, default=1.0)
+    individual_accuracy = models.DecimalField(
+        max_digits=7, decimal_places=4, null=True, blank=True
+    )
+    contribution_score = models.DecimalField(
+        max_digits=7, decimal_places=4, null=True, blank=True
+    )
+    is_active = models.BooleanField(default=True, db_index=True)
 
-    # Timestamps
     added_at = models.DateTimeField(auto_now_add=True)
 
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
     class Meta:
+        ordering = ["-created_at"]
         verbose_name = "ensemble model"
         verbose_name_plural = "ensemble models"
-        unique_together = ["ensemble", "model"]
+        unique_together = [("ensemble", "model")]
         indexes = [
-            models.Index(fields=["ensemble"]),
-            models.Index(fields=["model"]),
+            models.Index(fields=["ensemble", "is_active"]),
         ]
 
-    def __str__(self):
-        return f"{self.model.name} in {self.ensemble.name}"
+    def __str__(self) -> str:
+        model_name = self.model.name if self.model else "unknown"
+        return f"{model_name} in {self.ensemble.name} (w={self.weight})"
 
 
 class EnsemblePrediction(models.Model):
-    """
-    A prediction made by an ensemble.
-    """
+    """Solicitud y resultado de predicción del ensamble."""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
@@ -150,49 +137,40 @@ class EnsemblePrediction(models.Model):
         on_delete=models.CASCADE,
         related_name="predictions",
     )
-
-    # Request info
     requester = models.ForeignKey(
         "core.Company",
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name="ensemble_predictions",
+        null=True,
+        blank=True,
     )
 
-    # Input/Output
-    input_hash = models.CharField(max_length=64)  # Hash of input data
-    n_samples = models.IntegerField()
+    input_hash = models.CharField(max_length=66, blank=True)
+    n_samples = models.IntegerField(default=0)
+    prediction = models.JSONField(default=dict, blank=True)
+    confidence = models.DecimalField(
+        max_digits=7, decimal_places=4, null=True, blank=True
+    )
+    model_predictions = models.JSONField(default=dict, blank=True)
+    latency_ms = models.IntegerField(null=True, blank=True)
 
-    # Aggregated prediction
-    prediction = models.JSONField()  # Aggregated result
-    confidence = models.FloatField(null=True, blank=True)
-
-    # Individual model predictions (for transparency)
-    model_predictions = models.JSONField(default=dict)
-
-    # Performance
-    latency_ms = models.FloatField(null=True, blank=True)
-
-    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        ordering = ["-created_at"]
         verbose_name = "ensemble prediction"
         verbose_name_plural = "ensemble predictions"
-        ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["ensemble"]),
-            models.Index(fields=["requester"]),
-            models.Index(fields=["created_at"]),
         ]
 
-    def __str__(self):
-        return f"Prediction by {self.ensemble.name} ({self.n_samples} samples)"
+    def __str__(self) -> str:
+        return f"Prediction — {self.ensemble.name} ({self.n_samples} samples)"
 
 
 class EnsembleEvaluation(models.Model):
-    """
-    Evaluation results for an ensemble.
-    """
+    """Evaluación de rendimiento del ensamble."""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
@@ -202,28 +180,42 @@ class EnsembleEvaluation(models.Model):
         related_name="evaluations",
     )
 
-    # Evaluation metrics
-    accuracy = models.FloatField()
-    precision = models.FloatField(null=True, blank=True)
-    recall = models.FloatField(null=True, blank=True)
-    f1_score = models.FloatField(null=True, blank=True)
-    auc_roc = models.FloatField(null=True, blank=True)
+    accuracy = models.DecimalField(
+        max_digits=7, decimal_places=4, null=True, blank=True
+    )
+    precision = models.DecimalField(
+        max_digits=7, decimal_places=4, null=True, blank=True
+    )
+    recall = models.DecimalField(
+        max_digits=7, decimal_places=4, null=True, blank=True
+    )
+    f1_score = models.DecimalField(
+        max_digits=7, decimal_places=4, null=True, blank=True
+    )
+    auc_roc = models.DecimalField(
+        max_digits=7, decimal_places=4, null=True, blank=True
+    )
+    best_individual_accuracy = models.DecimalField(
+        max_digits=7, decimal_places=4, null=True, blank=True
+    )
+    improvement_over_best = models.DecimalField(
+        max_digits=7, decimal_places=4, null=True, blank=True
+    )
+    test_samples = models.IntegerField(null=True, blank=True)
+    test_data_hash = models.CharField(max_length=66, blank=True)
 
-    # Comparison with individual models
-    best_individual_accuracy = models.FloatField()
-    improvement_over_best = models.FloatField()
-
-    # Dataset info
-    test_samples = models.IntegerField()
-    test_data_hash = models.CharField(max_length=64)
-
-    # Timestamps
     evaluated_at = models.DateTimeField(auto_now_add=True)
 
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
     class Meta:
+        ordering = ["-created_at"]
         verbose_name = "ensemble evaluation"
         verbose_name_plural = "ensemble evaluations"
-        ordering = ["-evaluated_at"]
+        indexes = [
+            models.Index(fields=["ensemble"]),
+        ]
 
-    def __str__(self):
-        return f"Evaluation of {self.ensemble.name}: {self.accuracy:.2%}"
+    def __str__(self) -> str:
+        return f"Evaluation — {self.ensemble.name} (acc={self.accuracy})"

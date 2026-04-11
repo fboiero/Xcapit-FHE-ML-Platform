@@ -211,7 +211,7 @@ class EnsembleViewSet(viewsets.ModelViewSet):
         """Make predictions using the ensemble."""
         ensemble = self.get_object()
 
-        if ensemble.status not in [Ensemble.Status.ACTIVE, Ensemble.Status.DEPLOYED]:
+        if ensemble.status not in [Ensemble.Status.ACTIVE, Ensemble.Status.READY]:
             return Response(
                 {"detail": "Ensemble must be active to make predictions."},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -229,7 +229,7 @@ class EnsembleViewSet(viewsets.ModelViewSet):
             # In real implementation, would call actual model
             model_predictions[str(em.model.id)] = {
                 "predictions": [0] * len(X),  # Placeholder
-                "weight": em.weight,
+                "weight": float(em.weight),
             }
 
         # Aggregate predictions based on ensemble type
@@ -259,9 +259,6 @@ class EnsembleViewSet(viewsets.ModelViewSet):
         if ensemble_type == Ensemble.EnsembleType.VOTING:
             # Majority voting (simplified)
             return {"method": "voting", "predictions": [0] * n_samples}
-        elif ensemble_type == Ensemble.EnsembleType.AVERAGING:
-            # Simple average
-            return {"method": "averaging", "predictions": [0.5] * n_samples}
         elif ensemble_type == Ensemble.EnsembleType.WEIGHTED:
             # Weighted average
             return {"method": "weighted", "predictions": [0.5] * n_samples}
