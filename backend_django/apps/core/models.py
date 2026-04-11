@@ -141,6 +141,33 @@ class Company(models.Model):
         "enterprise": -1,  # Unlimited
     }
 
+    # Max data upload per tier (bytes)
+    TIER_UPLOAD_LIMITS = {
+        "free": 50 * 1024 * 1024,        # 50 MB
+        "starter": 1 * 1024 ** 3,         # 1 GB
+        "professional": 10 * 1024 ** 3,   # 10 GB
+        "enterprise": -1,                  # Unlimited
+    }
+
+    # Max training runs per day per tier
+    TIER_TRAINING_LIMITS = {
+        "free": 5,
+        "starter": 50,
+        "professional": 500,
+        "enterprise": -1,  # Unlimited
+    }
+
+    # Max sandboxes per tier
+    TIER_SANDBOX_LIMITS = {
+        "free": 1,
+        "starter": 3,
+        "professional": 10,
+        "enterprise": -1,  # Unlimited
+    }
+
+    # Trial duration (days)
+    TRIAL_DURATION_DAYS = 14
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
     email = models.EmailField(unique=True, db_index=True)
@@ -161,6 +188,10 @@ class Company(models.Model):
     industry = models.CharField(max_length=100, blank=True)
     website = models.URLField(blank=True)
     description = models.TextField(blank=True)
+
+    # Trial tracking
+    trial_started_at = models.DateTimeField(null=True, blank=True)
+    trial_expires_at = models.DateTimeField(null=True, blank=True)
 
     # Status
     is_active = models.BooleanField(default=True)
@@ -224,6 +255,53 @@ class Company(models.Model):
             company=self, status="active"
         ).count()
         return current_count < self.consortium_limit
+
+    # ── Trial helpers ──────────────────────────────────────────────
+
+    @property
+    def is_trial(self) -> bool:
+        """True when the company is on a free-tier trial with a set expiry."""
+        return (
+            self.tier == self.Tier.FREE
+            and self.trial_expires_at is not None
+        )
+
+    @property
+    def trial_expired(self) -> bool:
+        if not self.trial_expires_at:
+            return False
+        return timezone.now() > self.trial_expires_at
+
+    @property
+    def trial_days_remaining(self) -> int:
+        if not self.trial_expires_at:
+            return 0
+        delta = self.trial_expires_at - timezone.now()
+        return max(0, delta.days)
+
+    @property
+    def upload_limit(self) -> int:
+        """Max upload bytes. -1 = unlimited."""
+        return self.TIER_UPLOAD_LIMITS.get(self.tier, 50 * 1024 * 1024)
+
+    @property
+    def training_limit(self) -> int:
+        """Max training runs per day. -1 = unlimited."""
+        return self.TIER_TRAINING_LIMITS.get(self.tier, 5)
+
+    @property
+    def sandbox_limit(self) -> int:
+        """Max sandboxes. -1 = unlimited."""
+        return self.TIER_SANDBOX_LIMITS.get(self.tier, 1)
+
+    def start_trial(self) -> None:
+        """Activate the free-tier trial."""
+        from datetime import timedelta
+
+        now = timezone.now()
+        self.trial_started_at = now
+        self.trial_expires_at = now + timedelta(days=self.TRIAL_DURATION_DAYS)
+        self.save(update_fields=["trial_started_at", "trial_expires_at"])
 
 
 class APIKey(models.Model):

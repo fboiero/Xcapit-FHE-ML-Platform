@@ -1,32 +1,46 @@
 """
 Core serializers for Xcapit FHE-ML Platform.
 
-Provides validation and serialization for User, Company, and APIKey models.
+ModelSerializer classes for all core models with proper field definitions,
+read-only constraints, and nested representations where appropriate.
 """
 
-from django.contrib.auth import get_user_model
-from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
 from .models import (
-    APIKey,
     AuditLog,
+    APIKey,
     Company,
     Report,
     ScheduledTask,
     ScheduledTaskRun,
     UsageTracking,
+    User,
     Webhook,
     WebhookDelivery,
     Workflow,
     WorkflowRun,
 )
 
-User = get_user_model()
+
+# ── Company Serializers ───────────────────────────────────────────────
 
 
 class CompanySerializer(serializers.ModelSerializer):
-    """Serializer for Company model."""
+    """
+    Standard Company serializer.
+
+    Tier-related limits are read-only computed fields; name, email,
+    industry, website, and description are writable.
+    """
+
+    rate_limit = serializers.IntegerField(read_only=True)
+    daily_limit = serializers.IntegerField(read_only=True)
+    model_limit = serializers.IntegerField(read_only=True)
+    consortium_limit = serializers.IntegerField(read_only=True)
+    upload_limit = serializers.IntegerField(read_only=True)
+    training_limit = serializers.IntegerField(read_only=True)
+    sandbox_limit = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Company
@@ -34,36 +48,84 @@ class CompanySerializer(serializers.ModelSerializer):
             "id",
             "name",
             "email",
+            "tier",
             "industry",
             "website",
             "description",
             "is_active",
             "is_verified",
+            "rate_limit",
+            "daily_limit",
+            "model_limit",
+            "consortium_limit",
+            "upload_limit",
+            "training_limit",
+            "sandbox_limit",
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "is_verified", "created_at", "updated_at"]
+        read_only_fields = [
+            "id",
+            "tier",
+            "is_active",
+            "is_verified",
+            "created_at",
+            "updated_at",
+        ]
 
 
-class CompanyCreateSerializer(serializers.ModelSerializer):
-    """Serializer for creating a Company."""
+class CompanyDetailSerializer(CompanySerializer):
+    """
+    Extended Company serializer with trial information, subscription
+    status, and current usage limits.
+    """
 
-    class Meta:
-        model = Company
-        fields = ["name", "email", "industry", "website", "description"]
+    is_trial = serializers.BooleanField(read_only=True)
+    trial_expired = serializers.BooleanField(read_only=True)
+    trial_days_remaining = serializers.IntegerField(read_only=True)
+    user_count = serializers.SerializerMethodField()
+    api_key_count = serializers.SerializerMethodField()
 
-    def validate_email(self, value):
-        """Ensure email is unique and lowercase."""
-        value = value.lower()
-        if Company.objects.filter(email=value).exists():
-            raise serializers.ValidationError("A company with this email already exists.")
-        return value
+    class Meta(CompanySerializer.Meta):
+        fields = CompanySerializer.Meta.fields + [
+            "trial_started_at",
+            "trial_expires_at",
+            "custom_rate_limit",
+            "custom_daily_limit",
+            "is_trial",
+            "trial_expired",
+            "trial_days_remaining",
+            "user_count",
+            "api_key_count",
+        ]
+        read_only_fields = CompanySerializer.Meta.read_only_fields + [
+            "trial_started_at",
+            "trial_expires_at",
+            "custom_rate_limit",
+            "custom_daily_limit",
+        ]
+
+    def get_user_count(self, obj):
+        return obj.users.count()
+
+    def get_api_key_count(self, obj):
+        return obj.api_keys.filter(is_active=True).count()
+
+
+# ── User Serializer ───────────────────────────────────────────────────
 
 
 class UserSerializer(serializers.ModelSerializer):
-    """Serializer for User model."""
+    """
+    User serializer.
 
-    company_name = serializers.CharField(source="company.name", read_only=True)
+    Password is write-only, company is read-only (set via business logic).
+    """
+
+    full_name = serializers.CharField(source="get_full_name", read_only=True)
+    company_name = serializers.CharField(
+        source="company.name", read_only=True, default=None
+    )
 
     class Meta:
         model = User
@@ -72,118 +134,54 @@ class UserSerializer(serializers.ModelSerializer):
             "email",
             "first_name",
             "last_name",
+            "full_name",
             "company",
             "company_name",
             "is_active",
+            "is_staff",
             "date_joined",
             "last_login",
         ]
-        read_only_fields = ["id", "date_joined", "last_login"]
-
-
-class UserCreateSerializer(serializers.ModelSerializer):
-    """Serializer for creating a User with password validation."""
-
-    password = serializers.CharField(
-        write_only=True,
-        required=True,
-        style={"input_type": "password"},
-    )
-    password_confirm = serializers.CharField(
-        write_only=True,
-        required=True,
-        style={"input_type": "password"},
-    )
-
-    class Meta:
-        model = User
-        fields = [
+        read_only_fields = [
+            "id",
             "email",
-            "password",
-            "password_confirm",
-            "first_name",
-            "last_name",
             "company",
+            "is_active",
+            "is_staff",
+            "date_joined",
+            "last_login",
         ]
 
-    def validate_email(self, value):
-        """Ensure email is unique and lowercase."""
-        value = value.lower()
-        if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError("A user with this email already exists.")
-        return value
 
-    def validate(self, attrs):
-        """Validate password match and strength."""
-        if attrs["password"] != attrs["password_confirm"]:
-            raise serializers.ValidationError({"password": "Passwords do not match."})
-
-        # Validate password strength
-        validate_password(attrs["password"])
-
-        return attrs
-
-    def create(self, validated_data):
-        """Create user with hashed password."""
-        validated_data.pop("password_confirm")
-        password = validated_data.pop("password")
-        user = User(**validated_data)
-        user.set_password(password)
-        user.save()
-        return user
-
-
-class UserUpdateSerializer(serializers.ModelSerializer):
-    """Serializer for updating User profile."""
-
-    class Meta:
-        model = User
-        fields = ["first_name", "last_name"]
-
-
-class ChangePasswordSerializer(serializers.Serializer):
-    """Serializer for password change."""
-
-    old_password = serializers.CharField(
-        required=True,
-        style={"input_type": "password"},
-    )
-    new_password = serializers.CharField(
-        required=True,
-        style={"input_type": "password"},
-    )
-    new_password_confirm = serializers.CharField(
-        required=True,
-        style={"input_type": "password"},
-    )
-
-    def validate_old_password(self, value):
-        """Verify current password is correct."""
-        user = self.context["request"].user
-        if not user.check_password(value):
-            raise serializers.ValidationError("Current password is incorrect.")
-        return value
-
-    def validate(self, attrs):
-        """Validate new password match and strength."""
-        if attrs["new_password"] != attrs["new_password_confirm"]:
-            raise serializers.ValidationError({"new_password": "Passwords do not match."})
-        validate_password(attrs["new_password"])
-        return attrs
+# ── APIKey Serializer ─────────────────────────────────────────────────
 
 
 class APIKeySerializer(serializers.ModelSerializer):
-    """Serializer for APIKey model (read-only, no actual key exposed)."""
+    """
+    API Key serializer.
 
-    company_name = serializers.CharField(source="company.name", read_only=True)
+    ``key_hash`` is **never** exposed. The raw key is only returned once
+    at creation time via a separate view; this serializer is for listing
+    and managing existing keys.
+    """
+
+    created_by_email = serializers.EmailField(
+        source="created_by.email", read_only=True, default=None
+    )
+    company_name = serializers.CharField(
+        source="company.name", read_only=True
+    )
 
     class Meta:
         model = APIKey
         fields = [
             "id",
             "name",
+            "prefix",
             "company",
             "company_name",
+            "created_by",
+            "created_by_email",
             "permissions",
             "rate_limit",
             "is_active",
@@ -193,69 +191,157 @@ class APIKeySerializer(serializers.ModelSerializer):
         ]
         read_only_fields = [
             "id",
+            "prefix",
             "company",
+            "created_by",
             "created_at",
             "last_used_at",
         ]
+        # Ensure key_hash is never serialised — it is not in `fields`.
 
 
 class APIKeyCreateSerializer(serializers.ModelSerializer):
-    """Serializer for creating an APIKey."""
+    """
+    Serializer used when creating a new API key.
+
+    Only accepts name, permissions, rate_limit, and expires_at.
+    The company and created_by are set in the view from request context.
+    """
 
     class Meta:
         model = APIKey
-        fields = ["name", "permissions", "rate_limit", "expires_at"]
+        fields = [
+            "name",
+            "permissions",
+            "rate_limit",
+            "expires_at",
+        ]
 
     def validate_permissions(self, value):
-        """Validate permissions list."""
-        valid_permissions = ["read", "write", "admin"]
+        valid = {"read", "write", "admin"}
+        if not isinstance(value, list):
+            raise serializers.ValidationError("Permissions must be a list.")
         for perm in value:
-            if perm not in valid_permissions:
+            if perm not in valid:
                 raise serializers.ValidationError(
-                    f"Invalid permission '{perm}'. Valid: {valid_permissions}"
+                    f"Invalid permission '{perm}'. Valid options: {sorted(valid)}"
                 )
         return value
 
-    def validate_rate_limit(self, value):
-        """Validate rate limit is reasonable."""
-        if value < 1 or value > 10000:
-            raise serializers.ValidationError("Rate limit must be between 1 and 10000.")
+    def validate_rate_limit(self, value: int) -> int:
+        max_rate_limit = 10000  # requests per minute cap
+        if value > max_rate_limit:
+            raise serializers.ValidationError(
+                f"Rate limit cannot exceed {max_rate_limit} requests per minute."
+            )
+        if value < 1:
+            raise serializers.ValidationError(
+                "Rate limit must be at least 1 request per minute."
+            )
         return value
 
+
+class CompanyCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating a company."""
+
+    class Meta:
+        model = Company
+        fields = ["name", "email", "industry", "website", "description"]
+
+    def validate_email(self, value: str) -> str:
+        if Company.objects.filter(email=value).exists():
+            raise serializers.ValidationError("A company with this email already exists.")
+        return value
+
+
+class UserCreateSerializer(serializers.Serializer):
+    """Serializer for creating a user with password confirmation."""
+
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True, min_length=12)
+    password_confirm = serializers.CharField(write_only=True, min_length=12)
+    first_name = serializers.CharField(max_length=150)
+    last_name = serializers.CharField(max_length=150)
+    company = serializers.PrimaryKeyRelatedField(
+        queryset=Company.objects.all(), required=False, allow_null=True
+    )
+
+    def validate_email(self, value: str) -> str:
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("A user with this email already exists.")
+        return value
+
+    def validate(self, attrs):
+        if attrs.get("password") != attrs.get("password_confirm"):
+            raise serializers.ValidationError(
+                {"password_confirm": "Passwords do not match."}
+            )
+        return attrs
+
     def create(self, validated_data):
-        """Create API key and return with raw key (only time it's visible)."""
-        company = self.context["request"].user.company
-        raw_key, key_hash = APIKey.generate_key()
-
-        api_key = APIKey.objects.create(
-            company=company,
-            key_hash=key_hash,
-            **validated_data,
-        )
-
-        # Attach raw key for response (not saved to DB)
-        api_key._raw_key = raw_key
-        return api_key
+        validated_data.pop("password_confirm", None)
+        return User.objects.create_user(**validated_data)
 
 
-class APIKeyResponseSerializer(APIKeySerializer):
-    """Serializer for API key creation response (includes raw key once)."""
+class ChangePasswordSerializer(serializers.Serializer):
+    """Serializer for changing a user's password."""
+
+    old_password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(write_only=True, min_length=12)
+    new_password_confirm = serializers.CharField(write_only=True, min_length=12)
+
+    def validate_old_password(self, value: str) -> str:
+        user = self.context["request"].user
+        if not user.check_password(value):
+            raise serializers.ValidationError("Old password is incorrect.")
+        return value
+
+    def validate(self, attrs):
+        if attrs.get("new_password") != attrs.get("new_password_confirm"):
+            raise serializers.ValidationError(
+                {"new_password_confirm": "New passwords do not match."}
+            )
+        return attrs
+
+
+class APIKeyResponseSerializer(serializers.ModelSerializer):
+    """Serializer that includes the raw API key (only at creation time)."""
 
     key = serializers.SerializerMethodField()
 
-    class Meta(APIKeySerializer.Meta):
-        fields = APIKeySerializer.Meta.fields + ["key"]
+    class Meta:
+        model = APIKey
+        fields = [
+            "id",
+            "name",
+            "prefix",
+            "company",
+            "key",
+            "permissions",
+            "is_active",
+            "created_at",
+            "expires_at",
+        ]
+        read_only_fields = fields
 
-    def get_key(self, obj):
-        """Return raw key if available (only on creation)."""
+    def get_key(self, obj) -> str | None:
         return getattr(obj, "_raw_key", None)
 
 
-class AuditLogSerializer(serializers.ModelSerializer):
-    """Serializer for AuditLog model (read-only)."""
+# ── AuditLog Serializer ───────────────────────────────────────────────
 
-    user_email = serializers.CharField(source="user.email", read_only=True)
-    company_name = serializers.CharField(source="company.name", read_only=True)
+
+class AuditLogSerializer(serializers.ModelSerializer):
+    """
+    Read-only serializer for audit log entries.
+    """
+
+    user_email = serializers.EmailField(
+        source="user.email", read_only=True, default=None
+    )
+    company_name = serializers.CharField(
+        source="company.name", read_only=True, default=None
+    )
 
     class Meta:
         model = AuditLog
@@ -270,64 +356,28 @@ class AuditLogSerializer(serializers.ModelSerializer):
             "resource_type",
             "resource_id",
             "ip_address",
+            "user_agent",
             "request_path",
             "request_method",
             "response_status",
+            "extra_data",
             "created_at",
         ]
         read_only_fields = fields
 
 
-class HealthCheckSerializer(serializers.Serializer):
-    """Serializer for health check response."""
-
-    status = serializers.CharField()
-    version = serializers.CharField()
-    timestamp = serializers.DateTimeField()
-
-
-class CompanyWithTierSerializer(serializers.ModelSerializer):
-    """Serializer for Company model with tier information."""
-
-    rate_limit = serializers.IntegerField(read_only=True)
-    daily_limit = serializers.IntegerField(read_only=True)
-    model_limit = serializers.IntegerField(read_only=True)
-    consortium_limit = serializers.IntegerField(read_only=True)
-
-    class Meta:
-        model = Company
-        fields = [
-            "id",
-            "name",
-            "email",
-            "tier",
-            "custom_rate_limit",
-            "custom_daily_limit",
-            "industry",
-            "website",
-            "description",
-            "is_active",
-            "is_verified",
-            "rate_limit",
-            "daily_limit",
-            "model_limit",
-            "consortium_limit",
-            "created_at",
-            "updated_at",
-        ]
-        read_only_fields = [
-            "id",
-            "tier",
-            "is_verified",
-            "created_at",
-            "updated_at",
-        ]
+# ── UsageTracking Serializer ──────────────────────────────────────────
 
 
 class UsageTrackingSerializer(serializers.ModelSerializer):
-    """Serializer for UsageTracking model."""
+    """
+    Read-only serializer for daily usage tracking records.
+    """
 
-    company_name = serializers.CharField(source="company.name", read_only=True)
+    company_name = serializers.CharField(
+        source="company.name", read_only=True
+    )
+    within_daily_limit = serializers.SerializerMethodField()
 
     class Meta:
         model = UsageTracking
@@ -341,21 +391,40 @@ class UsageTrackingSerializer(serializers.ModelSerializer):
             "training_runs",
             "data_uploads_bytes",
             "rate_limit_hits",
+            "within_daily_limit",
             "created_at",
             "updated_at",
         ]
         read_only_fields = fields
 
+    def get_within_daily_limit(self, obj):
+        return obj.check_daily_limit()
+
+
+# ── Webhook Serializers ───────────────────────────────────────────────
+
 
 class WebhookSerializer(serializers.ModelSerializer):
-    """Serializer for Webhook model."""
+    """
+    Webhook serializer for list/detail views.
+
+    The ``secret`` field is write-only (never returned in responses).
+    Delivery statistics are read-only.
+    """
+
+    company_name = serializers.CharField(
+        source="company.name", read_only=True
+    )
 
     class Meta:
         model = Webhook
         fields = [
             "id",
+            "company",
+            "company_name",
             "name",
             "url",
+            "secret",
             "events",
             "custom_headers",
             "is_active",
@@ -374,6 +443,7 @@ class WebhookSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = [
             "id",
+            "company",
             "is_verified",
             "total_deliveries",
             "successful_deliveries",
@@ -385,12 +455,18 @@ class WebhookSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
+        extra_kwargs = {
+            "secret": {"write_only": True},
+        }
 
 
 class WebhookCreateSerializer(serializers.ModelSerializer):
-    """Serializer for creating a Webhook."""
+    """
+    Serializer for creating a webhook.
 
-    secret = serializers.CharField(required=False, write_only=True)
+    Company is set from request context. Accepts name, url, secret,
+    events, and optional configuration.
+    """
 
     class Meta:
         model = Webhook
@@ -404,59 +480,85 @@ class WebhookCreateSerializer(serializers.ModelSerializer):
             "timeout_seconds",
         ]
 
+    def validate_url(self, value: str) -> str:
+        """SECURITY: Block internal/private network URLs to prevent SSRF."""
+        import ipaddress
+        from urllib.parse import urlparse
+
+        parsed = urlparse(value)
+        hostname = parsed.hostname or ""
+
+        # Block non-HTTP(S) schemes
+        if parsed.scheme not in ("http", "https"):
+            raise serializers.ValidationError(
+                "Only http and https URLs are allowed."
+            )
+
+        # Block obviously internal hostnames
+        blocked_hosts = {
+            "localhost", "127.0.0.1", "0.0.0.0", "::1",
+            "metadata.google.internal", "169.254.169.254",
+        }
+        if hostname.lower() in blocked_hosts:
+            raise serializers.ValidationError(
+                "Internal network URLs are not allowed."
+            )
+
+        # Resolve and block private/reserved IP ranges
+        try:
+            import socket
+            resolved = socket.getaddrinfo(hostname, None)
+            for _, _, _, _, sockaddr in resolved:
+                ip = ipaddress.ip_address(sockaddr[0])
+                if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved:
+                    raise serializers.ValidationError(
+                        "URLs resolving to private/internal IPs are not allowed."
+                    )
+        except (socket.gaierror, OSError):
+            # Can't resolve — allow (might be a valid external host)
+            pass
+
+        return value
+
     def validate_events(self, value):
-        """Validate event types."""
-        valid_events = [choice[0] for choice in Webhook.EventType.choices]
+        if not isinstance(value, list) or len(value) == 0:
+            raise serializers.ValidationError(
+                "Events must be a non-empty list of event types."
+            )
+        valid_events = {choice[0] for choice in Webhook.EventType.choices}
         for event in value:
             if event not in valid_events:
                 raise serializers.ValidationError(
-                    f"Invalid event type '{event}'. Valid types: {valid_events}"
+                    f"Invalid event type '{event}'."
                 )
         return value
 
-    def validate_url(self, value):
-        """Validate webhook URL."""
-        if not value.startswith("https://"):
-            raise serializers.ValidationError("Webhook URL must use HTTPS.")
-        return value
-
     def validate_max_retries(self, value):
-        """Validate max retries."""
         if value < 0 or value > 10:
-            raise serializers.ValidationError("Max retries must be between 0 and 10.")
+            raise serializers.ValidationError(
+                "max_retries must be between 0 and 10."
+            )
         return value
 
     def validate_timeout_seconds(self, value):
-        """Validate timeout."""
-        if value < 5 or value > 60:
-            raise serializers.ValidationError("Timeout must be between 5 and 60 seconds.")
+        if value < 1 or value > 120:
+            raise serializers.ValidationError(
+                "timeout_seconds must be between 1 and 120."
+            )
         return value
 
-    def create(self, validated_data):
-        """Create webhook with generated secret if not provided."""
-        import secrets as py_secrets
 
-        company = self.context["request"].user.company
-        if "secret" not in validated_data or not validated_data.get("secret"):
-            validated_data["secret"] = py_secrets.token_urlsafe(32)
-
-        webhook = Webhook.objects.create(company=company, **validated_data)
-        return webhook
-
-
-class WebhookResponseSerializer(WebhookSerializer):
-    """Serializer for Webhook creation response (includes secret once)."""
-
-    secret = serializers.CharField(read_only=True)
-
-    class Meta(WebhookSerializer.Meta):
-        fields = WebhookSerializer.Meta.fields + ["secret"]
+# ── WebhookDelivery Serializer ────────────────────────────────────────
 
 
 class WebhookDeliverySerializer(serializers.ModelSerializer):
-    """Serializer for WebhookDelivery model."""
+    """
+    Read-only serializer for webhook delivery records.
+    """
 
-    webhook_name = serializers.CharField(source="webhook.name", read_only=True)
+    webhook_name = serializers.CharField(
+        source="webhook.name", read_only=True
+    )
 
     class Meta:
         model = WebhookDelivery
@@ -472,6 +574,7 @@ class WebhookDeliverySerializer(serializers.ModelSerializer):
             "max_attempts",
             "response_status_code",
             "response_body",
+            "response_headers",
             "latency_ms",
             "error_message",
             "created_at",
@@ -481,23 +584,20 @@ class WebhookDeliverySerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-class UsageStatsSerializer(serializers.Serializer):
-    """Serializer for usage statistics response."""
-
-    tier = serializers.CharField()
-    limits = serializers.DictField()
-    today = serializers.DictField()
-    month = serializers.DictField()
-
-
-# Report Serializers
+# ── Report Serializers ────────────────────────────────────────────────
 
 
 class ReportSerializer(serializers.ModelSerializer):
-    """Serializer for Report model."""
+    """
+    Report serializer for list/detail views.
+    """
 
-    company_name = serializers.CharField(source="company.name", read_only=True)
-    created_by_email = serializers.CharField(source="created_by.email", read_only=True)
+    created_by_email = serializers.EmailField(
+        source="created_by.email", read_only=True, default=None
+    )
+    company_name = serializers.CharField(
+        source="company.name", read_only=True
+    )
 
     class Meta:
         model = Report
@@ -515,6 +615,7 @@ class ReportSerializer(serializers.ModelSerializer):
             "sections",
             "parameters",
             "status",
+            "file_path",
             "file_size",
             "download_url",
             "download_expires_at",
@@ -528,6 +629,7 @@ class ReportSerializer(serializers.ModelSerializer):
             "company",
             "created_by",
             "status",
+            "file_path",
             "file_size",
             "download_url",
             "download_expires_at",
@@ -539,7 +641,11 @@ class ReportSerializer(serializers.ModelSerializer):
 
 
 class ReportCreateSerializer(serializers.ModelSerializer):
-    """Serializer for creating a Report."""
+    """
+    Serializer for creating a report.
+
+    Company and created_by are set from request context.
+    """
 
     class Meta:
         model = Report
@@ -554,49 +660,45 @@ class ReportCreateSerializer(serializers.ModelSerializer):
         ]
 
     def validate_report_type(self, value):
-        """Validate report type."""
-        valid_types = [choice[0] for choice in Report.ReportType.choices]
-        if value not in valid_types:
+        valid = {choice[0] for choice in Report.ReportType.choices}
+        if value not in valid:
             raise serializers.ValidationError(
-                f"Invalid report type '{value}'. Valid types: {valid_types}"
+                f"Invalid report type '{value}'."
             )
         return value
 
     def validate_format(self, value):
-        """Validate format."""
-        valid_formats = [choice[0] for choice in Report.Format.choices]
-        if value not in valid_formats:
+        valid = {choice[0] for choice in Report.Format.choices}
+        if value not in valid:
             raise serializers.ValidationError(
-                f"Invalid format '{value}'. Valid formats: {valid_formats}"
+                f"Invalid format '{value}'."
             )
         return value
 
     def validate(self, attrs):
-        """Validate date range."""
         date_from = attrs.get("date_from")
         date_to = attrs.get("date_to")
         if date_from and date_to and date_from > date_to:
             raise serializers.ValidationError(
-                {"date_to": "End date must be after start date."}
+                {"date_to": "date_to must be on or after date_from."}
             )
         return attrs
 
-    def create(self, validated_data):
-        """Create report for current company/user."""
-        user = self.context["request"].user
-        validated_data["company"] = user.company
-        validated_data["created_by"] = user
-        return Report.objects.create(**validated_data)
 
-
-# Workflow Serializers
+# ── Workflow Serializers ──────────────────────────────────────────────
 
 
 class WorkflowSerializer(serializers.ModelSerializer):
-    """Serializer for Workflow model."""
+    """
+    Workflow serializer for list/detail views.
+    """
 
-    company_name = serializers.CharField(source="company.name", read_only=True)
-    created_by_email = serializers.CharField(source="created_by.email", read_only=True)
+    created_by_email = serializers.EmailField(
+        source="created_by.email", read_only=True, default=None
+    )
+    company_name = serializers.CharField(
+        source="company.name", read_only=True
+    )
     success_rate = serializers.FloatField(read_only=True)
 
     class Meta:
@@ -615,10 +717,10 @@ class WorkflowSerializer(serializers.ModelSerializer):
             "total_runs",
             "successful_runs",
             "failed_runs",
-            "success_rate",
             "last_run_at",
             "last_success_at",
             "last_failure_at",
+            "success_rate",
             "created_at",
             "updated_at",
         ]
@@ -629,7 +731,6 @@ class WorkflowSerializer(serializers.ModelSerializer):
             "total_runs",
             "successful_runs",
             "failed_runs",
-            "success_rate",
             "last_run_at",
             "last_success_at",
             "last_failure_at",
@@ -639,7 +740,11 @@ class WorkflowSerializer(serializers.ModelSerializer):
 
 
 class WorkflowCreateSerializer(serializers.ModelSerializer):
-    """Serializer for creating a Workflow."""
+    """
+    Serializer for creating a workflow.
+
+    Company and created_by are set from request context.
+    """
 
     class Meta:
         model = Workflow
@@ -652,51 +757,66 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
         ]
 
     def validate_steps(self, value):
-        """Validate workflow steps."""
         if not isinstance(value, list):
             raise serializers.ValidationError("Steps must be a list.")
-        for i, step in enumerate(value):
+        for idx, step in enumerate(value):
             if not isinstance(step, dict):
-                raise serializers.ValidationError(f"Step {i} must be an object.")
-            if "type" not in step:
-                raise serializers.ValidationError(f"Step {i} must have a 'type' field.")
+                raise serializers.ValidationError(
+                    f"Step {idx} must be a dictionary."
+                )
             if "name" not in step:
-                raise serializers.ValidationError(f"Step {i} must have a 'name' field.")
+                raise serializers.ValidationError(
+                    f"Step {idx} is missing required field 'name'."
+                )
+            if "type" not in step:
+                raise serializers.ValidationError(
+                    f"Step {idx} is missing required field 'type'."
+                )
         return value
 
     def validate_trigger(self, value):
-        """Validate trigger configuration."""
         if not isinstance(value, dict):
-            raise serializers.ValidationError("Trigger must be an object.")
+            raise serializers.ValidationError("Trigger must be a dictionary.")
+        valid_types = {"manual", "schedule", "event"}
         trigger_type = value.get("type")
-        if trigger_type not in ["manual", "schedule", "event"]:
+        if trigger_type and trigger_type not in valid_types:
             raise serializers.ValidationError(
-                "Trigger type must be 'manual', 'schedule', or 'event'."
+                f"Invalid trigger type '{trigger_type}'. "
+                f"Valid options: {sorted(valid_types)}"
             )
-        if trigger_type == "schedule" and "schedule" not in value:
+        if trigger_type == "schedule" and not value.get("schedule"):
             raise serializers.ValidationError(
-                "Schedule trigger must include 'schedule' (cron expression)."
+                "Schedule trigger requires a 'schedule' field (e.g. cron expression)."
             )
-        if trigger_type == "event" and "event" not in value:
+        if trigger_type == "event" and not value.get("event"):
             raise serializers.ValidationError(
-                "Event trigger must include 'event' (event type)."
+                "Event trigger requires an 'event' field specifying the event name."
             )
         return value
 
-    def create(self, validated_data):
-        """Create workflow for current company/user."""
-        user = self.context["request"].user
-        validated_data["company"] = user.company
-        validated_data["created_by"] = user
-        return Workflow.objects.create(**validated_data)
+    def validate_status(self, value):
+        # New workflows can only be created as draft or active
+        valid_initial = {Workflow.Status.DRAFT, Workflow.Status.ACTIVE}
+        if value not in valid_initial:
+            raise serializers.ValidationError(
+                "New workflows can only be created with status 'draft' or 'active'."
+            )
+        return value
+
+
+# ── WorkflowRun Serializer ───────────────────────────────────────────
 
 
 class WorkflowRunSerializer(serializers.ModelSerializer):
-    """Serializer for WorkflowRun model."""
+    """
+    Read-only serializer for workflow run records.
+    """
 
-    workflow_name = serializers.CharField(source="workflow.name", read_only=True)
-    triggered_by_email = serializers.CharField(
-        source="triggered_by.email", read_only=True
+    workflow_name = serializers.CharField(
+        source="workflow.name", read_only=True
+    )
+    triggered_by_email = serializers.EmailField(
+        source="triggered_by.email", read_only=True, default=None
     )
 
     class Meta:
@@ -723,22 +843,20 @@ class WorkflowRunSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-class WorkflowRunCreateSerializer(serializers.Serializer):
-    """Serializer for triggering a workflow run."""
-
-    input_data = serializers.DictField(required=False, default=dict)
-
-
-# Scheduled Task Serializers
+# ── ScheduledTask Serializers ─────────────────────────────────────────
 
 
 class ScheduledTaskSerializer(serializers.ModelSerializer):
-    """Serializer for ScheduledTask model."""
+    """
+    Scheduled task serializer for list/detail views.
+    """
 
-    company_name = serializers.CharField(source="company.name", read_only=True)
-    created_by_email = serializers.CharField(source="created_by.email", read_only=True)
-    workflow_name = serializers.CharField(source="workflow.name", read_only=True)
-    report_name = serializers.CharField(source="report.name", read_only=True)
+    created_by_email = serializers.EmailField(
+        source="created_by.email", read_only=True, default=None
+    )
+    company_name = serializers.CharField(
+        source="company.name", read_only=True
+    )
 
     class Meta:
         model = ScheduledTask
@@ -755,9 +873,7 @@ class ScheduledTaskSerializer(serializers.ModelSerializer):
             "timezone",
             "config",
             "report",
-            "report_name",
             "workflow",
-            "workflow_name",
             "status",
             "next_run_at",
             "last_run_at",
@@ -785,7 +901,11 @@ class ScheduledTaskSerializer(serializers.ModelSerializer):
 
 
 class ScheduledTaskCreateSerializer(serializers.ModelSerializer):
-    """Serializer for creating a ScheduledTask."""
+    """
+    Serializer for creating a scheduled task.
+
+    Company and created_by are set from request context.
+    """
 
     class Meta:
         model = ScheduledTask
@@ -798,59 +918,57 @@ class ScheduledTaskCreateSerializer(serializers.ModelSerializer):
             "config",
             "report",
             "workflow",
-            "status",
             "max_consecutive_failures",
         ]
 
     def validate_task_type(self, value):
-        """Validate task type."""
-        valid_types = [choice[0] for choice in ScheduledTask.TaskType.choices]
-        if value not in valid_types:
+        valid = {choice[0] for choice in ScheduledTask.TaskType.choices}
+        if value not in valid:
             raise serializers.ValidationError(
-                f"Invalid task type '{value}'. Valid types: {valid_types}"
+                f"Invalid task type '{value}'."
             )
         return value
 
     def validate_cron_expression(self, value):
-        """Validate cron expression format."""
-        parts = value.split()
+        parts = value.strip().split()
         if len(parts) != 5:
             raise serializers.ValidationError(
-                "Cron expression must have 5 parts: minute hour day month day_of_week"
+                "Cron expression must have exactly 5 fields: "
+                "minute hour day month day_of_week."
+            )
+        return value
+
+    def validate_max_consecutive_failures(self, value):
+        if value < 0:
+            raise serializers.ValidationError(
+                "max_consecutive_failures must be >= 0."
             )
         return value
 
     def validate(self, attrs):
-        """Validate task type and related objects."""
         task_type = attrs.get("task_type")
-        report = attrs.get("report")
-        workflow = attrs.get("workflow")
-
-        if task_type == "report" and not report:
+        if task_type == "workflow" and not attrs.get("workflow"):
             raise serializers.ValidationError(
-                {"report": "Report must be specified for report tasks."}
+                {"workflow": "Workflow is required for task type 'workflow'."}
             )
-        if task_type == "workflow" and not workflow:
+        if task_type == "report" and not attrs.get("report"):
             raise serializers.ValidationError(
-                {"workflow": "Workflow must be specified for workflow tasks."}
+                {"report": "Report is required for task type 'report'."}
             )
-
         return attrs
 
-    def create(self, validated_data):
-        """Create scheduled task for current company/user."""
-        user = self.context["request"].user
-        validated_data["company"] = user.company
-        validated_data["created_by"] = user
-        task = ScheduledTask.objects.create(**validated_data)
-        task.calculate_next_run()
-        return task
+
+# ── ScheduledTaskRun Serializer ───────────────────────────────────────
 
 
 class ScheduledTaskRunSerializer(serializers.ModelSerializer):
-    """Serializer for ScheduledTaskRun model."""
+    """
+    Read-only serializer for scheduled task run records.
+    """
 
-    task_name = serializers.CharField(source="task.name", read_only=True)
+    task_name = serializers.CharField(
+        source="task.name", read_only=True
+    )
 
     class Meta:
         model = ScheduledTaskRun

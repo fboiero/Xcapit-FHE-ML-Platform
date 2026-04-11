@@ -31,6 +31,7 @@ class RegisterSerializer(serializers.Serializer):
     first_name = serializers.CharField(max_length=150)
     last_name = serializers.CharField(max_length=150)
     company_name = serializers.CharField(max_length=255, required=False)
+    industry = serializers.CharField(max_length=100, required=False, allow_blank=True)
 
     def validate_email(self, value):
         """Check email is not already registered."""
@@ -50,9 +51,10 @@ class RegisterSerializer(serializers.Serializer):
         return attrs
 
     def create(self, validated_data):
-        """Create user and optionally company."""
+        """Create user and optionally company. Auto-starts 14-day trial."""
         validated_data.pop("password_confirm")
         company_name = validated_data.pop("company_name", None)
+        industry = validated_data.pop("industry", "")
 
         # Create company if provided
         company = None
@@ -60,6 +62,21 @@ class RegisterSerializer(serializers.Serializer):
             company = Company.objects.create(
                 name=company_name,
                 email=validated_data["email"],
+                industry=industry,
+            )
+            # Auto-start 14-day trial
+            company.start_trial()
+
+            # Create subscription record
+            from apps.sandbox.models import Subscription
+
+            Subscription.objects.create(
+                company=company,
+                plan="free",
+                status=Subscription.Status.TRIALING,
+                trial_end=company.trial_expires_at,
+                current_period_start=company.trial_started_at,
+                current_period_end=company.trial_expires_at,
             )
 
         # Create user
@@ -193,7 +210,7 @@ class RegisterView(APIView):
             user_agent=request.META.get("HTTP_USER_AGENT", ""),
         )
 
-        return Response({
+        response_data = {
             "detail": "Registration successful.",
             "user": {
                 "id": str(user.id),
@@ -205,7 +222,25 @@ class RegisterView(APIView):
                 "refresh": str(refresh),
                 "access": str(refresh.access_token),
             },
-        }, status=status.HTTP_201_CREATED)
+        }
+
+        # Include trial info if company was created
+        if user.company:
+            response_data["trial"] = {
+                "active": user.company.is_trial,
+                "days_remaining": user.company.trial_days_remaining,
+                "expires_at": user.company.trial_expires_at,
+                "tier": user.company.tier,
+                "limits": {
+                    "daily_requests": user.company.daily_limit,
+                    "upload_bytes": user.company.upload_limit,
+                    "training_runs_per_day": user.company.training_limit,
+                    "max_consortiums": user.company.consortium_limit,
+                    "max_models": user.company.model_limit,
+                },
+            }
+
+        return Response(response_data, status=status.HTTP_201_CREATED)
 
     def _get_client_ip(self, request):
         """Get client IP address."""

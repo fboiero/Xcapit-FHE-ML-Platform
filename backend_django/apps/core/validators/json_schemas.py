@@ -27,10 +27,10 @@ try:
     JSONSCHEMA_AVAILABLE = True
     # Create format checker with common formats
     format_checker = FormatChecker()
-except ImportError:
+except (ImportError, TypeError):
     JSONSCHEMA_AVAILABLE = False
     format_checker = None
-    logger.warning("jsonschema not installed. JSON schema validation will be basic.")
+    logger.warning("jsonschema not available or incompatible. JSON schema validation will be basic.")
 
 
 # =============================================================================
@@ -363,21 +363,106 @@ class JSONSchemaValidator:
 
     def _basic_validate(self, value: Any) -> None:
         """Basic validation when jsonschema is not available."""
-        schema_type = self.schema.get("type")
+        self._validate_against_schema(value, self.schema)
 
-        if schema_type == "object":
-            if not isinstance(value, dict):
-                raise ValidationError("Expected an object.")
+    def _validate_against_schema(self, value: Any, schema: dict) -> None:
+        """Recursively validate value against a JSON schema (basic fallback)."""
+        import re
+        import uuid as _uuid
 
+        schema_type = schema.get("type")
+        errors: list[str] = []
+
+        # Type checking
+        type_map = {
+            "object": dict,
+            "array": list,
+            "string": str,
+            "integer": int,
+            "number": (int, float),
+            "boolean": bool,
+        }
+
+        if schema_type and schema_type in type_map:
+            expected = type_map[schema_type]
+            if not isinstance(value, expected):
+                # In Python, bool is a subclass of int; reject bools for int/number
+                if schema_type in ("integer", "number") and isinstance(value, bool):
+                    raise ValidationError(f"Expected {schema_type}, got {type(value).__name__}.")
+                raise ValidationError(f"Expected {schema_type}, got {type(value).__name__}.")
+
+        if schema_type == "object" and isinstance(value, dict):
             # Check required fields
-            required = self.schema.get("required", [])
-            for field in required:
+            for field in schema.get("required", []):
                 if field not in value:
-                    raise ValidationError(f"Missing required field: {field}")
+                    errors.append(f"Missing required field: {field}")
 
-        elif schema_type == "array":
-            if not isinstance(value, list):
-                raise ValidationError("Expected an array.")
+            # Validate each property against its sub-schema
+            properties = schema.get("properties", {})
+            for key, val in value.items():
+                if key in properties:
+                    prop_schema = properties[key]
+
+                    # Enum check
+                    if "enum" in prop_schema and val not in prop_schema["enum"]:
+                        errors.append(
+                            f"'{key}': '{val}' is not one of {prop_schema['enum']}"
+                        )
+
+                    # Type check for property
+                    prop_type = prop_schema.get("type")
+                    if prop_type and prop_type in type_map:
+                        expected_prop = type_map[prop_type]
+                        if not isinstance(val, expected_prop):
+                            errors.append(
+                                f"'{key}': expected {prop_type}, got {type(val).__name__}"
+                            )
+                        elif prop_type in ("integer", "number") and isinstance(val, bool):
+                            errors.append(
+                                f"'{key}': expected {prop_type}, got bool"
+                            )
+
+                    # Minimum / maximum
+                    if isinstance(val, (int, float)) and not isinstance(val, bool):
+                        if "minimum" in prop_schema and val < prop_schema["minimum"]:
+                            errors.append(
+                                f"'{key}': {val} is less than minimum {prop_schema['minimum']}"
+                            )
+                        if "maximum" in prop_schema and val > prop_schema["maximum"]:
+                            errors.append(
+                                f"'{key}': {val} is greater than maximum {prop_schema['maximum']}"
+                            )
+
+                    # Format check (basic)
+                    fmt = prop_schema.get("format")
+                    if fmt and isinstance(val, str):
+                        if fmt == "email" and "@" not in val:
+                            errors.append(f"'{key}': '{val}' is not a valid email")
+                        elif fmt == "uuid":
+                            try:
+                                _uuid.UUID(val)
+                            except (ValueError, AttributeError):
+                                errors.append(f"'{key}': '{val}' is not a valid UUID")
+
+            # Check additionalProperties: false
+            if schema.get("additionalProperties") is False:
+                allowed_keys = set(properties.keys())
+                extra = set(value.keys()) - allowed_keys
+                if extra:
+                    errors.append(f"Additional properties not allowed: {extra}")
+
+        elif schema_type == "array" and isinstance(value, list):
+            items_schema = schema.get("items")
+            if items_schema:
+                for i, item in enumerate(value):
+                    try:
+                        self._validate_against_schema(item, items_schema)
+                    except ValidationError as e:
+                        msgs = "; ".join(str(m) for m in e.messages)
+                        errors.append(f"Item {i}: {msgs}")
+
+        if errors:
+            raise ValidationError(errors)
 
     def __eq__(self, other: object) -> bool:
         """Compare validators by schema."""

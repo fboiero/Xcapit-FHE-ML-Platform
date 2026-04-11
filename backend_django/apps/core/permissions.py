@@ -1,269 +1,230 @@
 """
 Custom permissions for Xcapit FHE-ML Platform.
-
-Provides consortium-based access control and role-based permissions.
-
-Security policy: fail-closed for write operations without consortium context.
-Read operations without consortium context defer to view queryset scoping.
 """
 
-from rest_framework import permissions
+from rest_framework.permissions import BasePermission
 
 
-def _get_consortium_id(request, view) -> str | None:
-    """Extract consortium_id from URL kwargs, request data, or query params.
+class IsCompanyMember(BasePermission):
+    """Requires the user to belong to a company."""
 
-    Checks multiple sources to support:
-    - Direct kwargs (consortium_id)
-    - Nested routers (consortium_pk)
-    - Request data (consortium_id or consortium)
-    - Query params (consortium_id)
-    """
-    return (
-        view.kwargs.get("consortium_id")
-        or view.kwargs.get("consortium_pk")
-        or request.data.get("consortium_id")
-        or request.data.get("consortium")
-        or request.query_params.get("consortium_id")
-    )
-
-
-def _resolve_consortium_from_pk(view) -> str | None:
-    """Resolve consortium_id from view's pk kwarg for direct-consortium views.
-
-    When a view operates directly on a Consortium (e.g. ConsortiumViewSet actions),
-    pk IS the consortium_id. Validates that the pk actually references a Consortium.
-    """
-    pk = view.kwargs.get("pk")
-    if not pk:
-        return None
-    from apps.consortiums.models import Consortium
-
-    if Consortium.objects.filter(id=pk).exists():
-        return pk
-    return None
-
-
-def _check_consortium_context(request, view) -> tuple[str | None, bool]:
-    """Determine consortium context and whether to allow the request.
-
-    Returns (consortium_id, should_continue):
-    - (id, True): consortium found, proceed with membership check
-    - (None, True): no consortium but safe method, defer to queryset scoping
-    - (None, False): no consortium and unsafe method, deny access
-    """
-    consortium_id = _get_consortium_id(request, view)
-    if consortium_id:
-        return consortium_id, True
-
-    # No consortium_id found in standard locations
-    if request.method in permissions.SAFE_METHODS:
-        # Read operations: defer to view's queryset scoping
-        return None, True
-
-    # Unsafe methods: try pk as consortium_id (for ConsortiumViewSet actions)
-    consortium_id = _resolve_consortium_from_pk(view)
-    if consortium_id:
-        return consortium_id, True
-
-    # Fail-closed: deny write operations without consortium context
-    return None, False
-
-
-class IsCompanyMember(permissions.BasePermission):
-    """
-    Permission that requires user to be a member of the company.
-    """
-
-    message = "You must be a member of this company."
+    message = "You must belong to a company to perform this action."
 
     def has_permission(self, request, view):
-        if not request.user.is_authenticated:
-            return False
-        return request.user.company is not None
+        return bool(
+            request.user
+            and request.user.is_authenticated
+            and getattr(request.user, "company", None) is not None
+        )
 
 
-class IsConsortiumMember(permissions.BasePermission):
-    """
-    Permission that requires user to be a member of the consortium.
+class IsConsortiumMember(BasePermission):
+    """Requires the user's company to be an active member of the consortium."""
 
-    Fail-closed for write operations without consortium context.
-    Read operations without consortium context defer to queryset scoping.
-    """
-
-    message = "You are not a member of this consortium."
+    message = "Your company is not a member of this consortium."
 
     def has_permission(self, request, view):
-        if not request.user.is_authenticated:
-            return False
-
-        consortium_id, should_continue = _check_consortium_context(request, view)
-
-        if not should_continue:
-            return False  # Fail-closed: no consortium context for write operation
-
-        if not consortium_id:
-            return True  # Safe method without consortium: defer to queryset scoping
-
         from apps.consortiums.models import Consortium, ConsortiumMember
+
+        user = request.user
+        if not user or not user.is_authenticated or not user.company:
+            return False
+
+        # Prefer explicit consortium_id from query params or URL kwargs over the
+        # generic "pk" kwarg, which may belong to a different resource (e.g. an
+        # InferenceEndpoint UUID for detail actions on endpoint views).
+        consortium_pk = (
+            view.kwargs.get("consortium_pk")
+            or view.kwargs.get("consortium_id")
+            or request.query_params.get("consortium_id")
+            or request.data.get("consortium")
+        )
+        if not consortium_pk:
+            # Fall back to pk only for views registered directly on consortiums
+            # (i.e., when the view's basename suggests it's a consortium view).
+            basename = getattr(view, "basename", "") or ""
+            if "consortium" in basename.lower():
+                consortium_pk = view.kwargs.get("pk")
+
+        if not consortium_pk:
+            return True  # List views without consortium context pass through
+
+        try:
+            consortium = Consortium.objects.get(pk=consortium_pk)
+        except (Consortium.DoesNotExist, Exception):
+            return False
 
         # Owner is implicitly a member
-        if Consortium.objects.filter(id=consortium_id, owner=request.user.company).exists():
+        if consortium.owner_id == user.company_id:
             return True
 
         return ConsortiumMember.objects.filter(
-            consortium_id=consortium_id,
-            company=request.user.company,
+            consortium=consortium,
+            company=user.company,
             status="active",
         ).exists()
 
 
-class IsConsortiumOwner(permissions.BasePermission):
-    """
-    Permission that requires user to be the owner of the consortium.
-    """
+class IsConsortiumOwner(BasePermission):
+    """Requires the user's company to own the consortium."""
 
-    message = "Only the consortium owner can perform this action."
+    message = "You must be the consortium owner to perform this action."
 
     def has_permission(self, request, view):
-        if not request.user.is_authenticated:
-            return False
-
-        consortium_id, should_continue = _check_consortium_context(request, view)
-
-        if not should_continue:
-            return False  # Fail-closed: no consortium context for write operation
-
-        if not consortium_id:
-            return True  # Safe method without consortium: defer to queryset scoping
-
         from apps.consortiums.models import Consortium
 
-        return Consortium.objects.filter(
-            id=consortium_id,
-            owner=request.user.company,
-        ).exists()
-
-
-class IsConsortiumAdmin(permissions.BasePermission):
-    """
-    Permission that requires user to be owner or admin of the consortium.
-    """
-
-    message = "Only consortium owners or admins can perform this action."
-
-    def has_permission(self, request, view):
-        if not request.user.is_authenticated:
+        user = request.user
+        if not user or not user.is_authenticated:
             return False
 
-        consortium_id, should_continue = _check_consortium_context(request, view)
+        company = getattr(user, "company", None)
+        if not company:
+            return False
 
-        if not should_continue:
-            return False  # Fail-closed: no consortium context for write operation
-
+        consortium_id = (
+            view.kwargs.get("consortium_id")
+            or view.kwargs.get("consortium_pk")
+            or view.kwargs.get("pk")
+        )
         if not consortium_id:
-            return True  # Safe method without consortium: defer to queryset scoping
-
-        from apps.consortiums.models import Consortium, ConsortiumMember
-
-        # Check if owner
-        if Consortium.objects.filter(id=consortium_id, owner=request.user.company).exists():
             return True
 
-        # Check if admin
+        try:
+            consortium = Consortium.objects.get(pk=consortium_id)
+        except Consortium.DoesNotExist:
+            return False
+
+        return consortium.owner_id == company.id
+
+
+class IsConsortiumAdmin(BasePermission):
+    """Requires the user's company to be an admin (or owner) of the consortium."""
+
+    message = "You must be a consortium admin to perform this action."
+
+    def has_permission(self, request, view):
+        from apps.consortiums.models import Consortium, ConsortiumMember
+
+        user = request.user
+        if not user or not user.is_authenticated:
+            return False
+
+        company = getattr(user, "company", None)
+        if not company:
+            return False
+
+        consortium_id = (
+            view.kwargs.get("consortium_id")
+            or view.kwargs.get("consortium_pk")
+            or view.kwargs.get("pk")
+        )
+        if not consortium_id:
+            return True
+
+        try:
+            consortium = Consortium.objects.get(pk=consortium_id)
+        except Consortium.DoesNotExist:
+            return False
+
+        # Owner is implicitly an admin
+        if consortium.owner_id == company.id:
+            return True
+
         return ConsortiumMember.objects.filter(
-            consortium_id=consortium_id,
-            company=request.user.company,
-            role__in=["admin", "owner"],
-            status="active",
+            consortium=consortium,
+            company=company,
+            role__in=[ConsortiumMember.Role.ADMIN, ConsortiumMember.Role.OWNER],
+            status=ConsortiumMember.Status.ACTIVE,
         ).exists()
 
 
-class HasAPIKeyPermission(permissions.BasePermission):
-    """
-    Permission based on API key permissions.
+class HasAPIKeyPermission(BasePermission):
+    """Checks that the API key has the permissions required by the view."""
 
-    Usage in views:
-        permission_classes = [HasAPIKeyPermission]
-        required_permissions = ['read']  # or ['write'], ['admin']
-    """
-
-    message = "API key does not have required permissions."
+    message = "Your API key does not have the required permissions."
 
     def has_permission(self, request, view):
-        # Get required permissions from view
-        required_permissions = getattr(view, "required_permissions", [])
+        required = getattr(view, "required_permissions", None)
+        if not required:
+            return True
 
-        if not required_permissions:
-            return True  # No specific permissions required
-
-        # Check if request has API key auth
-        api_key = getattr(request, "auth", None)
-        if not api_key or not hasattr(api_key, "has_permission"):
+        auth = getattr(request, "auth", None)
+        if auth is None:
             return False
 
-        # Check all required permissions
-        for permission in required_permissions:
-            if not api_key.has_permission(permission):
-                return False
-
-        return True
+        return auth.has_permission(required[0] if len(required) == 1 else required)
 
 
-class IsResourceOwner(permissions.BasePermission):
-    """
-    Permission that checks if user's company owns the resource.
+class IsResourceOwner(BasePermission):
+    """Object-level permission: the request user's company must own the object."""
 
-    Requires the model to have an `owner` or `company` field.
-    """
-
-    message = "You do not own this resource."
+    message = "You do not have permission to access this resource."
 
     def has_object_permission(self, request, view, obj):
-        if not request.user.is_authenticated:
+        user = getattr(request, "user", None)
+        if not user or not getattr(user, "is_authenticated", False):
             return False
 
-        # Check for owner field
-        if hasattr(obj, "owner"):
-            return obj.owner == request.user.company
+        company = getattr(user, "company", None)
+        if not company:
+            return False
 
-        # Check for company field
-        if hasattr(obj, "company"):
-            return obj.company == request.user.company
+        obj_company = getattr(obj, "owner", None) or getattr(obj, "company", None)
+        if obj_company is None:
+            return False
 
-        return False
+        return obj_company.id == company.id
 
 
-class ReadOnly(permissions.BasePermission):
-    """
-    Permission that allows only safe (read-only) methods.
-    """
+class ReadOnly(BasePermission):
+    """Only allows safe (read-only) HTTP methods."""
 
     def has_permission(self, request, view):
-        return request.method in permissions.SAFE_METHODS
+        return request.method in ("GET", "HEAD", "OPTIONS")
 
 
-class IsActiveUser(permissions.BasePermission):
-    """
-    Permission that requires user to be active.
-    """
-
-    message = "Your account is not active."
+class IsActiveUser(BasePermission):
+    """Requires the user to be active and authenticated."""
 
     def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.is_active
+        user = getattr(request, "user", None)
+        if not user or not getattr(user, "is_authenticated", False):
+            return False
+        return user.is_active
 
 
-class IsVerifiedCompany(permissions.BasePermission):
-    """
-    Permission that requires user's company to be verified.
-    """
+class IsVerifiedCompany(BasePermission):
+    """Requires the user's company to be verified."""
 
     message = "Your company must be verified to perform this action."
 
     def has_permission(self, request, view):
-        if not request.user.is_authenticated:
+        user = getattr(request, "user", None)
+        if not user or not getattr(user, "is_authenticated", False):
+            return False
+        company = getattr(user, "company", None)
+        if not company:
+            return False
+        return getattr(company, "is_verified", False)
+
+
+class IsTrialActive(BasePermission):
+    """Blocks access when the company's trial has expired."""
+
+    message = "Your trial has expired. Please upgrade to continue."
+
+    def has_permission(self, request, view):
+        user = request.user
+        if not user or not user.is_authenticated:
             return False
 
-        company = request.user.company
-        return company is not None and company.is_verified
+        company = getattr(user, "company", None)
+        if not company:
+            return False
+
+        # Non-trial companies (paid tiers) always pass
+        if not company.is_trial:
+            return True
+
+        # Trial companies pass only if trial hasn't expired
+        return not company.trial_expired

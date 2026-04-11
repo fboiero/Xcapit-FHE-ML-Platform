@@ -13,7 +13,7 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
@@ -286,7 +286,7 @@ class HealthCheckView(View):
 
         response_data = {
             "status": overall_status.value,
-            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "timestamp": datetime.now(UTC).isoformat(),
             "version": getattr(settings, "SPECTACULAR_SETTINGS", {}).get("VERSION", "2.0.0"),
             "environment": "production" if not settings.DEBUG else "development",
             "components": [c.to_dict() for c in components],
