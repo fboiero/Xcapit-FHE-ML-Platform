@@ -1,434 +1,322 @@
-"""Data Quality Calculator for FHE-ML Platform.
+"""Data quality calculator for profiling and assessing datasets.
 
-This module provides real data quality calculations based on metadata
-and statistical properties of data WITHOUT accessing the actual values.
-
-Quality Metrics:
-- Completeness: Measures the proportion of non-null values
-- Consistency: Measures adherence to expected formats and ranges
-- Uniqueness: Measures the proportion of unique/non-duplicate values
-- Validity: Measures values that pass validation rules
-- Freshness: Measures how recent the data is
-
-All calculations work on aggregated statistics, not raw data,
-preserving privacy while providing quality insights.
+Provides missing-value analysis, outlier detection, correlation analysis,
+and composite quality scores.
 """
 
-import uuid
 from dataclasses import dataclass, field
-from datetime import datetime
-from typing import Any, Optional
+from typing import Any, Optional, Union
+
+import numpy as np
+
+try:
+    import pandas as pd
+
+    HAS_PANDAS = True
+except ImportError:
+    HAS_PANDAS = False
 
 
-@dataclass
-class DataProfile:
-    """Profile of data characteristics without exposing values."""
-
-    record_count: int
-    feature_count: int
-    null_counts: dict[str, int] = field(default_factory=dict)
-    duplicate_count: int = 0
-    outlier_count: int = 0
-    schema_violations: int = 0
-    format_violations: int = 0
-    range_violations: int = 0
-    last_updated: Optional[datetime] = None
-    data_hash: Optional[str] = None
-
-
-@dataclass
-class QualityScore:
-    """Quality assessment scores."""
-
-    overall: float
-    completeness: float
-    consistency: float
-    uniqueness: float
-    validity: float
-    freshness: float
-    details: dict[str, Any] = field(default_factory=dict)
+def _require_pandas():
+    if not HAS_PANDAS:
+        raise ImportError(
+            "pandas is required for data quality analysis. "
+            "Install it with: pip install pandas"
+        )
 
 
 class DataQualityCalculator:
-    """Calculator for data quality metrics from metadata."""
+    """Assess and profile the quality of tabular datasets.
 
-    def __init__(self, freshness_threshold_days: int = 30):
-        """Initialize the calculator.
+    Analyses completeness, consistency, outliers, and correlations
+    to produce an overall quality report.
 
-        Args:
-            freshness_threshold_days: Days after which data is considered stale.
-        """
-        self.freshness_threshold_days = freshness_threshold_days
+    Example:
+        >>> from sdk.quality import DataQualityCalculator
+        >>> calc = DataQualityCalculator()
+        >>> report = calc.report(df)
+        >>> print(report["overall_score"])
+    """
 
-    def calculate_completeness(
-        self,
-        record_count: int,
-        feature_count: int,
-        null_count: int = 0,
-        null_counts_per_feature: Optional[dict[str, int]] = None,
-    ) -> float:
-        """Calculate completeness score (0-100).
+    def __init__(self):
+        pass
 
-        Measures the proportion of non-null values in the dataset.
+    def profile(self, df: "pd.DataFrame") -> dict[str, Any]:
+        """Generate a high-level profile of the dataset.
 
         Args:
-            record_count: Total number of records.
-            feature_count: Number of features/columns.
-            null_count: Total null values across all features.
-            null_counts_per_feature: Optional per-feature null counts.
+            df: Input DataFrame.
 
         Returns:
-            Completeness score from 0 to 100.
+            Dict with n_rows, n_cols, dtypes, memory_usage, etc.
         """
-        if record_count == 0 or feature_count == 0:
-            return 0.0
+        _require_pandas()
 
-        total_cells = record_count * feature_count
-
-        if null_counts_per_feature:
-            null_count = sum(null_counts_per_feature.values())
-
-        if null_count < 0:
-            null_count = 0
-        if null_count > total_cells:
-            null_count = total_cells
-
-        completeness = ((total_cells - null_count) / total_cells) * 100
-        return round(min(100.0, max(0.0, completeness)), 2)
-
-    def calculate_consistency(
-        self,
-        record_count: int,
-        schema_violations: int = 0,
-        format_violations: int = 0,
-        range_violations: int = 0,
-    ) -> float:
-        """Calculate consistency score (0-100).
-
-        Measures adherence to expected formats, schemas, and ranges.
-
-        Args:
-            record_count: Total number of records.
-            schema_violations: Records with schema issues.
-            format_violations: Records with format issues.
-            range_violations: Records with out-of-range values.
-
-        Returns:
-            Consistency score from 0 to 100.
-        """
-        if record_count == 0:
-            return 0.0
-
-        total_violations = schema_violations + format_violations + range_violations
-
-        if total_violations < 0:
-            total_violations = 0
-
-        # Each violation type has equal weight
-        max_violations = record_count * 3  # 3 types of violations
-
-        consistency = ((max_violations - total_violations) / max_violations) * 100
-        return round(min(100.0, max(0.0, consistency)), 2)
-
-    def calculate_uniqueness(self, record_count: int, duplicate_count: int = 0) -> float:
-        """Calculate uniqueness score (0-100).
-
-        Measures the proportion of unique (non-duplicate) records.
-
-        Args:
-            record_count: Total number of records.
-            duplicate_count: Number of duplicate records.
-
-        Returns:
-            Uniqueness score from 0 to 100.
-        """
-        if record_count == 0:
-            return 0.0
-
-        if duplicate_count < 0:
-            duplicate_count = 0
-        if duplicate_count > record_count:
-            duplicate_count = record_count
-
-        uniqueness = ((record_count - duplicate_count) / record_count) * 100
-        return round(min(100.0, max(0.0, uniqueness)), 2)
-
-    def calculate_validity(
-        self,
-        record_count: int,
-        invalid_count: int = 0,
-        validation_rules_passed: int = 0,
-        total_validation_rules: int = 0,
-    ) -> float:
-        """Calculate validity score (0-100).
-
-        Measures records that pass business validation rules.
-
-        Args:
-            record_count: Total number of records.
-            invalid_count: Number of records failing validation.
-            validation_rules_passed: Number of rules passed.
-            total_validation_rules: Total validation rules applied.
-
-        Returns:
-            Validity score from 0 to 100.
-        """
-        if record_count == 0:
-            return 0.0
-
-        # Record-level validity
-        record_validity = ((record_count - invalid_count) / record_count) * 100
-
-        # Rule-level validity (if rules are provided)
-        if total_validation_rules > 0:
-            rule_validity = (validation_rules_passed / total_validation_rules) * 100
-            # Combine both metrics
-            validity = (record_validity + rule_validity) / 2
-        else:
-            validity = record_validity
-
-        return round(min(100.0, max(0.0, validity)), 2)
-
-    def calculate_freshness(
-        self, last_updated: Optional[datetime] = None, reference_time: Optional[datetime] = None
-    ) -> float:
-        """Calculate freshness score (0-100).
-
-        Measures how recent the data is relative to threshold.
-
-        Args:
-            last_updated: When data was last updated.
-            reference_time: Reference time (defaults to now).
-
-        Returns:
-            Freshness score from 0 to 100.
-        """
-        if not last_updated:
-            return 0.0
-
-        reference = reference_time or datetime.utcnow()
-
-        if isinstance(last_updated, str):
-            try:
-                last_updated = datetime.fromisoformat(last_updated.replace("Z", "+00:00"))
-            except ValueError:
-                return 0.0
-
-        # Remove timezone info for comparison
-        if last_updated.tzinfo is not None:
-            last_updated = last_updated.replace(tzinfo=None)
-        if reference.tzinfo is not None:
-            reference = reference.replace(tzinfo=None)
-
-        age_days = (reference - last_updated).total_seconds() / 86400
-
-        if age_days <= 0:
-            return 100.0
-
-        if age_days >= self.freshness_threshold_days:
-            return 0.0
-
-        # Linear decay
-        freshness = (
-            (self.freshness_threshold_days - age_days) / self.freshness_threshold_days
-        ) * 100
-        return round(min(100.0, max(0.0, freshness)), 2)
-
-    def calculate_overall(
-        self,
-        completeness: float,
-        consistency: float,
-        uniqueness: float,
-        validity: float,
-        freshness: float,
-        weights: Optional[dict[str, float]] = None,
-    ) -> float:
-        """Calculate overall quality score (0-100).
-
-        Weighted average of all quality dimensions.
-
-        Args:
-            completeness: Completeness score.
-            consistency: Consistency score.
-            uniqueness: Uniqueness score.
-            validity: Validity score.
-            freshness: Freshness score.
-            weights: Optional custom weights (default: equal).
-
-        Returns:
-            Overall quality score from 0 to 100.
-        """
-        if weights is None:
-            weights = {
-                "completeness": 0.25,
-                "consistency": 0.20,
-                "uniqueness": 0.20,
-                "validity": 0.20,
-                "freshness": 0.15,
-            }
-
-        # Normalize weights
-        total_weight = sum(weights.values())
-        if total_weight == 0:
-            return 0.0
-
-        overall = (
-            completeness * weights.get("completeness", 0.2)
-            + consistency * weights.get("consistency", 0.2)
-            + uniqueness * weights.get("uniqueness", 0.2)
-            + validity * weights.get("validity", 0.2)
-            + freshness * weights.get("freshness", 0.2)
-        ) / total_weight
-
-        return round(min(100.0, max(0.0, overall)), 2)
-
-    def assess_quality(self, profile: DataProfile) -> QualityScore:
-        """Perform complete quality assessment from data profile.
-
-        Args:
-            profile: DataProfile containing metadata about the data.
-
-        Returns:
-            QualityScore with all metrics calculated.
-        """
-        # Calculate total nulls from per-feature counts
-        total_nulls = sum(profile.null_counts.values()) if profile.null_counts else 0
-
-        completeness = self.calculate_completeness(
-            profile.record_count, profile.feature_count, total_nulls
-        )
-
-        consistency = self.calculate_consistency(
-            profile.record_count,
-            profile.schema_violations,
-            profile.format_violations,
-            profile.range_violations,
-        )
-
-        uniqueness = self.calculate_uniqueness(profile.record_count, profile.duplicate_count)
-
-        # For validity, we estimate from outliers and violations
-        invalid_count = profile.outlier_count + profile.schema_violations
-        validity = self.calculate_validity(profile.record_count, invalid_count)
-
-        freshness = self.calculate_freshness(profile.last_updated)
-
-        overall = self.calculate_overall(completeness, consistency, uniqueness, validity, freshness)
-
-        return QualityScore(
-            overall=overall,
-            completeness=completeness,
-            consistency=consistency,
-            uniqueness=uniqueness,
-            validity=validity,
-            freshness=freshness,
-            details={
-                "record_count": profile.record_count,
-                "feature_count": profile.feature_count,
-                "null_ratio": round(
-                    total_nulls / (profile.record_count * profile.feature_count) * 100, 2
-                )
-                if profile.record_count > 0 and profile.feature_count > 0
-                else 0,
-                "duplicate_ratio": round(profile.duplicate_count / profile.record_count * 100, 2)
-                if profile.record_count > 0
-                else 0,
-                "outlier_ratio": round(profile.outlier_count / profile.record_count * 100, 2)
-                if profile.record_count > 0
-                else 0,
-            },
-        )
-
-    def assess_from_metadata(
-        self,
-        record_count: int,
-        feature_count: int,
-        null_count: int = 0,
-        duplicate_count: int = 0,
-        outlier_count: int = 0,
-        last_updated: Optional[datetime] = None,
-        metadata: Optional[dict[str, Any]] = None,
-    ) -> dict[str, Any]:
-        """Assess quality directly from metadata values.
-
-        Convenience method that creates a profile and assesses it.
-
-        Args:
-            record_count: Total records.
-            feature_count: Total features.
-            null_count: Total null values.
-            duplicate_count: Duplicate records.
-            outlier_count: Outlier values detected.
-            last_updated: Last update timestamp.
-            metadata: Additional metadata.
-
-        Returns:
-            Dictionary with all quality metrics and assessment ID.
-        """
-        profile = DataProfile(
-            record_count=record_count,
-            feature_count=feature_count,
-            duplicate_count=duplicate_count,
-            outlier_count=outlier_count,
-            last_updated=last_updated or datetime.utcnow(),
-        )
-
-        # Distribute nulls evenly if only total is provided
-        if null_count > 0 and feature_count > 0:
-            nulls_per_feature = null_count // feature_count
-            for i in range(feature_count):
-                profile.null_counts[f"feature_{i}"] = nulls_per_feature
-
-        score = self.assess_quality(profile)
-
-        assessment_id = f"qa_{uuid.uuid4().hex[:12]}"
+        numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+        categorical_cols = df.select_dtypes(
+            include=["object", "category"]
+        ).columns.tolist()
 
         return {
-            "id": assessment_id,
-            "overall_score": score.overall,
-            "completeness_score": score.completeness,
-            "consistency_score": score.consistency,
-            "uniqueness_score": score.uniqueness,
-            "validity_score": score.validity,
-            "freshness_score": score.freshness,
-            "record_count": record_count,
-            "feature_count": feature_count,
-            "null_ratio": score.details.get("null_ratio", 0),
-            "duplicate_ratio": score.details.get("duplicate_ratio", 0),
-            "outlier_ratio": score.details.get("outlier_ratio", 0),
-            "assessed_at": datetime.utcnow(),
-            "metadata": metadata,
+            "n_rows": len(df),
+            "n_cols": len(df.columns),
+            "columns": list(df.columns),
+            "dtypes": {col: str(df[col].dtype) for col in df.columns},
+            "numeric_columns": numeric_cols,
+            "categorical_columns": categorical_cols,
+            "memory_usage_bytes": int(df.memory_usage(deep=True).sum()),
+            "duplicated_rows": int(df.duplicated().sum()),
         }
 
+    def missing_analysis(self, df: "pd.DataFrame") -> dict[str, Any]:
+        """Analyse missing values in the dataset.
 
-def calculate_quality_from_encrypted_metadata(
-    encrypted_record_count: int, encrypted_feature_count: int, stats_summary: dict[str, Any]
-) -> dict[str, Any]:
-    """Calculate quality metrics from FHE-encrypted data statistics.
+        Args:
+            df: Input DataFrame.
 
-    This function works with aggregated statistics that can be computed
-    on encrypted data, providing quality insights without decryption.
+        Returns:
+            Dict with per-column and overall missing-value statistics.
+        """
+        _require_pandas()
 
-    Args:
-        encrypted_record_count: Count of encrypted records.
-        encrypted_feature_count: Count of encrypted features.
-        stats_summary: Summary statistics (can be computed on encrypted data):
-            - null_bitmap_count: Count of null indicators
-            - duplicate_hash_collisions: Hash collisions (approximate duplicates)
-            - range_check_failures: Out-of-range values detected
-            - timestamp: When statistics were computed
+        total_cells = df.shape[0] * df.shape[1]
+        missing_counts = df.isnull().sum()
+        total_missing = int(missing_counts.sum())
 
-    Returns:
-        Quality assessment dictionary.
-    """
-    calculator = DataQualityCalculator()
+        per_column = {}
+        for col in df.columns:
+            count = int(missing_counts[col])
+            per_column[col] = {
+                "count": count,
+                "percentage": round(count / len(df) * 100, 2) if len(df) > 0 else 0.0,
+            }
 
-    return calculator.assess_from_metadata(
-        record_count=encrypted_record_count,
-        feature_count=encrypted_feature_count,
-        null_count=stats_summary.get("null_bitmap_count", 0),
-        duplicate_count=stats_summary.get("duplicate_hash_collisions", 0),
-        outlier_count=stats_summary.get("range_check_failures", 0),
-        last_updated=stats_summary.get("timestamp"),
-        metadata={"source": "fhe_encrypted", "stats_summary": stats_summary},
-    )
+        return {
+            "total_missing": total_missing,
+            "total_cells": total_cells,
+            "overall_missing_pct": round(
+                total_missing / total_cells * 100, 2
+            ) if total_cells > 0 else 0.0,
+            "per_column": per_column,
+            "columns_with_missing": [
+                col for col, info in per_column.items() if info["count"] > 0
+            ],
+        }
+
+    def outlier_detection(
+        self,
+        df: "pd.DataFrame",
+        method: str = "iqr",
+        threshold: float = 1.5,
+    ) -> dict[str, Any]:
+        """Detect outliers in numeric columns.
+
+        Args:
+            df: Input DataFrame.
+            method: Detection method. "iqr" (interquartile range) or
+                "zscore" (z-score with threshold).
+            threshold: IQR multiplier (default 1.5) or z-score threshold
+                (default 3.0 when method="zscore").
+
+        Returns:
+            Dict with per-column outlier counts and indices.
+        """
+        _require_pandas()
+
+        numeric_df = df.select_dtypes(include=[np.number])
+        results: dict[str, Any] = {}
+        total_outliers = 0
+
+        for col in numeric_df.columns:
+            values = numeric_df[col].dropna().values
+
+            if len(values) == 0:
+                results[col] = {"count": 0, "percentage": 0.0, "indices": []}
+                continue
+
+            if method == "zscore":
+                z_threshold = threshold if threshold > 2 else 3.0
+                mean = np.mean(values)
+                std = np.std(values)
+                if std == 0:
+                    outlier_mask = np.zeros(len(numeric_df[col]), dtype=bool)
+                else:
+                    z_scores = np.abs(
+                        (numeric_df[col].values - mean) / std
+                    )
+                    outlier_mask = z_scores > z_threshold
+            else:
+                # IQR method
+                q1 = np.percentile(values, 25)
+                q3 = np.percentile(values, 75)
+                iqr = q3 - q1
+                lower = q1 - threshold * iqr
+                upper = q3 + threshold * iqr
+                col_values = numeric_df[col].values
+                outlier_mask = (col_values < lower) | (col_values > upper)
+
+            # Handle NaN in original column — don't flag NaN as outlier
+            nan_mask = numeric_df[col].isnull().values
+            outlier_mask = outlier_mask & ~nan_mask
+
+            count = int(outlier_mask.sum())
+            total_outliers += count
+
+            indices = list(np.where(outlier_mask)[0])
+
+            results[col] = {
+                "count": count,
+                "percentage": round(
+                    count / len(df) * 100, 2
+                ) if len(df) > 0 else 0.0,
+                "indices": indices[:100],  # Limit for readability
+            }
+
+        return {
+            "method": method,
+            "threshold": threshold,
+            "total_outliers": total_outliers,
+            "per_column": results,
+        }
+
+    def correlation_analysis(self, df: "pd.DataFrame") -> dict[str, Any]:
+        """Compute correlation matrix for numeric columns.
+
+        Args:
+            df: Input DataFrame.
+
+        Returns:
+            Dict with correlation matrix and highly correlated pairs.
+        """
+        _require_pandas()
+
+        numeric_df = df.select_dtypes(include=[np.number])
+
+        if numeric_df.shape[1] < 2:
+            return {
+                "correlation_matrix": {},
+                "high_correlations": [],
+            }
+
+        corr_matrix = numeric_df.corr()
+
+        # Find highly correlated pairs (|r| > 0.8, excluding self-correlation)
+        high_corr = []
+        cols = corr_matrix.columns.tolist()
+        for i in range(len(cols)):
+            for j in range(i + 1, len(cols)):
+                r = corr_matrix.iloc[i, j]
+                if abs(r) > 0.8:
+                    high_corr.append(
+                        {
+                            "feature_1": cols[i],
+                            "feature_2": cols[j],
+                            "correlation": round(float(r), 4),
+                        }
+                    )
+
+        # Sort by absolute correlation descending
+        high_corr.sort(key=lambda x: abs(x["correlation"]), reverse=True)
+
+        return {
+            "correlation_matrix": corr_matrix.to_dict(),
+            "high_correlations": high_corr,
+        }
+
+    def completeness_score(self, df: "pd.DataFrame") -> float:
+        """Compute a completeness score (0-1) based on non-missing values.
+
+        Args:
+            df: Input DataFrame.
+
+        Returns:
+            Score between 0 (all missing) and 1 (no missing).
+        """
+        _require_pandas()
+
+        total = df.shape[0] * df.shape[1]
+        if total == 0:
+            return 1.0
+        missing = int(df.isnull().sum().sum())
+        return round(1.0 - missing / total, 4)
+
+    def consistency_score(self, df: "pd.DataFrame") -> float:
+        """Compute a consistency score (0-1) based on duplicate rows and type uniformity.
+
+        A perfect score means no duplicates and consistent types within columns.
+
+        Args:
+            df: Input DataFrame.
+
+        Returns:
+            Score between 0 and 1.
+        """
+        _require_pandas()
+
+        if len(df) == 0:
+            return 1.0
+
+        # Duplicate penalty
+        dup_ratio = df.duplicated().sum() / len(df)
+
+        # Type consistency — check if numeric columns have mixed types
+        type_issues = 0
+        for col in df.columns:
+            if df[col].dtype == object:
+                # Check if values are mixed numeric/string
+                non_null = df[col].dropna()
+                if len(non_null) > 0:
+                    numeric_count = pd.to_numeric(non_null, errors="coerce").notna().sum()
+                    if 0 < numeric_count < len(non_null):
+                        type_issues += 1
+
+        type_penalty = type_issues / max(len(df.columns), 1)
+
+        score = 1.0 - (dup_ratio * 0.5 + type_penalty * 0.5)
+        return round(max(0.0, min(1.0, score)), 4)
+
+    def report(self, df: "pd.DataFrame") -> dict[str, Any]:
+        """Generate a comprehensive data quality report.
+
+        Args:
+            df: Input DataFrame.
+
+        Returns:
+            Dict with profile, missing analysis, outlier detection,
+            correlation analysis, and overall quality score.
+        """
+        _require_pandas()
+
+        profile = self.profile(df)
+        missing = self.missing_analysis(df)
+        outliers = self.outlier_detection(df)
+        correlations = self.correlation_analysis(df)
+        completeness = self.completeness_score(df)
+        consistency = self.consistency_score(df)
+
+        # Outlier penalty
+        total_values = df.select_dtypes(include=[np.number]).shape[0] * max(
+            df.select_dtypes(include=[np.number]).shape[1], 1
+        )
+        outlier_ratio = (
+            outliers["total_outliers"] / total_values
+            if total_values > 0
+            else 0.0
+        )
+        outlier_score = max(0.0, 1.0 - outlier_ratio * 5)  # Penalise heavily
+
+        # Overall score: weighted average
+        overall = round(
+            completeness * 0.4 + consistency * 0.3 + outlier_score * 0.3, 4
+        )
+
+        return {
+            "profile": profile,
+            "missing": missing,
+            "outliers": outliers,
+            "correlations": correlations,
+            "completeness_score": completeness,
+            "consistency_score": consistency,
+            "outlier_score": round(outlier_score, 4),
+            "overall_score": overall,
+        }

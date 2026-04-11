@@ -1,507 +1,225 @@
-"""Model registry on blockchain.
+"""Model registry client for the FHE-ML platform.
 
-This module provides a Python client for interacting with the
-ModelRegistry smart contract for model verification and audit trail.
+Provides a high-level API on top of the ModelRegistryContract for
+registering, querying, and verifying ML models on-chain.
 """
 
 import hashlib
 import json
-from dataclasses import dataclass
-from datetime import datetime
+from dataclasses import asdict, dataclass
 from typing import Any, Optional
-
-import numpy as np
 
 from .connector import BlockchainConnector
 
-# ModelRegistry contract ABI (subset of functions we use)
-MODEL_REGISTRY_ABI = [
+
+# Default ABI for the ModelRegistry contract.
+# In production this would be loaded from a compiled artefact.
+MODEL_REGISTRY_ABI: list[dict] = [
     {
-        "inputs": [{"name": "modelType", "type": "string"}, {"name": "version", "type": "string"}],
+        "inputs": [
+            {"name": "modelHash", "type": "string"},
+            {"name": "metadataUri", "type": "string"},
+        ],
         "name": "registerModel",
-        "outputs": [{"name": "modelId", "type": "bytes32"}],
+        "outputs": [{"name": "", "type": "uint256"}],
         "stateMutability": "nonpayable",
         "type": "function",
     },
     {
-        "inputs": [
-            {"name": "modelId", "type": "bytes32"},
-            {"name": "epoch", "type": "uint256"},
-            {"name": "weightsHash", "type": "bytes32"},
-            {"name": "metricsHash", "type": "bytes32"},
-        ],
-        "name": "saveCheckpoint",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function",
-    },
-    {
-        "inputs": [
-            {"name": "modelId", "type": "bytes32"},
-            {"name": "datasetHash", "type": "bytes32"},
-        ],
-        "name": "startTraining",
-        "outputs": [{"name": "runId", "type": "bytes32"}],
-        "stateMutability": "nonpayable",
-        "type": "function",
-    },
-    {
-        "inputs": [
-            {"name": "modelId", "type": "bytes32"},
-            {"name": "runIndex", "type": "uint256"},
-            {"name": "totalEpochs", "type": "uint256"},
-            {"name": "finalWeightsHash", "type": "bytes32"},
-        ],
-        "name": "completeTraining",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function",
-    },
-    {
-        "inputs": [{"name": "modelId", "type": "bytes32"}],
-        "name": "verifyModel",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function",
-    },
-    {
-        "inputs": [{"name": "modelId", "type": "bytes32"}],
+        "inputs": [{"name": "modelId", "type": "uint256"}],
         "name": "getModel",
         "outputs": [
+            {"name": "modelHash", "type": "string"},
+            {"name": "metadataUri", "type": "string"},
             {"name": "owner", "type": "address"},
-            {"name": "modelType", "type": "string"},
-            {"name": "version", "type": "string"},
-            {"name": "weightsHash", "type": "bytes32"},
-            {"name": "createdAt", "type": "uint256"},
-            {"name": "updatedAt", "type": "uint256"},
-            {"name": "verified", "type": "bool"},
-            {"name": "active", "type": "bool"},
+            {"name": "timestamp", "type": "uint256"},
+            {"name": "isActive", "type": "bool"},
         ],
         "stateMutability": "view",
         "type": "function",
     },
     {
-        "inputs": [{"name": "modelId", "type": "bytes32"}],
-        "name": "getCheckpointCount",
+        "inputs": [],
+        "name": "getModelCount",
         "outputs": [{"name": "", "type": "uint256"}],
         "stateMutability": "view",
         "type": "function",
     },
     {
-        "inputs": [{"name": "modelId", "type": "bytes32"}, {"name": "index", "type": "uint256"}],
-        "name": "getCheckpoint",
-        "outputs": [
-            {"name": "epoch", "type": "uint256"},
-            {"name": "weightsHash", "type": "bytes32"},
-            {"name": "metricsHash", "type": "bytes32"},
-            {"name": "timestamp", "type": "uint256"},
-        ],
-        "stateMutability": "view",
-        "type": "function",
-    },
-    {
         "inputs": [
-            {"name": "modelId", "type": "bytes32"},
-            {"name": "epoch", "type": "uint256"},
-            {"name": "weightsHash", "type": "bytes32"},
+            {"name": "modelId", "type": "uint256"},
+            {"name": "newHash", "type": "string"},
         ],
-        "name": "verifyCheckpoint",
-        "outputs": [{"name": "", "type": "bool"}],
-        "stateMutability": "view",
-        "type": "function",
-    },
-    {
-        "inputs": [{"name": "owner", "type": "address"}],
-        "name": "getOwnerModels",
-        "outputs": [{"name": "", "type": "bytes32[]"}],
-        "stateMutability": "view",
+        "name": "updateModel",
+        "outputs": [],
+        "stateMutability": "nonpayable",
         "type": "function",
     },
 ]
 
 
 @dataclass
-class ModelInfo:
-    """Information about a registered model."""
+class ModelRecord:
+    """Represents a model registered on-chain."""
 
-    model_id: str
+    model_id: int
+    model_hash: str
+    metadata_uri: str
     owner: str
-    model_type: str
-    version: str
-    weights_hash: str
-    created_at: datetime
-    updated_at: datetime
-    verified: bool
-    active: bool
-
-
-@dataclass
-class CheckpointInfo:
-    """Information about a training checkpoint."""
-
-    epoch: int
-    weights_hash: str
-    metrics_hash: str
-    timestamp: datetime
+    timestamp: int
+    is_active: bool
 
 
 class ModelRegistryClient:
-    """Python client for ModelRegistry smart contract.
-
-    This class provides a high-level interface for:
-    - Registering ML models on blockchain
-    - Saving training checkpoints
-    - Verifying model provenance
-    - Managing model lifecycle
+    """High-level client for the on-chain model registry.
 
     Example:
+        >>> from sdk.blockchain import BlockchainConnector, ModelRegistryClient, Network
         >>> connector = BlockchainConnector(Network.ARBITRUM_SEPOLIA)
         >>> connector.set_account(private_key)
         >>> connector.connect()
         >>> registry = ModelRegistryClient(connector, contract_address)
-        >>> model_id = registry.register_model("LinearRegression", "1.0.0")
-        >>> registry.save_checkpoint(model_id, epoch=100, weights=model.weights)
+        >>> tx = registry.register(model_hash, {"version": "1.0"})
     """
 
     def __init__(
         self,
         connector: BlockchainConnector,
-        contract_address: str,
+        contract_address: Optional[str] = None,
+        abi: Optional[list] = None,
     ):
-        """Initialize ModelRegistry client.
+        """Initialize the registry client.
 
         Args:
-            connector: Connected BlockchainConnector instance.
-            contract_address: Address of deployed ModelRegistry contract.
+            connector: An active BlockchainConnector.
+            contract_address: Address of the deployed ModelRegistry contract.
+            abi: Contract ABI. Defaults to the built-in ABI.
         """
         self._connector = connector
         self._contract_address = contract_address
-        self._contract = connector.get_contract(contract_address, MODEL_REGISTRY_ABI)
+        self._abi = abi or MODEL_REGISTRY_ABI
+        self._contract = None
 
-    @property
-    def contract_address(self) -> str:
-        """Get contract address."""
-        return self._contract_address
+        if contract_address:
+            self._contract = connector.get_contract(
+                contract_address, self._abi
+            )
 
-    @staticmethod
-    def compute_weights_hash(weights: np.ndarray) -> bytes:
-        """Compute SHA256 hash of model weights.
+    def _ensure_contract(self):
+        """Ensure contract is available."""
+        if self._contract is None:
+            raise ValueError(
+                "No contract address set. "
+                "Pass contract_address to the constructor."
+            )
 
-        Args:
-            weights: Numpy array of weights.
-
-        Returns:
-            32-byte hash.
-        """
-        weights_bytes = weights.tobytes()
-        return hashlib.sha256(weights_bytes).digest()
-
-    @staticmethod
-    def compute_metrics_hash(metrics: dict[str, Any]) -> bytes:
-        """Compute SHA256 hash of training metrics.
-
-        Args:
-            metrics: Dictionary of metrics.
-
-        Returns:
-            32-byte hash.
-        """
-        metrics_json = json.dumps(metrics, sort_keys=True)
-        return hashlib.sha256(metrics_json.encode()).digest()
-
-    def register_model(
+    def register(
         self,
-        model_type: str,
-        version: str,
-        wait: bool = True,
+        model_hash: str,
+        metadata: Optional[dict] = None,
     ) -> str:
-        """Register a new model on blockchain.
+        """Register a model on-chain.
 
         Args:
-            model_type: Type of model (e.g., "LinearRegression").
-            version: Version string (e.g., "1.0.0").
-            wait: Whether to wait for transaction confirmation.
-
-        Returns:
-            Model ID (bytes32 as hex string).
-        """
-        tx = self._contract.functions.registerModel(
-            model_type,
-            version,
-        ).build_transaction(
-            {
-                "from": self._connector.address,
-                "nonce": self._connector.get_nonce(),
-                "gas": 200000,
-                "gasPrice": self._connector.get_gas_price(),
-                "chainId": self._connector.config.chain_id,
-            }
-        )
-
-        signed = self._connector.account.sign_transaction(tx)
-        tx_hash = self._connector.web3.eth.send_raw_transaction(signed.raw_transaction)
-
-        if wait:
-            self._connector.web3.eth.wait_for_transaction_receipt(tx_hash)
-            # Extract model_id from logs
-            # For now, return tx hash as placeholder
-            return tx_hash.hex()
-
-        return tx_hash.hex()
-
-    def save_checkpoint(
-        self,
-        model_id: str,
-        epoch: int,
-        weights: np.ndarray,
-        metrics: Optional[dict[str, Any]] = None,
-        wait: bool = True,
-    ) -> str:
-        """Save a training checkpoint.
-
-        Args:
-            model_id: Model identifier (hex string).
-            epoch: Current epoch number.
-            weights: Model weights as numpy array.
-            metrics: Optional training metrics.
-            wait: Whether to wait for confirmation.
+            model_hash: SHA-256 hash of the model artefact.
+            metadata: Optional metadata dict (serialised to JSON as the URI).
 
         Returns:
             Transaction hash.
         """
-        weights_hash = self.compute_weights_hash(weights)
-        metrics_hash = self.compute_metrics_hash(metrics or {})
+        self._ensure_contract()
 
-        # Convert model_id to bytes32
-        if model_id.startswith("0x"):
-            model_id_bytes = bytes.fromhex(model_id[2:])
-        else:
-            model_id_bytes = bytes.fromhex(model_id)
+        metadata_uri = ""
+        if metadata is not None:
+            metadata_uri = json.dumps(metadata, sort_keys=True)
 
-        tx = self._contract.functions.saveCheckpoint(
-            model_id_bytes,
-            epoch,
-            weights_hash,
-            metrics_hash,
-        ).build_transaction(
-            {
-                "from": self._connector.address,
-                "nonce": self._connector.get_nonce(),
-                "gas": 150000,
-                "gasPrice": self._connector.get_gas_price(),
-                "chainId": self._connector.config.chain_id,
-            }
+        from .contracts import ModelRegistryContract
+
+        registry = ModelRegistryContract(
+            self._connector, self._contract_address, self._abi
         )
+        return registry.register_model(model_hash, metadata_uri)
 
-        signed = self._connector.account.sign_transaction(tx)
-        tx_hash = self._connector.web3.eth.send_raw_transaction(signed.raw_transaction)
-
-        if wait:
-            self._connector.web3.eth.wait_for_transaction_receipt(tx_hash)
-
-        return tx_hash.hex()
-
-    def start_training(
-        self,
-        model_id: str,
-        dataset_hash: bytes,
-        wait: bool = True,
-    ) -> str:
-        """Start a new training run.
+    def get(self, model_id: int) -> ModelRecord:
+        """Get a model record by ID.
 
         Args:
-            model_id: Model identifier.
-            dataset_hash: Hash of training dataset.
-            wait: Whether to wait for confirmation.
+            model_id: On-chain model identifier.
 
         Returns:
-            Transaction hash.
+            ModelRecord with all on-chain fields.
         """
-        if model_id.startswith("0x"):
-            model_id_bytes = bytes.fromhex(model_id[2:])
-        else:
-            model_id_bytes = bytes.fromhex(model_id)
+        self._ensure_contract()
 
-        tx = self._contract.functions.startTraining(
-            model_id_bytes,
-            dataset_hash,
-        ).build_transaction(
-            {
-                "from": self._connector.address,
-                "nonce": self._connector.get_nonce(),
-                "gas": 150000,
-                "gasPrice": self._connector.get_gas_price(),
-                "chainId": self._connector.config.chain_id,
-            }
+        from .contracts import ModelRegistryContract
+
+        registry = ModelRegistryContract(
+            self._connector, self._contract_address, self._abi
         )
-
-        signed = self._connector.account.sign_transaction(tx)
-        tx_hash = self._connector.web3.eth.send_raw_transaction(signed.raw_transaction)
-
-        if wait:
-            self._connector.web3.eth.wait_for_transaction_receipt(tx_hash)
-
-        return tx_hash.hex()
-
-    def complete_training(
-        self,
-        model_id: str,
-        run_index: int,
-        total_epochs: int,
-        final_weights: np.ndarray,
-        wait: bool = True,
-    ) -> str:
-        """Complete a training run.
-
-        Args:
-            model_id: Model identifier.
-            run_index: Index of the training run.
-            total_epochs: Total epochs completed.
-            final_weights: Final model weights.
-            wait: Whether to wait for confirmation.
-
-        Returns:
-            Transaction hash.
-        """
-        if model_id.startswith("0x"):
-            model_id_bytes = bytes.fromhex(model_id[2:])
-        else:
-            model_id_bytes = bytes.fromhex(model_id)
-
-        final_hash = self.compute_weights_hash(final_weights)
-
-        tx = self._contract.functions.completeTraining(
-            model_id_bytes,
-            run_index,
-            total_epochs,
-            final_hash,
-        ).build_transaction(
-            {
-                "from": self._connector.address,
-                "nonce": self._connector.get_nonce(),
-                "gas": 150000,
-                "gasPrice": self._connector.get_gas_price(),
-                "chainId": self._connector.config.chain_id,
-            }
-        )
-
-        signed = self._connector.account.sign_transaction(tx)
-        tx_hash = self._connector.web3.eth.send_raw_transaction(signed.raw_transaction)
-
-        if wait:
-            self._connector.web3.eth.wait_for_transaction_receipt(tx_hash)
-
-        return tx_hash.hex()
-
-    def get_model(self, model_id: str) -> ModelInfo:
-        """Get model information from blockchain.
-
-        Args:
-            model_id: Model identifier.
-
-        Returns:
-            ModelInfo dataclass.
-        """
-        if model_id.startswith("0x"):
-            model_id_bytes = bytes.fromhex(model_id[2:])
-        else:
-            model_id_bytes = bytes.fromhex(model_id)
-
-        result = self._contract.functions.getModel(model_id_bytes).call()
-
-        return ModelInfo(
+        data = registry.get_model(model_id)
+        return ModelRecord(
             model_id=model_id,
-            owner=result[0],
-            model_type=result[1],
-            version=result[2],
-            weights_hash=result[3].hex(),
-            created_at=datetime.fromtimestamp(result[4]),
-            updated_at=datetime.fromtimestamp(result[5]),
-            verified=result[6],
-            active=result[7],
+            model_hash=data.get("model_hash", ""),
+            metadata_uri=data.get("metadata_uri", ""),
+            owner=data.get("owner", ""),
+            timestamp=data.get("timestamp", 0),
+            is_active=data.get("is_active", False),
         )
 
-    def get_checkpoint_count(self, model_id: str) -> int:
-        """Get number of checkpoints for a model.
-
-        Args:
-            model_id: Model identifier.
+    def list_all(self) -> list[ModelRecord]:
+        """List all registered models.
 
         Returns:
-            Number of checkpoints.
+            List of ModelRecord objects.
         """
-        if model_id.startswith("0x"):
-            model_id_bytes = bytes.fromhex(model_id[2:])
-        else:
-            model_id_bytes = bytes.fromhex(model_id)
+        self._ensure_contract()
 
-        return self._contract.functions.getCheckpointCount(model_id_bytes).call()
+        from .contracts import ModelRegistryContract
 
-    def get_checkpoint(self, model_id: str, index: int) -> CheckpointInfo:
-        """Get a specific checkpoint.
-
-        Args:
-            model_id: Model identifier.
-            index: Checkpoint index.
-
-        Returns:
-            CheckpointInfo dataclass.
-        """
-        if model_id.startswith("0x"):
-            model_id_bytes = bytes.fromhex(model_id[2:])
-        else:
-            model_id_bytes = bytes.fromhex(model_id)
-
-        result = self._contract.functions.getCheckpoint(
-            model_id_bytes,
-            index,
-        ).call()
-
-        return CheckpointInfo(
-            epoch=result[0],
-            weights_hash=result[1].hex(),
-            metrics_hash=result[2].hex(),
-            timestamp=datetime.fromtimestamp(result[3]),
+        registry = ModelRegistryContract(
+            self._connector, self._contract_address, self._abi
         )
+        raw_models = registry.list_models()
+        records = []
+        for m in raw_models:
+            records.append(
+                ModelRecord(
+                    model_id=m.get("model_id", 0),
+                    model_hash=m.get("model_hash", ""),
+                    metadata_uri=m.get("metadata_uri", ""),
+                    owner=m.get("owner", ""),
+                    timestamp=m.get("timestamp", 0),
+                    is_active=m.get("is_active", False),
+                )
+            )
+        return records
 
-    def verify_checkpoint(
-        self,
-        model_id: str,
-        epoch: int,
-        weights: np.ndarray,
-    ) -> bool:
-        """Verify a checkpoint matches on-chain record.
+    def verify(self, model_id: int, expected_hash: str) -> bool:
+        """Verify that a model's on-chain hash matches an expected value.
 
         Args:
-            model_id: Model identifier.
-            epoch: Epoch to verify.
-            weights: Weights to verify.
+            model_id: On-chain model identifier.
+            expected_hash: The hash to compare against.
 
         Returns:
-            True if checkpoint is valid.
+            True if the hashes match.
         """
-        if model_id.startswith("0x"):
-            model_id_bytes = bytes.fromhex(model_id[2:])
-        else:
-            model_id_bytes = bytes.fromhex(model_id)
+        record = self.get(model_id)
+        return record.model_hash == expected_hash
 
-        weights_hash = self.compute_weights_hash(weights)
+    @staticmethod
+    def compute_hash(data: bytes) -> str:
+        """Compute a SHA-256 hash for model data.
 
-        return self._contract.functions.verifyCheckpoint(
-            model_id_bytes,
-            epoch,
-            weights_hash,
-        ).call()
-
-    def get_my_models(self) -> list[str]:
-        """Get all models owned by current account.
+        Args:
+            data: Raw model bytes.
 
         Returns:
-            List of model IDs.
+            Hex-encoded SHA-256 hash with 0x prefix.
         """
-        result = self._contract.functions.getOwnerModels(self._connector.address).call()
-
-        return [m.hex() for m in result]
+        digest = hashlib.sha256(data).hexdigest()
+        return f"0x{digest}"
 
     def __repr__(self) -> str:
-        return f"ModelRegistryClient(contract={self._contract_address[:10]}...)"
+        addr = self._contract_address or "not set"
+        return f"ModelRegistryClient(contract={addr})"

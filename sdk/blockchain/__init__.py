@@ -1,70 +1,11 @@
-"""Blockchain integration for model verification and governance.
+"""Blockchain integration for FHE-ML SDK."""
 
-This module provides blockchain connectivity and smart contract
-interaction for registering ML models, verifying computations,
-and consortium governance on Arbitrum and other EVM-compatible chains.
-"""
-
-from .connector import (
-    NETWORK_CONFIGS,
-    BlockchainConnector,
-    Network,
-    NetworkConfig,
-)
-from .contracts import (
-    ARBITRUM_ONE_CONTRACTS,
-    ARBITRUM_SEPOLIA_CONTRACTS,
-    ContractAddresses,
-    get_contracts,
-    get_explorer_url,
-    is_testnet,
-)
-from .governance import (
-    AuditEvent,
-    AuditEventType,
-    ConsortiumInfo,
-    ConsortiumStatus,
-    ContributionInfo,
-    GovernanceClient,
-    MemberInfo,
-    MemberStatus,
-    ProposalInfo,
-    ProposalStatus,
-    ProposalType,
-)
-from .registry import (
-    CheckpointInfo,
-    ModelInfo,
-    ModelRegistryClient,
-)
+from .connector import BlockchainConnector, Network, NetworkConfig
+from .registry import ModelRegistryClient
 
 __all__ = [
-    # Connector
     "BlockchainConnector",
+    "ModelRegistryClient",
     "Network",
     "NetworkConfig",
-    "NETWORK_CONFIGS",
-    # Contracts
-    "ContractAddresses",
-    "ARBITRUM_SEPOLIA_CONTRACTS",
-    "ARBITRUM_ONE_CONTRACTS",
-    "get_contracts",
-    "is_testnet",
-    "get_explorer_url",
-    # Registry
-    "ModelRegistryClient",
-    "ModelInfo",
-    "CheckpointInfo",
-    # Governance
-    "GovernanceClient",
-    "ConsortiumStatus",
-    "MemberStatus",
-    "ProposalType",
-    "ProposalStatus",
-    "AuditEventType",
-    "ConsortiumInfo",
-    "MemberInfo",
-    "ContributionInfo",
-    "ProposalInfo",
-    "AuditEvent",
 ]

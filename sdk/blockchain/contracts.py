@@ -1,148 +1,254 @@
-"""Contract addresses and deployment configuration.
+"""Smart contract wrappers for the FHE-ML platform.
 
-This module provides deployed contract addresses for different networks,
-supporting both testnet (sandbox) and mainnet (production) environments.
+Provides typed interfaces for the ModelRegistry and Governance contracts.
 """
 
-from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional
 
-from .connector import Network
+try:
+    from web3 import Web3
 
+    HAS_WEB3 = True
+except ImportError:
+    HAS_WEB3 = False
 
-@dataclass
-class ContractAddresses:
-    """Deployed contract addresses for a network."""
-
-    governance: str
-    model_registry: str
-    computation_verifier: str
-    deployer: Optional[str] = None
-    deployed_at: Optional[str] = None
+from .connector import BlockchainConnector
 
 
-# =============================================================================
-# Testnet (Sandbox) - Arbitrum Sepolia
-# =============================================================================
-# Use this for development, testing, and integration validation
-# Deployed: 2026-01-24
+class ContractBase:
+    """Base class for smart-contract wrappers.
 
-ARBITRUM_SEPOLIA_CONTRACTS = ContractAddresses(
-    governance="0xda52326d106A91A1F22A0c41Be2dc1F531C01F11",
-    model_registry="0x1296cCeF7803Bff51FB690afCFc586E7012417b8",
-    computation_verifier="0xa5f04E0aefe55173C91b949Aa2385f0228dd2921",
-    deployer="0x1EFeA870E80aCa0E140A9C77d921FEd68F1D653D",
-    deployed_at="2026-01-24",
-)
-
-# =============================================================================
-# Mainnet (Production) - Arbitrum One
-# =============================================================================
-# Use this for production with real customers
-# Deployed: TBD (requires audit + multi-sig setup)
-
-ARBITRUM_ONE_CONTRACTS = ContractAddresses(
-    governance="",  # TBD after mainnet deployment
-    model_registry="",  # TBD after mainnet deployment
-    computation_verifier="",  # TBD after mainnet deployment
-    deployer="",
-    deployed_at="",
-)
-
-# =============================================================================
-# Local Development - Anvil/Hardhat
-# =============================================================================
-
-LOCAL_CONTRACTS = ContractAddresses(
-    governance="",  # Set dynamically during local deployment
-    model_registry="",
-    computation_verifier="",
-)
-
-# =============================================================================
-# Network to Contracts Mapping
-# =============================================================================
-
-NETWORK_CONTRACTS: dict[Network, ContractAddresses] = {
-    Network.ARBITRUM_SEPOLIA: ARBITRUM_SEPOLIA_CONTRACTS,
-    Network.ARBITRUM_ONE: ARBITRUM_ONE_CONTRACTS,
-    Network.LOCAL: LOCAL_CONTRACTS,
-}
-
-
-def get_contracts(network: Network) -> ContractAddresses:
-    """Get contract addresses for a network.
-
-    Args:
-        network: Target network.
-
-    Returns:
-        ContractAddresses for the network.
-
-    Raises:
-        ValueError: If network has no deployed contracts.
+    Handles common patterns: holding a connector reference,
+    instantiating the web3 contract, and providing call/transact helpers.
     """
-    if network not in NETWORK_CONTRACTS:
-        raise ValueError(f"No contracts configured for network: {network}")
 
-    contracts = NETWORK_CONTRACTS[network]
+    def __init__(
+        self,
+        connector: BlockchainConnector,
+        address: str,
+        abi: list,
+    ):
+        """Initialize the contract wrapper.
 
-    # Validate contracts are deployed (for non-local networks)
-    if network != Network.LOCAL and not contracts.governance:
-        raise ValueError(
-            f"Contracts not yet deployed on {network.value}. Use ARBITRUM_SEPOLIA for testing."
+        Args:
+            connector: Active BlockchainConnector instance.
+            address: Deployed contract address.
+            abi: Contract ABI (list of dicts).
+        """
+        self._connector = connector
+        self._address = address
+        self._abi = abi
+        self._contract = connector.get_contract(address, abi)
+
+    @property
+    def address(self) -> str:
+        """The contract address."""
+        return self._address
+
+    @property
+    def connector(self) -> BlockchainConnector:
+        """The underlying connector."""
+        return self._connector
+
+    def call(self, function_name: str, *args: Any) -> Any:
+        """Call a read-only contract function.
+
+        Args:
+            function_name: Name of the contract function.
+            *args: Positional arguments for the function.
+
+        Returns:
+            The return value from the contract call.
+        """
+        fn = self._contract.functions[function_name](*args)
+        return fn.call()
+
+    def transact(self, function_name: str, *args: Any) -> str:
+        """Execute a state-changing contract function.
+
+        Builds the transaction, signs it with the connector's account,
+        and returns the transaction hash.
+
+        Args:
+            function_name: Name of the contract function.
+            *args: Positional arguments for the function.
+
+        Returns:
+            Transaction hash as hex string.
+        """
+        fn = self._contract.functions[function_name](*args)
+        tx = fn.build_transaction(
+            {
+                "from": Web3.to_checksum_address(self._connector.address),
+                "nonce": self._connector.get_nonce(),
+                "chainId": self._connector.config.chain_id,
+                "gasPrice": self._connector.get_gas_price(),
+            }
+        )
+        return self._connector.send_transaction(tx)
+
+
+class ModelRegistryContract(ContractBase):
+    """Wrapper for the on-chain Model Registry contract.
+
+    Provides typed methods for registering, querying, updating,
+    and verifying ML models on-chain.
+    """
+
+    def register_model(
+        self, model_hash: str, metadata_uri: str
+    ) -> str:
+        """Register a new model on-chain.
+
+        Args:
+            model_hash: SHA-256 hash of the model artefact.
+            metadata_uri: URI pointing to model metadata (IPFS, HTTP, etc.).
+
+        Returns:
+            Transaction hash.
+        """
+        return self.transact("registerModel", model_hash, metadata_uri)
+
+    def get_model(self, model_id: int) -> dict:
+        """Retrieve model information by ID.
+
+        Args:
+            model_id: On-chain model identifier.
+
+        Returns:
+            Dict with model_hash, metadata_uri, owner, timestamp, etc.
+        """
+        result = self.call("getModel", model_id)
+        # Contract typically returns a tuple; map to dict
+        if isinstance(result, (list, tuple)):
+            keys = [
+                "model_hash",
+                "metadata_uri",
+                "owner",
+                "timestamp",
+                "is_active",
+            ]
+            return dict(zip(keys, result))
+        return result
+
+    def update_model(
+        self, model_id: int, new_hash: str
+    ) -> str:
+        """Update the hash for an existing model.
+
+        Args:
+            model_id: On-chain model identifier.
+            new_hash: New SHA-256 hash.
+
+        Returns:
+            Transaction hash.
+        """
+        return self.transact("updateModel", model_id, new_hash)
+
+    def list_models(self) -> list[dict]:
+        """List all registered models.
+
+        Returns:
+            List of model info dicts.
+        """
+        count = self.call("getModelCount")
+        models = []
+        for i in range(count):
+            try:
+                model = self.get_model(i)
+                model["model_id"] = i
+                models.append(model)
+            except Exception:
+                continue
+        return models
+
+    def verify_model(self, model_id: int) -> dict:
+        """Verify a model's on-chain registration.
+
+        Args:
+            model_id: On-chain model identifier.
+
+        Returns:
+            Dict with verification status and details.
+        """
+        model = self.get_model(model_id)
+        return {
+            "model_id": model_id,
+            "verified": model.get("is_active", False),
+            "model_hash": model.get("model_hash"),
+            "owner": model.get("owner"),
+            "timestamp": model.get("timestamp"),
+        }
+
+
+class GovernanceContract(ContractBase):
+    """Wrapper for the on-chain Governance contract.
+
+    Provides typed methods for creating proposals, voting,
+    and executing governance actions.
+    """
+
+    def create_proposal(
+        self, description: str, actions: list[dict]
+    ) -> str:
+        """Create a new governance proposal.
+
+        Args:
+            description: Human-readable proposal description.
+            actions: List of action dicts (target, calldata, value).
+
+        Returns:
+            Transaction hash.
+        """
+        targets = [a.get("target", "") for a in actions]
+        calldatas = [a.get("calldata", b"") for a in actions]
+        values = [a.get("value", 0) for a in actions]
+        return self.transact(
+            "createProposal", description, targets, calldatas, values
         )
 
-    return contracts
+    def vote(self, proposal_id: int, support: bool) -> str:
+        """Cast a vote on a proposal.
 
+        Args:
+            proposal_id: On-chain proposal identifier.
+            support: True for in favour, False for against.
 
-def is_testnet(network: Network) -> bool:
-    """Check if network is a testnet.
+        Returns:
+            Transaction hash.
+        """
+        return self.transact("vote", proposal_id, support)
 
-    Args:
-        network: Network to check.
+    def execute_proposal(self, proposal_id: int) -> str:
+        """Execute a passed proposal.
 
-    Returns:
-        True if testnet, False if mainnet.
-    """
-    return network in {
-        Network.ARBITRUM_SEPOLIA,
-        Network.ETHEREUM_SEPOLIA,
-        Network.LOCAL,
-    }
+        Args:
+            proposal_id: On-chain proposal identifier.
 
+        Returns:
+            Transaction hash.
+        """
+        return self.transact("executeProposal", proposal_id)
 
-def get_explorer_url(network: Network, address: str) -> str:
-    """Get block explorer URL for a contract address.
+    def get_proposal(self, proposal_id: int) -> dict:
+        """Retrieve proposal information.
 
-    Args:
-        network: Target network.
-        address: Contract address.
+        Args:
+            proposal_id: On-chain proposal identifier.
 
-    Returns:
-        Explorer URL.
-    """
-    explorers = {
-        Network.ARBITRUM_ONE: "https://arbiscan.io",
-        Network.ARBITRUM_SEPOLIA: "https://sepolia.arbiscan.io",
-        Network.ETHEREUM_MAINNET: "https://etherscan.io",
-        Network.ETHEREUM_SEPOLIA: "https://sepolia.etherscan.io",
-    }
-
-    base_url = explorers.get(network, "")
-    if not base_url:
-        return ""
-
-    return f"{base_url}/address/{address}"
-
-
-__all__ = [
-    "ContractAddresses",
-    "ARBITRUM_SEPOLIA_CONTRACTS",
-    "ARBITRUM_ONE_CONTRACTS",
-    "LOCAL_CONTRACTS",
-    "NETWORK_CONTRACTS",
-    "get_contracts",
-    "is_testnet",
-    "get_explorer_url",
-]
+        Returns:
+            Dict with description, votes_for, votes_against, status, etc.
+        """
+        result = self.call("getProposal", proposal_id)
+        if isinstance(result, (list, tuple)):
+            keys = [
+                "description",
+                "proposer",
+                "votes_for",
+                "votes_against",
+                "status",
+                "created_at",
+                "executed",
+            ]
+            return dict(zip(keys, result))
+        return result
