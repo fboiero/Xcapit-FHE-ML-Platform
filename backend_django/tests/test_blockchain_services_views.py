@@ -6,7 +6,7 @@ Targets coverage gaps in:
 - apps/blockchain/views.py (27% -> ~75%)
 """
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock, patch, PropertyMock
 
 import pytest
@@ -73,7 +73,7 @@ class TestBlockchainServiceInit:
         svc = BlockchainService()
         # Directly set the circuit breaker to open state
         svc._circuit._state.state = CircuitState.OPEN
-        svc._circuit._state.last_failure_time = datetime.utcnow()
+        svc._circuit._state.last_failure_time = datetime.now(UTC)
         try:
             assert svc.is_connected() is False
         finally:
@@ -177,7 +177,7 @@ class TestBlockchainServiceSignAndSend:
     def test_sign_and_send_circuit_open(self):
         svc = BlockchainService()
         svc._circuit._state.state = CircuitState.OPEN
-        svc._circuit._state.last_failure_time = datetime.utcnow()
+        svc._circuit._state.last_failure_time = datetime.now(UTC)
         try:
             wallet = BlockchainWallet(address="0x1", private_key="0xkey", name="t")
             result = svc._sign_and_send_with_retry(wallet, {})
@@ -325,12 +325,12 @@ class TestContractAddressesView:
     def test_get_contracts(self, auth_client):
         with patch("apps.blockchain.views.get_contract_addresses") as mock_get:
             mock_get.return_value = _mock_contract_addresses()
-            response = auth_client.get("/api/v2/blockchain/contracts/")
+            response = auth_client.get("/api/v2/blockchain/contract-addresses/")
         assert response.status_code == status.HTTP_200_OK
         assert response.data["governance"] == "0xGov"
 
     def test_get_contracts_unauthenticated(self, api_client):
-        response = api_client.get("/api/v2/blockchain/contracts/")
+        response = api_client.get("/api/v2/blockchain/contract-addresses/")
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 

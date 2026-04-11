@@ -24,7 +24,7 @@ from apps.federated.models import (
 class TestInferenceEndpointEndpoints:
     """Tests for inference endpoint CRUD operations."""
 
-    def test_create_endpoint(self, auth_client, consortium, company, ml_model):
+    def test_create_endpoint(self, auth_client, consortium, company):
         """Test creating an inference endpoint."""
         ConsortiumMember.objects.create(
             consortium=consortium,
@@ -32,13 +32,19 @@ class TestInferenceEndpointEndpoints:
             role=ConsortiumMember.Role.CONTRIBUTOR,
             status=ConsortiumMember.Status.ACTIVE,
         )
+        federated_model = FederatedModel.objects.create(
+            consortium=consortium,
+            name="Test Federated Model",
+            model_type=FederatedModel.ModelType.LOGISTIC_REGRESSION,
+            status=FederatedModel.Status.READY,
+        )
 
         url = "/api/v2/federated/endpoints/"
         data = {
             "consortium": str(consortium.id),
             "name": "Fraud Detection Endpoint",
             "description": "Real-time fraud detection",
-            "model": str(ml_model.id),
+            "model": str(federated_model.id),
             "endpoint_type": InferenceEndpoint.EndpointType.REALTIME,
         }
 
@@ -786,7 +792,7 @@ class TestFederatedModels:
             encrypted_output="test",
         )
 
-        assert str(request.id) in str(result)
+        assert str(request.id)[:8] in str(result)
 
     def test_federated_model_str(self, consortium):
         """Test federated model string representation."""

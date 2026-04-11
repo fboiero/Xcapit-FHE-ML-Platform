@@ -570,19 +570,14 @@ class TestPlatformSimulation:
         assert response.data["status"] == "deployed"
 
         # Create an inference endpoint
-        inference_backend = MLModel.objects.create(
-            name="Federated Inference Backend",
-            model_type="logistic_regression",
-            status=MLModel.Status.TRAINED,
-            owner=med_company,
-        )
+        # Use fed_model_id (InferenceEndpoint.model FK points to FederatedModel)
         response = api_client.post(
             "/api/v2/federated/endpoints/",
             data={
                 "consortium": str(consortium_id),
                 "name": "Diagnosis Endpoint",
                 "description": "Real-time patient diagnostics",
-                "model": str(inference_backend.id),
+                "model": str(fed_model_id),
                 "endpoint_type": "realtime",
                 "config": {"max_batch_size": 200},
             },
@@ -663,7 +658,7 @@ class TestPlatformSimulation:
                 format="json",
             )
             assert response.status_code == status.HTTP_201_CREATED
-            assert response.data["weight"] >= 1
+            assert float(response.data["weight"]) >= 1
 
         # Verify vote tally
         proposal.refresh_from_db()
@@ -689,7 +684,6 @@ class TestPlatformSimulation:
 
         # Marketplace: deploy a model
         category = Category.objects.create(
-            id="cat_healthcare_ai",
             name="Healthcare AI",
             description="AI models for healthcare applications",
         )
@@ -955,7 +949,6 @@ class TestPlatformSimulation:
 
         # Create HIPAA compliance framework
         hipaa = ComplianceFramework.objects.create(
-            id="framework_hipaa",
             name="HIPAA",
             version="2024",
             description="Health Insurance Portability and Accountability Act",
@@ -977,13 +970,13 @@ class TestPlatformSimulation:
 
         # Run compliance checks (4 passed, 1 failed)
         checks_data = [
-            ("hipaa_1", "passed", "Role-based access control implemented"),
-            ("hipaa_2", "passed", "Full audit trail with hash chain integrity"),
-            ("hipaa_3", "passed", "FHE encryption protects data at rest"),
-            ("hipaa_4", "passed", "TLS 1.3 for all transmissions"),
-            ("hipaa_5", "failed", "Legacy endpoint missing encryption"),
+            ("hipaa_1", "compliant", "pass", "Role-based access control implemented"),
+            ("hipaa_2", "compliant", "pass", "Full audit trail with hash chain integrity"),
+            ("hipaa_3", "compliant", "pass", "FHE encryption protects data at rest"),
+            ("hipaa_4", "compliant", "pass", "TLS 1.3 for all transmissions"),
+            ("hipaa_5", "non_compliant", "fail", "Legacy endpoint missing encryption"),
         ]
-        for control_id, check_status, result in checks_data:
+        for control_id, check_status, check_result, check_notes in checks_data:
             response = api_client.post(
                 "/api/v2/compliance/checks/",
                 data={
@@ -991,9 +984,9 @@ class TestPlatformSimulation:
                     "framework": hipaa.id,
                     "control_id": control_id,
                     "status": check_status,
-                    "result": result,
-                    "evidence": {"automated": True, "tool": "fhe-scanner"},
-                    "notes": f"Check for {control_id}",
+                    "result": check_result,
+                    "evidence": "Automated scan: fhe-scanner",
+                    "notes": check_notes,
                 },
                 format="json",
             )
@@ -1017,10 +1010,10 @@ class TestPlatformSimulation:
         report = ComplianceReport.objects.get(
             consortium=consortium, framework=hipaa
         )
-        assert report.overall_score == 80.0
+        assert float(report.overall_score) == 80.0
         assert report.passed_controls == 4
         assert report.failed_controls == 1
-        assert report.status == ComplianceReport.Status.PARTIAL
+        assert report.status == ComplianceReport.Status.COMPLETED
 
         # Create attestation
         response = api_client.post(
@@ -1031,7 +1024,7 @@ class TestPlatformSimulation:
                 "control_id": "hipaa_3",
                 "attester": str(gov_company.id),
                 "attester_role": "Chief Compliance Officer",
-                "attestation_type": "manual",
+                "attestation_type": "self_assessment",
                 "statement": "FHE encryption verified for all patient data at rest",
                 "evidence_urls": [
                     "https://evidence.example.com/fhe-audit-2024.pdf"
@@ -1058,7 +1051,7 @@ class TestPlatformSimulation:
                 "data_subjects": "Hospital patients over 18 years",
                 "recipients": ["MedCorp internal analytics", "Consortium members"],
                 "retention_period": "5 years from last processing",
-                "security_measures": ["FHE encryption", "access control", "audit logging"],
+                "security_measures": "FHE encryption, access control, audit logging",
                 "cross_border_transfer": False,
                 "transfer_safeguards": "N/A — no cross-border transfers",
             },
@@ -1076,7 +1069,7 @@ class TestPlatformSimulation:
         assert response.status_code == status.HTTP_200_OK
         event_types = [e["event_type"] for e in response.data["results"]]
         assert "proposal_created" in event_types
-        assert "proposal_voted" in event_types
+        assert "vote_cast" in event_types
         assert "proposal_executed" in event_types
 
         # Verify audit trail integrity (hash chain)

@@ -376,7 +376,6 @@ class TestModelSharingAndMarketplace:
         # Create a marketplace model and category (directly via ORM since
         # MarketplaceModelViewSet is read-only)
         category = Category.objects.create(
-            id="cat_analytics",
             name="Analytics",
             description="Analytics models",
         )
@@ -539,20 +538,14 @@ class TestFederatedLearning:
         assert response.data["status"] == "deployed"
 
         # ----- STEP 7: Create inference endpoint -----
-        ml_model = MLModel.objects.create(
-            name="Inference Backend Model",
-            model_type="logistic_regression",
-            status=MLModel.Status.TRAINED,
-            owner=company,
-        )
-
+        # Use the federated model (InferenceEndpoint.model FK points to FederatedModel)
         response = api_client.post(
             "/api/v2/federated/endpoints/",
             data={
                 "consortium": str(consortium.id),
                 "name": "Real-time Fraud Endpoint",
                 "description": "Production fraud detection",
-                "model": str(ml_model.id),
+                "model": str(fed_model_id),
                 "endpoint_type": "realtime",
                 "config": {"max_batch_size": 100},
             },
@@ -947,8 +940,8 @@ class TestGovernanceFlow:
             format="json",
         )
         assert response.status_code == status.HTTP_201_CREATED
-        # Weight should be 10000 // 100 = 100
-        assert response.data["weight"] == 100
+        # Weight should be 10000 // 100 = 100 (DecimalField returns string in DRF)
+        assert float(response.data["weight"]) == 100
 
         # Company B votes YES
         api_client.force_authenticate(user=user_b)
@@ -962,7 +955,7 @@ class TestGovernanceFlow:
             format="json",
         )
         assert response.status_code == status.HTTP_201_CREATED
-        assert response.data["weight"] == 50  # 5000 // 100
+        assert float(response.data["weight"]) == 50  # 5000 // 100
 
         # Company C votes NO
         api_client.force_authenticate(user=user_c)
@@ -976,14 +969,14 @@ class TestGovernanceFlow:
             format="json",
         )
         assert response.status_code == status.HTTP_201_CREATED
-        assert response.data["weight"] == 30  # 3000 // 100
+        assert float(response.data["weight"]) == 30  # 3000 // 100
 
         # ----- STEP 5: Verify vote counts -----
         proposal.refresh_from_db()
         assert proposal.yes_votes == 2
         assert proposal.no_votes == 1
-        assert proposal.voting_weight_yes == 150  # 100 + 50
-        assert proposal.voting_weight_no == 30
+        assert float(proposal.voting_weight_yes) == 150  # 100 + 50
+        assert float(proposal.voting_weight_no) == 30
 
         # Get votes list for the proposal
         api_client.force_authenticate(user=user_a)
@@ -1018,7 +1011,7 @@ class TestGovernanceFlow:
         assert response.status_code == status.HTTP_200_OK
         event_types = [e["event_type"] for e in response.data["results"]]
         assert "proposal_created" in event_types
-        assert "proposal_voted" in event_types
+        assert "vote_cast" in event_types
         assert "proposal_executed" in event_types
 
         # Verify audit trail integrity

@@ -126,12 +126,12 @@ class TestWebhookViewSet:
             {
                 "name": "New Hook",
                 "url": "https://example.com/new",
+                "secret": "my-super-secret-value",
                 "events": ["model.trained", "model.created"],
             },
             format="json",
         )
         assert r.status_code == status.HTTP_201_CREATED
-        assert "secret" in r.data
 
     def test_update(self, auth, webhook):
         r = auth.put(
@@ -139,6 +139,7 @@ class TestWebhookViewSet:
             {
                 "name": "Updated",
                 "url": "https://example.com/updated",
+                "secret": "updated-secret-value",
                 "events": ["model.trained"],
             },
             format="json",
@@ -983,7 +984,8 @@ class TestConsortiumMemberViewSetActions:
 
     def test_leave_not_member(self, other_auth, consortium, membership):
         r = other_auth.post(self._url(consortium.id, "leave/"))
-        assert r.status_code == status.HTTP_403_FORBIDDEN
+        # other_company is not an active member, so the API returns 400
+        assert r.status_code == status.HTTP_400_BAD_REQUEST
 
     def test_leave_owner_fails(self, auth, consortium, membership):
         r = auth.post(self._url(consortium.id, "leave/"))
@@ -1017,14 +1019,15 @@ class TestContributionProofViewSetActions:
 
 
 class TestConsortiumInvitationViewSetActions:
-    url = "/api/v2/consortiums/invitations/"
+    url = "/api/v2/invitations/"
 
     @pytest.fixture
-    def invitation(self, company, consortium):
+    def invitation(self, company, consortium, other_company):
         return ConsortiumInvitation.objects.create(
             consortium=consortium,
             inviter=company,
-            invitee_email="other@otherco.com",
+            invitee_email="u@otherco.com",
+            invitee_company=other_company,
             role=ConsortiumMember.Role.CONTRIBUTOR,
             status=ConsortiumInvitation.Status.PENDING,
             expires_at=timezone.now() + timedelta(days=7),

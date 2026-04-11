@@ -113,7 +113,7 @@ class TestAPIKeyEndpoints:
         response = auth_client.post(url, data, format="json")
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert "key" in response.data or "_raw_key" in response.data
+        assert "raw_key" in response.data
         assert APIKey.objects.filter(name="Test Key").exists()
 
     def test_list_api_keys(self, auth_client, company, user):

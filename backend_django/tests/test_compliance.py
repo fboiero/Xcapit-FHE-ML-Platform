@@ -4,6 +4,7 @@ Compliance module tests for Xcapit FHE-ML Platform.
 Tests for compliance frameworks, checks, reports, attestations, and GDPR records.
 """
 
+import uuid
 from datetime import timedelta
 
 import pytest
@@ -20,6 +21,14 @@ from apps.compliance.models import (
 )
 from apps.consortiums.models import ConsortiumMember
 
+# Fixed UUIDs for use across tests
+FRAMEWORK_GDPR_ID = uuid.UUID("11111111-1111-1111-1111-111111111111")
+FRAMEWORK_HIPAA_ID = uuid.UUID("22222222-2222-2222-2222-222222222222")
+FRAMEWORK_PCI_ID = uuid.UUID("33333333-3333-3333-3333-333333333333")
+FRAMEWORK_TEST_ID = uuid.UUID("44444444-4444-4444-4444-444444444444")
+FRAMEWORK_1_ID = uuid.UUID("55555555-5555-5555-5555-555555555555")
+FRAMEWORK_2_ID = uuid.UUID("66666666-6666-6666-6666-666666666666")
+
 
 @pytest.mark.django_db
 class TestComplianceFrameworkEndpoints:
@@ -28,7 +37,7 @@ class TestComplianceFrameworkEndpoints:
     def test_list_frameworks(self, auth_client):
         """Test listing compliance frameworks."""
         ComplianceFramework.objects.create(
-            id="framework_gdpr",
+            id=FRAMEWORK_GDPR_ID,
             name="GDPR",
             version="2018",
             description="General Data Protection Regulation",
@@ -45,13 +54,13 @@ class TestComplianceFrameworkEndpoints:
     def test_filter_frameworks_by_region(self, auth_client):
         """Test filtering frameworks by region."""
         ComplianceFramework.objects.create(
-            id="framework_gdpr",
+            id=FRAMEWORK_GDPR_ID,
             name="GDPR",
             version="2018",
             region="EU",
         )
         ComplianceFramework.objects.create(
-            id="framework_hipaa",
+            id=FRAMEWORK_HIPAA_ID,
             name="HIPAA",
             version="1996",
             region="US",
@@ -68,13 +77,13 @@ class TestComplianceFrameworkEndpoints:
     def test_filter_frameworks_by_industry(self, auth_client):
         """Test filtering frameworks by industry."""
         ComplianceFramework.objects.create(
-            id="framework_hipaa",
+            id=FRAMEWORK_HIPAA_ID,
             name="HIPAA",
             version="1996",
             industry="healthcare",
         )
         ComplianceFramework.objects.create(
-            id="framework_pci",
+            id=FRAMEWORK_PCI_ID,
             name="PCI-DSS",
             version="4.0",
             industry="finance",
@@ -91,7 +100,7 @@ class TestComplianceFrameworkEndpoints:
     def test_get_framework(self, auth_client):
         """Test getting a single framework."""
         framework = ComplianceFramework.objects.create(
-            id="framework_test",
+            id=FRAMEWORK_TEST_ID,
             name="Test Framework",
             version="1.0",
         )
@@ -106,7 +115,7 @@ class TestComplianceFrameworkEndpoints:
     def test_get_framework_controls(self, auth_client):
         """Test getting framework controls."""
         framework = ComplianceFramework.objects.create(
-            id="framework_test",
+            id=FRAMEWORK_TEST_ID,
             name="Test Framework",
             version="1.0",
             controls=[
@@ -126,7 +135,7 @@ class TestComplianceFrameworkEndpoints:
     def test_frameworks_are_read_only(self, auth_client):
         """Test frameworks cannot be created via API."""
         url = "/api/v2/compliance/frameworks/"
-        data = {"id": "new_framework", "name": "New Framework", "version": "1.0"}
+        data = {"id": str(FRAMEWORK_TEST_ID), "name": "New Framework", "version": "1.0"}
 
         response = auth_client.post(url, data, format="json")
 
@@ -166,28 +175,28 @@ class TestConsortiumComplianceEndpoints:
             status=ConsortiumMember.Status.ACTIVE,
         )
         framework = ComplianceFramework.objects.create(
-            id="framework_test",
+            id=FRAMEWORK_TEST_ID,
             name="Test Framework",
             version="1.0",
         )
         compliance = ConsortiumCompliance.objects.create(consortium=consortium)
         compliance.enabled_frameworks.add(framework)
 
-        # Add some checks
+        # Add some checks — use COMPLIANT status (not PASSED)
         ComplianceCheck.objects.create(
             consortium=consortium,
             framework=framework,
             control_id="ctrl1",
-            status=ComplianceCheck.Status.PASSED,
-            result="Control passed",
+            status=ComplianceCheck.Status.COMPLIANT,
+            result=ComplianceCheck.Result.PASS,
             checked_by=company,
         )
         ComplianceCheck.objects.create(
             consortium=consortium,
             framework=framework,
             control_id="ctrl2",
-            status=ComplianceCheck.Status.PASSED,
-            result="Control passed",
+            status=ComplianceCheck.Status.COMPLIANT,
+            result=ComplianceCheck.Result.PASS,
             checked_by=company,
         )
 
@@ -213,7 +222,7 @@ class TestComplianceCheckEndpoints:
             status=ConsortiumMember.Status.ACTIVE,
         )
         framework = ComplianceFramework.objects.create(
-            id="framework_test",
+            id=FRAMEWORK_TEST_ID,
             name="Test Framework",
             version="1.0",
         )
@@ -221,16 +230,16 @@ class TestComplianceCheckEndpoints:
         url = "/api/v2/compliance/checks/"
         data = {
             "consortium": str(consortium.id),
-            "framework": framework.id,
+            "framework": str(framework.id),
             "control_id": "ctrl1",
-            "status": ComplianceCheck.Status.PASSED,
-            "result": "Control passed verification",
+            "status": ComplianceCheck.Status.COMPLIANT,
+            "result": ComplianceCheck.Result.PASS,
         }
 
         response = auth_client.post(url, data, format="json")
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert response.data["status"] == "passed"
+        assert response.data["status"] == "compliant"
 
     def test_list_checks(self, auth_client, consortium, company):
         """Test listing compliance checks."""
@@ -241,7 +250,7 @@ class TestComplianceCheckEndpoints:
             status=ConsortiumMember.Status.ACTIVE,
         )
         framework = ComplianceFramework.objects.create(
-            id="framework_test",
+            id=FRAMEWORK_TEST_ID,
             name="Test Framework",
             version="1.0",
         )
@@ -249,8 +258,8 @@ class TestComplianceCheckEndpoints:
             consortium=consortium,
             framework=framework,
             control_id="ctrl1",
-            status=ComplianceCheck.Status.PASSED,
-            result="Test",
+            status=ComplianceCheck.Status.COMPLIANT,
+            result=ComplianceCheck.Result.PASS,
             checked_by=company,
         )
 
@@ -270,12 +279,12 @@ class TestComplianceCheckEndpoints:
             status=ConsortiumMember.Status.ACTIVE,
         )
         framework1 = ComplianceFramework.objects.create(
-            id="framework_1",
+            id=FRAMEWORK_1_ID,
             name="Framework 1",
             version="1.0",
         )
         framework2 = ComplianceFramework.objects.create(
-            id="framework_2",
+            id=FRAMEWORK_2_ID,
             name="Framework 2",
             version="1.0",
         )
@@ -283,22 +292,22 @@ class TestComplianceCheckEndpoints:
             consortium=consortium,
             framework=framework1,
             control_id="ctrl1",
-            result="Test",
+            result=ComplianceCheck.Result.PASS,
         )
         ComplianceCheck.objects.create(
             consortium=consortium,
             framework=framework2,
             control_id="ctrl1",
-            result="Test",
+            result=ComplianceCheck.Result.PASS,
         )
 
-        url = f"/api/v2/compliance/checks/?consortium_id={consortium.id}&framework_id=framework_1"
+        url = f"/api/v2/compliance/checks/?consortium_id={consortium.id}&framework_id={FRAMEWORK_1_ID}"
 
         response = auth_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
         for check in response.data.get("results", response.data):
-            assert check["framework"] == "framework_1"
+            assert str(check["framework"]) == str(FRAMEWORK_1_ID)
 
     def test_filter_checks_by_status(self, auth_client, consortium, company):
         """Test filtering checks by status."""
@@ -309,7 +318,7 @@ class TestComplianceCheckEndpoints:
             status=ConsortiumMember.Status.ACTIVE,
         )
         framework = ComplianceFramework.objects.create(
-            id="framework_test",
+            id=FRAMEWORK_TEST_ID,
             name="Test Framework",
             version="1.0",
         )
@@ -317,24 +326,24 @@ class TestComplianceCheckEndpoints:
             consortium=consortium,
             framework=framework,
             control_id="ctrl1",
-            status=ComplianceCheck.Status.PASSED,
-            result="Test",
+            status=ComplianceCheck.Status.COMPLIANT,
+            result=ComplianceCheck.Result.PASS,
         )
         ComplianceCheck.objects.create(
             consortium=consortium,
             framework=framework,
             control_id="ctrl2",
-            status=ComplianceCheck.Status.FAILED,
-            result="Test",
+            status=ComplianceCheck.Status.NON_COMPLIANT,
+            result=ComplianceCheck.Result.FAIL,
         )
 
-        url = f"/api/v2/compliance/checks/?consortium_id={consortium.id}&status=passed"
+        url = f"/api/v2/compliance/checks/?consortium_id={consortium.id}&status=compliant"
 
         response = auth_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
         for check in response.data.get("results", response.data):
-            assert check["status"] == "passed"
+            assert check["status"] == "compliant"
 
 
 @pytest.mark.django_db
@@ -350,7 +359,7 @@ class TestComplianceReportEndpoints:
             status=ConsortiumMember.Status.ACTIVE,
         )
         framework = ComplianceFramework.objects.create(
-            id="framework_test",
+            id=FRAMEWORK_TEST_ID,
             name="Test Framework",
             version="1.0",
         )
@@ -358,7 +367,7 @@ class TestComplianceReportEndpoints:
             consortium=consortium,
             framework=framework,
             overall_score=85.0,
-            status=ComplianceReport.Status.PARTIAL,
+            status=ComplianceReport.Status.COMPLETED,
             passed_controls=8,
             failed_controls=2,
             total_controls=10,
@@ -382,40 +391,40 @@ class TestComplianceReportEndpoints:
             status=ConsortiumMember.Status.ACTIVE,
         )
         framework = ComplianceFramework.objects.create(
-            id="framework_test",
+            id=FRAMEWORK_TEST_ID,
             name="Test Framework",
             version="1.0",
         )
         ConsortiumCompliance.objects.create(consortium=consortium)
 
-        # Add checks
+        # Add checks — use COMPLIANT status to get 90% score
         for i in range(9):
             ComplianceCheck.objects.create(
                 consortium=consortium,
                 framework=framework,
                 control_id=f"ctrl{i}",
-                status=ComplianceCheck.Status.PASSED,
-                result="Passed",
+                status=ComplianceCheck.Status.COMPLIANT,
+                result=ComplianceCheck.Result.PASS,
             )
         ComplianceCheck.objects.create(
             consortium=consortium,
             framework=framework,
             control_id="ctrl9",
-            status=ComplianceCheck.Status.FAILED,
-            result="Failed",
+            status=ComplianceCheck.Status.NON_COMPLIANT,
+            result=ComplianceCheck.Result.FAIL,
         )
 
         url = "/api/v2/compliance/reports/generate/"
         data = {
             "consortium_id": str(consortium.id),
-            "framework_id": framework.id,
+            "framework_id": str(framework.id),
         }
 
         response = auth_client.post(url, data, format="json")
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert response.data["overall_score"] == 90.0
-        assert response.data["status"] == "compliant"
+        assert float(response.data["overall_score"]) == 90.0
+        assert response.data["status"] == "completed"
 
     def test_generate_report_no_checks(self, auth_client, consortium, company):
         """Test generating report without checks fails."""
@@ -428,7 +437,7 @@ class TestComplianceReportEndpoints:
             status=ConsortiumMember.Status.ACTIVE,
         )
         framework = ComplianceFramework.objects.create(
-            id="framework_test",
+            id=FRAMEWORK_TEST_ID,
             name="Test Framework",
             version="1.0",
         )
@@ -436,7 +445,7 @@ class TestComplianceReportEndpoints:
         url = "/api/v2/compliance/reports/generate/"
         data = {
             "consortium_id": str(consortium.id),
-            "framework_id": framework.id,
+            "framework_id": str(framework.id),
         }
 
         response = auth_client.post(url, data, format="json")
@@ -453,12 +462,12 @@ class TestComplianceReportEndpoints:
             status=ConsortiumMember.Status.ACTIVE,
         )
         framework1 = ComplianceFramework.objects.create(
-            id="framework_1",
+            id=FRAMEWORK_1_ID,
             name="Framework 1",
             version="1.0",
         )
         framework2 = ComplianceFramework.objects.create(
-            id="framework_2",
+            id=FRAMEWORK_2_ID,
             name="Framework 2",
             version="1.0",
         )
@@ -466,24 +475,24 @@ class TestComplianceReportEndpoints:
             consortium=consortium,
             framework=framework1,
             overall_score=90,
-            status=ComplianceReport.Status.COMPLIANT,
+            status=ComplianceReport.Status.COMPLETED,
             total_controls=10,
         )
         ComplianceReport.objects.create(
             consortium=consortium,
             framework=framework2,
             overall_score=70,
-            status=ComplianceReport.Status.PARTIAL,
+            status=ComplianceReport.Status.COMPLETED,
             total_controls=10,
         )
 
-        url = f"/api/v2/compliance/reports/?consortium_id={consortium.id}&framework_id=framework_1"
+        url = f"/api/v2/compliance/reports/?consortium_id={consortium.id}&framework_id={FRAMEWORK_1_ID}"
 
         response = auth_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
         for report in response.data.get("results", response.data):
-            assert report["framework"] == "framework_1"
+            assert str(report["framework"]) == str(FRAMEWORK_1_ID)
 
 
 @pytest.mark.django_db
@@ -499,7 +508,7 @@ class TestAttestationEndpoints:
             status=ConsortiumMember.Status.ACTIVE,
         )
         framework = ComplianceFramework.objects.create(
-            id="framework_test",
+            id=FRAMEWORK_TEST_ID,
             name="Test Framework",
             version="1.0",
         )
@@ -507,7 +516,7 @@ class TestAttestationEndpoints:
         url = "/api/v2/compliance/attestations/"
         data = {
             "consortium": str(consortium.id),
-            "framework": framework.id,
+            "framework": str(framework.id),
             "control_id": "ctrl1",
             "statement": "I attest that this control is implemented",
             "attester_role": "Security Officer",
@@ -527,7 +536,7 @@ class TestAttestationEndpoints:
             status=ConsortiumMember.Status.ACTIVE,
         )
         framework = ComplianceFramework.objects.create(
-            id="framework_test",
+            id=FRAMEWORK_TEST_ID,
             name="Test Framework",
             version="1.0",
         )
@@ -554,15 +563,17 @@ class TestAttestationEndpoints:
             status=ConsortiumMember.Status.ACTIVE,
         )
         framework = ComplianceFramework.objects.create(
-            id="framework_test",
+            id=FRAMEWORK_TEST_ID,
             name="Test Framework",
             version="1.0",
         )
+        # valid_from must be set for the filter (valid_from__lte=now) to include it
         Attestation.objects.create(
             consortium=consortium,
             framework=framework,
             attester=company,
             statement="Valid attestation",
+            valid_from=timezone.now() - timedelta(days=1),
         )
         Attestation.objects.create(
             consortium=consortium,
@@ -589,7 +600,7 @@ class TestAttestationEndpoints:
             status=ConsortiumMember.Status.ACTIVE,
         )
         framework = ComplianceFramework.objects.create(
-            id="framework_test",
+            id=FRAMEWORK_TEST_ID,
             name="Test Framework",
             version="1.0",
         )
@@ -617,7 +628,7 @@ class TestAttestationEndpoints:
             status=ConsortiumMember.Status.ACTIVE,
         )
         framework = ComplianceFramework.objects.create(
-            id="framework_test",
+            id=FRAMEWORK_TEST_ID,
             name="Test Framework",
             version="1.0",
         )
@@ -651,7 +662,7 @@ class TestAttestationEndpoints:
             status=ConsortiumMember.Status.ACTIVE,
         )
         framework = ComplianceFramework.objects.create(
-            id="framework_test",
+            id=FRAMEWORK_TEST_ID,
             name="Test Framework",
             version="1.0",
         )
@@ -765,7 +776,7 @@ class TestComplianceModels:
     def test_framework_str(self):
         """Test framework string representation."""
         framework = ComplianceFramework.objects.create(
-            id="framework_test",
+            id=FRAMEWORK_TEST_ID,
             name="Test Framework",
             version="2.0",
         )
@@ -776,7 +787,7 @@ class TestComplianceModels:
     def test_framework_controls_count(self):
         """Test framework controls count property."""
         framework = ComplianceFramework.objects.create(
-            id="framework_test",
+            id=FRAMEWORK_TEST_ID,
             name="Test",
             version="1.0",
             controls=[{"id": "c1"}, {"id": "c2"}, {"id": "c3"}],
@@ -804,7 +815,7 @@ class TestComplianceModels:
     def test_check_str(self, consortium):
         """Test compliance check string representation."""
         framework = ComplianceFramework.objects.create(
-            id="framework_test",
+            id=FRAMEWORK_TEST_ID,
             name="Test Framework",
             version="1.0",
         )
@@ -812,8 +823,8 @@ class TestComplianceModels:
             consortium=consortium,
             framework=framework,
             control_id="ctrl1",
-            status=ComplianceCheck.Status.PASSED,
-            result="Passed",
+            status=ComplianceCheck.Status.COMPLIANT,
+            result=ComplianceCheck.Result.PASS,
         )
 
         assert "Test Framework" in str(check)
@@ -822,7 +833,7 @@ class TestComplianceModels:
     def test_report_str(self, consortium):
         """Test compliance report string representation."""
         framework = ComplianceFramework.objects.create(
-            id="framework_test",
+            id=FRAMEWORK_TEST_ID,
             name="Test Framework",
             version="1.0",
         )
@@ -830,7 +841,7 @@ class TestComplianceModels:
             consortium=consortium,
             framework=framework,
             overall_score=85,
-            status=ComplianceReport.Status.PARTIAL,
+            status=ComplianceReport.Status.COMPLETED,
             total_controls=10,
         )
 
@@ -840,7 +851,7 @@ class TestComplianceModels:
     def test_attestation_str(self, consortium, company):
         """Test attestation string representation."""
         framework = ComplianceFramework.objects.create(
-            id="framework_test",
+            id=FRAMEWORK_TEST_ID,
             name="Test Framework",
             version="1.0",
         )
@@ -856,7 +867,7 @@ class TestComplianceModels:
     def test_attestation_is_valid(self, consortium, company):
         """Test attestation validity check."""
         framework = ComplianceFramework.objects.create(
-            id="framework_test",
+            id=FRAMEWORK_TEST_ID,
             name="Test Framework",
             version="1.0",
         )
@@ -889,10 +900,11 @@ class TestComplianceModels:
 
     def test_processing_record_str(self, consortium, company):
         """Test data processing record string representation."""
+        # The __str__ truncates at 60 chars, use a string that exceeds 60 chars
         record = DataProcessingRecord.objects.create(
             consortium=consortium,
             company=company,
-            processing_purpose="Very long processing purpose that exceeds fifty characters",
+            processing_purpose="Very long processing purpose that definitely exceeds sixty characters in length",
             legal_basis="Consent",
         )
 

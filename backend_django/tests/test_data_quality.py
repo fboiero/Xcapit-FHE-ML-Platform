@@ -171,7 +171,7 @@ class TestQualityAssessmentEndpoints:
         response = auth_client.post(url, data, format="json")
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert response.data["overall_score"] > 0
+        assert float(response.data["overall_score"]) > 0
 
     def test_get_assessment_summary(self, auth_client, quality_assessment):
         """Test getting assessment summary."""

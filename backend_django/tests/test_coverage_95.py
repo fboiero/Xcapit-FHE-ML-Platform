@@ -1257,8 +1257,8 @@ class TestMLModels:
         share.refresh_from_db()
         assert share.status == "approved"
         assert share.is_active
-        assert share.can_predict()
-        assert not share.can_retrain()
+        assert share.can_predict
+        assert not share.can_retrain
 
     def test_model_share_full_access(self):
         from apps.consortiums.models import Consortium
@@ -1273,7 +1273,7 @@ class TestMLModels:
             share_type="full_access",
         )
         share.approve()
-        assert share.can_retrain()
+        assert share.can_retrain
 
     def test_model_share_reject(self):
         from apps.consortiums.models import Consortium

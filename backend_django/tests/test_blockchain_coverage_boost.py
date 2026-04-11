@@ -13,7 +13,7 @@ import json
 import signal
 import sys
 import time
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from threading import Thread
 from unittest.mock import MagicMock, Mock, PropertyMock, patch, call
@@ -93,7 +93,7 @@ class TestBlockchainServiceConnect:
         """Line 93: raise CircuitBreakerOpen when circuit is open."""
         svc = BlockchainService()
         svc._circuit._state.state = CircuitState.OPEN
-        svc._circuit._state.last_failure_time = datetime.utcnow()
+        svc._circuit._state.last_failure_time = datetime.now(UTC)
         try:
             with pytest.raises(CircuitBreakerOpen):
                 svc._connect()

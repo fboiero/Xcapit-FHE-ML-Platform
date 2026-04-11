@@ -4,6 +4,7 @@ Marketplace module tests for Xcapit FHE-ML Platform.
 Tests for model marketplace, deployments, and reviews.
 """
 
+import uuid
 from decimal import Decimal
 
 import pytest
@@ -13,17 +14,27 @@ from apps.consortiums.models import ConsortiumMember
 from apps.marketplace.models import Category, Deployment, MarketplaceModel, Review
 
 
+def make_category(**kwargs) -> Category:
+    """Helper to create a Category with a valid UUID id."""
+    kwargs.setdefault("name", f"Category {uuid.uuid4().hex[:8]}")
+    return Category.objects.create(**kwargs)
+
+
+def make_model(category: Category | None = None, **kwargs) -> MarketplaceModel:
+    """Helper to create a MarketplaceModel with a valid category."""
+    if category is None:
+        category = make_category()
+    kwargs.setdefault("model_type", MarketplaceModel.ModelType.LOGISTIC_REGRESSION)
+    return MarketplaceModel.objects.create(category=category, **kwargs)
+
+
 @pytest.mark.django_db
 class TestCategoryEndpoints:
     """Tests for category (read-only) operations."""
 
     def test_list_categories(self, auth_client):
         """Test listing categories."""
-        Category.objects.create(
-            id="cat_fraud",
-            name="Fraud Detection",
-            description="Models for fraud detection",
-        )
+        make_category(name="Fraud Detection", description="Models for fraud detection")
 
         url = "/api/v2/marketplace/categories/"
 
@@ -34,10 +45,7 @@ class TestCategoryEndpoints:
 
     def test_get_category(self, auth_client):
         """Test getting a single category."""
-        category = Category.objects.create(
-            id="cat_test",
-            name="Test Category",
-        )
+        category = make_category(name="Test Category")
 
         url = f"/api/v2/marketplace/categories/{category.id}/"
 
@@ -48,13 +56,10 @@ class TestCategoryEndpoints:
 
     def test_get_category_models(self, auth_client):
         """Test getting models in a category."""
-        category = Category.objects.create(
-            id="cat_test",
-            name="Test Category",
-        )
-        MarketplaceModel.objects.create(
-            name="Test Model",
+        category = make_category(name="Test Category")
+        make_model(
             category=category,
+            name="Test Model",
             model_type=MarketplaceModel.ModelType.LOGISTIC_REGRESSION,
             is_active=True,
         )
@@ -69,7 +74,7 @@ class TestCategoryEndpoints:
     def test_categories_are_read_only(self, auth_client):
         """Test categories cannot be created via API."""
         url = "/api/v2/marketplace/categories/"
-        data = {"id": "new_cat", "name": "New Category"}
+        data = {"name": "New Category"}
 
         response = auth_client.post(url, data, format="json")
 
@@ -82,11 +87,7 @@ class TestMarketplaceModelEndpoints:
 
     def test_list_models(self, auth_client):
         """Test listing marketplace models."""
-        MarketplaceModel.objects.create(
-            name="Test Model",
-            model_type=MarketplaceModel.ModelType.LOGISTIC_REGRESSION,
-            is_active=True,
-        )
+        make_model(name="Test Model", is_active=True)
 
         url = "/api/v2/marketplace/models/"
 
@@ -97,16 +98,8 @@ class TestMarketplaceModelEndpoints:
 
     def test_list_only_active_models(self, auth_client):
         """Test only active models are listed."""
-        active = MarketplaceModel.objects.create(
-            name="Active Model",
-            model_type=MarketplaceModel.ModelType.LOGISTIC_REGRESSION,
-            is_active=True,
-        )
-        MarketplaceModel.objects.create(
-            name="Inactive Model",
-            model_type=MarketplaceModel.ModelType.LOGISTIC_REGRESSION,
-            is_active=False,
-        )
+        make_model(name="Active Model", is_active=True)
+        make_model(name="Inactive Model", is_active=False)
 
         url = "/api/v2/marketplace/models/"
 
@@ -120,7 +113,7 @@ class TestMarketplaceModelEndpoints:
 
     def test_get_model(self, auth_client):
         """Test getting a single model."""
-        model = MarketplaceModel.objects.create(
+        model = make_model(
             name="Test Model",
             description="A test model",
             model_type=MarketplaceModel.ModelType.LINEAR_REGRESSION,
@@ -134,22 +127,12 @@ class TestMarketplaceModelEndpoints:
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data["name"] == "Test Model"
-        assert response.data["accuracy"] == 0.92
+        assert float(response.data["accuracy"]) == pytest.approx(0.92)
 
     def test_get_featured_models(self, auth_client):
         """Test getting featured models."""
-        MarketplaceModel.objects.create(
-            name="Featured Model",
-            model_type=MarketplaceModel.ModelType.LOGISTIC_REGRESSION,
-            is_active=True,
-            is_featured=True,
-        )
-        MarketplaceModel.objects.create(
-            name="Regular Model",
-            model_type=MarketplaceModel.ModelType.LOGISTIC_REGRESSION,
-            is_active=True,
-            is_featured=False,
-        )
+        make_model(name="Featured Model", is_active=True, is_featured=True)
+        make_model(name="Regular Model", is_active=True, is_featured=False)
 
         url = "/api/v2/marketplace/models/featured/"
 
@@ -162,18 +145,8 @@ class TestMarketplaceModelEndpoints:
 
     def test_get_popular_models(self, auth_client):
         """Test getting popular models."""
-        MarketplaceModel.objects.create(
-            name="Popular Model",
-            model_type=MarketplaceModel.ModelType.LOGISTIC_REGRESSION,
-            is_active=True,
-            downloads=1000,
-        )
-        MarketplaceModel.objects.create(
-            name="Less Popular",
-            model_type=MarketplaceModel.ModelType.LOGISTIC_REGRESSION,
-            is_active=True,
-            downloads=10,
-        )
+        make_model(name="Popular Model", is_active=True, downloads=1000)
+        make_model(name="Less Popular", is_active=True, downloads=10)
 
         url = "/api/v2/marketplace/models/popular/"
 
@@ -186,11 +159,7 @@ class TestMarketplaceModelEndpoints:
 
     def test_get_top_rated_models(self, auth_client, company):
         """Test getting top rated models."""
-        model = MarketplaceModel.objects.create(
-            name="Top Rated",
-            model_type=MarketplaceModel.ModelType.LOGISTIC_REGRESSION,
-            is_active=True,
-        )
+        model = make_model(name="Top Rated", is_active=True)
         Review.objects.create(
             marketplace_model=model,
             reviewer=company,
@@ -205,13 +174,13 @@ class TestMarketplaceModelEndpoints:
 
     def test_search_models(self, auth_client):
         """Test searching marketplace models."""
-        MarketplaceModel.objects.create(
+        make_model(
             name="Fraud Detection Model",
             description="Detects fraud in transactions",
             model_type=MarketplaceModel.ModelType.LOGISTIC_REGRESSION,
             is_active=True,
         )
-        MarketplaceModel.objects.create(
+        make_model(
             name="Customer Segmentation",
             model_type=MarketplaceModel.ModelType.KMEANS,
             is_active=True,
@@ -227,15 +196,15 @@ class TestMarketplaceModelEndpoints:
 
     def test_search_with_filters(self, auth_client):
         """Test searching with filters."""
-        category = Category.objects.create(id="cat_fraud", name="Fraud")
-        MarketplaceModel.objects.create(
+        category = make_category(name="Fraud")
+        make_model(
             name="Free Model",
             category=category,
             model_type=MarketplaceModel.ModelType.LOGISTIC_REGRESSION,
             pricing_type=MarketplaceModel.PricingType.FREE,
             is_active=True,
         )
-        MarketplaceModel.objects.create(
+        make_model(
             name="Paid Model",
             category=category,
             model_type=MarketplaceModel.ModelType.LOGISTIC_REGRESSION,
@@ -245,7 +214,7 @@ class TestMarketplaceModelEndpoints:
 
         url = "/api/v2/marketplace/models/search/"
         data = {
-            "category": "cat_fraud",
+            "category": str(category.id),
             "pricing_type": "free",
         }
 
@@ -257,13 +226,13 @@ class TestMarketplaceModelEndpoints:
 
     def test_search_by_min_accuracy(self, auth_client):
         """Test searching by minimum accuracy."""
-        MarketplaceModel.objects.create(
+        make_model(
             name="High Accuracy",
             model_type=MarketplaceModel.ModelType.LOGISTIC_REGRESSION,
             accuracy=0.95,
             is_active=True,
         )
-        MarketplaceModel.objects.create(
+        make_model(
             name="Low Accuracy",
             model_type=MarketplaceModel.ModelType.LOGISTIC_REGRESSION,
             accuracy=0.70,
@@ -277,11 +246,11 @@ class TestMarketplaceModelEndpoints:
 
         assert response.status_code == status.HTTP_200_OK
         for result in response.data["results"]:
-            assert result["accuracy"] >= 0.90
+            assert float(result["accuracy"]) >= 0.90
 
     def test_get_model_reviews(self, auth_client, company):
         """Test getting reviews for a model."""
-        model = MarketplaceModel.objects.create(
+        model = make_model(
             name="Test Model",
             model_type=MarketplaceModel.ModelType.LOGISTIC_REGRESSION,
             is_active=True,
@@ -324,11 +293,7 @@ class TestDeploymentEndpoints:
             role=ConsortiumMember.Role.CONTRIBUTOR,
             status=ConsortiumMember.Status.ACTIVE,
         )
-        model = MarketplaceModel.objects.create(
-            name="Test Model",
-            model_type=MarketplaceModel.ModelType.LOGISTIC_REGRESSION,
-            is_active=True,
-        )
+        model = make_model(name="Test Model", is_active=True)
 
         url = "/api/v2/marketplace/deployments/"
         data = {
@@ -352,10 +317,7 @@ class TestDeploymentEndpoints:
             role=ConsortiumMember.Role.CONTRIBUTOR,
             status=ConsortiumMember.Status.ACTIVE,
         )
-        model = MarketplaceModel.objects.create(
-            name="Test Model",
-            model_type=MarketplaceModel.ModelType.LOGISTIC_REGRESSION,
-        )
+        model = make_model(name="Test Model")
         Deployment.objects.create(
             marketplace_model=model,
             consortium=consortium,
@@ -371,10 +333,7 @@ class TestDeploymentEndpoints:
 
     def test_list_deployments_by_company(self, auth_client, consortium, company):
         """Test listing deployments by company."""
-        model = MarketplaceModel.objects.create(
-            name="Test Model",
-            model_type=MarketplaceModel.ModelType.LOGISTIC_REGRESSION,
-        )
+        model = make_model(name="Test Model")
         Deployment.objects.create(
             marketplace_model=model,
             consortium=consortium,
@@ -389,17 +348,14 @@ class TestDeploymentEndpoints:
         assert len(response.data) >= 1
 
     def test_suspend_deployment(self, auth_client, consortium, company):
-        """Test suspending a deployment."""
+        """Test suspending a deployment (sets status to PAUSED)."""
         ConsortiumMember.objects.create(
             consortium=consortium,
             company=company,
             role=ConsortiumMember.Role.CONTRIBUTOR,
             status=ConsortiumMember.Status.ACTIVE,
         )
-        model = MarketplaceModel.objects.create(
-            name="Test Model",
-            model_type=MarketplaceModel.ModelType.LOGISTIC_REGRESSION,
-        )
+        model = make_model(name="Test Model")
         deployment = Deployment.objects.create(
             marketplace_model=model,
             consortium=consortium,
@@ -413,25 +369,22 @@ class TestDeploymentEndpoints:
 
         assert response.status_code == status.HTTP_200_OK
         deployment.refresh_from_db()
-        assert deployment.status == Deployment.Status.SUSPENDED
+        assert deployment.status == Deployment.Status.PAUSED
 
     def test_activate_deployment(self, auth_client, consortium, company):
-        """Test activating a suspended deployment."""
+        """Test activating a suspended (paused) deployment."""
         ConsortiumMember.objects.create(
             consortium=consortium,
             company=company,
             role=ConsortiumMember.Role.CONTRIBUTOR,
             status=ConsortiumMember.Status.ACTIVE,
         )
-        model = MarketplaceModel.objects.create(
-            name="Test Model",
-            model_type=MarketplaceModel.ModelType.LOGISTIC_REGRESSION,
-        )
+        model = make_model(name="Test Model")
         deployment = Deployment.objects.create(
             marketplace_model=model,
             consortium=consortium,
             deployed_by=company,
-            status=Deployment.Status.SUSPENDED,
+            status=Deployment.Status.PAUSED,
         )
 
         url = f"/api/v2/marketplace/deployments/{deployment.id}/activate/?consortium_id={consortium.id}"
@@ -450,10 +403,7 @@ class TestDeploymentEndpoints:
             role=ConsortiumMember.Role.CONTRIBUTOR,
             status=ConsortiumMember.Status.ACTIVE,
         )
-        model = MarketplaceModel.objects.create(
-            name="Test Model",
-            model_type=MarketplaceModel.ModelType.LOGISTIC_REGRESSION,
-        )
+        model = make_model(name="Test Model")
         deployment = Deployment.objects.create(
             marketplace_model=model,
             consortium=consortium,
@@ -478,15 +428,12 @@ class TestDeploymentEndpoints:
             role=ConsortiumMember.Role.CONTRIBUTOR,
             status=ConsortiumMember.Status.ACTIVE,
         )
-        model = MarketplaceModel.objects.create(
-            name="Test Model",
-            model_type=MarketplaceModel.ModelType.LOGISTIC_REGRESSION,
-        )
+        model = make_model(name="Test Model")
         deployment = Deployment.objects.create(
             marketplace_model=model,
             consortium=consortium,
             deployed_by=company,
-            status=Deployment.Status.SUSPENDED,
+            status=Deployment.Status.PAUSED,
         )
 
         url = f"/api/v2/marketplace/deployments/{deployment.id}/suspend/?consortium_id={consortium.id}"
@@ -503,10 +450,7 @@ class TestDeploymentEndpoints:
             role=ConsortiumMember.Role.CONTRIBUTOR,
             status=ConsortiumMember.Status.ACTIVE,
         )
-        model = MarketplaceModel.objects.create(
-            name="Test Model",
-            model_type=MarketplaceModel.ModelType.LOGISTIC_REGRESSION,
-        )
+        model = make_model(name="Test Model")
         deployment = Deployment.objects.create(
             marketplace_model=model,
             consortium=consortium,
@@ -528,10 +472,7 @@ class TestDeploymentEndpoints:
             role=ConsortiumMember.Role.CONTRIBUTOR,
             status=ConsortiumMember.Status.ACTIVE,
         )
-        model = MarketplaceModel.objects.create(
-            name="Test Model",
-            model_type=MarketplaceModel.ModelType.LOGISTIC_REGRESSION,
-        )
+        model = make_model(name="Test Model")
         deployment = Deployment.objects.create(
             marketplace_model=model,
             consortium=consortium,
@@ -552,11 +493,7 @@ class TestReviewEndpoints:
 
     def test_create_review(self, auth_client, company, consortium):
         """Test creating a review."""
-        model = MarketplaceModel.objects.create(
-            name="Test Model",
-            model_type=MarketplaceModel.ModelType.LOGISTIC_REGRESSION,
-            is_active=True,
-        )
+        model = make_model(name="Test Model", is_active=True)
         # Must deploy model before reviewing
         Deployment.objects.create(
             marketplace_model=model,
@@ -579,10 +516,7 @@ class TestReviewEndpoints:
 
     def test_list_my_reviews(self, auth_client, company):
         """Test listing user's own reviews."""
-        model = MarketplaceModel.objects.create(
-            name="Test Model",
-            model_type=MarketplaceModel.ModelType.LOGISTIC_REGRESSION,
-        )
+        model = make_model(name="Test Model")
         Review.objects.create(
             marketplace_model=model,
             reviewer=company,
@@ -598,10 +532,7 @@ class TestReviewEndpoints:
 
     def test_update_review(self, auth_client, company):
         """Test updating a review."""
-        model = MarketplaceModel.objects.create(
-            name="Test Model",
-            model_type=MarketplaceModel.ModelType.LOGISTIC_REGRESSION,
-        )
+        model = make_model(name="Test Model")
         review = Review.objects.create(
             marketplace_model=model,
             reviewer=company,
@@ -620,10 +551,7 @@ class TestReviewEndpoints:
 
     def test_delete_review(self, auth_client, company):
         """Test deleting a review."""
-        model = MarketplaceModel.objects.create(
-            name="Test Model",
-            model_type=MarketplaceModel.ModelType.LOGISTIC_REGRESSION,
-        )
+        model = make_model(name="Test Model")
         review = Review.objects.create(
             marketplace_model=model,
             reviewer=company,
@@ -639,10 +567,7 @@ class TestReviewEndpoints:
 
     def test_mark_review_helpful(self, auth_client, company):
         """Test marking a review as helpful."""
-        model = MarketplaceModel.objects.create(
-            name="Test Model",
-            model_type=MarketplaceModel.ModelType.LOGISTIC_REGRESSION,
-        )
+        model = make_model(name="Test Model")
         review = Review.objects.create(
             marketplace_model=model,
             reviewer=company,
@@ -664,29 +589,26 @@ class TestMarketplaceModels:
 
     def test_category_str(self):
         """Test category string representation."""
-        category = Category.objects.create(
-            id="cat_test",
-            name="Test Category",
-        )
+        category = make_category(name="Test Category")
 
         assert "Test Category" in str(category)
 
     def test_category_model_count(self):
         """Test category model count property."""
-        category = Category.objects.create(id="cat_test", name="Test")
-        MarketplaceModel.objects.create(
+        category = make_category(name="Test")
+        make_model(
             name="Model 1",
             category=category,
             model_type=MarketplaceModel.ModelType.LINEAR_REGRESSION,
             is_active=True,
         )
-        MarketplaceModel.objects.create(
+        make_model(
             name="Model 2",
             category=category,
             model_type=MarketplaceModel.ModelType.LINEAR_REGRESSION,
             is_active=True,
         )
-        MarketplaceModel.objects.create(
+        make_model(
             name="Inactive",
             category=category,
             model_type=MarketplaceModel.ModelType.LINEAR_REGRESSION,
@@ -697,7 +619,7 @@ class TestMarketplaceModels:
 
     def test_model_str(self):
         """Test model string representation."""
-        model = MarketplaceModel.objects.create(
+        model = make_model(
             name="Test Model",
             model_type=MarketplaceModel.ModelType.LINEAR_REGRESSION,
             version="2.0.0",
@@ -708,7 +630,7 @@ class TestMarketplaceModels:
 
     def test_model_rating(self, company, other_company):
         """Test model rating property."""
-        model = MarketplaceModel.objects.create(
+        model = make_model(
             name="Test Model",
             model_type=MarketplaceModel.ModelType.LINEAR_REGRESSION,
         )
@@ -718,8 +640,8 @@ class TestMarketplaceModels:
         assert model.rating == 4.0
 
     def test_model_rating_no_reviews(self):
-        """Test model rating with no reviews."""
-        model = MarketplaceModel.objects.create(
+        """Test model rating with no reviews returns 0."""
+        model = make_model(
             name="Test Model",
             model_type=MarketplaceModel.ModelType.LINEAR_REGRESSION,
         )
@@ -728,7 +650,7 @@ class TestMarketplaceModels:
 
     def test_model_rating_count(self, company, other_company):
         """Test model rating count property."""
-        model = MarketplaceModel.objects.create(
+        model = make_model(
             name="Test Model",
             model_type=MarketplaceModel.ModelType.LINEAR_REGRESSION,
         )
@@ -738,19 +660,19 @@ class TestMarketplaceModels:
         assert model.rating_count == 2
 
     def test_model_industry(self):
-        """Test model industry property."""
-        category = Category.objects.create(id="cat_fraud", name="Fraud")
-        model = MarketplaceModel.objects.create(
+        """Test model industry property returns category name."""
+        category = make_category(name="Fraud")
+        model = make_model(
             name="Test Model",
             category=category,
             model_type=MarketplaceModel.ModelType.LINEAR_REGRESSION,
         )
 
-        assert model.industry == "cat_fraud"
+        assert model.industry == "Fraud"
 
     def test_deployment_str(self, consortium, company):
         """Test deployment string representation."""
-        model = MarketplaceModel.objects.create(
+        model = make_model(
             name="Test Model",
             model_type=MarketplaceModel.ModelType.LINEAR_REGRESSION,
         )
@@ -765,7 +687,7 @@ class TestMarketplaceModels:
 
     def test_review_str(self, company):
         """Test review string representation."""
-        model = MarketplaceModel.objects.create(
+        model = make_model(
             name="Test Model",
             model_type=MarketplaceModel.ModelType.LINEAR_REGRESSION,
         )

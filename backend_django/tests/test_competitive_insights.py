@@ -120,8 +120,8 @@ class TestCompanyMetricModel:
         company_metric.calculate_percentile()
         company_metric.refresh_from_db()
 
-        # 88.5 is between p75 (92) and p50 (85), so should be 75
-        assert company_metric.percentile_rank == 75
+        # 88.5 >= p50 (85) but < p75 (92), so rank is 50 (last threshold exceeded)
+        assert company_metric.percentile_rank == 50
 
 
 @pytest.mark.django_db

@@ -564,7 +564,7 @@ class TestJSONSchemaValidator:
 
         validator = JSONSchemaValidator({"type": "object"})
         validator._validator = None
-        with pytest.raises(ValidationError, match="Expected an object"):
+        with pytest.raises(ValidationError, match="Expected object"):
             validator("not an object")
 
     def test_basic_validate_wrong_type_array(self):
@@ -572,7 +572,7 @@ class TestJSONSchemaValidator:
 
         validator = JSONSchemaValidator({"type": "array"})
         validator._validator = None
-        with pytest.raises(ValidationError, match="Expected an array"):
+        with pytest.raises(ValidationError, match="Expected array"):
             validator("not an array")
 
     def test_eq(self):

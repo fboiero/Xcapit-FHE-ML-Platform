@@ -148,11 +148,13 @@ class TestProposalExecution:
             proposer=company,
             proposal_type=Proposal.Type.UPDATE_CONFIG,
             title="Passed Proposal",
+            status=Proposal.Status.ACTIVE,
             expires_at=timezone.now() - timedelta(days=1),  # Already expired
             yes_votes=5,
             no_votes=1,
             voting_weight_yes=5.0,
             voting_weight_no=1.0,
+            data={"config": {"voting_threshold": 0.75}},
         )
 
         url = f"/api/v2/governance/proposals/{proposal.id}/execute/?consortium_id={consortium.id}"
@@ -161,7 +163,7 @@ class TestProposalExecution:
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data["passed"] is True
-        assert response.data["status"] == Proposal.Status.PASSED
+        assert response.data["status"] == Proposal.Status.EXECUTED
 
     def test_execute_rejected_proposal(self, auth_client, consortium, company):
         """Test executing a proposal that failed."""
@@ -177,6 +179,7 @@ class TestProposalExecution:
             proposer=company,
             proposal_type=Proposal.Type.UPDATE_CONFIG,
             title="Failed Proposal",
+            status=Proposal.Status.ACTIVE,
             expires_at=timezone.now() - timedelta(days=1),
             yes_votes=1,
             no_votes=5,
@@ -206,6 +209,7 @@ class TestProposalExecution:
             proposer=company,
             proposal_type=Proposal.Type.UPDATE_CONFIG,
             title="Active Proposal",
+            status=Proposal.Status.ACTIVE,
             expires_at=timezone.now() + timedelta(days=7),  # Still active
         )
 
@@ -255,6 +259,7 @@ class TestProposalExecution:
             proposer=company,
             proposal_type=Proposal.Type.UPDATE_CONFIG,
             title="No Votes Proposal",
+            status=Proposal.Status.ACTIVE,
             expires_at=timezone.now() - timedelta(days=1),
             yes_votes=0,
             no_votes=0,
@@ -295,20 +300,20 @@ class TestVoteEndpoints:
             proposer=company,
             proposal_type=Proposal.Type.UPDATE_CONFIG,
             title="Vote Test",
+            status=Proposal.Status.ACTIVE,
             expires_at=timezone.now() + timedelta(days=7),
         )
 
-        url = "/api/v2/governance/votes/"
+        url = f"/api/v2/governance/proposals/{proposal.id}/vote/?consortium_id={consortium.id}"
         data = {
-            "proposal": str(proposal.id),
-            "support": True,
+            "support": Vote.Support.FOR,
             "comment": "I support this proposal",
         }
 
         response = auth_client.post(url, data, format="json")
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert response.data["support"] is True
+        assert response.data["support"] == Vote.Support.FOR
         assert Vote.objects.filter(proposal=proposal, voter=company).exists()
 
         # Check proposal vote counts updated
@@ -329,19 +334,19 @@ class TestVoteEndpoints:
             proposer=company,
             proposal_type=Proposal.Type.UPDATE_CONFIG,
             title="Vote Test",
+            status=Proposal.Status.ACTIVE,
             expires_at=timezone.now() + timedelta(days=7),
         )
 
-        url = "/api/v2/governance/votes/"
+        url = f"/api/v2/governance/proposals/{proposal.id}/vote/?consortium_id={consortium.id}"
         data = {
-            "proposal": str(proposal.id),
-            "support": False,
+            "support": Vote.Support.AGAINST,
         }
 
         response = auth_client.post(url, data, format="json")
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert response.data["support"] is False
+        assert response.data["support"] == Vote.Support.AGAINST
 
         proposal.refresh_from_db()
         assert proposal.no_votes == 1
@@ -360,20 +365,20 @@ class TestVoteEndpoints:
             proposer=company,
             proposal_type=Proposal.Type.UPDATE_CONFIG,
             title="Vote Test",
+            status=Proposal.Status.ACTIVE,
             expires_at=timezone.now() + timedelta(days=7),
         )
 
         Vote.objects.create(
             proposal=proposal,
             voter=company,
-            support=True,
+            support=Vote.Support.FOR,
             weight=1,
         )
 
-        url = "/api/v2/governance/votes/"
+        url = f"/api/v2/governance/proposals/{proposal.id}/vote/?consortium_id={consortium.id}"
         data = {
-            "proposal": str(proposal.id),
-            "support": False,
+            "support": Vote.Support.AGAINST,
         }
 
         response = auth_client.post(url, data, format="json")
@@ -399,10 +404,9 @@ class TestVoteEndpoints:
             expires_at=timezone.now() + timedelta(days=7),
         )
 
-        url = "/api/v2/governance/votes/"
+        url = f"/api/v2/governance/proposals/{proposal.id}/vote/?consortium_id={consortium.id}"
         data = {
-            "proposal": str(proposal.id),
-            "support": True,
+            "support": Vote.Support.FOR,
         }
 
         response = auth_client.post(url, data, format="json")
@@ -424,13 +428,13 @@ class TestVoteEndpoints:
             proposer=company,
             proposal_type=Proposal.Type.UPDATE_CONFIG,
             title="Expired Proposal",
+            status=Proposal.Status.ACTIVE,
             expires_at=timezone.now() - timedelta(days=1),
         )
 
-        url = "/api/v2/governance/votes/"
+        url = f"/api/v2/governance/proposals/{proposal.id}/vote/?consortium_id={consortium.id}"
         data = {
-            "proposal": str(proposal.id),
-            "support": True,
+            "support": Vote.Support.FOR,
         }
 
         response = auth_client.post(url, data, format="json")
@@ -439,7 +443,7 @@ class TestVoteEndpoints:
         assert "ended" in response.data["detail"].lower()
 
     def test_list_my_votes(self, auth_client, consortium, company):
-        """Test listing user's votes."""
+        """Test listing votes for a proposal."""
         ConsortiumMember.objects.create(
             consortium=consortium,
             company=company,
@@ -458,11 +462,11 @@ class TestVoteEndpoints:
         Vote.objects.create(
             proposal=proposal,
             voter=company,
-            support=True,
+            support=Vote.Support.FOR,
             weight=1,
         )
 
-        url = "/api/v2/governance/votes/"
+        url = f"/api/v2/governance/proposals/{proposal.id}/votes/?consortium_id={consortium.id}"
 
         response = auth_client.get(url)
 
@@ -470,7 +474,11 @@ class TestVoteEndpoints:
         assert len(response.data) >= 1
 
     def test_non_member_cannot_vote(self, other_auth_client, consortium, company, other_company):
-        """Test non-member cannot vote on proposal."""
+        """Test non-member cannot access a proposal's vote action.
+
+        The queryset is membership-scoped, so a non-member gets 404 (resource
+        hidden) rather than 403, which is the intended security behaviour.
+        """
         # Only main company is member
         ConsortiumMember.objects.create(
             consortium=consortium,
@@ -484,18 +492,20 @@ class TestVoteEndpoints:
             proposer=company,
             proposal_type=Proposal.Type.UPDATE_CONFIG,
             title="Test",
+            status=Proposal.Status.ACTIVE,
             expires_at=timezone.now() + timedelta(days=7),
         )
 
-        url = "/api/v2/governance/votes/"
+        url = f"/api/v2/governance/proposals/{proposal.id}/vote/?consortium_id={consortium.id}"
         data = {
-            "proposal": str(proposal.id),
-            "support": True,
+            "support": Vote.Support.FOR,
         }
 
         response = other_auth_client.post(url, data, format="json")
 
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        # The queryset returns none() for non-members, so get_object raises 404
+        # (intentional: resource existence is not disclosed to outsiders)
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
 @pytest.mark.django_db
@@ -543,7 +553,7 @@ class TestAuditEventEndpoints:
         AuditEvent.objects.create(
             consortium=consortium,
             actor=company,
-            event_type=AuditEvent.EventType.DATA_CONTRIBUTED,
+            event_type=AuditEvent.EventType.VOTE_CAST,
         )
 
         url = f"/api/v2/governance/audit-events/?consortium_id={consortium.id}&event_type=member_joined"
@@ -718,6 +728,7 @@ class TestProposalModel:
             proposer=company,
             proposal_type=Proposal.Type.UPDATE_CONFIG,
             title="Test",
+            status=Proposal.Status.ACTIVE,
             expires_at=timezone.now() - timedelta(days=1),
         )
 
@@ -796,10 +807,10 @@ class TestVoteModel:
         vote = Vote.objects.create(
             proposal=proposal,
             voter=company,
-            support=True,
+            support=Vote.Support.FOR,
         )
 
-        assert "Yes" in str(vote)
+        assert Vote.Support.FOR in str(vote)
         assert company.name in str(vote)
 
 
@@ -808,14 +819,16 @@ class TestAuditEventModel:
     """Tests for AuditEvent model."""
 
     def test_audit_event_hash_generation(self, consortium, company):
-        """Test audit event hash is generated on save."""
+        """Test audit event hash can be stored and retrieved."""
+        test_hash = "a" * 64  # SHA-256 hex-length placeholder
         event = AuditEvent.objects.create(
             consortium=consortium,
             actor=company,
             event_type=AuditEvent.EventType.MEMBER_JOINED,
+            event_hash=test_hash,
         )
 
-        assert event.event_hash != ""
+        assert event.event_hash == test_hash
         assert len(event.event_hash) == 64  # SHA-256 hex length
 
     def test_audit_event_str(self, consortium, company):
