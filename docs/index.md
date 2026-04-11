@@ -1,107 +1,118 @@
-# Xcapit FHE-ML Platform Documentation
+# Xcapit FHE-ML Platform — Centro de Documentacion
 
-## Documentación Completa del SDK de Machine Learning con Encriptación Homomórfica
-
----
-
-## Tabla de Contenidos
-
-### Parte I: Fundamentos Teóricos
-1. [Introducción a la Encriptación Homomórfica](theory/01-homomorphic-encryption.md)
-2. [El Esquema CKKS](theory/02-ckks-scheme.md)
-3. [Machine Learning sobre Datos Encriptados](theory/03-ml-on-encrypted-data.md)
-4. [Aproximaciones Polinomiales para FHE](theory/04-polynomial-approximations.md)
-
-### Parte II: Arquitectura del Sistema
-5. [Arquitectura General](guides/01-architecture.md)
-6. [Capa de Encriptación](guides/02-encryption-layer.md)
-7. [Modelos de Machine Learning](guides/03-ml-models.md)
-8. [Integración Blockchain](guides/04-blockchain-integration.md)
-
-### Parte III: Guías Prácticas
-9. [Guía de Inicio Rápido](guides/05-quickstart.md)
-10. [Entrenamiento de Modelos](guides/06-training-models.md)
-11. [Deployment en Producción](guides/07-deployment.md)
-12. [Casos de Uso](guides/08-use-cases.md)
-
-### Parte IV: Referencia API
-13. [SDK Python](api/python-sdk.md)
-14. [REST API](api/rest-api.md)
-15. [CLI](api/cli-reference.md)
-
-### Anexos
-- [Glosario](glossary.md)
-- [Referencias Bibliográficas](references.md)
-- [FAQ](faq.md)
+**Version**: 1.0.0-rc1 | **Ultima actualizacion**: Marzo 2026
 
 ---
 
-## ¿Qué es Xcapit FHE-ML?
+## Documentacion Principal
 
-Xcapit FHE-ML es una plataforma que permite realizar **Machine Learning sobre datos encriptados** utilizando **Encriptación Homomórfica Completa (FHE)**. Esto significa que:
+| Documento | Descripcion |
+|-----------|-------------|
+| [Manual de Usuario](USER_MANUAL.md) | Manual completo para usuarios de la plataforma |
+| [Release Notes RC1](RELEASE_NOTES_RC1.md) | Notas de version del Release Candidate 1 |
+| [Arquitectura Tecnica](TECHNICAL_ARCHITECTURE.md) | Descripcion de la arquitectura del sistema |
+| [Referencia API](API_REFERENCE.md) | Documentacion de endpoints REST |
+| [OpenAPI Spec](openapi.yaml) | Especificacion OpenAPI 3.0 |
+| [Auditoria de Seguridad](SECURITY_AUDIT_REPORT.md) | Reporte de auditoria de seguridad |
+| [Guia de Implementacion](IMPLEMENTATION_GUIDE.md) | Patrones de implementacion |
+| [Walkthrough de la Plataforma](PLATFORM_WALKTHROUGH.md) | Tour completo de la plataforma |
 
-1. Los datos **nunca se descifran** durante el procesamiento
-2. Los modelos pueden **entrenarse y hacer predicciones** sin ver los datos originales
-3. Solo el propietario de los datos puede **descifrar los resultados**
+## Inicio Rapido
 
-### Diagrama Conceptual
+| Documento | Descripcion |
+|-----------|-------------|
+| [Getting Started](getting-started.md) | Guia de inicio rapido |
+| [Onboarding Paso a Paso](ONBOARDING_PASO_A_PASO.md) | Tutorial de onboarding |
+| [Glosario](glossary.md) | Terminos y definiciones |
 
-```
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│   Datos         │     │   Servidor ML   │     │   Resultados    │
-│   Originales    │     │   (No ve datos) │     │   Descifrados   │
-└────────┬────────┘     └────────┬────────┘     └────────┬────────┘
-         │                       │                       │
-         ▼                       ▼                       ▼
-    ┌─────────┐            ┌─────────┐            ┌─────────┐
-    │Encriptar│───────────▶│Procesar │───────────▶│Descifrar│
-    │ (CKKS)  │  Cifrado   │Cifrado  │  Cifrado   │ (CKKS)  │
-    └─────────┘            └─────────┘            └─────────┘
-         │                       │                       │
-    ┌────┴────┐            ┌────┴────┐            ┌────┴────┐
-    │ Llave   │            │Solo ve  │            │ Llave   │
-    │ Pública │            │números  │            │ Privada │
-    └─────────┘            │aleatorio│            └─────────┘
-                           └─────────┘
-```
+## Teoria FHE
 
----
+| Capitulo | Tema |
+|----------|------|
+| [01 — Cifrado Homomorfico](theory/01-homomorphic-encryption.md) | Fundamentos de FHE |
+| [02 — Esquema CKKS](theory/02-ckks-scheme.md) | Detalles matematicos de CKKS |
+| [03 — ML sobre Datos Cifrados](theory/03-ml-on-encrypted-data.md) | Modelos ML con FHE |
+| [04 — Aproximaciones Polinomiales](theory/04-polynomial-approximations.md) | Tecnicas polinomiales para FHE |
+
+## Guias de Arquitectura
+
+| Guia | Tema |
+|------|------|
+| [01 — Arquitectura General](guides/01-architecture.md) | Vision general del sistema |
+| [02 — Capa de Cifrado](guides/02-encryption-layer.md) | Detalles de la capa FHE |
+| [03 — Modelos ML](guides/03-ml-models.md) | Documentacion de modelos |
+| [04 — Integracion Blockchain](guides/04-blockchain-integration.md) | Smart contracts y Arbitrum |
+| [05 — Inicio Rapido](guides/05-quickstart.md) | Tutorial paso a paso |
+
+## SDK
+
+| Documento | Descripcion |
+|-----------|-------------|
+| [Arquitectura SDK](sdk/ARCHITECTURE.md) | Arquitectura interna del SDK |
+| [Troubleshooting](sdk/TROUBLESHOOTING.md) | Problemas comunes y soluciones |
+| [Tutoriales](sdk/TUTORIALS.md) | Tutoriales del SDK |
+
+## Cumplimiento y Seguridad
+
+| Documento | Descripcion |
+|-----------|-------------|
+| [ISO 27001](compliance/ISO27001_2022_SaaS_Compliance.md) | Documentacion ISO 27001 |
+| [Auditoria de Seguridad API](API_SECURITY_AUDIT.md) | Auditoria de seguridad de la API |
+| [Smart Contract Audit](SMART_CONTRACT_AUDIT.md) | Auditoria de smart contracts |
+| [Security Reviews](security-reviews/) | Reportes de revision de seguridad |
+
+## Architecture Decision Records (ADR)
+
+| ADR | Decision |
+|-----|----------|
+| [001 — JSONField](adr/001-jsonfield-usage.md) | Uso de JSONField en modelos |
+| [002 — Service Layer](adr/002-service-layer-pattern.md) | Patron de capa de servicio |
+| [003 — Blockchain Resilience](adr/003-blockchain-resilience.md) | Estrategia de resiliencia blockchain |
+| [004 — Observability](adr/004-observability-stack.md) | Stack de monitoreo y logging |
+
+## Trazabilidad
+
+| Documento | Descripcion |
+|-----------|-------------|
+| [Requisitos](traceability/REQUIREMENTS.md) | Requisitos funcionales y no funcionales |
+| [User Stories](traceability/USER_STORIES.md) | Historias de usuario |
+| [Matriz de Trazabilidad](traceability/TRACEABILITY_MATRIX.csv) | Trazabilidad requisitos → tests |
+| [Evidencia de Tests](traceability/TEST_EVIDENCE.md) | Evidencia de pruebas |
+| [Plan de Sprint](traceability/SPRINT_PLAN.md) | Planificacion de sprints |
+
+## Operaciones y Deployment
+
+| Documento | Descripcion |
+|-----------|-------------|
+| [Deployment](DEPLOYMENT.md) | Procedimientos de despliegue |
+| [Runbook de Operaciones](OPERATIONS_RUNBOOK.md) | Procedimientos operativos |
+| [Production Readiness](PRODUCTION_READINESS_PLAN.md) | Checklist de produccion |
+| [Release Checklist](RELEASE_CHECKLIST.md) | Procedimientos de release |
+
+## Recursos
+
+| Recurso | Descripcion |
+|---------|-------------|
+| [Diagramas](diagrams/) | 21 diagramas SVG de arquitectura |
+| [Evidencia](evidence/) | Reportes de evidencia y demos |
+| [Demos](demos/) | Demos interactivas y video comercial |
+| [Ejemplos](../examples/) | 7 Jupyter notebooks |
+| [Soporte FHE](FHE_SUPPORT_MATRIX.md) | Matriz de soporte de modelos FHE |
+| [Schemas](MODEL_SCHEMAS.md) | Schemas de datos |
+| [Roadmap](../PLATFORM_ROADMAP.md) | Hoja de ruta del proyecto |
+| [Casos de Uso](USE_CASES.md) | Documentacion de casos de uso |
 
 ## Audiencia
 
-Esta documentación está diseñada para:
+Esta documentacion esta disenada para:
 
-- **Científicos de datos** que quieren proteger datos sensibles
-- **Desarrolladores** que implementan soluciones de ML privadas
-- **Investigadores** interesados en criptografía aplicada
-- **Oficiales de cumplimiento** (HIPAA, GDPR, LGPD)
-- **Estudiantes** aprendiendo sobre FHE y ML
-
----
-
-## Requisitos Previos
-
-Para entender completamente esta documentación, se recomienda conocimiento básico de:
-
-- Álgebra lineal (vectores, matrices)
-- Probabilidad y estadística
-- Machine Learning básico
-- Python programming
-
-No se requiere conocimiento previo de criptografía.
+- **Usuarios de la plataforma** — [Manual de Usuario](USER_MANUAL.md)
+- **Desarrolladores** — [Guia de Implementacion](IMPLEMENTATION_GUIDE.md), [SDK Docs](sdk/)
+- **Cientificos de datos** — [Modelos ML](guides/03-ml-models.md), [Teoria FHE](theory/)
+- **Oficiales de cumplimiento** — [ISO 27001](compliance/), [Auditoria](SECURITY_AUDIT_REPORT.md)
+- **DevOps** — [Deployment](DEPLOYMENT.md), [Runbook](OPERATIONS_RUNBOOK.md)
+- **Blockchain developers** — [Blockchain Guide](guides/04-blockchain-integration.md), [Contract Audit](SMART_CONTRACT_AUDIT.md)
 
 ---
 
-## Navegación Rápida
-
-| Quiero... | Ir a... |
-|-----------|---------|
-| Entender qué es FHE | [Teoría: Encriptación Homomórfica](theory/01-homomorphic-encryption.md) |
-| Empezar a usar el SDK | [Guía: Inicio Rápido](guides/05-quickstart.md) |
-| Ver ejemplos de código | [Demos](demos/) |
-| Entender la arquitectura | [Arquitectura General](guides/01-architecture.md) |
-| Usar la REST API | [API Reference](api/rest-api.md) |
-
----
-
-*Versión: 1.0.0 | Última actualización: Diciembre 2024*
+*Xcapit FHE-ML Platform v1.0.0-rc1 — [Xcapit](https://xcapit.com) / [QuarkID](https://quarkid.org)*

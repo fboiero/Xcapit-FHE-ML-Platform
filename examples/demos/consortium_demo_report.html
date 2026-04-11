@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Xcapit FHE-ML Platform - Demo Consorcio</title>
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --bg2: #111827;
+    --bg3: #1f2937;
+    --accent: #06b6d4;
+    --accent2: #8b5cf6;
+    --accent3: #10b981;
+    --danger: #ef4444;
+    --warn: #f59e0b;
+    --text: #e5e7eb;
+    --text2: #9ca3af;
+    --text3: #6b7280;
+    --border: #374151;
+    --glow: rgba(6,182,212,0.3);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    background: radial-gradient(ellipse at 50% 0%, rgba(6,182,212,0.15) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 80%, rgba(139,92,246,0.1) 0%, transparent 50%),
+                var(--bg);
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23374151' fill-opacity='0.15'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    opacity: 0.5;
+  }
+  .hero-content { position: relative; z-index: 1; }
+  .hero h1 {
+    font-size: 3.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 0.5rem;
+  }
+  .hero .subtitle {
+    font-size: 1.3rem;
+    color: var(--text2);
+    max-width: 700px;
+    margin: 0.5rem auto 2rem;
+  }
+  .hero .badge {
+    display: inline-block;
+    padding: 0.4rem 1.2rem;
+    background: rgba(6,182,212,0.15);
+    border: 1px solid rgba(6,182,212,0.3);
+    border-radius: 999px;
+    font-size: 0.85rem;
+    color: var(--accent);
+    margin-bottom: 1.5rem;
+    letter-spacing: 0.05em;
+  }
+  .scroll-hint {
+    position: absolute;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    animation: bounce 2s infinite;
+    color: var(--text3);
+    font-size: 0.85rem;
+  }
+  .scroll-hint svg { display: block; margin: 0.3rem auto 0; }
+  @keyframes bounce {
+    0%,100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(8px); }
+  }
+
+  /* ── SECTIONS ── */
+  section {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 4rem 2rem;
+  }
+  .section-number {
+    display: inline-block;
+    width: 36px; height: 36px;
+    line-height: 36px;
+    text-align: center;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-right: 0.7rem;
+    flex-shrink: 0;
+  }
+  h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+  }
+  h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 0.8rem;
+  }
+  p, li { color: var(--text2); }
+  p { margin-bottom: 1rem; }
+
+  /* ── CARDS ── */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin: 1.5rem 0;
+  }
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+  .card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 20px var(--glow);
+  }
+  .card .icon {
+    width: 48px; height: 48px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .card .icon.blue { background: rgba(6,182,212,0.15); }
+  .card .icon.purple { background: rgba(139,92,246,0.15); }
+  .card .icon.green { background: rgba(16,185,129,0.15); }
+  .card h4 { font-size: 1.1rem; margin-bottom: 0.3rem; color: var(--text); }
+  .card .stat {
+    font-size: 2rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .card .stat-label { font-size: 0.85rem; color: var(--text3); }
+
+  /* ── FLOW DIAGRAM ── */
+  .flow-container {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    margin: 2rem 0;
+    overflow-x: auto;
+  }
+  .flow-svg { width: 100%; min-width: 900px; }
+
+  /* ── COMPARISON TABLE ── */
+  .comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-size: 0.95rem;
+  }
+  .comparison-table th {
+    background: var(--bg3);
+    color: var(--accent);
+    padding: 0.8rem 1rem;
+    text-align: left;
+    border-bottom: 2px solid var(--accent);
+    font-weight: 600;
+  }
+  .comparison-table td {
+    padding: 0.7rem 1rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text2);
+  }
+  .comparison-table tr:hover td { background: rgba(6,182,212,0.05); }
+  .comparison-table .highlight-row td {
+    background: rgba(6,182,212,0.1);
+    color: var(--text);
+    font-weight: 600;
+    border-bottom: 2px solid var(--accent);
+  }
+  .val-good { color: var(--accent3) !important; font-weight: 600; }
+  .val-bad { color: var(--danger) !important; }
+  .val-ok { color: var(--warn) !important; }
+
+  /* ── BAR CHARTS ── */
+  .chart-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin: 2rem 0;
+  }
+  @media (max-width: 768px) { .chart-container { grid-template-columns: 1fr; } }
+  .chart-box {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+  .chart-box h4 {
+    font-size: 1rem;
+    color: var(--text);
+    margin-bottom: 1.2rem;
+    text-align: center;
+  }
+  .bar-group { margin-bottom: 1rem; }
+  .bar-label {
+    font-size: 0.8rem;
+    color: var(--text2);
+    margin-bottom: 0.3rem;
+    display: flex;
+    justify-content: space-between;
+  }
+  .bar-track {
+    height: 28px;
+    background: var(--bg3);
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 1.5s ease;
+    display: flex;
+    align-items: center;
+    padding-left: 0.6rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #fff;
+  }
+  .bar-fill.accent { background: linear-gradient(90deg, var(--accent), #22d3ee); }
+  .bar-fill.purple { background: linear-gradient(90deg, var(--accent2), #a78bfa); }
+  .bar-fill.green { background: linear-gradient(90deg, var(--accent3), #34d399); }
+  .bar-fill.red { background: linear-gradient(90deg, var(--danger), #f87171); }
+  .bar-fill.warn { background: linear-gradient(90deg, var(--warn), #fbbf24); }
+
+  /* ── PREDICTIONS TABLE ── */
+  .pred-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    font-size: 0.9rem;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+  }
+  .pred-table th {
+    background: var(--bg3);
+    color: var(--accent);
+    padding: 0.6rem 0.8rem;
+    text-align: right;
+    font-weight: 600;
+    font-size: 0.8rem;
+  }
+  .pred-table th:first-child { text-align: center; }
+  .pred-table td {
+    padding: 0.5rem 0.8rem;
+    border-bottom: 1px solid var(--border);
+    text-align: right;
+    color: var(--text2);
+  }
+  .pred-table td:first-child { text-align: center; color: var(--text3); }
+  .pred-table .cons-col { color: var(--accent3); font-weight: 600; }
+
+  /* ── ENCRYPTION PROOF ── */
+  .cipher-box {
+    background: #000;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.2rem;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.75rem;
+    color: var(--accent);
+    overflow-x: auto;
+    word-break: break-all;
+    margin: 1rem 0;
+    line-height: 1.8;
+  }
+  .cipher-box .label {
+    color: var(--text3);
+    font-size: 0.7rem;
+    display: block;
+    margin-bottom: 0.3rem;
+  }
+
+  /* ── STEP TIMELINE ── */
+  .timeline {
+    position: relative;
+    margin: 2rem 0;
+    padding-left: 3rem;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--accent), var(--accent2), var(--accent3));
+  }
+  .timeline-item {
+    position: relative;
+    margin-bottom: 2.5rem;
+    padding-left: 1.5rem;
+  }
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -2.15rem;
+    top: 0.4rem;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 3px solid var(--bg);
+    z-index: 1;
+  }
+  .timeline-item:nth-child(even)::before { background: var(--accent2); }
+  .timeline-item:last-child::before { background: var(--accent3); }
+  .timeline-item h4 {
+    color: var(--text);
+    font-size: 1rem;
+    margin-bottom: 0.4rem;
+  }
+  .timeline-item p { font-size: 0.9rem; }
+
+  /* ── METRIC HIGHLIGHT ── */
+  .metric-row {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin: 1.5rem 0;
+  }
+  .metric-box {
+    flex: 1;
+    min-width: 200px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+  }
+  .metric-box.glow {
+    border-color: var(--accent3);
+    box-shadow: 0 0 20px rgba(16,185,129,0.2);
+  }
+  .metric-box .value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin: 0.3rem 0;
+  }
+  .metric-box .label { font-size: 0.85rem; color: var(--text3); }
+  .metric-box .sublabel { font-size: 0.75rem; color: var(--text3); margin-top: 0.3rem; }
+
+  /* ── DIVIDER ── */
+  .divider {
+    border: none;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border), transparent);
+    margin: 3rem 0;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: var(--text3);
+    font-size: 0.85rem;
+    border-top: 1px solid var(--border);
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+
+  /* ── FADE-IN ANIMATION ── */
+  .fade-in {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .fade-in.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ── LOCK ANIMATION ── */
+  @keyframes lockPulse {
+    0%, 100% { filter: drop-shadow(0 0 4px rgba(6,182,212,0.4)); }
+    50% { filter: drop-shadow(0 0 12px rgba(6,182,212,0.8)); }
+  }
+  .lock-pulse { animation: lockPulse 2s infinite; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 600px) {
+    .hero h1 { font-size: 2rem; }
+    section { padding: 2rem 1rem; }
+    h2 { font-size: 1.4rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════ -->
+<!--  HERO                                           -->
+<!-- ════════════════════════════════════════════════ -->
+<div class="hero">
+  <div class="hero-content">
+    <div class="badge">CKKS 128-BIT ENCRYPTION &middot; TENSEAL &middot; ARBITRUM</div>
+    <h1>Xcapit FHE-ML Platform</h1>
+    <p class="subtitle">
+      Demo funcional: cómo compartir datos encriptados en un consorcio
+      mejora las predicciones de machine learning sin revelar información privada.
+    </p>
+    <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; margin-top:1rem;">
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:0.8rem 1.5rem;text-align:center;">
+        <div style="font-size:1.8rem;font-weight:800;color:var(--accent3);">+0.21</div>
+        <div style="font-size:0.75rem;color:var(--text3);">puntos de R&sup2;</div>
+      </div>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:0.8rem 1.5rem;text-align:center;">
+        <div style="font-size:1.8rem;font-weight:800;color:var(--accent);">70%</div>
+        <div style="font-size:0.75rem;color:var(--text3);">menos error (MAE)</div>
+      </div>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:0.8rem 1.5rem;text-align:center;">
+        <div style="font-size:1.8rem;font-weight:800;color:var(--accent2);">128-bit</div>
+        <div style="font-size:0.75rem;color:var(--text3);">seguridad FHE</div>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-hint">
+    Scroll para ver la demo
+    <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════ -->
+<!--  PASO 1: ESCENARIO                              -->
+<!-- ════════════════════════════════════════════════ -->
+<section class="fade-in">
+  <h2><span class="section-number">1</span> El Escenario</h2>
+  <p>
+    Tres hospitales quieren construir un modelo para <strong>predecir el costo de tratamiento</strong>
+    de pacientes usando variables clínicas (edad, BMI, severidad). El problema: cada hospital solo
+    atiende a una parte sesgada de la población.
+  </p>
+
+  <div class="card-grid">
+    <div class="card">
+      <div class="icon blue">
+        <svg width="24" height="24" fill="none" stroke="#06b6d4" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg>
+      </div>
+      <h4>Hospital Norte</h4>
+      <p style="font-size:0.9rem;">
+        <strong>20 pacientes</strong><br>
+        Edad: 55-90 (media 71)<br>
+        BMI alto (27.0) &middot; Severidad alta (3.9)<br>
+        Costo medio: <strong>$18,979</strong>
+      </p>
+    </div>
+    <div class="card">
+      <div class="icon purple">
+        <svg width="24" height="24" fill="none" stroke="#8b5cf6" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg>
+      </div>
+      <h4>Hospital Centro</h4>
+      <p style="font-size:0.9rem;">
+        <strong>15 pacientes</strong><br>
+        Edad: 25-65 (media 41.5)<br>
+        BMI normal (26.3) &middot; Severidad normal (2.6)<br>
+        Costo medio: <strong>$12,636</strong>
+      </p>
+    </div>
+    <div class="card">
+      <div class="icon green">
+        <svg width="24" height="24" fill="none" stroke="#10b981" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg>
+      </div>
+      <h4>Hospital Sur</h4>
+      <p style="font-size:0.9rem;">
+        <strong>12 pacientes</strong><br>
+        Edad: 18-45 (media 30.9)<br>
+        BMI bajo (24.7) &middot; Severidad baja (1.7)<br>
+        Costo medio: <strong>$9,951</strong>
+      </p>
+    </div>
+  </div>
+
+  <p style="text-align:center; font-size:0.9rem; color:var(--text3); margin-top:1rem;">
+    Relación real (ground truth): <code style="color:var(--accent);">costo = 200&times;edad + 150&times;BMI + 300&times;severidad - 500 + ruido</code>
+  </p>
+</section>
+
+<hr class="divider">
+
+<!-- ════════════════════════════════════════════════ -->
+<!--  PASO 2: DIAGRAMA DE FLUJO COMPLETO             -->
+<!-- ════════════════════════════════════════════════ -->
+<section class="fade-in">
+  <h2><span class="section-number">2</span> Diagrama de Flujo: Cifrado y Entrenamiento</h2>
+  <p>
+    Cada hospital encripta sus datos localmente con CKKS. Los ciphertexts se comparten en el consorcio
+    sin revelar datos en texto plano. El modelo entrena sobre los datos encriptados combinados.
+  </p>
+
+  <div class="flow-container">
+    <svg class="flow-svg" viewBox="0 0 960 620" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="gCyan" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#06b6d4"/>
+          <stop offset="100%" stop-color="#22d3ee"/>
+        </linearGradient>
+        <linearGradient id="gPurple" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#8b5cf6"/>
+          <stop offset="100%" stop-color="#a78bfa"/>
+        </linearGradient>
+        <linearGradient id="gGreen" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#10b981"/>
+          <stop offset="100%" stop-color="#34d399"/>
+        </linearGradient>
+        <linearGradient id="gGold" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#f59e0b"/>
+          <stop offset="100%" stop-color="#fbbf24"/>
+        </linearGradient>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="3" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <path d="M0,0 L8,3 L0,6" fill="#4b5563"/>
+        </marker>
+        <marker id="arrowCyan" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <path d="M0,0 L8,3 L0,6" fill="#06b6d4"/>
+        </marker>
+      </defs>
+
+      <!-- STAGE LABELS -->
+      <text x="120" y="30" fill="#6b7280" font-size="11" text-anchor="middle" font-weight="600">DATOS LOCALES</text>
+      <text x="340" y="30" fill="#6b7280" font-size="11" text-anchor="middle" font-weight="600">ENCRIPTACION CKKS</text>
+      <text x="580" y="30" fill="#6b7280" font-size="11" text-anchor="middle" font-weight="600">CONSORCIO FHE</text>
+      <text x="810" y="30" fill="#6b7280" font-size="11" text-anchor="middle" font-weight="600">RESULTADO</text>
+
+      <!-- Vertical dashed lines -->
+      <line x1="230" y1="40" x2="230" y2="580" stroke="#374151" stroke-width="1" stroke-dasharray="4"/>
+      <line x1="460" y1="40" x2="460" y2="580" stroke="#374151" stroke-width="1" stroke-dasharray="4"/>
+      <line x1="690" y1="40" x2="690" y2="580" stroke="#374151" stroke-width="1" stroke-dasharray="4"/>
+
+      <!-- ── HOSPITAL NORTE ── -->
+      <rect x="30" y="60" width="180" height="80" rx="10" fill="#111827" stroke="#06b6d4" stroke-width="1.5"/>
+      <text x="120" y="88" fill="#06b6d4" font-size="12" text-anchor="middle" font-weight="600">Hospital Norte</text>
+      <text x="120" y="108" fill="#9ca3af" font-size="10" text-anchor="middle">20 pacientes</text>
+      <text x="120" y="124" fill="#6b7280" font-size="9" text-anchor="middle">edad: 55-90 | BMI alto</text>
+
+      <!-- Arrow to encryption -->
+      <line x1="210" y1="100" x2="260" y2="100" stroke="#4b5563" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+      <!-- Encryption box Norte -->
+      <rect x="265" y="65" width="150" height="70" rx="8" fill="#0f172a" stroke="#06b6d4" stroke-width="1" stroke-dasharray="3"/>
+      <text x="340" y="92" fill="#06b6d4" font-size="20" text-anchor="middle" class="lock-pulse">&#x1F512;</text>
+      <text x="340" y="118" fill="#06b6d4" font-size="9" text-anchor="middle">CKKS 128-bit</text>
+
+      <!-- Arrow to consortium -->
+      <line x1="415" y1="100" x2="465" y2="285" stroke="#06b6d4" stroke-width="1.5" stroke-dasharray="5" marker-end="url(#arrowCyan)"/>
+      <text x="450" y="180" fill="#06b6d4" font-size="8" transform="rotate(65,450,180)">ciphertext</text>
+
+      <!-- ── HOSPITAL CENTRO ── -->
+      <rect x="30" y="200" width="180" height="80" rx="10" fill="#111827" stroke="#8b5cf6" stroke-width="1.5"/>
+      <text x="120" y="228" fill="#8b5cf6" font-size="12" text-anchor="middle" font-weight="600">Hospital Centro</text>
+      <text x="120" y="248" fill="#9ca3af" font-size="10" text-anchor="middle">15 pacientes</text>
+      <text x="120" y="264" fill="#6b7280" font-size="9" text-anchor="middle">edad: 25-65 | BMI normal</text>
+
+      <line x1="210" y1="240" x2="260" y2="240" stroke="#4b5563" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+      <rect x="265" y="205" width="150" height="70" rx="8" fill="#0f172a" stroke="#8b5cf6" stroke-width="1" stroke-dasharray="3"/>
+      <text x="340" y="232" fill="#8b5cf6" font-size="20" text-anchor="middle" class="lock-pulse">&#x1F512;</text>
+      <text x="340" y="258" fill="#8b5cf6" font-size="9" text-anchor="middle">CKKS 128-bit</text>
+
+      <line x1="415" y1="240" x2="465" y2="300" stroke="#8b5cf6" stroke-width="1.5" stroke-dasharray="5"/>
+      <text x="445" y="260" fill="#8b5cf6" font-size="8" transform="rotate(25,445,260)">ciphertext</text>
+
+      <!-- ── HOSPITAL SUR ── -->
+      <rect x="30" y="340" width="180" height="80" rx="10" fill="#111827" stroke="#10b981" stroke-width="1.5"/>
+      <text x="120" y="368" fill="#10b981" font-size="12" text-anchor="middle" font-weight="600">Hospital Sur</text>
+      <text x="120" y="388" fill="#9ca3af" font-size="10" text-anchor="middle">12 pacientes</text>
+      <text x="120" y="404" fill="#6b7280" font-size="9" text-anchor="middle">edad: 18-45 | BMI bajo</text>
+
+      <line x1="210" y1="380" x2="260" y2="380" stroke="#4b5563" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+      <rect x="265" y="345" width="150" height="70" rx="8" fill="#0f172a" stroke="#10b981" stroke-width="1" stroke-dasharray="3"/>
+      <text x="340" y="372" fill="#10b981" font-size="20" text-anchor="middle" class="lock-pulse">&#x1F512;</text>
+      <text x="340" y="398" fill="#10b981" font-size="9" text-anchor="middle">CKKS 128-bit</text>
+
+      <line x1="415" y1="380" x2="465" y2="315" stroke="#10b981" stroke-width="1.5" stroke-dasharray="5"/>
+      <text x="445" y="360" fill="#10b981" font-size="8" transform="rotate(-25,445,360)">ciphertext</text>
+
+      <!-- ── CONSORCIO ── -->
+      <rect x="470" y="250" width="210" height="120" rx="12" fill="#111827" stroke="url(#gCyan)" stroke-width="2" filter="url(#glow)"/>
+      <text x="575" y="280" fill="#e5e7eb" font-size="13" text-anchor="middle" font-weight="700">Consorcio FHE</text>
+      <text x="575" y="300" fill="#06b6d4" font-size="10" text-anchor="middle">47 muestras combinadas</text>
+      <text x="575" y="320" fill="#9ca3af" font-size="9" text-anchor="middle">Datos encriptados de 3 hospitales</text>
+      <text x="575" y="340" fill="#9ca3af" font-size="9" text-anchor="middle">Entrenamiento sobre ciphertexts</text>
+      <text x="575" y="358" fill="#f59e0b" font-size="9" text-anchor="middle">LinearRegression (gradient descent)</text>
+
+      <!-- Arrow to result -->
+      <line x1="680" y1="310" x2="720" y2="310" stroke="#06b6d4" stroke-width="2" marker-end="url(#arrowCyan)"/>
+
+      <!-- ── RESULTADO ── -->
+      <rect x="725" y="240" width="210" height="140" rx="12" fill="#111827" stroke="url(#gGreen)" stroke-width="2" filter="url(#glow)"/>
+      <text x="830" y="270" fill="#10b981" font-size="13" text-anchor="middle" font-weight="700">Modelo Entrenado</text>
+      <text x="830" y="296" fill="#e5e7eb" font-size="11" text-anchor="middle">R&sup2; = 0.9900</text>
+      <text x="830" y="316" fill="#e5e7eb" font-size="11" text-anchor="middle">MAE = $344</text>
+      <text x="830" y="340" fill="#9ca3af" font-size="9" text-anchor="middle">vs R&sup2; = 0.78 promedio local</text>
+      <text x="830" y="358" fill="#9ca3af" font-size="9" text-anchor="middle">vs MAE = $1,149 promedio local</text>
+      <text x="830" y="372" fill="#10b981" font-size="9" text-anchor="middle" font-weight="600">70% menos error</text>
+
+      <!-- ── LOCAL MODELS (faded) ── -->
+      <rect x="470" y="460" width="210" height="100" rx="10" fill="#111827" stroke="#374151" stroke-width="1" opacity="0.6"/>
+      <text x="575" y="488" fill="#6b7280" font-size="11" text-anchor="middle" font-weight="600">Modelos Locales</text>
+      <text x="575" y="508" fill="#6b7280" font-size="9" text-anchor="middle">Norte: R&sup2;=0.99 (solo ancianos)</text>
+      <text x="575" y="524" fill="#6b7280" font-size="9" text-anchor="middle">Centro: R&sup2;=0.98 (solo adultos)</text>
+      <text x="575" y="540" fill="#ef4444" font-size="9" text-anchor="middle" font-weight="600">Sur: R&sup2;=0.37 (solo jovenes)</text>
+
+      <!-- Dashed arrows from encrypted to local -->
+      <line x1="415" y1="115" x2="470" y2="475" stroke="#374151" stroke-width="1" stroke-dasharray="3" opacity="0.4"/>
+      <line x1="415" y1="255" x2="470" y2="500" stroke="#374151" stroke-width="1" stroke-dasharray="3" opacity="0.4"/>
+      <line x1="415" y1="390" x2="470" y2="525" stroke="#374151" stroke-width="1" stroke-dasharray="3" opacity="0.4"/>
+
+      <!-- Arrow local to bad result -->
+      <rect x="725" y="460" width="210" height="100" rx="10" fill="#111827" stroke="#ef4444" stroke-width="1" opacity="0.6"/>
+      <text x="830" y="488" fill="#ef4444" font-size="11" text-anchor="middle" font-weight="600">Resultado Pobre</text>
+      <text x="830" y="510" fill="#6b7280" font-size="10" text-anchor="middle">R&sup2; prom = 0.7834</text>
+      <text x="830" y="530" fill="#6b7280" font-size="10" text-anchor="middle">MAE prom = $1,149</text>
+      <text x="830" y="548" fill="#ef4444" font-size="9" text-anchor="middle">Sesgo local, no generaliza</text>
+
+      <line x1="680" y1="510" x2="720" y2="510" stroke="#374151" stroke-width="1.5" marker-end="url(#arrow)" opacity="0.5"/>
+
+      <!-- VS label -->
+      <text x="830" y="430" fill="#f59e0b" font-size="14" text-anchor="middle" font-weight="800">VS</text>
+      <line x1="830" y1="390" x2="830" y2="420" stroke="#f59e0b" stroke-width="1" stroke-dasharray="3"/>
+      <line x1="830" y1="440" x2="830" y2="460" stroke="#f59e0b" stroke-width="1" stroke-dasharray="3"/>
+    </svg>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ════════════════════════════════════════════════ -->
+<!--  PASO 3: ENCRIPTACIÓN EN DETALLE                -->
+<!-- ════════════════════════════════════════════════ -->
+<section class="fade-in">
+  <h2><span class="section-number">3</span> Encriptación: Datos Reales vs Ciphertext</h2>
+  <p>Cada registro de paciente se convierte en un ciphertext CKKS de ~334 KB. El dato original es irrecuperable sin la clave secreta.</p>
+
+  <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:1.5rem;align-items:center;margin:2rem 0;">
+    <!-- Plaintext -->
+    <div class="card" style="text-align:center;">
+      <h4 style="color:var(--warn);">Texto Plano (privado)</h4>
+      <div style="font-family:monospace;font-size:0.9rem;margin-top:0.8rem;line-height:2;">
+        <div>edad = <strong style="color:var(--text);">68.11</strong></div>
+        <div>bmi = <strong style="color:var(--text);">24.46</strong></div>
+        <div>severidad = <strong style="color:var(--text);">6.92</strong></div>
+      </div>
+    </div>
+
+    <!-- Arrow -->
+    <div style="text-align:center;">
+      <div style="font-size:2rem;color:var(--accent);" class="lock-pulse">&#x1F512;</div>
+      <div style="font-size:0.75rem;color:var(--text3);margin-top:0.3rem;">CKKS encrypt</div>
+      <svg width="80" height="20"><line x1="0" y1="10" x2="80" y2="10" stroke="var(--accent)" stroke-width="2" stroke-dasharray="4"/><polygon points="75,5 80,10 75,15" fill="var(--accent)"/></svg>
+    </div>
+
+    <!-- Ciphertext -->
+    <div class="card" style="text-align:center;">
+      <h4 style="color:var(--accent);">Ciphertext (compartido)</h4>
+      <div class="cipher-box" style="text-align:left;font-size:0.65rem;">
+        <span class="label">334,479 bytes - CKKS Vector</span>
+        0a010312ffb4145ea11004010200007f
+        1a0500000000002&#x200B;8b52ffda061000600
+        a4c1e3f7d2b891...
+      </div>
+    </div>
+  </div>
+
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:1.2rem;margin-top:1rem;">
+    <h4 style="color:var(--accent3);margin-bottom:0.5rem;">Verificación de integridad: decrypt(encrypt(x)) = x</h4>
+    <table style="width:100%;font-family:monospace;font-size:0.85rem;">
+      <tr><td style="padding:0.3rem;color:var(--text2);">edad</td><td style="color:var(--text);">68.11</td><td style="color:var(--accent);">&#x2192;</td><td style="color:var(--text);">68.11</td><td style="color:var(--accent3);">error: 0.00000000</td></tr>
+      <tr><td style="padding:0.3rem;color:var(--text2);">bmi</td><td style="color:var(--text);">24.46</td><td style="color:var(--accent);">&#x2192;</td><td style="color:var(--text);">24.46</td><td style="color:var(--accent3);">error: 0.00000000</td></tr>
+      <tr><td style="padding:0.3rem;color:var(--text2);">severidad</td><td style="color:var(--text);">6.92</td><td style="color:var(--accent);">&#x2192;</td><td style="color:var(--text);">6.92</td><td style="color:var(--accent3);">error: 0.00000000</td></tr>
+    </table>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ════════════════════════════════════════════════ -->
+<!--  PASO 4: RESULTADOS                             -->
+<!-- ════════════════════════════════════════════════ -->
+<section class="fade-in">
+  <h2><span class="section-number">4</span> Resultados: Local vs Consorcio</h2>
+
+  <!-- Summary metrics -->
+  <div class="metric-row">
+    <div class="metric-box">
+      <div class="label">R&sup2; Promedio Local</div>
+      <div class="value" style="color:var(--warn);">0.7834</div>
+      <div class="sublabel">Modelos entrenados por separado</div>
+    </div>
+    <div class="metric-box glow">
+      <div class="label">R&sup2; Consorcio FHE</div>
+      <div class="value" style="color:var(--accent3);">0.9900</div>
+      <div class="sublabel">Modelo con datos combinados encriptados</div>
+    </div>
+    <div class="metric-box">
+      <div class="label">Mejora Absoluta</div>
+      <div class="value" style="color:var(--accent);">+0.21</div>
+      <div class="sublabel">puntos de R&sup2;</div>
+    </div>
+  </div>
+
+  <!-- Comparison table -->
+  <table class="comparison-table">
+    <thead>
+      <tr>
+        <th>Modelo</th>
+        <th>R&sup2;</th>
+        <th>MAE ($)</th>
+        <th>RMSE ($)</th>
+        <th>Muestras</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Hospital Norte</td>
+        <td class="val-good">0.9943</td>
+        <td>$260</td>
+        <td>$322</td>
+        <td>20</td>
+      </tr>
+      <tr>
+        <td>Hospital Centro</td>
+        <td class="val-good">0.9840</td>
+        <td>$430</td>
+        <td>$542</td>
+        <td>15</td>
+      </tr>
+      <tr>
+        <td>Hospital Sur</td>
+        <td class="val-bad">0.3720</td>
+        <td class="val-bad">$2,757</td>
+        <td class="val-bad">$3,393</td>
+        <td>12</td>
+      </tr>
+      <tr>
+        <td><em>Promedio Local</em></td>
+        <td class="val-ok">0.7834</td>
+        <td class="val-ok">$1,149</td>
+        <td>&mdash;</td>
+        <td>&mdash;</td>
+      </tr>
+      <tr class="highlight-row">
+        <td>CONSORCIO (FHE)</td>
+        <td class="val-good">0.9900</td>
+        <td class="val-good">$344</td>
+        <td class="val-good">$429</td>
+        <td>47</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Bar charts -->
+  <div class="chart-container">
+    <div class="chart-box">
+      <h4>R&sup2; (Coeficiente de Determinación)</h4>
+      <div class="bar-group">
+        <div class="bar-label"><span>Hospital Norte</span><span>0.9943</span></div>
+        <div class="bar-track"><div class="bar-fill accent" style="width:99.4%;">0.994</div></div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-label"><span>Hospital Centro</span><span>0.9840</span></div>
+        <div class="bar-track"><div class="bar-fill purple" style="width:98.4%;">0.984</div></div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-label"><span>Hospital Sur</span><span>0.3720</span></div>
+        <div class="bar-track"><div class="bar-fill red" style="width:37.2%;">0.372</div></div>
+      </div>
+      <div class="bar-group" style="margin-top:1.5rem;padding-top:1rem;border-top:2px solid var(--accent);">
+        <div class="bar-label"><span style="font-weight:700;color:var(--accent3);">CONSORCIO</span><span style="color:var(--accent3);font-weight:700;">0.9900</span></div>
+        <div class="bar-track"><div class="bar-fill green" style="width:99%;">0.990</div></div>
+      </div>
+    </div>
+
+    <div class="chart-box">
+      <h4>MAE - Error Absoluto Medio ($)</h4>
+      <div class="bar-group">
+        <div class="bar-label"><span>Hospital Norte</span><span>$260</span></div>
+        <div class="bar-track"><div class="bar-fill accent" style="width:9.4%;">$260</div></div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-label"><span>Hospital Centro</span><span>$430</span></div>
+        <div class="bar-track"><div class="bar-fill purple" style="width:15.6%;">$430</div></div>
+      </div>
+      <div class="bar-group">
+        <div class="bar-label"><span>Hospital Sur</span><span>$2,757</span></div>
+        <div class="bar-track"><div class="bar-fill red" style="width:100%;">$2,757</div></div>
+      </div>
+      <div class="bar-group" style="margin-top:1.5rem;padding-top:1rem;border-top:2px solid var(--accent);">
+        <div class="bar-label"><span style="font-weight:700;color:var(--accent3);">CONSORCIO</span><span style="color:var(--accent3);font-weight:700;">$344</span></div>
+        <div class="bar-track"><div class="bar-fill green" style="width:12.5%;">$344</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ════════════════════════════════════════════════ -->
+<!--  PASO 5: PREDICCIONES INDIVIDUALES              -->
+<!-- ════════════════════════════════════════════════ -->
+<section class="fade-in">
+  <h2><span class="section-number">5</span> Predicciones: Paciente por Paciente</h2>
+  <p>Comparación de predicciones sobre 5 pacientes reales del set de test (población general).</p>
+
+  <table class="pred-table">
+    <thead>
+      <tr>
+        <th style="text-align:center;">#</th>
+        <th>Real ($)</th>
+        <th>L-Norte</th>
+        <th>L-Centro</th>
+        <th>L-Sur</th>
+        <th style="color:var(--accent3);">CONSORCIO</th>
+        <th>Err. Cons.</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td>$11,169</td>
+        <td>$11,265</td>
+        <td>$11,472</td>
+        <td class="val-bad">$11,198</td>
+        <td class="cons-col">$11,455</td>
+        <td class="val-good">$285</td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td>$21,088</td>
+        <td>$21,767</td>
+        <td>$21,205</td>
+        <td class="val-bad">$16,012</td>
+        <td class="cons-col">$21,710</td>
+        <td class="val-good">$623</td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td>$10,165</td>
+        <td>$10,272</td>
+        <td>$10,754</td>
+        <td class="val-bad">$10,063</td>
+        <td class="cons-col">$10,364</td>
+        <td class="val-good">$200</td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td>$17,541</td>
+        <td>$17,302</td>
+        <td>$17,277</td>
+        <td class="val-bad">$12,464</td>
+        <td class="cons-col">$17,068</td>
+        <td class="val-good">$473</td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td>$14,022</td>
+        <td>$13,857</td>
+        <td>$14,097</td>
+        <td class="val-bad">$12,081</td>
+        <td class="cons-col">$13,940</td>
+        <td class="val-good">$82</td>
+      </tr>
+      <tr style="border-top:2px solid var(--accent);font-weight:600;">
+        <td></td>
+        <td style="color:var(--text3);">Err. prom.</td>
+        <td>$257</td>
+        <td>$270</td>
+        <td class="val-bad">$2,445</td>
+        <td class="cons-col">$333</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p style="margin-top:1rem;font-size:0.9rem;">
+    El Hospital Sur predice <strong style="color:var(--danger);">$16,012</strong> para un paciente que costó $21,088 (error de $5,076)
+    porque nunca vio pacientes de esa edad/severidad. El consorcio predice <strong style="color:var(--accent3);">$21,710</strong> (error de solo $623).
+  </p>
+</section>
+
+<hr class="divider">
+
+<!-- ════════════════════════════════════════════════ -->
+<!--  PASO 6: TIMELINE / VIDEO WALKTHROUGH           -->
+<!-- ════════════════════════════════════════════════ -->
+<section class="fade-in">
+  <h2><span class="section-number">6</span> Walkthrough Paso a Paso</h2>
+  <p>Secuencia completa de la demo, como se ejecutaría en producción.</p>
+
+  <div class="timeline">
+    <div class="timeline-item">
+      <h4>1. Cada hospital genera sus datos locales</h4>
+      <p>Los datos nunca salen del hospital en texto plano. Norte tiene ancianos, Centro adultos, Sur jóvenes.</p>
+    </div>
+    <div class="timeline-item">
+      <h4>2. Generación de contexto CKKS</h4>
+      <p>Se crea un contexto de encriptación compartido: poly_degree=8192, scale=2^40, seguridad 128-bit. Se generan claves de Galois y relinearización.</p>
+    </div>
+    <div class="timeline-item">
+      <h4>3. Encriptación local de datos</h4>
+      <p>Cada hospital encripta sus registros como vectores CKKS (~334 KB por fila). Los ciphertexts se envían al consorcio. Tiempo total: ~17 segundos para 47+47 vectores.</p>
+    </div>
+    <div class="timeline-item">
+      <h4>4. Entrenamiento local (baseline)</h4>
+      <p>Cada hospital entrena su propio modelo con LinearRegression FHE. El Norte y Centro andan bien (R&sup2; > 0.98), pero el Sur solo llega a 0.37 porque su población es muy limitada.</p>
+    </div>
+    <div class="timeline-item">
+      <h4>5. Combinación de ciphertexts en el consorcio</h4>
+      <p>Los 47 vectores encriptados de los 3 hospitales se combinan en un único EncryptedDataset. Ningún hospital puede ver los datos de otro &mdash; solo el modelo opera sobre ellos.</p>
+    </div>
+    <div class="timeline-item">
+      <h4>6. Entrenamiento del modelo del consorcio</h4>
+      <p>LinearRegression entrena sobre los 47 vectores combinados con gradient descent (lr=0.05, 300 epochs, early stopping). El modelo ve toda la distribución demográfica.</p>
+    </div>
+    <div class="timeline-item">
+      <h4>7. Evaluación sobre población general</h4>
+      <p>Se evalúa en 200 pacientes representativos de toda la población. R&sup2; sube de 0.78 a 0.99, MAE baja de $1,149 a $344. Mejora de 70% en precisión.</p>
+    </div>
+    <div class="timeline-item">
+      <h4>8. Registro en blockchain (Arbitrum)</h4>
+      <p>El hash del modelo entrenado se registra en Arbitrum para auditoría y trazabilidad. Cada contribución queda verificada con ContributionProof.</p>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ════════════════════════════════════════════════ -->
+<!--  PASO 7: PARÁMETROS FHE                         -->
+<!-- ════════════════════════════════════════════════ -->
+<section class="fade-in">
+  <h2><span class="section-number">7</span> Parámetros de Seguridad FHE</h2>
+
+  <div class="card-grid">
+    <div class="card">
+      <h4 style="color:var(--accent);">Esquema de Encriptación</h4>
+      <table style="width:100%;font-size:0.85rem;margin-top:0.5rem;">
+        <tr><td style="padding:0.3rem 0;color:var(--text3);">Esquema</td><td style="color:var(--text);">CKKS (Cheon-Kim-Kim-Song)</td></tr>
+        <tr><td style="padding:0.3rem 0;color:var(--text3);">Librería</td><td style="color:var(--text);">TenSEAL v0.3.16</td></tr>
+        <tr><td style="padding:0.3rem 0;color:var(--text3);">Seguridad</td><td style="color:var(--accent3);">128 bits (equiv. AES-128)</td></tr>
+        <tr><td style="padding:0.3rem 0;color:var(--text3);">Poly Degree</td><td style="color:var(--text);">8,192</td></tr>
+        <tr><td style="padding:0.3rem 0;color:var(--text3);">Scale</td><td style="color:var(--text);">2<sup>40</sup></td></tr>
+        <tr><td style="padding:0.3rem 0;color:var(--text3);">Coeff Mod</td><td style="color:var(--text);">[60, 40, 40, 60]</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h4 style="color:var(--accent2);">Modelo ML</h4>
+      <table style="width:100%;font-size:0.85rem;margin-top:0.5rem;">
+        <tr><td style="padding:0.3rem 0;color:var(--text3);">Tipo</td><td style="color:var(--text);">Linear Regression (FHE)</td></tr>
+        <tr><td style="padding:0.3rem 0;color:var(--text3);">Optimizador</td><td style="color:var(--text);">Gradient Descent</td></tr>
+        <tr><td style="padding:0.3rem 0;color:var(--text3);">Learning Rate</td><td style="color:var(--text);">0.05</td></tr>
+        <tr><td style="padding:0.3rem 0;color:var(--text3);">Epochs</td><td style="color:var(--text);">300 (early stopping: 30)</td></tr>
+        <tr><td style="padding:0.3rem 0;color:var(--text3);">Features</td><td style="color:var(--text);">3 (edad, BMI, severidad)</td></tr>
+        <tr><td style="padding:0.3rem 0;color:var(--text3);">Init</td><td style="color:var(--text);">Xavier initialization</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h4 style="color:var(--accent3);">Blockchain</h4>
+      <table style="width:100%;font-size:0.85rem;margin-top:0.5rem;">
+        <tr><td style="padding:0.3rem 0;color:var(--text3);">Red</td><td style="color:var(--text);">Arbitrum (L2)</td></tr>
+        <tr><td style="padding:0.3rem 0;color:var(--text3);">Registro</td><td style="color:var(--text);">Model hash (SHA-256)</td></tr>
+        <tr><td style="padding:0.3rem 0;color:var(--text3);">Contribuciones</td><td style="color:var(--text);">ContributionProof</td></tr>
+        <tr><td style="padding:0.3rem 0;color:var(--text3);">Gobernanza</td><td style="color:var(--text);">GovernanceClient</td></tr>
+        <tr><td style="padding:0.3rem 0;color:var(--text3);">Contratos</td><td style="color:var(--text);">Solidity / Foundry</td></tr>
+        <tr><td style="padding:0.3rem 0;color:var(--text3);">Auditoría</td><td style="color:var(--text);">Inmutable on-chain</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ════════════════════════════════════════════════ -->
+<!--  CONCLUSIÓN                                     -->
+<!-- ════════════════════════════════════════════════ -->
+<section class="fade-in" style="text-align:center;padding-bottom:4rem;">
+  <h2 style="justify-content:center;"><span class="section-number" style="background:linear-gradient(135deg,var(--accent3),var(--accent));">&#x2713;</span> Conclusión</h2>
+
+  <div style="max-width:700px;margin:0 auto;">
+    <p style="font-size:1.1rem;color:var(--text);line-height:1.8;">
+      Los datos de cada hospital permanecieron <strong style="color:var(--accent);">encriptados con CKKS de 128 bits</strong>
+      durante todo el proceso. Ningún hospital reveló sus datos en texto plano.
+    </p>
+    <p style="font-size:1.1rem;color:var(--text);line-height:1.8;">
+      Al combinar datos encriptados en el consorcio, el modelo mejoró su
+      <strong style="color:var(--accent3);">R&sup2; de 0.78 a 0.99</strong> y redujo el
+      <strong style="color:var(--accent3);">error promedio en un 70%</strong>.
+    </p>
+    <p style="font-size:1.1rem;color:var(--text);line-height:1.8;margin-top:1.5rem;">
+      Esto demuestra que el <strong>consorcio FHE</strong> permite mejor machine learning
+      con total privacidad de los datos.
+    </p>
+  </div>
+
+  <div class="metric-row" style="margin-top:2rem;max-width:600px;margin-left:auto;margin-right:auto;">
+    <div class="metric-box glow">
+      <div class="label">Mejora Final</div>
+      <div class="value" style="color:var(--accent3);font-size:3rem;">70%</div>
+      <div class="sublabel">menos error de predicción</div>
+    </div>
+    <div class="metric-box glow">
+      <div class="label">Privacidad</div>
+      <div class="value" style="color:var(--accent);font-size:3rem;">100%</div>
+      <div class="sublabel">datos siempre encriptados</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  Xcapit FHE-ML Platform &middot; Demo generada con datos reales de encriptación CKKS via TenSEAL<br>
+  <a href="https://github.com/AlejoGarat/Xcapit-FHE-ML-Platform">GitHub</a> &middot; 2026
+</footer>
+
+<!-- ── SCROLL ANIMATIONS ── -->
+<script>
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
