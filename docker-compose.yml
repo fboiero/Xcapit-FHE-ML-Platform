@@ -238,6 +238,55 @@ services:
     tmpfs:
       - /tmp
 
+  # ============ Dashboard (Development) ============
+  dashboard-dev:
+    build:
+      context: ./dashboard
+    image: xcapit-fhe-dashboard:dev
+    container_name: xcapit-fhe-dashboard-dev
+    ports:
+      - "3000:80"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000
+      - VITE_DEFAULT_LANG=es
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - backend
+    profiles:
+      - dev
+
+  # ============ Dashboard (Production) ============
+  dashboard:
+    build:
+      context: ./dashboard
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-https://apifhe.xcapit.com}
+        VITE_DEFAULT_LANG: ${VITE_DEFAULT_LANG:-es}
+        VITE_ENABLE_BLOCKCHAIN: ${VITE_ENABLE_BLOCKCHAIN:-true}
+        VITE_ENABLE_FHE: ${VITE_ENABLE_FHE:-true}
+    image: xcapit-fhe-dashboard:latest
+    container_name: xcapit-fhe-dashboard
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - backend
+    profiles:
+      - production
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+      - /tmp
+
   # ============ OpenBao (Secret Management - Production) ============
   openbao:
     image: quay.io/openbao/openbao:2.1.0

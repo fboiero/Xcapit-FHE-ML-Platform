@@ -164,6 +164,22 @@ services:
         max-file: "3"
     command: celery -A config beat -l warning
 
+  # ============ Dashboard Production Overrides ============
+  dashboard:
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   # ============ OpenBao (Vault) Production Overrides ============
   openbao:
     deploy:
