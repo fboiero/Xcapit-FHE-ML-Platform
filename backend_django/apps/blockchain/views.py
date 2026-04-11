@@ -1,22 +1,24 @@
 """
-Blockchain API views for Xcapit FHE-ML Platform.
+Views para la app de Blockchain.
 
-Provides REST endpoints for blockchain operations:
-- Connection status and health
-- Consortium management
-- Model registry
-- Computation verification
+ViewSets para gestionar transacciones y contratos inteligentes desplegados,
+junto con las APIViews existentes para operaciones on-chain.
 """
+
+from __future__ import annotations
 
 import logging
 from typing import Optional
 
-from apps.core.permissions import IsCompanyMember
-from rest_framework import status
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.core.permissions import IsCompanyMember
+
+from .models import SmartContractDeployment, Transaction
 from .secrets import blockchain_secrets, get_contract_addresses
 from .serializers import (
     AddMemberSerializer,
@@ -52,6 +54,144 @@ def _hex_to_bytes(hex_str: str) -> bytes:
     if hex_str.startswith("0x"):
         hex_str = hex_str[2:]
     return bytes.fromhex(hex_str)
+
+
+# =============================================================================
+# Model-backed ViewSets (Transaction / SmartContractDeployment)
+# =============================================================================
+
+from rest_framework import serializers as drf_serializers
+
+
+class TransactionSerializer(drf_serializers.ModelSerializer):
+    """Serializer for Transaction model."""
+
+    company_name: str = drf_serializers.CharField(source="company.name", read_only=True)
+
+    class Meta:
+        model = Transaction
+        fields = [
+            "id",
+            "company",
+            "company_name",
+            "consortium",
+            "tx_hash",
+            "block_number",
+            "network",
+            "tx_type",
+            "status",
+            "gas_used",
+            "gas_price",
+            "value_wei",
+            "from_address",
+            "to_address",
+            "contract_address",
+            "input_data",
+            "error_message",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = fields
+
+
+class SmartContractDeploymentSerializer(drf_serializers.ModelSerializer):
+    """Serializer for SmartContractDeployment model."""
+
+    company_name: str = drf_serializers.CharField(source="company.name", read_only=True)
+
+    class Meta:
+        model = SmartContractDeployment
+        fields = [
+            "id",
+            "company",
+            "company_name",
+            "consortium",
+            "contract_type",
+            "address",
+            "network",
+            "transaction",
+            "abi",
+            "bytecode_hash",
+            "version",
+            "is_active",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = fields
+
+
+class TransactionViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet de solo lectura para transacciones blockchain.
+
+    - list:     transacciones de la empresa del usuario.
+    - retrieve: detalle de una transaccion.
+    - recent:   ultimas 20 transacciones.
+
+    Soporta filtros por query params: network, status, tx_type.
+    """
+
+    serializer_class = TransactionSerializer
+    permission_classes = [IsAuthenticated, IsCompanyMember]
+
+    def get_queryset(self):
+        """Retorna transacciones filtradas por la empresa del usuario."""
+        user = self.request.user
+        if not user.company:
+            return Transaction.objects.none()
+
+        queryset = Transaction.objects.filter(
+            company=user.company,
+        ).select_related("company", "consortium")
+
+        # Filtros opcionales
+        network = self.request.query_params.get("network")
+        if network:
+            queryset = queryset.filter(network=network)
+
+        tx_status = self.request.query_params.get("status")
+        if tx_status:
+            queryset = queryset.filter(status=tx_status)
+
+        tx_type = self.request.query_params.get("tx_type")
+        if tx_type:
+            queryset = queryset.filter(tx_type=tx_type)
+
+        return queryset
+
+    @action(detail=False, methods=["get"])
+    def recent(self, request) -> Response:
+        """Retorna las ultimas 20 transacciones de la empresa."""
+        queryset = self.get_queryset()[:20]
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+
+class SmartContractViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet de solo lectura para contratos inteligentes desplegados.
+
+    - list:     contratos de la empresa del usuario.
+    - retrieve: detalle de un contrato.
+    """
+
+    serializer_class = SmartContractDeploymentSerializer
+    permission_classes = [IsAuthenticated, IsCompanyMember]
+
+    def get_queryset(self):
+        """Retorna contratos filtrados por la empresa del usuario."""
+        user = self.request.user
+        if not user.company:
+            return SmartContractDeployment.objects.none()
+
+        return SmartContractDeployment.objects.filter(
+            company=user.company,
+        ).select_related("company", "consortium", "transaction")
+
+
+# =============================================================================
+# On-chain APIViews (existing)
+# =============================================================================
 
 
 class BlockchainStatusView(APIView):

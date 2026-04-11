@@ -14,7 +14,7 @@ import functools
 import logging
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from enum import Enum
 from threading import Lock
 from typing import Any, Callable, TypeVar
@@ -137,7 +137,7 @@ class CircuitBreaker:
             if self._state.last_failure_time is None:
                 return
 
-            elapsed = datetime.utcnow() - self._state.last_failure_time
+            elapsed = datetime.now(UTC) - self._state.last_failure_time
             if elapsed > timedelta(seconds=self.config.recovery_timeout):
                 logger.info(f"Circuit {self.name}: OPEN -> HALF_OPEN (recovery timeout)")
                 self._state.state = CircuitState.HALF_OPEN
@@ -146,7 +146,7 @@ class CircuitBreaker:
     def record_success(self) -> None:
         """Record a successful call."""
         with self._state_lock:
-            self._state.last_success_time = datetime.utcnow()
+            self._state.last_success_time = datetime.now(UTC)
 
             if self._state.state == CircuitState.HALF_OPEN:
                 self._state.success_count += 1
@@ -169,7 +169,7 @@ class CircuitBreaker:
             return
 
         with self._state_lock:
-            self._state.last_failure_time = datetime.utcnow()
+            self._state.last_failure_time = datetime.now(UTC)
             self._state.failure_count += 1
 
             if self._state.state == CircuitState.HALF_OPEN:

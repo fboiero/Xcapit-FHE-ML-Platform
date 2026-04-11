@@ -2,13 +2,18 @@
 Blockchain API URL configuration.
 
 Provides endpoints for:
+- Transaction history (ViewSet)
+- Smart contract deployments (ViewSet)
 - Status and health
 - Consortium management
 - Model registry
 - Computation verification
 """
 
-from django.urls import path
+from __future__ import annotations
+
+from django.urls import include, path
+from rest_framework.routers import DefaultRouter
 
 from .views import (
     BlockchainStatusView,
@@ -25,15 +30,23 @@ from .views import (
     ContributionRecordView,
     ModelDetailView,
     ModelRegisterView,
+    SmartContractViewSet,
+    TransactionViewSet,
     WalletBalanceView,
 )
 
 app_name = "blockchain"
 
+router = DefaultRouter()
+router.register(r"transactions", TransactionViewSet, basename="transaction")
+router.register(r"contracts", SmartContractViewSet, basename="contract")
+
 urlpatterns = [
+    # Router-based ViewSets
+    path("", include(router.urls)),
     # Status
     path("status/", BlockchainStatusView.as_view(), name="status"),
-    path("contracts/", ContractAddressesView.as_view(), name="contracts"),
+    path("contract-addresses/", ContractAddressesView.as_view(), name="contract-addresses"),
     path("balance/<str:address>/", WalletBalanceView.as_view(), name="balance"),
     # Consortium
     path("consortium/create/", ConsortiumCreateView.as_view(), name="consortium-create"),
