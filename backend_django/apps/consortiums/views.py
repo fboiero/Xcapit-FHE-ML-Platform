@@ -1,312 +1,375 @@
 """
-Consortium views for Xcapit FHE-ML Platform.
+Views para la app de Consortiums.
 
-Provides endpoints for consortium management, membership,
-and contribution tracking.
+ViewSets y APIViews para gestionar consorcios, membresías,
+pruebas de contribución, resultados de entrenamiento e invitaciones.
 """
 
-from apps.core.models import AuditLog
-from apps.core.permissions import (
-    IsCompanyMember,
-    IsConsortiumAdmin,
-    IsConsortiumMember,
-    IsConsortiumOwner,
-)
-from django.db import transaction
-from django.db.models import Count, Sum
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, status, viewsets
+from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .models import Consortium, ConsortiumInvitation, ConsortiumMember, ContributionProof
+from apps.core.permissions import IsCompanyMember, IsConsortiumMember
+
+from .models import (
+    Consortium,
+    ConsortiumInvitation,
+    ConsortiumMember,
+    ContributionProof,
+    TrainingResult,
+)
 from .serializers import (
     ConsortiumCreateSerializer,
     ConsortiumInvitationCreateSerializer,
     ConsortiumInvitationSerializer,
     ConsortiumMemberSerializer,
     ConsortiumSerializer,
-    ConsortiumStatsSerializer,
     ContributionProofCreateSerializer,
     ContributionProofSerializer,
+    TrainingResultSerializer,
 )
+
+
+# =============================================================================
+# Consortium CRUD
+# =============================================================================
 
 
 class ConsortiumViewSet(viewsets.ModelViewSet):
     """
-    ViewSet for Consortium management.
+    CRUD completo para Consortium.
+
+    - list:   consorcios donde la empresa del usuario es owner o miembro activo.
+    - create: crea un consorcio y registra a la empresa como owner.
+    - update/partial_update: solo el owner puede modificar.
+    - destroy: solo el owner puede eliminar (soft: cambia status a archived).
     """
 
     serializer_class = ConsortiumSerializer
     permission_classes = [IsAuthenticated, IsCompanyMember]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ["status", "model_type"]
-    search_fields = ["name", "description"]
-    ordering_fields = ["created_at", "name", "status"]
-    ordering = ["-created_at"]
 
     def get_queryset(self):
-        """
-        Return consortiums the user's company is a member of.
-        """
+        """Retorna consorcios donde la empresa es propietaria o miembro activo."""
         user = self.request.user
         if not user.company:
             return Consortium.objects.none()
 
-        # Get consortiums where company is a member
-        member_consortiums = ConsortiumMember.objects.filter(
-            company=user.company,
+        company = user.company
+
+        # Consorcios propios
+        owned = Consortium.objects.filter(owner=company)
+
+        # Consorcios donde la empresa es miembro activo
+        member_consortium_ids = ConsortiumMember.objects.filter(
+            company=company,
             status=ConsortiumMember.Status.ACTIVE,
         ).values_list("consortium_id", flat=True)
 
-        return Consortium.objects.filter(id__in=member_consortiums).select_related(
-            "owner"
-        ).prefetch_related("members")
+        return (owned | Consortium.objects.filter(id__in=member_consortium_ids)).distinct()
 
     def get_serializer_class(self):
-        """Use different serializers for different actions."""
         if self.action == "create":
             return ConsortiumCreateSerializer
         return ConsortiumSerializer
 
-    def get_permissions(self):
-        """Apply different permissions for different actions."""
-        if self.action in ["update", "partial_update", "destroy"]:
-            return [IsAuthenticated(), IsConsortiumOwner()]
-        return super().get_permissions()
-
     def perform_create(self, serializer):
-        """Create consortium and log event."""
-        consortium = serializer.save()
+        """Crea el consorcio asignando la empresa del usuario como owner
+        y lo registra automaticamente como miembro con rol owner."""
+        company = self.request.user.company
+        consortium = serializer.save(owner=company)
 
-        # Log creation
-        AuditLog.log(
-            self.request,
-            action="consortium_created",
-            resource_type="consortium",
-            resource_id=consortium.id,
-            extra_data={"name": consortium.name},
+        # Registrar al owner como miembro activo
+        ConsortiumMember.objects.create(
+            consortium=consortium,
+            company=company,
+            role=ConsortiumMember.Role.OWNER,
+            status=ConsortiumMember.Status.ACTIVE,
         )
+
+    def perform_update(self, serializer):
+        """Solo el owner puede actualizar el consorcio."""
+        consortium = self.get_object()
+        if consortium.owner_id != self.request.user.company_id:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Solo el propietario puede editar este consorcio.")
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        """Archiva el consorcio en lugar de eliminarlo fisicamente."""
+        if instance.owner_id != self.request.user.company_id:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Solo el propietario puede eliminar este consorcio.")
+        instance.status = Consortium.Status.ARCHIVED
+        instance.save(update_fields=["status", "updated_at"])
+
+    @action(detail=False, methods=["get"])
+    def owned(self, request):
+        """List consortiums owned by the current company."""
+        company = request.user.company
+        if not company:
+            return Response({"detail": "No company associated."}, status=status.HTTP_403_FORBIDDEN)
+        qs = Consortium.objects.filter(owner=company)
+        serializer = ConsortiumSerializer(qs, many=True)
+        return Response(serializer.data)
 
     @action(detail=True, methods=["get"])
     def stats(self, request, pk=None):
-        """Get consortium statistics."""
+        """Return aggregate stats for a consortium."""
         consortium = self.get_object()
-
-        members = ConsortiumMember.objects.filter(consortium=consortium)
-        contributions = ContributionProof.objects.filter(
-            consortium=consortium, verified=True
+        total_members = ConsortiumMember.objects.filter(consortium=consortium).count()
+        active_members = ConsortiumMember.objects.filter(
+            consortium=consortium, status=ConsortiumMember.Status.ACTIVE
+        ).count()
+        total_contributions = ContributionProof.objects.filter(consortium=consortium).count()
+        return Response(
+            {
+                "total_members": total_members,
+                "active_members": active_members,
+                "total_contributions": total_contributions,
+                "status": consortium.status,
+                "name": consortium.name,
+            }
         )
 
-        stats = {
-            "total_members": members.count(),
-            "active_members": members.filter(status=ConsortiumMember.Status.ACTIVE).count(),
-            "total_records": contributions.aggregate(total=Sum("record_count"))["total"] or 0,
-            "total_contributions": contributions.count(),
-            "model_status": consortium.status,
-        }
-
-        serializer = ConsortiumStatsSerializer(stats)
-        return Response(serializer.data)
-
-    @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated, IsConsortiumAdmin])
+    @action(detail=True, methods=["post"])
     def start_training(self, request, pk=None):
-        """Start consortium model training."""
-        from .services.training import FHETrainingService
+        """Initiate federated training for this consortium."""
+        from apps.consortiums.services.training import FHETrainingService
 
         consortium = self.get_object()
-
         if consortium.status != Consortium.Status.ACTIVE:
             return Response(
                 {"detail": "Consortium must be active to start training."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
-        # Check minimum members
         active_members = ConsortiumMember.objects.filter(
-            consortium=consortium,
-            status=ConsortiumMember.Status.ACTIVE,
+            consortium=consortium, status=ConsortiumMember.Status.ACTIVE
         ).count()
-
-        if active_members < consortium.min_members:
+        min_members = getattr(consortium, "min_members", 2) or 2
+        if active_members < min_members:
             return Response(
-                {"detail": f"Need at least {consortium.min_members} members to start training."},
+                {"detail": f"Need at least {min_members} active members to start training."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
-        # Start training via service
-        training_service = FHETrainingService(request=request)
-        result = training_service.start_training(consortium)
-
+        service = FHETrainingService(request=request)
+        result = service.start_training(consortium)
         if not result.success:
             return Response(
-                {"detail": result.error},
+                {"detail": result.error, "error_code": result.error_code},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
-        # Log event
-        AuditLog.log(
-            request,
-            action="training_started",
-            resource_type="consortium",
-            resource_id=consortium.id,
-            extra_data={
-                "task_id": result.data.get("task_id"),
-                "training_result_id": result.data.get("training_result_id"),
-            },
-        )
-
         return Response({
-            "detail": "Training started.",
-            "status": "training",
+            "detail": "Training initiated.",
+            "consortium_id": str(consortium.id),
             "task_id": result.data.get("task_id"),
             "training_result_id": result.data.get("training_result_id"),
-            "contributions_count": result.data.get("contributions_count"),
-            "total_records": result.data.get("total_records"),
         })
 
-    @action(detail=False, methods=["get"])
-    def owned(self, request):
-        """Get consortiums owned by the user's company."""
-        user = request.user
-        if not user.company:
-            return Response([])
 
-        consortiums = Consortium.objects.filter(owner=user.company)
-        serializer = self.get_serializer(consortiums, many=True)
-        return Response(serializer.data)
+# =============================================================================
+# ConsortiumMember (nested bajo /consortiums/{id}/members/)
+# =============================================================================
 
 
-class ConsortiumMemberViewSet(viewsets.ModelViewSet):
+class ConsortiumMemberViewSet(
+    mixins.ListModelMixin,
+    viewsets.GenericViewSet,
+):
     """
-    ViewSet for consortium membership management.
+    Gestión de miembros de un consorcio.
+
+    - list:  listar miembros del consorcio.
+    - join:  la empresa del usuario solicita unirse (action POST).
+    - leave: la empresa del usuario abandona el consorcio (action POST).
     """
 
     serializer_class = ConsortiumMemberSerializer
-    permission_classes = [IsAuthenticated, IsConsortiumMember]
-    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ["status", "role"]
-    ordering_fields = ["joined_at", "role", "status"]
-    ordering = ["-joined_at"]
+    permission_classes = [IsAuthenticated, IsCompanyMember]
+
+    def _get_consortium(self):
+        """Obtiene el consorcio desde la URL y verifica que exista."""
+        return get_object_or_404(Consortium, pk=self.kwargs["consortium_pk"])
 
     def get_queryset(self):
-        """Filter members by consortium."""
-        consortium_id = self.kwargs.get("consortium_pk")
-        return ConsortiumMember.objects.filter(
-            consortium_id=consortium_id
-        ).select_related("company", "consortium")
+        """Miembros del consorcio especificado, filtrados por visibilidad."""
+        consortium = self._get_consortium()
+        user = self.request.user
 
-    def get_permissions(self):
-        """Only admins can modify memberships."""
-        if self.action in ["update", "partial_update", "destroy"]:
-            return [IsAuthenticated(), IsConsortiumAdmin()]
-        return super().get_permissions()
+        if not user.company:
+            return ConsortiumMember.objects.none()
 
-    @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated, IsConsortiumAdmin])
-    def approve(self, request, consortium_pk=None, pk=None):
-        """Approve a pending membership."""
-        member = self.get_object()
+        # Solo miembros activos del consorcio o el owner pueden ver la lista
+        is_owner = consortium.owner_id == user.company_id
+        is_member = ConsortiumMember.objects.filter(
+            consortium=consortium,
+            company=user.company,
+            status=ConsortiumMember.Status.ACTIVE,
+        ).exists()
 
-        if member.status != ConsortiumMember.Status.PENDING:
+        if is_owner or is_member:
+            return ConsortiumMember.objects.filter(consortium=consortium)
+
+        return ConsortiumMember.objects.none()
+
+    @action(detail=False, methods=["post"])
+    def join(self, request, consortium_pk=None):
+        """
+        La empresa del usuario solicita unirse al consorcio.
+
+        Si el consorcio esta en estado draft o active, se crea un registro
+        de miembro con status pending.
+        """
+        consortium = self._get_consortium()
+        company = request.user.company
+
+        if not company:
             return Response(
-                {"detail": "Membership is not pending."},
+                {"detail": "Debes pertenecer a una empresa."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        member.status = ConsortiumMember.Status.ACTIVE
-        member.save(update_fields=["status", "updated_at"])
+        # Verificar que la empresa no sea ya miembro
+        existing = ConsortiumMember.objects.filter(
+            consortium=consortium,
+            company=company,
+        ).first()
 
-        # Log event
-        AuditLog.log(
-            request,
-            action="member_approved",
-            resource_type="consortium_member",
-            resource_id=member.id,
-            extra_data={"company_id": str(member.company_id)},
+        if existing:
+            if existing.status == ConsortiumMember.Status.ACTIVE:
+                return Response(
+                    {"detail": "Tu empresa ya es miembro activo de este consorcio."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if existing.status == ConsortiumMember.Status.PENDING:
+                return Response(
+                    {"detail": "Ya existe una solicitud pendiente para tu empresa."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            # Si fue rechazado, salio o removido, permitir reintento
+            existing.status = ConsortiumMember.Status.PENDING
+            existing.role = ConsortiumMember.Role.CONTRIBUTOR
+            existing.save(update_fields=["status", "role", "updated_at"])
+            serializer = ConsortiumMemberSerializer(existing)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        # Crear nueva solicitud de membresía
+        member = ConsortiumMember.objects.create(
+            consortium=consortium,
+            company=company,
+            role=ConsortiumMember.Role.CONTRIBUTOR,
+            status=ConsortiumMember.Status.PENDING,
         )
 
-        return Response(ConsortiumMemberSerializer(member).data)
-
-    @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated, IsConsortiumAdmin])
-    def remove(self, request, consortium_pk=None, pk=None):
-        """Remove a member from the consortium."""
-        member = self.get_object()
-
-        if member.role == ConsortiumMember.Role.OWNER:
-            return Response(
-                {"detail": "Cannot remove the consortium owner."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        member.status = ConsortiumMember.Status.REMOVED
-        member.save(update_fields=["status", "updated_at"])
-
-        # Log event
-        AuditLog.log(
-            request,
-            action="member_removed",
-            resource_type="consortium_member",
-            resource_id=member.id,
-            extra_data={"company_id": str(member.company_id)},
-        )
-
-        return Response({"detail": "Member removed."})
+        serializer = ConsortiumMemberSerializer(member)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @action(detail=False, methods=["post"])
     def leave(self, request, consortium_pk=None):
-        """Leave a consortium."""
-        user = request.user
+        """
+        La empresa del usuario abandona el consorcio.
+
+        El owner no puede abandonar su propio consorcio.
+        """
+        consortium = self._get_consortium()
+        company = request.user.company
+
+        if not company:
+            return Response(
+                {"detail": "Debes pertenecer a una empresa."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # El owner no puede abandonar
+        if consortium.owner_id == company.id:
+            return Response(
+                {"detail": "El propietario no puede abandonar su consorcio."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         member = ConsortiumMember.objects.filter(
-            consortium_id=consortium_pk,
-            company=user.company,
+            consortium=consortium,
+            company=company,
+            status=ConsortiumMember.Status.ACTIVE,
         ).first()
 
         if not member:
             return Response(
-                {"detail": "Not a member of this consortium."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
-        if member.role == ConsortiumMember.Role.OWNER:
-            return Response(
-                {"detail": "Owner cannot leave. Transfer ownership first."},
+                {"detail": "Tu empresa no es miembro activo de este consorcio."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         member.status = ConsortiumMember.Status.LEFT
         member.save(update_fields=["status", "updated_at"])
 
-        # Log event
-        AuditLog.log(
-            request,
-            action="member_left",
-            resource_type="consortium_member",
-            resource_id=member.id,
+        return Response(
+            {"detail": "Tu empresa ha abandonado el consorcio."},
+            status=status.HTTP_200_OK,
         )
 
-        return Response({"detail": "Left consortium successfully."})
+    @action(detail=True, methods=["post"])
+    def approve(self, request, consortium_pk=None, pk=None):
+        """Approve a pending membership request (owner only)."""
+        consortium = self._get_consortium()
+        if consortium.owner_id != request.user.company_id:
+            return Response(
+                {"detail": "Solo el propietario puede aprobar miembros."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        member = get_object_or_404(
+            ConsortiumMember, pk=pk, consortium=consortium
+        )
+        if member.status != ConsortiumMember.Status.PENDING:
+            return Response(
+                {"detail": "Solo se pueden aprobar solicitudes pendientes."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        member.status = ConsortiumMember.Status.ACTIVE
+        member.save(update_fields=["status", "updated_at"])
+        return Response(ConsortiumMemberSerializer(member).data)
+
+    @action(detail=True, methods=["post"])
+    def remove(self, request, consortium_pk=None, pk=None):
+        """Remove an active member from the consortium (owner only)."""
+        consortium = self._get_consortium()
+        if consortium.owner_id != request.user.company_id:
+            return Response(
+                {"detail": "Solo el propietario puede remover miembros."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        member = get_object_or_404(
+            ConsortiumMember, pk=pk, consortium=consortium
+        )
+        if member.role == ConsortiumMember.Role.OWNER:
+            return Response(
+                {"detail": "No se puede remover al propietario."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        member.status = ConsortiumMember.Status.REMOVED
+        member.save(update_fields=["status", "updated_at"])
+        return Response(ConsortiumMemberSerializer(member).data)
 
 
-class ContributionProofViewSet(viewsets.ModelViewSet):
+# =============================================================================
+# ContributionProof (nested bajo /consortiums/{id}/contributions/)
+# =============================================================================
+
+
+class ContributionProofViewSet(
+    mixins.CreateModelMixin,
+    viewsets.ReadOnlyModelViewSet,
+):
     """
-    ViewSet for contribution proof management.
+    Pruebas de contribución de un consorcio.
+
+    - list:   solo lectura filtrado por empresa/consorcio.
+    - create: permite a miembros activos enviar una nueva prueba de contribución.
     """
 
     serializer_class = ContributionProofSerializer
-    permission_classes = [IsAuthenticated, IsConsortiumMember]
-    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ["verified", "company"]
-    ordering_fields = ["created_at", "record_count", "verified"]
-    ordering = ["-created_at"]
-
-    def get_queryset(self):
-        """Filter contributions by consortium."""
-        consortium_id = self.kwargs.get("consortium_pk")
-        return ContributionProof.objects.filter(
-            consortium_id=consortium_id
-        ).select_related("company", "consortium")
+    permission_classes = [IsAuthenticated, IsCompanyMember, IsConsortiumMember]
 
     def get_serializer_class(self):
         if self.action == "create":
@@ -314,160 +377,335 @@ class ContributionProofViewSet(viewsets.ModelViewSet):
         return ContributionProofSerializer
 
     def perform_create(self, serializer):
-        """Create contribution and log event."""
-        contribution = serializer.save()
-
-        # Log event
-        AuditLog.log(
-            self.request,
-            action="data_contributed",
-            resource_type="contribution_proof",
-            resource_id=contribution.id,
-            extra_data={
-                "record_count": contribution.record_count,
-                "data_hash": contribution.data_hash[:16] + "...",
-            },
+        consortium_pk = self.kwargs.get("consortium_pk")
+        serializer.save(
+            company=self.request.user.company,
+            consortium_id=consortium_pk,
         )
+
+    def get_queryset(self):
+        consortium_pk = self.kwargs.get("consortium_pk")
+        user = self.request.user
+
+        if not user.company:
+            return ContributionProof.objects.none()
+
+        queryset = ContributionProof.objects.filter(consortium_id=consortium_pk)
+
+        # El owner del consorcio puede ver todas las contribuciones
+        try:
+            consortium = Consortium.objects.get(pk=consortium_pk)
+        except Consortium.DoesNotExist:
+            return ContributionProof.objects.none()
+
+        if consortium.owner_id == user.company_id:
+            return queryset
+
+        # Miembros solo ven sus propias contribuciones
+        return queryset.filter(company=user.company)
 
     @action(detail=False, methods=["get"])
     def my_contributions(self, request, consortium_pk=None):
-        """Get current company's contributions."""
+        """Return only the current company's contributions."""
         user = request.user
-        contributions = ContributionProof.objects.filter(
-            consortium_id=consortium_pk,
-            company=user.company,
+        if not user.company:
+            return Response(
+                {"detail": "No company associated."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        qs = ContributionProof.objects.filter(
+            consortium_id=consortium_pk, company=user.company
         )
-        serializer = self.get_serializer(contributions, many=True)
-        return Response(serializer.data)
+        return Response(ContributionProofSerializer(qs, many=True).data)
 
     @action(detail=False, methods=["get"])
     def summary(self, request, consortium_pk=None):
-        """Get contribution summary per company."""
-        contributions = (
-            ContributionProof.objects.filter(consortium_id=consortium_pk, verified=True)
-            .values("company__id", "company__name")
-            .annotate(
-                total_records=Sum("record_count"),
-                contribution_count=Count("id"),
-            )
-            .order_by("-total_records")
+        """Return aggregate stats about contributions in this consortium."""
+        qs = self.get_queryset()
+        total = qs.count()
+        verified = qs.filter(verified=True).count()
+        total_records = sum(c.record_count for c in qs)
+        return Response(
+            {
+                "total_contributions": total,
+                "verified_contributions": verified,
+                "total_records": total_records,
+            }
         )
 
-        return Response(list(contributions))
+
+# =============================================================================
+# TrainingResult (nested bajo /consortiums/{id}/training-results/)
+# =============================================================================
 
 
-class ConsortiumInvitationViewSet(viewsets.ModelViewSet):
+class TrainingResultViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    ViewSet for consortium invitations.
+    Lista de solo lectura de resultados de entrenamiento de un consorcio.
+
+    Todos los miembros activos pueden ver los resultados.
+    """
+
+    serializer_class = TrainingResultSerializer
+    permission_classes = [IsAuthenticated, IsCompanyMember, IsConsortiumMember]
+
+    def get_queryset(self):
+        consortium_pk = self.kwargs.get("consortium_pk")
+        user = self.request.user
+
+        if not user.company:
+            return TrainingResult.objects.none()
+
+        return TrainingResult.objects.filter(consortium_id=consortium_pk)
+
+
+# =============================================================================
+# ConsortiumInvitation
+# =============================================================================
+
+
+class ConsortiumInvitationViewSet(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin,
+    viewsets.GenericViewSet,
+):
+    """
+    Gestión de invitaciones a consorcios.
+
+    - list:    invitaciones enviadas por la empresa o recibidas por ella.
+    - create:  enviar una invitacion (solo owner/admin del consorcio).
+    - accept:  aceptar una invitacion (action POST).
+    - reject:  rechazar una invitacion (action POST).
     """
 
     serializer_class = ConsortiumInvitationSerializer
     permission_classes = [IsAuthenticated, IsCompanyMember]
 
     def get_queryset(self):
-        """Get invitations for the user's company."""
+        """Muestra invitaciones enviadas o recibidas por la empresa del usuario."""
         user = self.request.user
         if not user.company:
             return ConsortiumInvitation.objects.none()
 
-        # Sent or received invitations
-        return ConsortiumInvitation.objects.filter(
-            inviter=user.company,
-        ) | ConsortiumInvitation.objects.filter(invitee_email=user.company.email)
+        company = user.company
+
+        # Invitaciones enviadas por la empresa
+        sent = ConsortiumInvitation.objects.filter(inviter=company)
+
+        # Invitaciones recibidas (por empresa FK, por email del usuario, o por email de la empresa)
+        received = ConsortiumInvitation.objects.filter(invitee_company=company)
+        received_by_user_email = ConsortiumInvitation.objects.filter(
+            invitee_email=user.email,
+        )
+        received_by_company_email = ConsortiumInvitation.objects.filter(
+            invitee_email=company.email,
+        )
+
+        return (sent | received | received_by_user_email | received_by_company_email).distinct()
 
     def get_serializer_class(self):
         if self.action == "create":
             return ConsortiumInvitationCreateSerializer
         return ConsortiumInvitationSerializer
 
-    @action(detail=True, methods=["post"])
-    @transaction.atomic
-    def accept(self, request, pk=None):
-        """Accept an invitation."""
-        invitation = self.get_object()
-        user = request.user
+    def perform_create(self, serializer):
+        """
+        Crea la invitacion asignando la empresa del usuario como inviter.
 
-        if invitation.invitee_email.lower() != user.company.email.lower():
+        Solo el owner o admin del consorcio puede enviar invitaciones.
+        """
+        from rest_framework.exceptions import PermissionDenied
+
+        company = self.request.user.company
+        consortium = serializer.validated_data["consortium"]
+
+        # Verificar que la empresa es owner o admin del consorcio
+        is_owner = consortium.owner_id == company.id
+        is_admin = ConsortiumMember.objects.filter(
+            consortium=consortium,
+            company=company,
+            role=ConsortiumMember.Role.ADMIN,
+            status=ConsortiumMember.Status.ACTIVE,
+        ).exists()
+
+        if not is_owner and not is_admin:
+            raise PermissionDenied(
+                "Solo el propietario o un admin del consorcio puede enviar invitaciones."
+            )
+
+        # Resolver la empresa invitada si existe un usuario con ese email
+        from apps.core.models import User
+        invitee_email = serializer.validated_data["invitee_email"]
+        invitee_company = None
+        try:
+            invitee_user = User.objects.get(email=invitee_email)
+            invitee_company = invitee_user.company
+        except User.DoesNotExist:
+            pass
+
+        # Valor por defecto para expires_at si no fue proporcionado
+        expires_at = serializer.validated_data.get("expires_at")
+        if not expires_at:
+            from datetime import timedelta
+            expires_at = timezone.now() + timedelta(days=30)
+
+        serializer.save(
+            inviter=company,
+            invitee_company=invitee_company,
+            expires_at=expires_at,
+        )
+
+    @action(detail=True, methods=["post"])
+    def accept(self, request, pk=None):
+        """
+        Acepta una invitacion pendiente.
+
+        Crea el registro de miembro con status activo y el rol indicado
+        en la invitacion.
+        """
+        invitation = self.get_object()
+        company = request.user.company
+
+        if not company:
             return Response(
-                {"detail": "This invitation is not for your company."},
+                {"detail": "Debes pertenecer a una empresa."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Verificar que la invitacion es para esta empresa o para el email del usuario
+        if (
+            invitation.invitee_company_id
+            and invitation.invitee_company_id != company.id
+        ):
+            return Response(
+                {"detail": "Esta invitacion no es para tu empresa."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if (
+            not invitation.invitee_company_id
+            and invitation.invitee_email != request.user.email
+            and invitation.invitee_email != company.email
+        ):
+            return Response(
+                {"detail": "Esta invitacion no es para ti."},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
         if invitation.status != ConsortiumInvitation.Status.PENDING:
             return Response(
-                {"detail": "Invitation is no longer pending."},
+                {"detail": f"La invitacion ya fue {invitation.get_status_display().lower()}."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         if invitation.is_expired:
+            invitation.status = ConsortiumInvitation.Status.EXPIRED
+            invitation.save(update_fields=["status"])
             return Response(
-                {"detail": "Invitation has expired."},
+                {"detail": "La invitacion ha expirado."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Create membership
-        ConsortiumMember.objects.create(
-            consortium=invitation.consortium,
-            company=user.company,
-            role=invitation.role,
-            status=ConsortiumMember.Status.ACTIVE,
-        )
-
-        # Update invitation
+        # Aceptar la invitacion
         invitation.status = ConsortiumInvitation.Status.ACCEPTED
-        invitation.invitee_company = user.company
         invitation.responded_at = timezone.now()
-        invitation.save()
+        invitation.invitee_company = company
+        invitation.save(update_fields=["status", "responded_at", "invitee_company"])
 
-        # Log event
-        AuditLog.log(
-            request,
-            action="invitation_accepted",
-            resource_type="consortium_invitation",
-            resource_id=invitation.id,
+        # Crear o reactivar miembro
+        member, created = ConsortiumMember.objects.get_or_create(
+            consortium=invitation.consortium,
+            company=company,
+            defaults={
+                "role": invitation.role,
+                "status": ConsortiumMember.Status.ACTIVE,
+            },
         )
 
-        return Response({"detail": "Invitation accepted."})
+        if not created:
+            member.role = invitation.role
+            member.status = ConsortiumMember.Status.ACTIVE
+            member.save(update_fields=["role", "status", "updated_at"])
+
+        serializer = ConsortiumInvitationSerializer(invitation)
+        return Response(serializer.data)
 
     @action(detail=True, methods=["post"])
-    def decline(self, request, pk=None):
-        """Decline an invitation."""
+    def reject(self, request, pk=None):
+        """
+        Rechaza una invitacion pendiente.
+        """
         invitation = self.get_object()
-        user = request.user
+        company = request.user.company
 
-        if invitation.invitee_email.lower() != user.company.email.lower():
+        if not company:
             return Response(
-                {"detail": "This invitation is not for your company."},
+                {"detail": "Debes pertenecer a una empresa."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Verificar que la invitacion es para esta empresa o para el email del usuario
+        if (
+            invitation.invitee_company_id
+            and invitation.invitee_company_id != company.id
+        ):
+            return Response(
+                {"detail": "Esta invitacion no es para tu empresa."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if (
+            not invitation.invitee_company_id
+            and invitation.invitee_email != request.user.email
+            and invitation.invitee_email != company.email
+        ):
+            return Response(
+                {"detail": "Esta invitacion no es para ti."},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
         if invitation.status != ConsortiumInvitation.Status.PENDING:
             return Response(
-                {"detail": "Invitation is no longer pending."},
+                {"detail": f"La invitacion ya fue {invitation.get_status_display().lower()}."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         invitation.status = ConsortiumInvitation.Status.DECLINED
         invitation.responded_at = timezone.now()
-        invitation.save()
+        invitation.save(update_fields=["status", "responded_at"])
 
-        return Response({"detail": "Invitation declined."})
+        serializer = ConsortiumInvitationSerializer(invitation)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=["post"])
+    def decline(self, request, pk=None):
+        """Alias for reject — decline a pending invitation."""
+        return self.reject(request, pk=pk)
 
     @action(detail=False, methods=["get"])
     def received(self, request):
-        """Get received invitations."""
-        user = request.user
+        """List invitations received by the current company."""
+        company = request.user.company
+        if not company:
+            return Response(
+                {"detail": "No company associated."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         invitations = ConsortiumInvitation.objects.filter(
-            invitee_email=user.company.email,
-            status=ConsortiumInvitation.Status.PENDING,
-        )
-        serializer = self.get_serializer(invitations, many=True)
-        return Response(serializer.data)
+            invitee_company=company
+        ) | ConsortiumInvitation.objects.filter(invitee_email=request.user.email)
+        invitations = invitations.distinct()
+        return Response(ConsortiumInvitationSerializer(invitations, many=True).data)
 
     @action(detail=False, methods=["get"])
     def sent(self, request):
-        """Get sent invitations."""
-        user = request.user
-        invitations = ConsortiumInvitation.objects.filter(inviter=user.company)
-        serializer = self.get_serializer(invitations, many=True)
-        return Response(serializer.data)
+        """List invitations sent by the current company."""
+        company = request.user.company
+        if not company:
+            return Response(
+                {"detail": "No company associated."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        invitations = ConsortiumInvitation.objects.filter(inviter=company)
+        return Response(ConsortiumInvitationSerializer(invitations, many=True).data)
