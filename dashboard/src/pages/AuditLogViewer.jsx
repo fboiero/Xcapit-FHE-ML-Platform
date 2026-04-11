@@ -1,434 +1,287 @@
-import { useState, useEffect, useMemo } from 'react'
-import { useTranslation } from 'react-i18next'
+import { useState } from 'react'
 
-// Generate mock audit logs
-const generateMockLogs = () => {
-  const actions = [
-    { type: 'model_created', description: 'Created model', severity: 'info' },
-    { type: 'model_trained', description: 'Trained model', severity: 'success' },
-    { type: 'model_deployed', description: 'Deployed model', severity: 'success' },
-    { type: 'prediction_made', description: 'Made prediction', severity: 'info' },
-    { type: 'data_uploaded', description: 'Uploaded data', severity: 'info' },
-    { type: 'data_encrypted', description: 'Encrypted data', severity: 'info' },
-    { type: 'member_joined', description: 'Member joined consortium', severity: 'success' },
-    { type: 'member_left', description: 'Member left consortium', severity: 'warning' },
-    { type: 'proposal_created', description: 'Created proposal', severity: 'info' },
-    { type: 'vote_cast', description: 'Vote cast on proposal', severity: 'info' },
-    { type: 'login_success', description: 'User logged in', severity: 'success' },
-    { type: 'login_failed', description: 'Failed login attempt', severity: 'error' },
-    { type: 'api_key_created', description: 'Created API key', severity: 'warning' },
-    { type: 'api_key_revoked', description: 'Revoked API key', severity: 'warning' },
-    { type: 'settings_changed', description: 'Changed settings', severity: 'info' },
-    { type: 'export_model', description: 'Exported model', severity: 'info' },
-    { type: 'import_model', description: 'Imported model', severity: 'info' },
-  ]
-
-  const users = ['admin@company.com', 'analyst@company.com', 'engineer@company.com', 'manager@company.com']
-  const resources = ['model-001', 'model-002', 'consortium-001', 'dataset-001', 'api-key-001']
-  const ips = ['192.168.1.100', '10.0.0.50', '172.16.0.25', '192.168.2.150']
-
-  const logs = []
-  const now = Date.now()
-
-  for (let i = 0; i < 100; i++) {
-    const action = actions[Math.floor(Math.random() * actions.length)]
-    logs.push({
-      id: `log-${1000 - i}`,
-      timestamp: new Date(now - i * 15 * 60 * 1000).toISOString(), // Every 15 minutes
-      action: action.type,
-      description: action.description,
-      severity: action.severity,
-      user: users[Math.floor(Math.random() * users.length)],
-      resourceType: action.type.includes('model') ? 'model' :
-                    action.type.includes('member') || action.type.includes('proposal') ? 'consortium' :
-                    action.type.includes('data') ? 'dataset' : 'system',
-      resourceId: resources[Math.floor(Math.random() * resources.length)],
-      ipAddress: ips[Math.floor(Math.random() * ips.length)],
-      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
-      metadata: action.type === 'prediction_made' ? { samples: Math.floor(Math.random() * 1000) + 1 } : {},
-      txHash: action.type.includes('member') || action.type.includes('vote')
-        ? `0x${Math.random().toString(16).slice(2, 66)}`
-        : null,
-    })
-  }
-
-  return logs
+const COLORS = {
+  primary: '#4f46e5',
+  primaryLight: '#eef2ff',
+  success: '#10b981',
+  successLight: '#dcfce7',
+  warning: '#f59e0b',
+  warningLight: '#fef9c3',
+  danger: '#ef4444',
+  dangerLight: '#fef2f2',
+  bg: '#f8fafc',
+  card: '#ffffff',
+  text: '#1e293b',
+  muted: '#64748b',
+  border: '#e5e7eb',
+  purple: '#8b5cf6',
+  purpleLight: '#f5f3ff',
 }
 
+const ACTION_CATEGORIES = {
+  auth: { label: 'Autenticacion', bg: '#eff6ff', color: '#3b82f6' },
+  data: { label: 'Datos', bg: COLORS.successLight, color: COLORS.success },
+  training: { label: 'Entrenamiento', bg: COLORS.purpleLight, color: COLORS.purple },
+  admin: { label: 'Administracion', bg: COLORS.dangerLight, color: COLORS.danger },
+  governance: { label: 'Gobernanza', bg: COLORS.warningLight, color: COLORS.warning },
+}
+
+const ALL_LOGS = [
+  { id: 1, timestamp: '2026-03-14T14:32:10', user: 'admin@xcapit.com', action: 'login', category: 'auth', resource: 'Sesion', ip: '192.168.1.45', status: 'success', details: { method: 'JWT', mfa: true, user_agent: 'Chrome 120' } },
+  { id: 2, timestamp: '2026-03-14T14:28:05', user: 'maria@medcorp.com', action: 'upload_data', category: 'data', resource: 'Dataset pacientes_2026', ip: '10.0.0.12', status: 'success', details: { records: 4520, size: '12.4 MB', encrypted: true, format: 'CSV' } },
+  { id: 3, timestamp: '2026-03-14T14:15:33', user: 'carlos@healthdata.com', action: 'start_training', category: 'training', resource: 'Consorcio HealthML', ip: '10.0.0.88', status: 'success', details: { model_type: 'linear_regression', epochs: 50, security_level: '128-bit CKKS' } },
+  { id: 4, timestamp: '2026-03-14T13:55:12', user: 'admin@xcapit.com', action: 'update_permissions', category: 'admin', resource: 'Usuario carlos@healthdata.com', ip: '192.168.1.45', status: 'success', details: { old_role: 'viewer', new_role: 'contributor', consortium: 'HealthML' } },
+  { id: 5, timestamp: '2026-03-14T13:42:08', user: 'pedro@fintech.com', action: 'login_failed', category: 'auth', resource: 'Sesion', ip: '203.45.67.89', status: 'failure', details: { reason: 'Credenciales invalidas', attempt: 3, locked: false } },
+  { id: 6, timestamp: '2026-03-14T13:30:22', user: 'ana@bioanalytics.com', action: 'vote_proposal', category: 'governance', resource: 'Propuesta #12', ip: '10.0.0.55', status: 'success', details: { vote: 'a_favor', proposal: 'Aumentar epsilon a 3.0' } },
+  { id: 7, timestamp: '2026-03-14T13:15:44', user: 'system', action: 'training_completed', category: 'training', resource: 'Consorcio FinanceML', ip: '10.0.0.1', status: 'success', details: { duration: '2h 14m', accuracy: 0.942, r2: 0.891 } },
+  { id: 8, timestamp: '2026-03-14T12:58:11', user: 'maria@medcorp.com', action: 'download_model', category: 'data', resource: 'Modelo costos_v3', ip: '10.0.0.12', status: 'success', details: { model_id: 'mdl_abc123', version: '3.1', size: '4.2 MB' } },
+  { id: 9, timestamp: '2026-03-14T12:45:30', user: 'admin@xcapit.com', action: 'create_api_key', category: 'admin', resource: 'API Key prod-ml-01', ip: '192.168.1.45', status: 'success', details: { prefix: 'xc_prod', permissions: ['read', 'write'], expires: '2027-03-14' } },
+  { id: 10, timestamp: '2026-03-14T12:30:55', user: 'carlos@healthdata.com', action: 'encrypt_data', category: 'data', resource: 'Dataset historiales', ip: '10.0.0.88', status: 'success', details: { scheme: 'CKKS', security_level: '128-bit', records: 8900 } },
+  { id: 11, timestamp: '2026-03-14T12:15:20', user: 'unknown@external.com', action: 'login_failed', category: 'auth', resource: 'Sesion', ip: '185.220.101.34', status: 'failure', details: { reason: 'Cuenta no existe', blocked_ip: true } },
+  { id: 12, timestamp: '2026-03-14T11:58:09', user: 'system', action: 'backup_completed', category: 'admin', resource: 'Base de datos principal', ip: '10.0.0.1', status: 'success', details: { size: '2.3 GB', duration: '4m 22s', location: 's3://backups/2026-03-14' } },
+  { id: 13, timestamp: '2026-03-14T11:42:33', user: 'ana@bioanalytics.com', action: 'upload_data', category: 'data', resource: 'Dataset genomico_2026', ip: '10.0.0.55', status: 'failure', details: { reason: 'Formato invalido', expected: 'CSV', received: 'XLSX' } },
+  { id: 14, timestamp: '2026-03-14T11:30:18', user: 'pedro@fintech.com', action: 'login', category: 'auth', resource: 'Sesion', ip: '203.45.67.89', status: 'success', details: { method: 'JWT', mfa: true, user_agent: 'Firefox 119' } },
+  { id: 15, timestamp: '2026-03-14T11:15:42', user: 'maria@medcorp.com', action: 'create_proposal', category: 'governance', resource: 'Propuesta #13', ip: '10.0.0.12', status: 'success', details: { title: 'Implementar ZKP para contribuciones', type: 'Tecnica' } },
+  { id: 16, timestamp: '2026-03-14T10:55:08', user: 'carlos@healthdata.com', action: 'decrypt_result', category: 'data', resource: 'Resultado prediccion_batch_44', ip: '10.0.0.88', status: 'success', details: { records: 1200, model: 'costos_v3' } },
+  { id: 17, timestamp: '2026-03-14T10:40:25', user: 'admin@xcapit.com', action: 'revoke_api_key', category: 'admin', resource: 'API Key test-dev-02', ip: '192.168.1.45', status: 'success', details: { prefix: 'xc_test', reason: 'Expirada' } },
+  { id: 18, timestamp: '2026-03-14T10:22:11', user: 'system', action: 'round_started', category: 'training', resource: 'Ronda federada #6', ip: '10.0.0.1', status: 'success', details: { participants: 5, method: 'FedAvg', estimated_duration: '4h' } },
+  { id: 19, timestamp: '2026-03-14T10:05:47', user: 'ana@bioanalytics.com', action: 'logout', category: 'auth', resource: 'Sesion', ip: '10.0.0.55', status: 'success', details: { session_duration: '3h 42m' } },
+  { id: 20, timestamp: '2026-03-14T09:48:33', user: 'pedro@fintech.com', action: 'upload_data', category: 'data', resource: 'Dataset transacciones_q1', ip: '203.45.67.89', status: 'success', details: { records: 25600, size: '45.1 MB', encrypted: true, format: 'Parquet' } },
+  { id: 21, timestamp: '2026-03-14T09:30:19', user: 'admin@xcapit.com', action: 'update_config', category: 'admin', resource: 'Configuracion FHE', ip: '192.168.1.45', status: 'success', details: { setting: 'security_level', old: '128-bit', new: '192-bit' } },
+  { id: 22, timestamp: '2026-03-14T09:15:04', user: 'system', action: 'compliance_scan', category: 'admin', resource: 'Auditoria GDPR', ip: '10.0.0.1', status: 'success', details: { framework: 'GDPR', score: 94, findings: 2 } },
+]
+
+const ACTION_TYPES = ['Todos', 'auth', 'data', 'training', 'admin', 'governance']
+const ITEMS_PER_PAGE = 8
+
 export default function AuditLogViewer() {
-  const { t } = useTranslation()
-  const [logs, setLogs] = useState([])
-  const [filters, setFilters] = useState({
-    search: '',
-    severity: 'all',
-    resourceType: 'all',
-    dateFrom: '',
-    dateTo: '',
-    user: '',
+  const [categoryFilter, setCategoryFilter] = useState('Todos')
+  const [userSearch, setUserSearch] = useState('')
+  const [expandedId, setExpandedId] = useState(null)
+  const [page, setPage] = useState(1)
+
+  const filtered = ALL_LOGS.filter((log) => {
+    const matchCategory = categoryFilter === 'Todos' || log.category === categoryFilter
+    const matchUser = userSearch === '' || log.user.toLowerCase().includes(userSearch.toLowerCase())
+    return matchCategory && matchUser
   })
-  const [selectedLog, setSelectedLog] = useState(null)
-  const [currentPage, setCurrentPage] = useState(1)
-  const logsPerPage = 20
 
-  useEffect(() => {
-    setLogs(generateMockLogs())
-  }, [])
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE)
+  const paginated = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE)
 
-  const severityColors = {
-    info: 'bg-blue-100 text-blue-800',
-    success: 'bg-green-100 text-green-800',
-    warning: 'bg-yellow-100 text-yellow-800',
-    error: 'bg-red-100 text-red-800',
+  const handleCategoryChange = (cat) => {
+    setCategoryFilter(cat)
+    setPage(1)
   }
 
-  const severityIcons = {
-    info: (
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
-    success: (
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
-    warning: (
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-      </svg>
-    ),
-    error: (
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
-  }
-
-  // Filter logs
-  const filteredLogs = useMemo(() => {
-    return logs.filter(log => {
-      if (filters.search && !log.description.toLowerCase().includes(filters.search.toLowerCase()) &&
-          !log.action.toLowerCase().includes(filters.search.toLowerCase()) &&
-          !log.user.toLowerCase().includes(filters.search.toLowerCase())) {
-        return false
-      }
-      if (filters.severity !== 'all' && log.severity !== filters.severity) {
-        return false
-      }
-      if (filters.resourceType !== 'all' && log.resourceType !== filters.resourceType) {
-        return false
-      }
-      if (filters.user && !log.user.toLowerCase().includes(filters.user.toLowerCase())) {
-        return false
-      }
-      if (filters.dateFrom && new Date(log.timestamp) < new Date(filters.dateFrom)) {
-        return false
-      }
-      if (filters.dateTo && new Date(log.timestamp) > new Date(filters.dateTo + 'T23:59:59')) {
-        return false
-      }
-      return true
-    })
-  }, [logs, filters])
-
-  // Pagination
-  const totalPages = Math.ceil(filteredLogs.length / logsPerPage)
-  const paginatedLogs = filteredLogs.slice((currentPage - 1) * logsPerPage, currentPage * logsPerPage)
-
-  // Statistics
-  const stats = useMemo(() => {
-    const today = new Date().toDateString()
-    const todayLogs = logs.filter(log => new Date(log.timestamp).toDateString() === today)
-
-    return {
-      total: logs.length,
-      today: todayLogs.length,
-      errors: logs.filter(log => log.severity === 'error').length,
-      warnings: logs.filter(log => log.severity === 'warning').length,
-    }
-  }, [logs])
-
-  const formatDate = (isoString) => {
-    const date = new Date(isoString)
-    return date.toLocaleString()
-  }
-
-  const exportLogs = () => {
-    const csv = [
-      ['Timestamp', 'Action', 'Description', 'Severity', 'User', 'Resource Type', 'Resource ID', 'IP Address'].join(','),
-      ...filteredLogs.map(log => [
-        log.timestamp,
-        log.action,
-        log.description,
-        log.severity,
-        log.user,
-        log.resourceType,
-        log.resourceId,
-        log.ipAddress,
-      ].join(','))
-    ].join('\n')
-
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `audit-logs-${new Date().toISOString().split('T')[0]}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
+  const handleSearchChange = (val) => {
+    setUserSearch(val)
+    setPage(1)
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div style={{ padding: 32, maxWidth: 1200, margin: '0 auto' }}>
       {/* Header */}
-      <div className="flex justify-between items-center mb-8">
+      <div style={{ marginBottom: 32 }}>
+        <h1 style={{ fontSize: 28, fontWeight: 700, color: COLORS.text, margin: '0 0 8px' }}>
+          Registro de Auditoria
+        </h1>
+        <p style={{ fontSize: 16, color: COLORS.muted, margin: 0 }}>
+          Historial completo de acciones y eventos del sistema
+        </p>
+      </div>
+
+      {/* Filter bar */}
+      <div style={{
+        background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`,
+        padding: 20, marginBottom: 24,
+        display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
+      }}>
+        {/* Category filter */}
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Audit Log</h1>
-          <p className="text-gray-600 mt-1">Complete history of system activities and events</p>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: COLORS.muted, marginBottom: 4 }}>
+            Tipo de accion
+          </label>
+          <select
+            value={categoryFilter}
+            onChange={(e) => handleCategoryChange(e.target.value)}
+            style={{
+              padding: '8px 12px', borderRadius: 8, border: `1px solid ${COLORS.border}`,
+              fontSize: 14, outline: 'none', background: '#fff', cursor: 'pointer', minWidth: 160,
+            }}
+          >
+            {ACTION_TYPES.map((t) => (
+              <option key={t} value={t}>
+                {t === 'Todos' ? 'Todos' : ACTION_CATEGORIES[t]?.label || t}
+              </option>
+            ))}
+          </select>
         </div>
-        <button
-          onClick={exportLogs}
-          className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition flex items-center gap-2"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-          </svg>
-          Export CSV
-        </button>
-      </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-xl p-4 border border-gray-200">
-          <div className="text-sm text-gray-500">Total Events</div>
-          <div className="text-2xl font-bold text-gray-900 mt-1">{stats.total}</div>
+        {/* User search */}
+        <div style={{ flex: '1 1 200px' }}>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: COLORS.muted, marginBottom: 4 }}>
+            Buscar usuario
+          </label>
+          <input
+            type="text"
+            value={userSearch}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            placeholder="email del usuario..."
+            style={{
+              width: '100%', padding: '8px 12px', borderRadius: 8, border: `1px solid ${COLORS.border}`,
+              fontSize: 14, outline: 'none', boxSizing: 'border-box',
+            }}
+          />
         </div>
-        <div className="bg-white rounded-xl p-4 border border-gray-200">
-          <div className="text-sm text-gray-500">Today</div>
-          <div className="text-2xl font-bold text-blue-600 mt-1">{stats.today}</div>
-        </div>
-        <div className="bg-white rounded-xl p-4 border border-gray-200">
-          <div className="text-sm text-gray-500">Warnings</div>
-          <div className="text-2xl font-bold text-yellow-600 mt-1">{stats.warnings}</div>
-        </div>
-        <div className="bg-white rounded-xl p-4 border border-gray-200">
-          <div className="text-sm text-gray-500">Errors</div>
-          <div className="text-2xl font-bold text-red-600 mt-1">{stats.errors}</div>
-        </div>
-      </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-          <div className="md:col-span-2">
-            <label className="block text-xs font-medium text-gray-500 mb-1">Search</label>
-            <input
-              type="text"
-              placeholder="Search logs..."
-              value={filters.search}
-              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Severity</label>
-            <select
-              value={filters.severity}
-              onChange={(e) => setFilters({ ...filters, severity: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
-            >
-              <option value="all">All</option>
-              <option value="info">Info</option>
-              <option value="success">Success</option>
-              <option value="warning">Warning</option>
-              <option value="error">Error</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Resource Type</label>
-            <select
-              value={filters.resourceType}
-              onChange={(e) => setFilters({ ...filters, resourceType: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
-            >
-              <option value="all">All</option>
-              <option value="model">Model</option>
-              <option value="consortium">Consortium</option>
-              <option value="dataset">Dataset</option>
-              <option value="system">System</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">From</label>
-            <input
-              type="date"
-              value={filters.dateFrom}
-              onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">To</label>
-            <input
-              type="date"
-              value={filters.dateTo}
-              onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
-            />
-          </div>
+        {/* Results count */}
+        <div style={{ alignSelf: 'flex-end', paddingBottom: 4 }}>
+          <span style={{ fontSize: 13, color: COLORS.muted }}>
+            {filtered.length} registro{filtered.length !== 1 ? 's' : ''}
+          </span>
         </div>
       </div>
 
-      {/* Logs Table */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Severity</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Resource</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">IP</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {paginatedLogs.map(log => (
-                <tr key={log.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => setSelectedLog(log)}>
-                  <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">
-                    {formatDate(log.timestamp)}
+      {/* Log entries table */}
+      <div style={{
+        background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`, overflow: 'hidden',
+      }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr style={{ background: COLORS.bg, borderBottom: `2px solid ${COLORS.border}` }}>
+              {['Hora', 'Usuario', 'Accion', 'Recurso', 'IP', 'Estado', ''].map((h) => (
+                <th key={h} style={{
+                  textAlign: 'left', padding: '12px 14px', fontSize: 12,
+                  fontWeight: 600, color: COLORS.muted, textTransform: 'uppercase',
+                }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {paginated.map((log) => {
+              const catStyle = ACTION_CATEGORIES[log.category]
+              const isExpanded = expandedId === log.id
+              return (
+                <tr key={log.id} style={{ cursor: 'pointer' }} onClick={() => setExpandedId(isExpanded ? null : log.id)}>
+                  <td style={{ padding: '12px 14px', fontSize: 13, color: COLORS.muted, fontFamily: 'monospace', whiteSpace: 'nowrap' }}>
+                    {new Date(log.timestamp).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                   </td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${severityColors[log.severity]}`}>
-                      {severityIcons[log.severity]}
-                      {log.severity}
+                  <td style={{ padding: '12px 14px', fontSize: 13, color: COLORS.text, fontWeight: 500 }}>
+                    {log.user}
+                  </td>
+                  <td style={{ padding: '12px 14px' }}>
+                    <span style={{
+                      padding: '3px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+                      background: catStyle?.bg || COLORS.bg, color: catStyle?.color || COLORS.muted,
+                    }}>
+                      {log.action.replace(/_/g, ' ')}
                     </span>
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="font-medium text-gray-900 text-sm">{log.description}</div>
-                    <div className="text-xs text-gray-500">{log.action}</div>
+                  <td style={{ padding: '12px 14px', fontSize: 13, color: COLORS.text, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {log.resource}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{log.user}</td>
-                  <td className="px-4 py-3">
-                    <div className="text-sm text-gray-900">{log.resourceType}</div>
-                    <div className="text-xs text-gray-500 font-mono">{log.resourceId}</div>
+                  <td style={{ padding: '12px 14px', fontSize: 12, color: COLORS.muted, fontFamily: 'monospace' }}>
+                    {log.ip}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-500 font-mono">{log.ipAddress}</td>
-                  <td className="px-4 py-3">
-                    {log.txHash && (
-                      <span className="inline-flex items-center px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">
-                        Blockchain
-                      </span>
-                    )}
+                  <td style={{ padding: '12px 14px' }}>
+                    <span style={{
+                      padding: '3px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+                      background: log.status === 'success' ? COLORS.successLight : COLORS.dangerLight,
+                      color: log.status === 'success' ? COLORS.success : COLORS.danger,
+                    }}>
+                      {log.status === 'success' ? 'Exitoso' : 'Fallido'}
+                    </span>
+                  </td>
+                  <td style={{ padding: '12px 14px', fontSize: 14, color: COLORS.muted }}>
+                    <span style={{
+                      display: 'inline-block', transition: 'transform 0.2s',
+                      transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                    }}>
+                      &#9662;
+                    </span>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              )
+            })}
+          </tbody>
+        </table>
 
-        {/* Pagination */}
-        <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-between">
-          <div className="text-sm text-gray-500">
-            Showing {(currentPage - 1) * logsPerPage + 1} to {Math.min(currentPage * logsPerPage, filteredLogs.length)} of {filteredLogs.length} results
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 hover:bg-gray-50"
-            >
-              Previous
-            </button>
-            <button
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 hover:bg-gray-50"
-            >
-              Next
-            </button>
-          </div>
-        </div>
+        {/* Expanded detail rows - rendered outside the table for layout simplicity */}
+        {paginated.map((log) => {
+          if (expandedId !== log.id) return null
+          return (
+            <div key={`detail-${log.id}`} style={{
+              padding: '16px 24px', background: COLORS.bg,
+              borderBottom: `1px solid ${COLORS.border}`,
+            }}>
+              <p style={{ fontSize: 12, fontWeight: 600, color: COLORS.muted, margin: '0 0 8px', textTransform: 'uppercase' }}>
+                Detalles del evento
+              </p>
+              <div style={{
+                background: COLORS.card, borderRadius: 8, border: `1px solid ${COLORS.border}`,
+                padding: 16, fontFamily: 'monospace', fontSize: 13, color: COLORS.text,
+                lineHeight: 1.6, overflowX: 'auto',
+              }}>
+                {JSON.stringify(log.details, null, 2)}
+              </div>
+              <p style={{ fontSize: 12, color: COLORS.muted, margin: '8px 0 0' }}>
+                Fecha completa: {new Date(log.timestamp).toLocaleString('es-AR')}
+              </p>
+            </div>
+          )
+        })}
       </div>
 
-      {/* Detail Modal */}
-      {selectedLog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-auto">
-            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white">
-              <h3 className="text-lg font-semibold">Event Details</h3>
-              <button onClick={() => setSelectedLog(null)} className="text-gray-400 hover:text-gray-600">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 20,
+        }}>
+          <button
+            onClick={() => setPage(Math.max(1, page - 1))}
+            disabled={page === 1}
+            style={{
+              padding: '8px 18px', borderRadius: 8,
+              border: `1px solid ${COLORS.border}`, background: COLORS.card,
+              color: page === 1 ? COLORS.muted : COLORS.text,
+              fontSize: 14, fontWeight: 500,
+              cursor: page === 1 ? 'not-allowed' : 'pointer',
+            }}
+          >
+            Anterior
+          </button>
+
+          <div style={{ display: 'flex', gap: 4 }}>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+              <button
+                key={p}
+                onClick={() => setPage(p)}
+                style={{
+                  width: 36, height: 36, borderRadius: 8, border: 'none',
+                  background: p === page ? COLORS.primary : 'transparent',
+                  color: p === page ? '#fff' : COLORS.muted,
+                  fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                }}
+              >
+                {p}
               </button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-gray-500">Timestamp</label>
-                  <div className="text-sm text-gray-900 mt-1">{formatDate(selectedLog.timestamp)}</div>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500">Severity</label>
-                  <div className="mt-1">
-                    <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${severityColors[selectedLog.severity]}`}>
-                      {severityIcons[selectedLog.severity]}
-                      {selectedLog.severity}
-                    </span>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500">Action</label>
-                  <div className="text-sm text-gray-900 mt-1">{selectedLog.action}</div>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500">Description</label>
-                  <div className="text-sm text-gray-900 mt-1">{selectedLog.description}</div>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500">User</label>
-                  <div className="text-sm text-gray-900 mt-1">{selectedLog.user}</div>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500">IP Address</label>
-                  <div className="text-sm text-gray-900 mt-1 font-mono">{selectedLog.ipAddress}</div>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500">Resource Type</label>
-                  <div className="text-sm text-gray-900 mt-1">{selectedLog.resourceType}</div>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500">Resource ID</label>
-                  <div className="text-sm text-gray-900 mt-1 font-mono">{selectedLog.resourceId}</div>
-                </div>
-              </div>
-
-              {selectedLog.txHash && (
-                <div>
-                  <label className="block text-xs font-medium text-gray-500">Blockchain Transaction</label>
-                  <div className="text-sm text-gray-900 mt-1 font-mono break-all bg-gray-50 p-2 rounded">
-                    {selectedLog.txHash}
-                  </div>
-                </div>
-              )}
-
-              {Object.keys(selectedLog.metadata).length > 0 && (
-                <div>
-                  <label className="block text-xs font-medium text-gray-500">Metadata</label>
-                  <pre className="text-sm text-gray-900 mt-1 bg-gray-50 p-2 rounded overflow-auto">
-                    {JSON.stringify(selectedLog.metadata, null, 2)}
-                  </pre>
-                </div>
-              )}
-
-              <div>
-                <label className="block text-xs font-medium text-gray-500">User Agent</label>
-                <div className="text-sm text-gray-900 mt-1 font-mono text-xs">{selectedLog.userAgent}</div>
-              </div>
-            </div>
+            ))}
           </div>
+
+          <button
+            onClick={() => setPage(Math.min(totalPages, page + 1))}
+            disabled={page === totalPages}
+            style={{
+              padding: '8px 18px', borderRadius: 8,
+              border: `1px solid ${COLORS.border}`, background: COLORS.card,
+              color: page === totalPages ? COLORS.muted : COLORS.text,
+              fontSize: 14, fontWeight: 500,
+              cursor: page === totalPages ? 'not-allowed' : 'pointer',
+            }}
+          >
+            Siguiente
+          </button>
         </div>
       )}
     </div>

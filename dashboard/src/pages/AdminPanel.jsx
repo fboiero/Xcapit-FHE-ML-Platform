@@ -1,426 +1,289 @@
 import { useState } from 'react'
-import { useTranslation } from 'react-i18next'
 
-// Admin Panel - System administration for super admins
+const COLORS = {
+  primary: '#4f46e5',
+  primaryLight: '#eef2ff',
+  success: '#10b981',
+  successLight: '#dcfce7',
+  warning: '#f59e0b',
+  warningLight: '#fef9c3',
+  danger: '#ef4444',
+  dangerLight: '#fef2f2',
+  bg: '#f8fafc',
+  card: '#ffffff',
+  text: '#1e293b',
+  muted: '#64748b',
+  border: '#e5e7eb',
+  accent: '#06d6a0',
+}
+
+const TIER_COLORS = {
+  enterprise: { bg: '#fdf4ff', color: '#a855f7', label: 'Enterprise' },
+  professional: { bg: '#eff6ff', color: '#3b82f6', label: 'Professional' },
+  starter: { bg: '#f0fdf4', color: '#22c55e', label: 'Starter' },
+  trial: { bg: COLORS.warningLight, color: COLORS.warning, label: 'Trial' },
+}
+
+const COMPANIES = [
+  { id: 1, name: 'MedCorp S.A.', tier: 'enterprise', members: 45, consortiums: 3, trial: false, lastActive: '2026-03-14' },
+  { id: 2, name: 'FinTech Solutions', tier: 'professional', members: 22, consortiums: 2, trial: false, lastActive: '2026-03-14' },
+  { id: 3, name: 'SecureLab', tier: 'enterprise', members: 38, consortiums: 4, trial: false, lastActive: '2026-03-13' },
+  { id: 4, name: 'DataInsights AR', tier: 'professional', members: 15, consortiums: 1, trial: false, lastActive: '2026-03-12' },
+  { id: 5, name: 'CryptoHealth', tier: 'starter', members: 8, consortiums: 1, trial: false, lastActive: '2026-03-11' },
+  { id: 6, name: 'BioAnalytics', tier: 'trial', members: 4, consortiums: 0, trial: true, lastActive: '2026-03-10' },
+  { id: 7, name: 'NeuralMed', tier: 'trial', members: 3, consortiums: 0, trial: true, lastActive: '2026-03-09' },
+  { id: 8, name: 'PrivacyFirst Tech', tier: 'starter', members: 10, consortiums: 1, trial: false, lastActive: '2026-03-08' },
+]
+
+const SYSTEM_HEALTH = [
+  { name: 'API Gateway', status: 'green', latency: '12ms', uptime: '99.98%' },
+  { name: 'Base de Datos', status: 'green', latency: '3ms', uptime: '99.99%' },
+  { name: 'Redis Cache', status: 'green', latency: '1ms', uptime: '99.97%' },
+  { name: 'FHE Engine', status: 'yellow', latency: '245ms', uptime: '99.85%' },
+  { name: 'Blockchain Node', status: 'green', latency: '89ms', uptime: '99.92%' },
+]
+
+const STATUS_COLORS = {
+  green: COLORS.success,
+  yellow: COLORS.warning,
+  red: COLORS.danger,
+}
+
+const ACTIVITY_LOG = [
+  { id: 1, action: 'Aprobacion de trial', user: 'admin@xcapit.com', target: 'BioAnalytics', time: 'Hace 2 horas' },
+  { id: 2, action: 'Cambio de tier', user: 'admin@xcapit.com', target: 'CryptoHealth (Trial -> Starter)', time: 'Hace 4 horas' },
+  { id: 3, action: 'Reseteo de password', user: 'admin@xcapit.com', target: 'usuario@datainsights.com', time: 'Hace 6 horas' },
+  { id: 4, action: 'Creacion de consorcio', user: 'admin@xcapit.com', target: 'Consorcio Seguros Unidos', time: 'Hace 1 dia' },
+  { id: 5, action: 'Suspension de cuenta', user: 'admin@xcapit.com', target: 'cuenta_spam_01', time: 'Hace 1 dia' },
+  { id: 6, action: 'Actualizacion FHE Engine', user: 'devops@xcapit.com', target: 'v2.4.1 -> v2.5.0', time: 'Hace 2 dias' },
+  { id: 7, action: 'Backup de base de datos', user: 'devops@xcapit.com', target: 'snapshot_20260312', time: 'Hace 2 dias' },
+  { id: 8, action: 'Aprobacion de trial', user: 'admin@xcapit.com', target: 'NeuralMed', time: 'Hace 3 dias' },
+  { id: 9, action: 'Configuracion de seguridad', user: 'admin@xcapit.com', target: 'CKKS 256-bit habilitado', time: 'Hace 4 dias' },
+  { id: 10, action: 'Cambio de tier', user: 'admin@xcapit.com', target: 'FinTech Solutions (Starter -> Professional)', time: 'Hace 5 dias' },
+]
+
 export default function AdminPanel() {
-  const { t } = useTranslation()
-  const [activeTab, setActiveTab] = useState('overview')
+  const [isAdmin] = useState(true)
+  const [actionModal, setActionModal] = useState(null)
 
-  // Simulated data
-  const systemStats = {
-    totalUsers: 1247,
-    activeUsers: 892,
-    totalCompanies: 156,
-    totalConsortiums: 43,
-    totalModels: 312,
-    totalPredictions: 1456789,
-    storageUsed: '2.4 TB',
-    cpuUsage: 67,
-    memoryUsage: 72,
-    networkIn: '12.5 GB/day',
-    networkOut: '8.3 GB/day',
+  if (!isAdmin) {
+    return (
+      <div style={{ padding: 32, maxWidth: 1200, margin: '0 auto', textAlign: 'center', paddingTop: 120 }}>
+        <p style={{ fontSize: 18, color: COLORS.danger, fontWeight: 600 }}>Acceso denegado</p>
+        <p style={{ fontSize: 14, color: COLORS.muted }}>Solo administradores pueden acceder a este panel.</p>
+      </div>
+    )
   }
 
-  const recentActivity = [
-    { id: '1', type: 'user_created', message: 'New user registered: john@example.com', timestamp: '2026-01-27T10:30:00Z' },
-    { id: '2', type: 'model_trained', message: 'Model "FraudDetector v2" training completed', timestamp: '2026-01-27T10:15:00Z' },
-    { id: '3', type: 'consortium_created', message: 'New consortium "Healthcare Alliance" created', timestamp: '2026-01-27T09:45:00Z' },
-    { id: '4', type: 'alert', message: 'High CPU usage detected on worker-3', timestamp: '2026-01-27T09:30:00Z' },
-    { id: '5', type: 'user_login', message: 'Admin login from new IP: 192.168.1.100', timestamp: '2026-01-27T09:00:00Z' },
-  ]
-
-  const companies = [
-    { id: '1', name: 'Acme Corp', tier: 'enterprise', users: 45, models: 23, status: 'active' },
-    { id: '2', name: 'TechStart Inc', tier: 'professional', users: 12, models: 8, status: 'active' },
-    { id: '3', name: 'Global Finance', tier: 'enterprise', users: 78, models: 45, status: 'active' },
-    { id: '4', name: 'HealthCare Plus', tier: 'professional', users: 23, models: 15, status: 'suspended' },
-    { id: '5', name: 'DataDriven Co', tier: 'starter', users: 5, models: 3, status: 'active' },
-  ]
-
-  const systemLogs = [
-    { id: '1', level: 'info', service: 'api', message: 'Request processed successfully', timestamp: '2026-01-27T10:32:15Z' },
-    { id: '2', level: 'warning', service: 'worker', message: 'Job queue approaching capacity', timestamp: '2026-01-27T10:31:45Z' },
-    { id: '3', level: 'error', service: 'database', message: 'Connection timeout (recovered)', timestamp: '2026-01-27T10:30:22Z' },
-    { id: '4', level: 'info', service: 'auth', message: 'Token refresh for user 1234', timestamp: '2026-01-27T10:29:58Z' },
-    { id: '5', level: 'info', service: 'model', message: 'Prediction batch completed (1000 samples)', timestamp: '2026-01-27T10:28:30Z' },
-  ]
-
-  const tabs = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'companies', label: 'Companies' },
-    { id: 'users', label: 'Users' },
-    { id: 'system', label: 'System' },
-    { id: 'logs', label: 'Logs' },
-    { id: 'settings', label: 'Settings' },
-  ]
+  const totalEmpresas = COMPANIES.length
+  const totalUsuarios = COMPANIES.reduce((s, c) => s + c.members, 0)
+  const totalConsorcios = new Set(COMPANIES.flatMap(c => Array(c.consortiums).fill(0))).size || COMPANIES.reduce((s, c) => s + c.consortiums, 0)
+  const storageUsed = '847 GB'
 
   return (
-    <div className="space-y-6">
+    <div style={{ padding: 32, maxWidth: 1200, margin: '0 auto' }}>
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32, flexWrap: 'wrap', gap: 16 }}>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Admin Panel</h1>
-          <p className="text-gray-500 mt-1">System administration and monitoring</p>
+          <h1 style={{ fontSize: 28, fontWeight: 700, color: COLORS.text, margin: '0 0 8px' }}>
+            Panel de Administracion
+          </h1>
+          <p style={{ fontSize: 16, color: COLORS.muted, margin: 0 }}>
+            Gestion de empresas, usuarios y salud del sistema
+          </p>
         </div>
-        <div className="flex items-center space-x-2">
-          <span className="flex items-center px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm">
-            <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-            System Healthy
-          </span>
-        </div>
+        <span style={{
+          padding: '6px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600,
+          background: COLORS.dangerLight, color: COLORS.danger,
+        }}>
+          Solo administradores
+        </span>
       </div>
 
-      {/* Tabs */}
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`pb-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === tab.id
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </nav>
+      {/* Stats row */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 28 }}>
+        {[
+          { label: 'Total empresas', value: totalEmpresas, color: COLORS.primary },
+          { label: 'Usuarios activos', value: totalUsuarios, color: COLORS.accent },
+          { label: 'Consorcios', value: 11, color: COLORS.success },
+          { label: 'Storage usado', value: storageUsed, color: COLORS.warning },
+        ].map(s => (
+          <div key={s.label} style={{
+            background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`, padding: 20,
+          }}>
+            <p style={{ fontSize: 13, color: COLORS.muted, margin: '0 0 4px' }}>{s.label}</p>
+            <p style={{ fontSize: 28, fontWeight: 700, color: s.color, margin: 0 }}>{s.value}</p>
+          </div>
+        ))}
       </div>
 
-      {/* Overview Tab */}
-      {activeTab === 'overview' && (
-        <div className="space-y-6">
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-              <p className="text-sm text-gray-500">Total Users</p>
-              <p className="text-2xl font-bold text-gray-900">{systemStats.totalUsers.toLocaleString()}</p>
-              <p className="text-xs text-green-600">+12% this month</p>
-            </div>
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-              <p className="text-sm text-gray-500">Active Users</p>
-              <p className="text-2xl font-bold text-gray-900">{systemStats.activeUsers.toLocaleString()}</p>
-              <p className="text-xs text-gray-500">Last 24 hours</p>
-            </div>
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-              <p className="text-sm text-gray-500">Total Companies</p>
-              <p className="text-2xl font-bold text-gray-900">{systemStats.totalCompanies}</p>
-              <p className="text-xs text-green-600">+5 this month</p>
-            </div>
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-              <p className="text-sm text-gray-500">Total Consortiums</p>
-              <p className="text-2xl font-bold text-gray-900">{systemStats.totalConsortiums}</p>
-              <p className="text-xs text-green-600">+2 this month</p>
-            </div>
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-              <p className="text-sm text-gray-500">Total Models</p>
-              <p className="text-2xl font-bold text-gray-900">{systemStats.totalModels}</p>
-              <p className="text-xs text-green-600">+28 this month</p>
-            </div>
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-              <p className="text-sm text-gray-500">Total Predictions</p>
-              <p className="text-2xl font-bold text-gray-900">{(systemStats.totalPredictions / 1000000).toFixed(1)}M</p>
-              <p className="text-xs text-green-600">+15% this month</p>
-            </div>
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-              <p className="text-sm text-gray-500">Storage Used</p>
-              <p className="text-2xl font-bold text-gray-900">{systemStats.storageUsed}</p>
-              <p className="text-xs text-gray-500">of 10 TB</p>
-            </div>
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-              <p className="text-sm text-gray-500">API Requests</p>
-              <p className="text-2xl font-bold text-gray-900">2.3M</p>
-              <p className="text-xs text-gray-500">Today</p>
-            </div>
-          </div>
+      {/* Companies table */}
+      <div style={{
+        background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`,
+        padding: 24, marginBottom: 24,
+      }}>
+        <h3 style={{ fontSize: 18, fontWeight: 600, color: COLORS.text, margin: '0 0 20px' }}>
+          Empresas Registradas
+        </h3>
 
-          {/* System Health */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-              <h3 className="text-sm font-medium text-gray-500 mb-4">CPU Usage</h3>
-              <div className="flex items-end justify-between">
-                <span className="text-3xl font-bold text-gray-900">{systemStats.cpuUsage}%</span>
-                <div className="w-32 h-16 bg-gray-100 rounded relative overflow-hidden">
-                  <div
-                    className="absolute bottom-0 left-0 right-0 bg-indigo-500"
-                    style={{ height: `${systemStats.cpuUsage}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-              <h3 className="text-sm font-medium text-gray-500 mb-4">Memory Usage</h3>
-              <div className="flex items-end justify-between">
-                <span className="text-3xl font-bold text-gray-900">{systemStats.memoryUsage}%</span>
-                <div className="w-32 h-16 bg-gray-100 rounded relative overflow-hidden">
-                  <div
-                    className="absolute bottom-0 left-0 right-0 bg-emerald-500"
-                    style={{ height: `${systemStats.memoryUsage}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-              <h3 className="text-sm font-medium text-gray-500 mb-4">Network I/O</h3>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-500">In</span>
-                  <span className="font-medium">{systemStats.networkIn}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-500">Out</span>
-                  <span className="font-medium">{systemStats.networkOut}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Recent Activity */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-            <div className="p-6 border-b">
-              <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
-            </div>
-            <div className="divide-y">
-              {recentActivity.map((activity) => (
-                <div key={activity.id} className="p-4 flex items-center">
-                  <div className={`w-2 h-2 rounded-full mr-4 ${
-                    activity.type === 'alert' ? 'bg-yellow-500' :
-                    activity.type === 'error' ? 'bg-red-500' : 'bg-blue-500'
-                  }`} />
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-900">{activity.message}</p>
-                  </div>
-                  <span className="text-xs text-gray-500">
-                    {new Date(activity.timestamp).toLocaleString()}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
+        {/* Table header */}
+        <div style={{
+          display: 'grid', gridTemplateColumns: '2fr 100px 80px 100px 80px 100px',
+          gap: 12, padding: '10px 16px', background: COLORS.bg, borderRadius: 8,
+          fontSize: 12, fontWeight: 600, color: COLORS.muted, textTransform: 'uppercase',
+          marginBottom: 4,
+        }}>
+          <span>Empresa</span>
+          <span>Tier</span>
+          <span>Miembros</span>
+          <span>Consorcios</span>
+          <span>Trial</span>
+          <span>Ultima act.</span>
         </div>
-      )}
 
-      {/* Companies Tab */}
-      {activeTab === 'companies' && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-          <div className="p-6 border-b flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Companies</h2>
-            <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm">
-              Add Company
-            </button>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Company</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tier</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Users</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Models</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {companies.map((company) => (
-                  <tr key={company.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{company.name}</td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2 py-1 text-xs rounded-full font-medium ${
-                        company.tier === 'enterprise' ? 'bg-purple-100 text-purple-700' :
-                        company.tier === 'professional' ? 'bg-blue-100 text-blue-700' :
-                        'bg-gray-100 text-gray-700'
-                      }`}>
-                        {company.tier}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">{company.users}</td>
-                    <td className="px-6 py-4 text-sm text-gray-500">{company.models}</td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2 py-1 text-xs rounded-full font-medium ${
-                        company.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                      }`}>
-                        {company.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm">
-                      <button className="text-indigo-600 hover:text-indigo-700 mr-3">Edit</button>
-                      <button className="text-red-600 hover:text-red-700">Suspend</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* System Tab */}
-      {activeTab === 'system' && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Services Status */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Services Status</h3>
-              <div className="space-y-3">
-                {['API Gateway', 'Database', 'Worker Queue', 'Cache', 'ML Engine', 'Blockchain'].map((service) => (
-                  <div key={service} className="flex items-center justify-between py-2 border-b last:border-0">
-                    <span className="text-sm text-gray-700">{service}</span>
-                    <span className="flex items-center text-sm text-green-600">
-                      <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                      Healthy
-                    </span>
-                  </div>
-                ))}
-              </div>
+        {COMPANIES.map(company => {
+          const tierStyle = TIER_COLORS[company.tier]
+          return (
+            <div key={company.id} style={{
+              display: 'grid', gridTemplateColumns: '2fr 100px 80px 100px 80px 100px',
+              gap: 12, padding: '14px 16px', alignItems: 'center',
+              borderBottom: `1px solid ${COLORS.border}`,
+            }}>
+              <span style={{ fontSize: 14, fontWeight: 500, color: COLORS.text }}>{company.name}</span>
+              <span style={{
+                padding: '3px 10px', borderRadius: 6, fontSize: 12, fontWeight: 600,
+                background: tierStyle.bg, color: tierStyle.color,
+                display: 'inline-block', width: 'fit-content',
+              }}>
+                {tierStyle.label}
+              </span>
+              <span style={{ fontSize: 14, color: COLORS.muted }}>{company.members}</span>
+              <span style={{ fontSize: 14, color: COLORS.muted }}>{company.consortiums}</span>
+              <span style={{
+                fontSize: 12, fontWeight: 600,
+                color: company.trial ? COLORS.warning : COLORS.success,
+              }}>
+                {company.trial ? 'Si' : 'No'}
+              </span>
+              <span style={{ fontSize: 13, color: COLORS.muted }}>{company.lastActive}</span>
             </div>
+          )
+        })}
+      </div>
 
-            {/* Quick Actions */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-              <div className="space-y-3">
-                <button className="w-full p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50">
-                  <div className="font-medium text-gray-900">Clear Cache</div>
-                  <div className="text-sm text-gray-500">Clear all cached data</div>
-                </button>
-                <button className="w-full p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50">
-                  <div className="font-medium text-gray-900">Restart Workers</div>
-                  <div className="text-sm text-gray-500">Restart all worker processes</div>
-                </button>
-                <button className="w-full p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50">
-                  <div className="font-medium text-gray-900">Run Migrations</div>
-                  <div className="text-sm text-gray-500">Apply pending database migrations</div>
-                </button>
-                <button className="w-full p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50">
-                  <div className="font-medium text-gray-900">Generate Backup</div>
-                  <div className="text-sm text-gray-500">Create manual system backup</div>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Logs Tab */}
-      {activeTab === 'logs' && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-          <div className="p-6 border-b flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">System Logs</h2>
-            <div className="flex items-center space-x-2">
-              <select className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm">
-                <option>All Levels</option>
-                <option>Error</option>
-                <option>Warning</option>
-                <option>Info</option>
-              </select>
-              <select className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm">
-                <option>All Services</option>
-                <option>API</option>
-                <option>Worker</option>
-                <option>Database</option>
-                <option>Auth</option>
-              </select>
-            </div>
-          </div>
-          <div className="font-mono text-sm">
-            {systemLogs.map((log) => (
-              <div key={log.id} className={`px-6 py-2 border-b ${
-                log.level === 'error' ? 'bg-red-50' :
-                log.level === 'warning' ? 'bg-yellow-50' : ''
-              }`}>
-                <span className={`inline-block w-16 ${
-                  log.level === 'error' ? 'text-red-600' :
-                  log.level === 'warning' ? 'text-yellow-600' : 'text-blue-600'
-                }`}>
-                  [{log.level.toUpperCase()}]
-                </span>
-                <span className="text-gray-500 mr-2">[{log.service}]</span>
-                <span className="text-gray-700">{log.message}</span>
-                <span className="text-gray-400 ml-4">
-                  {new Date(log.timestamp).toLocaleString()}
-                </span>
+      {/* System health + Activity log */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: 20 }}>
+        {/* System health */}
+        <div style={{
+          background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`, padding: 24,
+        }}>
+          <h3 style={{ fontSize: 18, fontWeight: 600, color: COLORS.text, margin: '0 0 20px' }}>
+            Salud del Sistema
+          </h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {SYSTEM_HEALTH.map(service => (
+              <div key={service.name} style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '12px 16px', background: COLORS.bg, borderRadius: 8,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{
+                    width: 10, height: 10, borderRadius: '50%',
+                    background: STATUS_COLORS[service.status],
+                  }} />
+                  <span style={{ fontSize: 14, fontWeight: 500, color: COLORS.text }}>{service.name}</span>
+                </div>
+                <div style={{ display: 'flex', gap: 16 }}>
+                  <span style={{ fontSize: 12, color: COLORS.muted }}>Latencia: {service.latency}</span>
+                  <span style={{ fontSize: 12, color: COLORS.muted }}>Uptime: {service.uptime}</span>
+                </div>
               </div>
             ))}
           </div>
         </div>
-      )}
 
-      {/* Settings Tab */}
-      {activeTab === 'settings' && (
-        <div className="space-y-6">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">System Settings</h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between py-3 border-b">
-                <div>
-                  <div className="font-medium text-gray-900">Maintenance Mode</div>
-                  <div className="text-sm text-gray-500">Disable user access during maintenance</div>
+        {/* Activity log */}
+        <div style={{
+          background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`, padding: 24,
+        }}>
+          <h3 style={{ fontSize: 18, fontWeight: 600, color: COLORS.text, margin: '0 0 20px' }}>
+            Actividad Reciente
+          </h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            {ACTIVITY_LOG.map((entry, idx) => (
+              <div key={entry.id} style={{
+                padding: '10px 0',
+                borderBottom: idx < ACTIVITY_LOG.length - 1 ? `1px solid ${COLORS.border}` : 'none',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <span style={{ fontSize: 14, fontWeight: 500, color: COLORS.text }}>{entry.action}</span>
+                  <span style={{ fontSize: 12, color: COLORS.muted, flexShrink: 0 }}>{entry.time}</span>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" className="sr-only peer" />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                </label>
-              </div>
-              <div className="flex items-center justify-between py-3 border-b">
-                <div>
-                  <div className="font-medium text-gray-900">New Registrations</div>
-                  <div className="text-sm text-gray-500">Allow new user registrations</div>
+                <div style={{ display: 'flex', gap: 8, fontSize: 12, color: COLORS.muted }}>
+                  <span>{entry.user}</span>
+                  <span>-</span>
+                  <span>{entry.target}</span>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" className="sr-only peer" defaultChecked />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                </label>
               </div>
-              <div className="flex items-center justify-between py-3 border-b">
-                <div>
-                  <div className="font-medium text-gray-900">Debug Mode</div>
-                  <div className="text-sm text-gray-500">Enable verbose logging</div>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" className="sr-only peer" />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                </label>
-              </div>
-              <div className="py-3">
-                <label className="block font-medium text-gray-900 mb-2">Rate Limit (requests/minute)</label>
-                <input
-                  type="number"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                  defaultValue={1000}
-                />
-              </div>
-              <div className="py-3">
-                <label className="block font-medium text-gray-900 mb-2">Session Timeout (minutes)</label>
-                <input
-                  type="number"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                  defaultValue={60}
-                />
-              </div>
-            </div>
-            <div className="mt-6">
-              <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
-                Save Settings
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Quick actions */}
+      <div style={{
+        background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`,
+        padding: 24, marginTop: 20,
+      }}>
+        <h3 style={{ fontSize: 18, fontWeight: 600, color: COLORS.text, margin: '0 0 20px' }}>
+          Acciones Rapidas
+        </h3>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          {[
+            { label: 'Aprobar Trial', action: 'approve_trial', bg: COLORS.success, desc: 'Aprobar una cuenta de prueba pendiente' },
+            { label: 'Cambiar Tier', action: 'change_tier', bg: COLORS.primary, desc: 'Modificar el nivel de suscripcion de una empresa' },
+            { label: 'Resetear Password', action: 'reset_password', bg: COLORS.warning, desc: 'Enviar enlace de reseteo a un usuario' },
+          ].map(btn => (
+            <div key={btn.action} style={{ flex: 1, minWidth: 200 }}>
+              <button
+                onClick={() => setActionModal(actionModal === btn.action ? null : btn.action)}
+                style={{
+                  width: '100%', padding: '14px 20px', borderRadius: 8, border: 'none',
+                  background: actionModal === btn.action ? btn.bg : COLORS.bg,
+                  color: actionModal === btn.action ? '#fff' : COLORS.text,
+                  fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                  transition: 'background 0.2s, color 0.2s',
+                }}
+              >
+                {btn.label}
               </button>
+              {actionModal === btn.action && (
+                <div style={{
+                  marginTop: 8, padding: 16, background: COLORS.bg, borderRadius: 8,
+                  border: `1px solid ${COLORS.border}`,
+                }}>
+                  <p style={{ fontSize: 13, color: COLORS.muted, margin: '0 0 12px' }}>{btn.desc}</p>
+                  <input
+                    placeholder={btn.action === 'reset_password' ? 'Email del usuario' : 'Nombre de la empresa'}
+                    style={{
+                      width: '100%', padding: '10px 12px', borderRadius: 8,
+                      border: `1px solid ${COLORS.border}`, fontSize: 14, color: COLORS.text,
+                      outline: 'none', boxSizing: 'border-box', marginBottom: 8,
+                    }}
+                  />
+                  <button style={{
+                    padding: '8px 16px', borderRadius: 6, border: 'none',
+                    background: btn.bg, color: '#fff', fontSize: 13,
+                    fontWeight: 600, cursor: 'pointer',
+                  }}>
+                    Confirmar
+                  </button>
+                </div>
+              )}
             </div>
-          </div>
+          ))}
         </div>
-      )}
-
-      {/* Users Tab Placeholder */}
-      {activeTab === 'users' && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="text-center py-12">
-            <svg className="w-12 h-12 mx-auto text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-            </svg>
-            <h3 className="mt-4 text-lg font-medium text-gray-900">User Management</h3>
-            <p className="text-gray-500 mt-2">Full user management with search, filters, and bulk actions.</p>
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   )
 }

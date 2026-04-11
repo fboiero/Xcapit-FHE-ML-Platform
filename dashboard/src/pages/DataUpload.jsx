@@ -1,394 +1,275 @@
-import { useState, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Sentry } from '../lib/sentry';
+import { useState, useEffect } from 'react'
+
+const COLORS = {
+  primary: '#4f46e5',
+  primaryLight: '#eef2ff',
+  success: '#10b981',
+  successLight: '#dcfce7',
+  warning: '#f59e0b',
+  warningLight: '#fef9c3',
+  danger: '#ef4444',
+  dangerLight: '#fef2f2',
+  bg: '#f8fafc',
+  card: '#ffffff',
+  text: '#1e293b',
+  muted: '#64748b',
+  border: '#e5e7eb',
+  accent: '#06d6a0',
+}
+
+const MOCK_PREVIEW = [
+  { paciente: 'P-1001', edad: 45, presion: 130, colesterol: 220, glucosa: 110, riesgo: 0.72 },
+  { paciente: 'P-1002', edad: 32, presion: 118, colesterol: 185, glucosa: 92, riesgo: 0.31 },
+  { paciente: 'P-1003', edad: 58, presion: 145, colesterol: 260, glucosa: 138, riesgo: 0.89 },
+  { paciente: 'P-1004', edad: 41, presion: 125, colesterol: 198, glucosa: 105, riesgo: 0.55 },
+  { paciente: 'P-1005', edad: 67, presion: 152, colesterol: 275, glucosa: 145, riesgo: 0.93 },
+]
+
+const QUALITY_CHECKS = [
+  { label: 'Completitud', value: '98.4%', status: 'ok' },
+  { label: 'Valores faltantes', value: '8 de 3000', status: 'ok' },
+  { label: 'Tipos de datos', value: 'Validados', status: 'ok' },
+  { label: 'Duplicados', value: '0 encontrados', status: 'ok' },
+  { label: 'Outliers', value: '3 detectados', status: 'warn' },
+]
 
 export default function DataUpload() {
-  const { t } = useTranslation();
-  const fileInputRef = useRef(null);
-  const [file, setFile] = useState(null);
-  const [preview, setPreview] = useState(null);
-  const [columns, setColumns] = useState([]);
-  const [targetColumn, setTargetColumn] = useState('');
-  const [featureColumns, setFeatureColumns] = useState([]);
-  const [uploadStatus, setUploadStatus] = useState(null);
-  const [dataStats, setDataStats] = useState(null);
+  const [phase, setPhase] = useState('idle') // idle | uploading | uploaded | encrypting | done
+  const [dragOver, setDragOver] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [encryptProgress, setEncryptProgress] = useState(0)
+  const [proofHash, setProofHash] = useState('')
 
-  const handleFileSelect = async (e) => {
-    const selectedFile = e.target.files[0];
-    if (!selectedFile) return;
+  const usedMB = 42.7
+  const totalMB = 100
 
-    setFile(selectedFile);
-    setUploadStatus('processing');
+  const startUpload = () => {
+    setPhase('uploading')
+    setUploadProgress(0)
+  }
 
-    try {
-      const text = await selectedFile.text();
-      const lines = text.trim().split('\n');
-      const headers = lines[0].split(',').map((h) => h.trim().replace(/"/g, ''));
+  useEffect(() => {
+    if (phase !== 'uploading') return
+    const interval = setInterval(() => {
+      setUploadProgress(prev => {
+        if (prev >= 100) { clearInterval(interval); setPhase('uploaded'); return 100 }
+        return prev + 5
+      })
+    }, 80)
+    return () => clearInterval(interval)
+  }, [phase])
 
-      setColumns(headers);
-      setFeatureColumns(headers.slice(0, -1));
-      setTargetColumn(headers[headers.length - 1]);
+  const startEncrypt = () => {
+    setPhase('encrypting')
+    setEncryptProgress(0)
+  }
 
-      // Parse data for preview
-      const data = lines.slice(1, 6).map((line) => {
-        const values = line.split(',').map((v) => v.trim().replace(/"/g, ''));
-        const row = {};
-        headers.forEach((h, i) => {
-          row[h] = values[i];
-        });
-        return row;
-      });
-
-      setPreview(data);
-
-      // Calculate basic stats
-      const allData = lines.slice(1).map((line) =>
-        line.split(',').map((v) => parseFloat(v.trim().replace(/"/g, '')))
-      );
-
-      const stats = {
-        rows: allData.length,
-        columns: headers.length,
-        numericColumns: headers.filter((_, i) =>
-          allData.every((row) => !isNaN(row[i]))
-        ).length,
-        missingValues: allData.reduce((acc, row) =>
-          acc + row.filter((v) => isNaN(v) || v === null || v === '').length, 0
-        ),
-      };
-
-      setDataStats(stats);
-      setUploadStatus('ready');
-    } catch (error) {
-      Sentry.captureException(error);
-      setUploadStatus('error');
-    }
-  };
-
-  const handleFeatureToggle = (column) => {
-    if (column === targetColumn) return;
-
-    setFeatureColumns((prev) => {
-      if (prev.includes(column)) {
-        return prev.filter((c) => c !== column);
-      }
-      return [...prev, column];
-    });
-  };
-
-  const handleTargetSelect = (column) => {
-    setTargetColumn(column);
-    setFeatureColumns((prev) => prev.filter((c) => c !== column));
-  };
-
-  const generateEncryptionCode = () => {
-    if (!file || !targetColumn) return '';
-
-    return `from xcapit_fhe import SecureDataLoader, create_standard_pipeline
-import pandas as pd
-
-# Load data
-df = pd.read_csv("${file.name}")
-
-# Define features and target
-features = ${JSON.stringify(featureColumns)}
-target = "${targetColumn}"
-
-X = df[features].values
-y = df[target].values
-
-# Preprocess data
-pipeline = create_standard_pipeline(
-    handle_missing=True,
-    scaling='minmax'  # Best for FHE
-)
-X_processed = pipeline.fit_transform(X)
-
-# Encrypt data
-loader = SecureDataLoader(
-    security_level=128,
-    normalize=False  # Already preprocessed
-)
-encrypted_data = loader.encrypt(X_processed, y)
-
-print(f"Encrypted {len(X)} samples")
-print(f"Features: {len(features)}")
-print(f"Encryption complete!")
-`;
-  };
+  useEffect(() => {
+    if (phase !== 'encrypting') return
+    const interval = setInterval(() => {
+      setEncryptProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(interval)
+          setProofHash('0x7a3f...e2b1c4d8f905a6712bcde3401fab890c')
+          setPhase('done')
+          return 100
+        }
+        return prev + 4
+      })
+    }, 100)
+    return () => clearInterval(interval)
+  }, [phase])
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
-            {t('dataUpload.title', 'Data Upload & Encryption')}
+    <div style={{ padding: 32, maxWidth: 1200, margin: '0 auto' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28, flexWrap: 'wrap', gap: 16 }}>
+        <div>
+          <h1 style={{ fontSize: 28, fontWeight: 700, color: COLORS.text, margin: '0 0 8px' }}>
+            Subir Datos
           </h1>
-          <p className="mt-2 text-gray-600">
-            {t('dataUpload.subtitle', 'Upload your dataset and prepare it for FHE encryption')}
+          <p style={{ fontSize: 16, color: COLORS.muted, margin: 0 }}>
+            Sube, valida y cifra datasets para entrenamiento FHE
           </p>
         </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Upload Section */}
-          <div className="space-y-6">
-            {/* File Upload */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold mb-4">
-                {t('dataUpload.uploadFile', 'Upload File')}
-              </h2>
-
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-purple-500 transition-colors"
-              >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".csv,.tsv"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                />
-
-                <svg
-                  className="mx-auto h-12 w-12 text-gray-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                  />
-                </svg>
-
-                <p className="mt-2 text-sm text-gray-600">
-                  {file
-                    ? file.name
-                    : t('dataUpload.dropzone', 'Click to upload or drag and drop')}
-                </p>
-                <p className="text-xs text-gray-500">CSV files only</p>
-              </div>
-
-              {uploadStatus === 'processing' && (
-                <div className="mt-4 flex items-center text-blue-600">
-                  <svg className="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24">
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                      fill="none"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                    />
-                  </svg>
-                  Processing file...
-                </div>
-              )}
-
-              {uploadStatus === 'error' && (
-                <div className="mt-4 text-red-600">
-                  Error processing file. Please ensure it&apos;s a valid CSV.
-                </div>
-              )}
-            </div>
-
-            {/* Data Stats */}
-            {dataStats && (
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-lg font-semibold mb-4">
-                  {t('dataUpload.dataStats', 'Data Statistics')}
-                </h2>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-blue-50 rounded-lg p-4">
-                    <div className="text-2xl font-bold text-blue-600">{dataStats.rows}</div>
-                    <div className="text-sm text-blue-800">Rows</div>
-                  </div>
-                  <div className="bg-green-50 rounded-lg p-4">
-                    <div className="text-2xl font-bold text-green-600">{dataStats.columns}</div>
-                    <div className="text-sm text-green-800">Columns</div>
-                  </div>
-                  <div className="bg-purple-50 rounded-lg p-4">
-                    <div className="text-2xl font-bold text-purple-600">{dataStats.numericColumns}</div>
-                    <div className="text-sm text-purple-800">Numeric Columns</div>
-                  </div>
-                  <div className="bg-yellow-50 rounded-lg p-4">
-                    <div className="text-2xl font-bold text-yellow-600">{dataStats.missingValues}</div>
-                    <div className="text-sm text-yellow-800">Missing Values</div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Column Selection */}
-            {columns.length > 0 && (
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-lg font-semibold mb-4">
-                  {t('dataUpload.selectColumns', 'Select Columns')}
-                </h2>
-
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Target Column (y)
-                  </label>
-                  <select
-                    value={targetColumn}
-                    onChange={(e) => handleTargetSelect(e.target.value)}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-purple-500 focus:border-purple-500"
-                  >
-                    {columns.map((col) => (
-                      <option key={col} value={col}>
-                        {col}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Feature Columns (X)
-                  </label>
-                  <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-2">
-                    {columns
-                      .filter((col) => col !== targetColumn)
-                      .map((col) => (
-                        <label
-                          key={col}
-                          className="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={featureColumns.includes(col)}
-                            onChange={() => handleFeatureToggle(col)}
-                            className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
-                          />
-                          <span className="ml-2 text-sm">{col}</span>
-                        </label>
-                      ))}
-                  </div>
-                  <div className="mt-2 text-sm text-gray-500">
-                    {featureColumns.length} features selected
-                  </div>
-                </div>
-              </div>
-            )}
+        {/* Tier usage */}
+        <div style={{ background: COLORS.card, borderRadius: 10, border: `1px solid ${COLORS.border}`, padding: '12px 20px', minWidth: 200 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: COLORS.text }}>Almacenamiento</span>
+            <span style={{ fontSize: 12, fontWeight: 600, color: COLORS.primary }}>{usedMB} MB / {totalMB} MB</span>
           </div>
-
-          {/* Preview and Code */}
-          <div className="space-y-6">
-            {/* Data Preview */}
-            {preview && (
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-lg font-semibold mb-4">
-                  {t('dataUpload.preview', 'Data Preview')}
-                </h2>
-
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead>
-                      <tr>
-                        {columns.map((col) => (
-                          <th
-                            key={col}
-                            className={`px-3 py-2 text-left text-xs font-medium uppercase ${
-                              col === targetColumn
-                                ? 'bg-purple-100 text-purple-800'
-                                : featureColumns.includes(col)
-                                ? 'bg-blue-50 text-blue-800'
-                                : 'bg-gray-50 text-gray-500'
-                            }`}
-                          >
-                            {col}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {preview.map((row, i) => (
-                        <tr key={i}>
-                          {columns.map((col) => (
-                            <td key={col} className="px-3 py-2 text-sm text-gray-900">
-                              {row[col]}
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                <div className="mt-2 text-xs text-gray-500">
-                  Showing first 5 rows
-                </div>
-              </div>
-            )}
-
-            {/* Generated Code */}
-            {file && targetColumn && (
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-lg font-semibold mb-4">
-                  {t('dataUpload.encryptionCode', 'Encryption Code')}
-                </h2>
-
-                <div className="relative">
-                  <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-sm max-h-96">
-                    <code>{generateEncryptionCode()}</code>
-                  </pre>
-                  <button
-                    onClick={() => navigator.clipboard.writeText(generateEncryptionCode())}
-                    className="absolute top-2 right-2 bg-gray-700 text-white px-2 py-1 rounded text-xs hover:bg-gray-600"
-                  >
-                    Copy
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* FHE Info */}
-            <div className="bg-gradient-to-r from-purple-500 to-indigo-600 rounded-lg shadow p-6 text-white">
-              <h2 className="text-lg font-semibold mb-4">
-                {t('dataUpload.fheInfo', 'About FHE Encryption')}
-              </h2>
-
-              <ul className="space-y-3 text-sm">
-                <li className="flex items-start">
-                  <svg className="h-5 w-5 mr-2 text-purple-200" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span>Data remains encrypted during all ML computations</span>
-                </li>
-                <li className="flex items-start">
-                  <svg className="h-5 w-5 mr-2 text-purple-200" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span>128-bit security (NSA approved)</span>
-                </li>
-                <li className="flex items-start">
-                  <svg className="h-5 w-5 mr-2 text-purple-200" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span>Only you have the decryption key</span>
-                </li>
-                <li className="flex items-start">
-                  <svg className="h-5 w-5 mr-2 text-purple-200" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span>GDPR and HIPAA compliant</span>
-                </li>
-              </ul>
-            </div>
+          <div style={{ width: '100%', height: 6, background: COLORS.bg, borderRadius: 3, overflow: 'hidden' }}>
+            <div style={{ height: '100%', background: usedMB / totalMB > 0.8 ? COLORS.warning : COLORS.primary, width: `${(usedMB / totalMB) * 100}%`, borderRadius: 3 }} />
           </div>
         </div>
       </div>
+
+      {/* Upload zone */}
+      {phase === 'idle' && (
+        <div
+          onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={e => { e.preventDefault(); setDragOver(false); startUpload() }}
+          onClick={startUpload}
+          style={{
+            background: dragOver ? COLORS.primaryLight : COLORS.card,
+            borderRadius: 12, border: `2px dashed ${dragOver ? COLORS.primary : COLORS.border}`,
+            padding: '64px 20px', textAlign: 'center', cursor: 'pointer',
+            marginBottom: 24, transition: 'all 0.2s',
+          }}
+        >
+          <svg width="56" height="56" fill="none" stroke={COLORS.muted} viewBox="0 0 24 24" strokeWidth={1.5} style={{ margin: '0 auto 16px', display: 'block' }}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+          </svg>
+          <p style={{ fontSize: 17, fontWeight: 600, color: COLORS.text, margin: '0 0 8px' }}>
+            Arrastra tu archivo CSV aqui
+          </p>
+          <p style={{ fontSize: 14, color: COLORS.muted, margin: 0 }}>
+            o haz click para seleccionar. Maximo 100 MB por archivo.
+          </p>
+        </div>
+      )}
+
+      {/* Upload progress */}
+      {phase === 'uploading' && (
+        <div style={{ background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`, padding: 28, marginBottom: 24 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+            <span style={{ fontSize: 14, fontWeight: 600, color: COLORS.text }}>Subiendo healthcare_data.csv...</span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.primary }}>{uploadProgress}%</span>
+          </div>
+          <div style={{ width: '100%', height: 10, background: COLORS.bg, borderRadius: 5, overflow: 'hidden' }}>
+            <div style={{ height: '100%', background: COLORS.primary, width: `${uploadProgress}%`, borderRadius: 5, transition: 'width 0.2s' }} />
+          </div>
+        </div>
+      )}
+
+      {/* Post-upload: file info + preview + quality */}
+      {(phase === 'uploaded' || phase === 'encrypting' || phase === 'done') && (
+        <>
+          {/* File info card */}
+          <div style={{ background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`, padding: 24, marginBottom: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+              <svg width="20" height="20" fill="none" stroke={COLORS.success} viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+              </svg>
+              <span style={{ fontSize: 15, fontWeight: 600, color: COLORS.success }}>Archivo subido correctamente</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 16 }}>
+              {[
+                { label: 'Nombre', value: 'healthcare_data.csv' },
+                { label: 'Tamanio', value: '2.4 MB' },
+                { label: 'Registros', value: '3,000' },
+                { label: 'Features', value: '6 columnas' },
+              ].map(info => (
+                <div key={info.label} style={{ background: COLORS.bg, borderRadius: 8, padding: 14 }}>
+                  <p style={{ fontSize: 11, color: COLORS.muted, margin: '0 0 2px', textTransform: 'uppercase', fontWeight: 600, letterSpacing: 0.5 }}>{info.label}</p>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: COLORS.text, margin: 0 }}>{info.value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Data preview */}
+          <div style={{ background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`, padding: 24, marginBottom: 20 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 600, color: COLORS.text, margin: '0 0 16px' }}>Vista previa de datos</h3>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                <thead>
+                  <tr style={{ borderBottom: `2px solid ${COLORS.border}` }}>
+                    {['Paciente', 'Edad', 'Presion', 'Colesterol', 'Glucosa', 'Riesgo'].map(h => (
+                      <th key={h} style={{ textAlign: 'left', padding: '8px 12px', fontWeight: 600, color: COLORS.muted, textTransform: 'uppercase', fontSize: 11, letterSpacing: 0.5 }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {MOCK_PREVIEW.map(row => (
+                    <tr key={row.paciente} style={{ borderBottom: `1px solid ${COLORS.border}` }}>
+                      <td style={{ padding: '8px 12px', fontWeight: 500, color: COLORS.primary }}>{row.paciente}</td>
+                      <td style={{ padding: '8px 12px', color: COLORS.text }}>{row.edad}</td>
+                      <td style={{ padding: '8px 12px', color: COLORS.text }}>{row.presion}</td>
+                      <td style={{ padding: '8px 12px', color: COLORS.text }}>{row.colesterol}</td>
+                      <td style={{ padding: '8px 12px', color: COLORS.text }}>{row.glucosa}</td>
+                      <td style={{ padding: '8px 12px', fontWeight: 600, color: row.riesgo > 0.7 ? COLORS.danger : row.riesgo > 0.5 ? COLORS.warning : COLORS.success }}>{row.riesgo}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Quality checks */}
+          <div style={{ background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`, padding: 24, marginBottom: 20 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 600, color: COLORS.text, margin: '0 0 16px' }}>Control de calidad</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+              {QUALITY_CHECKS.map(qc => (
+                <div key={qc.label} style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '10px 0', borderBottom: `1px solid ${COLORS.border}`,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{
+                      width: 8, height: 8, borderRadius: '50%',
+                      background: qc.status === 'ok' ? COLORS.success : COLORS.warning,
+                    }} />
+                    <span style={{ fontSize: 14, color: COLORS.text }}>{qc.label}</span>
+                  </div>
+                  <span style={{
+                    fontSize: 13, fontWeight: 600,
+                    color: qc.status === 'ok' ? COLORS.success : COLORS.warning,
+                  }}>{qc.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Encrypt action */}
+          {phase === 'uploaded' && (
+            <div style={{ textAlign: 'center', padding: '8px 0' }}>
+              <button onClick={startEncrypt} style={{
+                padding: '12px 28px', borderRadius: 8, border: 'none',
+                background: COLORS.primary, color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer',
+              }}>
+                Confirmar y Cifrar
+              </button>
+            </div>
+          )}
+
+          {/* Encryption progress */}
+          {phase === 'encrypting' && (
+            <div style={{ background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`, padding: 24 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                <span style={{ fontSize: 14, fontWeight: 600, color: COLORS.text }}>Cifrando con FHE (CKKS 128-bit)...</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.primary }}>{encryptProgress}%</span>
+              </div>
+              <div style={{ width: '100%', height: 10, background: COLORS.bg, borderRadius: 5, overflow: 'hidden' }}>
+                <div style={{ height: '100%', background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.accent})`, width: `${encryptProgress}%`, borderRadius: 5, transition: 'width 0.2s' }} />
+              </div>
+            </div>
+          )}
+
+          {/* Success state */}
+          {phase === 'done' && (
+            <div style={{
+              background: COLORS.successLight, borderRadius: 12, border: `1px solid #86efac`,
+              padding: 24, textAlign: 'center',
+            }}>
+              <svg width="40" height="40" fill="none" stroke={COLORS.success} viewBox="0 0 24 24" strokeWidth={2} style={{ margin: '0 auto 12px', display: 'block' }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+              </svg>
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: COLORS.success, margin: '0 0 8px' }}>
+                Datos cifrados exitosamente
+              </h3>
+              <p style={{ fontSize: 13, color: COLORS.text, margin: '0 0 4px' }}>Prueba ZKP de integridad generada</p>
+              <p style={{
+                fontSize: 12, fontFamily: 'monospace', color: COLORS.muted,
+                background: '#fff', padding: '8px 16px', borderRadius: 6, display: 'inline-block', marginTop: 8,
+              }}>
+                Hash: {proofHash}
+              </p>
+            </div>
+          )}
+        </>
+      )}
     </div>
-  );
+  )
 }

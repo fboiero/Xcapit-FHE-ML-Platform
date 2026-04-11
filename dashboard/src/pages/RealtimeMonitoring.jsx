@@ -1,405 +1,290 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
-import { useTranslation } from 'react-i18next'
+import { useState, useEffect, useRef } from 'react'
+
+const COLORS = {
+  primary: '#4f46e5',
+  primaryLight: '#eef2ff',
+  success: '#10b981',
+  successLight: '#dcfce7',
+  warning: '#f59e0b',
+  warningLight: '#fef9c3',
+  danger: '#ef4444',
+  dangerLight: '#fef2f2',
+  bg: '#f8fafc',
+  card: '#ffffff',
+  text: '#1e293b',
+  muted: '#64748b',
+  border: '#e5e7eb',
+  accent: '#06d6a0',
+}
+
+const ENDPOINTS = [
+  '/api/v2/consortiums/', '/api/v2/training/start/', '/api/v2/data/upload/',
+  '/api/v2/models/predict/', '/api/v2/auth/login/', '/api/v2/governance/proposals/',
+  '/api/v2/compliance/status/', '/api/v2/keys/generate/',
+]
+
+const STATUS_CODES = [200, 200, 200, 200, 200, 201, 200, 401, 500, 200, 200, 200, 200, 200, 204]
+
+function generateApiCall(id) {
+  const endpoint = ENDPOINTS[Math.floor(Math.random() * ENDPOINTS.length)]
+  const status = STATUS_CODES[Math.floor(Math.random() * STATUS_CODES.length)]
+  const latency = Math.floor(Math.random() * 350) + 20
+  const now = new Date()
+  return {
+    id,
+    timestamp: now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+    endpoint,
+    status,
+    latency,
+  }
+}
+
+function generateBlockchainTx(id) {
+  const types = ['Registro de modelo', 'Verificacion ZKP', 'Actualizacion de pesos', 'Registro de contribucion']
+  const statuses = ['confirmada', 'confirmada', 'confirmada', 'pendiente']
+  return {
+    id,
+    hash: `0x${Array.from({ length: 8 }, () => Math.floor(Math.random() * 16).toString(16)).join('')}...`,
+    type: types[Math.floor(Math.random() * types.length)],
+    status: statuses[Math.floor(Math.random() * statuses.length)],
+    time: new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
+    gas: (Math.random() * 0.008 + 0.001).toFixed(4),
+  }
+}
+
+const INITIAL_CALLS = Array.from({ length: 10 }, (_, i) => generateApiCall(i))
+const INITIAL_TXS = Array.from({ length: 5 }, (_, i) => generateBlockchainTx(i))
 
 export default function RealtimeMonitoring() {
-  const { t } = useTranslation()
-  const [connected, setConnected] = useState(false)
+  const [systemStatus, setSystemStatus] = useState('green')
+  const [uptime, setUptime] = useState('99.97%')
   const [metrics, setMetrics] = useState({
-    requestsPerSecond: 0,
-    avgLatency: 0,
-    activeModels: 0,
-    queueSize: 0,
-    cpuUsage: 0,
-    memoryUsage: 0,
-    gpuUsage: 0,
+    latency: { value: 142, trend: 'down', change: '-8ms' },
+    throughput: { value: 1247, trend: 'up', change: '+52/s' },
+    errorRate: { value: 0.12, trend: 'down', change: '-0.03%' },
+    activeUsers: { value: 84, trend: 'up', change: '+12' },
   })
-  const [history, setHistory] = useState([])
-  const [alerts, setAlerts] = useState([])
-  const [logs, setLogs] = useState([])
-  const [selectedTimeRange, setSelectedTimeRange] = useState('5m')
-  const intervalRef = useRef(null)
+  const [apiCalls, setApiCalls] = useState(INITIAL_CALLS)
+  const [fheOps, setFheOps] = useState({ encryptions: 342, decryptions: 198, trainings: 12 })
+  const [blockchainTxs, setBlockchainTxs] = useState(INITIAL_TXS)
+  const callIdRef = useRef(10)
+  const txIdRef = useRef(5)
 
-  // Simulate WebSocket connection
   useEffect(() => {
-    const connect = () => {
-      setConnected(true)
+    const interval = setInterval(() => {
+      // Update metrics with small random variations
+      setMetrics(prev => ({
+        latency: {
+          value: Math.max(50, prev.latency.value + Math.floor(Math.random() * 20 - 10)),
+          trend: Math.random() > 0.5 ? 'up' : 'down',
+          change: `${Math.random() > 0.5 ? '+' : '-'}${Math.floor(Math.random() * 15)}ms`,
+        },
+        throughput: {
+          value: Math.max(800, prev.throughput.value + Math.floor(Math.random() * 100 - 50)),
+          trend: Math.random() > 0.4 ? 'up' : 'down',
+          change: `${Math.random() > 0.5 ? '+' : '-'}${Math.floor(Math.random() * 80)}/s`,
+        },
+        errorRate: {
+          value: Math.max(0, +(prev.errorRate.value + (Math.random() * 0.06 - 0.03)).toFixed(2)),
+          trend: Math.random() > 0.5 ? 'up' : 'down',
+          change: `${Math.random() > 0.5 ? '+' : '-'}${(Math.random() * 0.05).toFixed(2)}%`,
+        },
+        activeUsers: {
+          value: Math.max(20, prev.activeUsers.value + Math.floor(Math.random() * 10 - 5)),
+          trend: Math.random() > 0.4 ? 'up' : 'down',
+          change: `${Math.random() > 0.5 ? '+' : '-'}${Math.floor(Math.random() * 8)}`,
+        },
+      }))
 
-      intervalRef.current = setInterval(() => {
-        // Simulate real-time data
-        const newMetrics = {
-          requestsPerSecond: Math.floor(Math.random() * 100) + 50,
-          avgLatency: Math.floor(Math.random() * 50) + 10,
-          activeModels: Math.floor(Math.random() * 5) + 3,
-          queueSize: Math.floor(Math.random() * 20),
-          cpuUsage: Math.random() * 40 + 30,
-          memoryUsage: Math.random() * 30 + 50,
-          gpuUsage: Math.random() * 50 + 20,
-        }
+      // Add new API call
+      callIdRef.current += 1
+      setApiCalls(prev => [generateApiCall(callIdRef.current), ...prev.slice(0, 9)])
 
-        setMetrics(newMetrics)
-        setHistory(prev => [...prev.slice(-60), { ...newMetrics, timestamp: Date.now() }])
-
-        // Random log entry
-        if (Math.random() > 0.7) {
-          const logTypes = ['info', 'warning', 'error']
-          const logType = logTypes[Math.floor(Math.random() * logTypes.length)]
-          const messages = {
-            info: ['Model inference completed', 'New training job started', 'Batch prediction processed'],
-            warning: ['High latency detected', 'Queue size increasing', 'Memory usage above 80%'],
-            error: ['Model failed to load', 'Connection timeout', 'Invalid input data'],
-          }
-
-          setLogs(prev => [{
-            id: Date.now(),
-            type: logType,
-            message: messages[logType][Math.floor(Math.random() * messages[logType].length)],
-            timestamp: new Date().toISOString(),
-          }, ...prev.slice(0, 49)])
-        }
-      }, 1000)
-    }
-
-    connect()
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current)
+      // Occasionally add blockchain tx
+      if (Math.random() > 0.6) {
+        txIdRef.current += 1
+        setBlockchainTxs(prev => [generateBlockchainTx(txIdRef.current), ...prev.slice(0, 4)])
       }
-    }
+
+      // Update FHE ops
+      setFheOps(prev => ({
+        encryptions: prev.encryptions + Math.floor(Math.random() * 5),
+        decryptions: prev.decryptions + Math.floor(Math.random() * 3),
+        trainings: prev.trainings + (Math.random() > 0.85 ? 1 : 0),
+      }))
+
+      // Random system status (mostly green)
+      const r = Math.random()
+      setSystemStatus(r > 0.95 ? 'yellow' : 'green')
+    }, 3000)
+
+    return () => clearInterval(interval)
   }, [])
 
-  // Generate alerts based on metrics
-  useEffect(() => {
-    const newAlerts = []
-    if (metrics.cpuUsage > 80) {
-      newAlerts.push({ type: 'warning', message: t('monitoring.highCpuUsage') })
-    }
-    if (metrics.memoryUsage > 85) {
-      newAlerts.push({ type: 'error', message: t('monitoring.highMemoryUsage') })
-    }
-    if (metrics.avgLatency > 40) {
-      newAlerts.push({ type: 'warning', message: t('monitoring.highLatency') })
-    }
-    if (metrics.queueSize > 15) {
-      newAlerts.push({ type: 'info', message: t('monitoring.queueBacklog') })
-    }
-    setAlerts(newAlerts)
-  }, [metrics, t])
+  const statusColors = { green: COLORS.success, yellow: COLORS.warning, red: COLORS.danger }
+  const statusLabels = { green: 'Operativo', yellow: 'Degradado', red: 'Caido' }
 
-  const MetricCard = ({ title, value, unit, trend, icon, color }) => (
-    <div className="bg-white rounded-xl border border-slate-200 p-4">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-sm text-slate-500">{title}</span>
-        <span className={`text-xl ${color}`}>{icon}</span>
-      </div>
-      <div className="flex items-baseline gap-1">
-        <span className="text-2xl font-bold text-slate-900">{value}</span>
-        <span className="text-sm text-slate-500">{unit}</span>
-      </div>
-      {trend !== undefined && (
-        <div className={`text-sm mt-1 ${trend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-          {trend >= 0 ? '↑' : '↓'} {Math.abs(trend).toFixed(1)}%
-        </div>
-      )}
-    </div>
-  )
-
-  const renderSparkline = (data, color) => {
-    if (data.length < 2) return null
-
-    const values = data.map(d => d.value)
-    const min = Math.min(...values)
-    const max = Math.max(...values)
-    const range = max - min || 1
-
-    const points = data.map((d, i) => {
-      const x = (i / (data.length - 1)) * 100
-      const y = 100 - ((d.value - min) / range) * 100
-      return `${x},${y}`
-    }).join(' ')
-
-    return (
-      <svg className="w-full h-12" viewBox="0 0 100 100" preserveAspectRatio="none">
-        <polyline
-          points={points}
-          fill="none"
-          stroke={color}
-          strokeWidth="2"
-          vectorEffect="non-scaling-stroke"
-        />
-      </svg>
-    )
-  }
+  const METRIC_CARDS = [
+    { key: 'latency', label: 'Latencia API', value: `${metrics.latency.value}ms`, ...metrics.latency },
+    { key: 'throughput', label: 'Throughput', value: `${metrics.throughput.value}/s`, ...metrics.throughput },
+    { key: 'errorRate', label: 'Tasa de Error', value: `${metrics.errorRate.value}%`, ...metrics.errorRate },
+    { key: 'activeUsers', label: 'Usuarios Activos', value: metrics.activeUsers.value, ...metrics.activeUsers },
+  ]
 
   return (
-    <div className="space-y-6">
+    <div style={{ padding: 32, maxWidth: 1200, margin: '0 auto' }}>
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32, flexWrap: 'wrap', gap: 16 }}>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">{t('monitoring.title')}</h1>
-          <p className="text-slate-600 mt-1">{t('monitoring.subtitle')}</p>
+          <h1 style={{ fontSize: 28, fontWeight: 700, color: COLORS.text, margin: '0 0 8px' }}>
+            Monitoreo en Tiempo Real
+          </h1>
+          <p style={{ fontSize: 16, color: COLORS.muted, margin: 0 }}>
+            Metricas de rendimiento y operaciones del sistema
+          </p>
         </div>
-        <div className="flex items-center gap-4">
-          <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${
-            connected ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-          }`}>
-            <span className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
-            {connected ? t('monitoring.connected') : t('monitoring.disconnected')}
-          </div>
-          <select
-            value={selectedTimeRange}
-            onChange={(e) => setSelectedTimeRange(e.target.value)}
-            className="px-4 py-2 border border-slate-200 rounded-lg text-sm"
-          >
-            <option value="1m">1 {t('monitoring.minute')}</option>
-            <option value="5m">5 {t('monitoring.minutes')}</option>
-            <option value="15m">15 {t('monitoring.minutes')}</option>
-            <option value="1h">1 {t('monitoring.hour')}</option>
-          </select>
+        {/* System status badge */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10, padding: '10px 20px',
+          borderRadius: 10, background: COLORS.card, border: `1px solid ${COLORS.border}`,
+        }}>
+          <div style={{
+            width: 12, height: 12, borderRadius: '50%',
+            background: statusColors[systemStatus],
+            boxShadow: `0 0 8px ${statusColors[systemStatus]}88`,
+            animation: 'pulse 2s ease-in-out infinite',
+          }} />
+          <span style={{ fontSize: 14, fontWeight: 600, color: statusColors[systemStatus] }}>
+            {statusLabels[systemStatus]}
+          </span>
+          <span style={{ fontSize: 13, color: COLORS.muted }}>|</span>
+          <span style={{ fontSize: 13, color: COLORS.muted }}>Uptime: {uptime}</span>
         </div>
       </div>
+      <style>{`@keyframes pulse { 0%, 100% { opacity: 1 } 50% { opacity: 0.5 } }`}</style>
 
-      {/* Alerts */}
-      {alerts.length > 0 && (
-        <div className="space-y-2">
-          {alerts.map((alert, idx) => (
-            <div
-              key={idx}
-              className={`px-4 py-3 rounded-lg flex items-center gap-3 ${
-                alert.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' :
-                alert.type === 'warning' ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' :
-                'bg-blue-50 text-blue-700 border border-blue-200'
-              }`}
-            >
-              {alert.type === 'error' ? '⚠️' : alert.type === 'warning' ? '⚡' : 'ℹ️'}
-              <span className="font-medium">{alert.message}</span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Main Metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <MetricCard
-          title={t('monitoring.requestsPerSecond')}
-          value={metrics.requestsPerSecond}
-          unit="req/s"
-          icon="📊"
-          color="text-blue-500"
-        />
-        <MetricCard
-          title={t('monitoring.avgLatency')}
-          value={metrics.avgLatency}
-          unit="ms"
-          icon="⚡"
-          color="text-yellow-500"
-        />
-        <MetricCard
-          title={t('monitoring.activeModels')}
-          value={metrics.activeModels}
-          unit=""
-          icon="🤖"
-          color="text-purple-500"
-        />
-        <MetricCard
-          title={t('monitoring.queueSize')}
-          value={metrics.queueSize}
-          unit={t('monitoring.jobs')}
-          icon="📋"
-          color="text-green-500"
-        />
-      </div>
-
-      {/* Resource Usage */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-xl border border-slate-200 p-6">
-          <h3 className="font-medium text-slate-900 mb-4">{t('monitoring.cpuUsage')}</h3>
-          <div className="relative pt-1">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-2xl font-bold text-slate-900">{metrics.cpuUsage.toFixed(1)}%</span>
-              <span className={`text-sm ${metrics.cpuUsage > 80 ? 'text-red-600' : 'text-green-600'}`}>
-                {metrics.cpuUsage > 80 ? t('monitoring.high') : t('monitoring.normal')}
+      {/* Metric cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
+        {METRIC_CARDS.map((m) => (
+          <div key={m.key} style={{
+            background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`, padding: 20,
+          }}>
+            <p style={{ fontSize: 13, color: COLORS.muted, margin: '0 0 8px' }}>{m.label}</p>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+              <span style={{ fontSize: 28, fontWeight: 700, color: COLORS.text }}>{m.value}</span>
+              <span style={{
+                fontSize: 13, fontWeight: 600,
+                color: m.trend === 'up'
+                  ? (m.key === 'errorRate' || m.key === 'latency' ? COLORS.danger : COLORS.success)
+                  : (m.key === 'errorRate' || m.key === 'latency' ? COLORS.success : COLORS.danger),
+              }}>
+                {m.trend === 'up' ? '\u2191' : '\u2193'} {m.change}
               </span>
             </div>
-            <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all duration-300 ${
-                  metrics.cpuUsage > 80 ? 'bg-red-500' : metrics.cpuUsage > 60 ? 'bg-yellow-500' : 'bg-green-500'
-                }`}
-                style={{ width: `${metrics.cpuUsage}%` }}
-              />
-            </div>
           </div>
-          <div className="mt-4">
-            {renderSparkline(
-              history.slice(-30).map(h => ({ value: h.cpuUsage })),
-              metrics.cpuUsage > 80 ? '#ef4444' : '#22c55e'
-            )}
-          </div>
-        </div>
+        ))}
+      </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 p-6">
-          <h3 className="font-medium text-slate-900 mb-4">{t('monitoring.memoryUsage')}</h3>
-          <div className="relative pt-1">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-2xl font-bold text-slate-900">{metrics.memoryUsage.toFixed(1)}%</span>
-              <span className={`text-sm ${metrics.memoryUsage > 85 ? 'text-red-600' : 'text-green-600'}`}>
-                {metrics.memoryUsage > 85 ? t('monitoring.high') : t('monitoring.normal')}
-              </span>
-            </div>
-            <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all duration-300 ${
-                  metrics.memoryUsage > 85 ? 'bg-red-500' : metrics.memoryUsage > 70 ? 'bg-yellow-500' : 'bg-blue-500'
-                }`}
-                style={{ width: `${metrics.memoryUsage}%` }}
-              />
-            </div>
-          </div>
-          <div className="mt-4">
-            {renderSparkline(
-              history.slice(-30).map(h => ({ value: h.memoryUsage })),
-              metrics.memoryUsage > 85 ? '#ef4444' : '#3b82f6'
-            )}
-          </div>
+      {/* FHE operations */}
+      <div style={{
+        background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`,
+        padding: 20, marginBottom: 24, display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap', gap: 16,
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <p style={{ fontSize: 12, color: COLORS.muted, margin: '0 0 4px', fontWeight: 600, textTransform: 'uppercase' }}>Encriptaciones hoy</p>
+          <p style={{ fontSize: 24, fontWeight: 700, color: COLORS.primary, margin: 0 }}>{fheOps.encryptions}</p>
         </div>
-
-        <div className="bg-white rounded-xl border border-slate-200 p-6">
-          <h3 className="font-medium text-slate-900 mb-4">{t('monitoring.gpuUsage')}</h3>
-          <div className="relative pt-1">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-2xl font-bold text-slate-900">{metrics.gpuUsage.toFixed(1)}%</span>
-              <span className="text-sm text-green-600">{t('monitoring.normal')}</span>
-            </div>
-            <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-purple-500 rounded-full transition-all duration-300"
-                style={{ width: `${metrics.gpuUsage}%` }}
-              />
-            </div>
-          </div>
-          <div className="mt-4">
-            {renderSparkline(
-              history.slice(-30).map(h => ({ value: h.gpuUsage })),
-              '#a855f7'
-            )}
-          </div>
+        <div style={{ width: 1, background: COLORS.border }} />
+        <div style={{ textAlign: 'center' }}>
+          <p style={{ fontSize: 12, color: COLORS.muted, margin: '0 0 4px', fontWeight: 600, textTransform: 'uppercase' }}>Desencriptaciones hoy</p>
+          <p style={{ fontSize: 24, fontWeight: 700, color: COLORS.success, margin: 0 }}>{fheOps.decryptions}</p>
+        </div>
+        <div style={{ width: 1, background: COLORS.border }} />
+        <div style={{ textAlign: 'center' }}>
+          <p style={{ fontSize: 12, color: COLORS.muted, margin: '0 0 4px', fontWeight: 600, textTransform: 'uppercase' }}>Entrenamientos hoy</p>
+          <p style={{ fontSize: 24, fontWeight: 700, color: COLORS.warning, margin: 0 }}>{fheOps.trainings}</p>
         </div>
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Request Rate Chart */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6">
-          <h3 className="font-medium text-slate-900 mb-4">{t('monitoring.requestRate')}</h3>
-          <div className="h-48 relative">
-            <svg className="w-full h-full" viewBox="0 0 100 50" preserveAspectRatio="none">
-              {history.length > 1 && (
-                <>
-                  <defs>
-                    <linearGradient id="requestGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#6366f1" stopOpacity="0.3" />
-                      <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
-                    </linearGradient>
-                  </defs>
-                  <path
-                    d={`M 0 50 ${history.slice(-60).map((h, i) => {
-                      const x = (i / 59) * 100
-                      const y = 50 - (h.requestsPerSecond / 150) * 50
-                      return `L ${x} ${y}`
-                    }).join(' ')} L 100 50 Z`}
-                    fill="url(#requestGradient)"
-                  />
-                  <polyline
-                    points={history.slice(-60).map((h, i) => {
-                      const x = (i / 59) * 100
-                      const y = 50 - (h.requestsPerSecond / 150) * 50
-                      return `${x},${y}`
-                    }).join(' ')}
-                    fill="none"
-                    stroke="#6366f1"
-                    strokeWidth="1.5"
-                    vectorEffect="non-scaling-stroke"
-                  />
-                </>
-              )}
-            </svg>
-          </div>
+      {/* Two-column: API calls + Blockchain txs */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 24 }}>
+        {/* API calls log */}
+        <div style={{
+          background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`, padding: 24,
+        }}>
+          <h2 style={{ fontSize: 18, fontWeight: 600, color: COLORS.text, margin: '0 0 16px' }}>
+            Llamadas API recientes
+          </h2>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ borderBottom: `2px solid ${COLORS.border}` }}>
+                {['Hora', 'Endpoint', 'Estado', 'Latencia'].map((h) => (
+                  <th key={h} style={{
+                    textAlign: 'left', padding: '8px 6px', fontSize: 12,
+                    fontWeight: 600, color: COLORS.muted, textTransform: 'uppercase',
+                  }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {apiCalls.map((call) => (
+                <tr key={call.id} style={{ borderBottom: `1px solid ${COLORS.border}` }}>
+                  <td style={{ padding: '8px 6px', fontSize: 13, color: COLORS.muted, fontFamily: 'monospace' }}>
+                    {call.timestamp}
+                  </td>
+                  <td style={{ padding: '8px 6px', fontSize: 13, color: COLORS.text, fontFamily: 'monospace' }}>
+                    {call.endpoint}
+                  </td>
+                  <td style={{ padding: '8px 6px' }}>
+                    <span style={{
+                      padding: '2px 8px', borderRadius: 4, fontSize: 12, fontWeight: 600, fontFamily: 'monospace',
+                      background: call.status < 300 ? COLORS.successLight : call.status < 500 ? COLORS.warningLight : COLORS.dangerLight,
+                      color: call.status < 300 ? COLORS.success : call.status < 500 ? COLORS.warning : COLORS.danger,
+                    }}>
+                      {call.status}
+                    </span>
+                  </td>
+                  <td style={{
+                    padding: '8px 6px', fontSize: 13, fontFamily: 'monospace',
+                    color: call.latency > 250 ? COLORS.danger : call.latency > 150 ? COLORS.warning : COLORS.muted,
+                  }}>
+                    {call.latency}ms
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
 
-        {/* Latency Chart */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6">
-          <h3 className="font-medium text-slate-900 mb-4">{t('monitoring.latencyDistribution')}</h3>
-          <div className="h-48 relative">
-            <svg className="w-full h-full" viewBox="0 0 100 50" preserveAspectRatio="none">
-              {history.length > 1 && (
-                <>
-                  <defs>
-                    <linearGradient id="latencyGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.3" />
-                      <stop offset="100%" stopColor="#f59e0b" stopOpacity="0" />
-                    </linearGradient>
-                  </defs>
-                  <path
-                    d={`M 0 50 ${history.slice(-60).map((h, i) => {
-                      const x = (i / 59) * 100
-                      const y = 50 - (h.avgLatency / 80) * 50
-                      return `L ${x} ${y}`
-                    }).join(' ')} L 100 50 Z`}
-                    fill="url(#latencyGradient)"
-                  />
-                  <polyline
-                    points={history.slice(-60).map((h, i) => {
-                      const x = (i / 59) * 100
-                      const y = 50 - (h.avgLatency / 80) * 50
-                      return `${x},${y}`
-                    }).join(' ')}
-                    fill="none"
-                    stroke="#f59e0b"
-                    strokeWidth="1.5"
-                    vectorEffect="non-scaling-stroke"
-                  />
-                </>
-              )}
-            </svg>
+        {/* Blockchain transactions */}
+        <div style={{
+          background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`, padding: 24,
+        }}>
+          <h2 style={{ fontSize: 18, fontWeight: 600, color: COLORS.text, margin: '0 0 16px' }}>
+            Transacciones blockchain
+          </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            {blockchainTxs.map((tx) => (
+              <div key={tx.id} style={{
+                padding: '12px 0', borderBottom: `1px solid ${COLORS.border}`,
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                  <span style={{ fontSize: 13, fontWeight: 500, color: COLORS.text }}>{tx.type}</span>
+                  <span style={{
+                    padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600,
+                    background: tx.status === 'confirmada' ? COLORS.successLight : COLORS.warningLight,
+                    color: tx.status === 'confirmada' ? COLORS.success : COLORS.warning,
+                  }}>
+                    {tx.status}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 12, color: COLORS.muted, fontFamily: 'monospace' }}>{tx.hash}</span>
+                  <span style={{ fontSize: 12, color: COLORS.muted }}>{tx.gas} ETH | {tx.time}</span>
+                </div>
+              </div>
+            ))}
           </div>
-        </div>
-      </div>
-
-      {/* Live Logs */}
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-        <div className="p-4 border-b border-slate-200 flex items-center justify-between">
-          <h3 className="font-medium text-slate-900">{t('monitoring.liveLogs')}</h3>
-          <button className="text-sm text-slate-500 hover:text-slate-700">
-            {t('monitoring.clearLogs')}
-          </button>
-        </div>
-        <div className="h-64 overflow-y-auto bg-slate-900 font-mono text-sm">
-          {logs.map(log => (
-            <div
-              key={log.id}
-              className={`px-4 py-2 border-b border-slate-800 ${
-                log.type === 'error' ? 'text-red-400' :
-                log.type === 'warning' ? 'text-yellow-400' :
-                'text-green-400'
-              }`}
-            >
-              <span className="text-slate-500">[{new Date(log.timestamp).toLocaleTimeString()}]</span>
-              <span className={`ml-2 px-1 rounded ${
-                log.type === 'error' ? 'bg-red-900' :
-                log.type === 'warning' ? 'bg-yellow-900' :
-                'bg-green-900'
-              }`}>
-                {log.type.toUpperCase()}
-              </span>
-              <span className="ml-2">{log.message}</span>
-            </div>
-          ))}
-          {logs.length === 0 && (
-            <div className="p-4 text-slate-500 text-center">
-              {t('monitoring.waitingForLogs')}
-            </div>
-          )}
         </div>
       </div>
     </div>

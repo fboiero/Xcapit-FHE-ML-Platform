@@ -1,482 +1,494 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { Sentry } from '../lib/sentry'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import {
   getConsortium,
   getConsortiumStats,
   listMembers,
-  listInvitations,
-  inviteToConsortium,
-  activateConsortium,
   startTraining,
   getTrainingStatus,
-  downloadResults,
+  inviteToConsortium,
 } from '../api/client'
 
-const statusLabels = {
-  draft: { label: 'Borrador', color: 'bg-slate-100 text-slate-700' },
-  active: { label: 'Activo', color: 'bg-green-100 text-green-700' },
-  training: { label: 'Entrenando', color: 'bg-blue-100 text-blue-700' },
-  completed: { label: 'Completado', color: 'bg-purple-100 text-purple-700' },
-  archived: { label: 'Archivado', color: 'bg-slate-100 text-slate-500' },
+const COLORS = {
+  primary: '#6366f1',
+  primaryHover: '#4f46e5',
+  primaryLight: '#eef2ff',
+  success: '#10b981',
+  successLight: '#dcfce7',
+  warning: '#f59e0b',
+  warningLight: '#fef9c3',
+  danger: '#ef4444',
+  dangerLight: '#fef2f2',
+  bg: '#f9fafb',
+  card: '#ffffff',
+  text: '#111827',
+  muted: '#6b7280',
+  border: '#e5e7eb',
+  borderFocus: '#6366f1',
 }
 
-const roleLabels = {
-  owner: 'Propietario',
-  admin: 'Administrador',
-  contributor: 'Contribuidor',
-  viewer: 'Visualizador',
+const STATUS_MAP = {
+  active: { label: 'Activo', color: COLORS.success, bg: COLORS.successLight },
+  training: { label: 'Entrenando', color: COLORS.warning, bg: COLORS.warningLight },
+  completed: { label: 'Completado', color: COLORS.primary, bg: COLORS.primaryLight },
+  pending: { label: 'Pendiente', color: COLORS.muted, bg: '#f3f4f6' },
+}
+
+const MODEL_LABELS = {
+  linear_regression: 'Regresion lineal',
+  logistic_regression: 'Regresion logistica',
+  random_forest: 'Random Forest',
+  neural_network: 'Red neuronal',
 }
 
 export default function ConsortiumDetail() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const [consortium, setConsortium] = useState(null)
-  const [stats, setStats] = useState(null)
   const [members, setMembers] = useState([])
-  const [invitations, setInvitations] = useState([])
+  const [stats, setStats] = useState(null)
   const [trainingStatus, setTrainingStatus] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [activeTab, setActiveTab] = useState('overview')
-
-  // Invite modal
-  const [showInviteModal, setShowInviteModal] = useState(false)
+  const [showInvite, setShowInvite] = useState(false)
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteRole, setInviteRole] = useState('contributor')
   const [inviting, setInviting] = useState(false)
+  const [inviteMsg, setInviteMsg] = useState('')
+  const [trainingLoading, setTrainingLoading] = useState(false)
 
   useEffect(() => {
-    loadData()
+    const fetchData = async () => {
+      try {
+        const [cData, mData] = await Promise.allSettled([
+          getConsortium(id),
+          listMembers(id),
+        ])
+        if (cData.status === 'fulfilled') setConsortium(cData.value)
+        if (mData.status === 'fulfilled') {
+          const data = mData.value
+          setMembers(Array.isArray(data) ? data : data.results || [])
+        }
+
+        try {
+          const s = await getConsortiumStats(id)
+          setStats(s)
+        } catch (_) { /* stats may not exist yet */ }
+
+        try {
+          const ts = await getTrainingStatus(id)
+          setTrainingStatus(ts)
+        } catch (_) { /* no training yet */ }
+      } catch (err) {
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
   }, [id])
-
-  useEffect(() => {
-    let interval
-    if (consortium?.status === 'training') {
-      interval = setInterval(loadTrainingStatus, 5000)
-    }
-    return () => clearInterval(interval)
-  }, [consortium?.status])
-
-  const loadData = async () => {
-    try {
-      const [consortiumData, statsData, membersData, invitationsData] = await Promise.all([
-        getConsortium(id),
-        getConsortiumStats(id),
-        listMembers(id),
-        listInvitations(id),
-      ])
-      setConsortium(consortiumData)
-      setStats(statsData)
-      setMembers(membersData)
-      setInvitations(invitationsData)
-
-      if (consortiumData.status === 'training') {
-        loadTrainingStatus()
-      }
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const loadTrainingStatus = async () => {
-    try {
-      const status = await getTrainingStatus(id)
-      setTrainingStatus(status)
-      if (status.status === 'completed') {
-        loadData() // Refresh all data
-      }
-    } catch (err) {
-      Sentry.captureException(err)
-    }
-  }
 
   const handleInvite = async (e) => {
     e.preventDefault()
     setInviting(true)
+    setInviteMsg('')
     try {
       await inviteToConsortium(id, inviteEmail, inviteRole)
-      setShowInviteModal(false)
+      setInviteMsg('Invitacion enviada correctamente.')
       setInviteEmail('')
-      setInviteRole('contributor')
-      loadData()
+      setShowInvite(false)
     } catch (err) {
-      setError(err.message)
+      setInviteMsg(`Error: ${err.message}`)
     } finally {
       setInviting(false)
     }
   }
 
-  const handleActivate = async () => {
-    try {
-      await activateConsortium(id)
-      loadData()
-    } catch (err) {
-      setError(err.message)
-    }
-  }
-
   const handleStartTraining = async () => {
+    setTrainingLoading(true)
     try {
-      await startTraining(id)
-      loadData()
+      const result = await startTraining(id)
+      setTrainingStatus(result)
+      setConsortium((prev) => prev ? { ...prev, status: 'training' } : prev)
     } catch (err) {
       setError(err.message)
-    }
-  }
-
-  const handleDownloadResults = async () => {
-    try {
-      const blob = await downloadResults(id)
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `${consortium.name}-results.json`
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      a.remove()
-    } catch (err) {
-      setError(err.message)
+    } finally {
+      setTrainingLoading(false)
     }
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
+      <div style={{ padding: 32, textAlign: 'center' }}>
+        <div style={{
+          width: 40, height: 40, border: `3px solid ${COLORS.border}`, borderTopColor: COLORS.primary,
+          borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '80px auto',
+        }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+        <p style={{ color: COLORS.muted }}>Cargando consorcio...</p>
       </div>
     )
   }
 
   if (!consortium) {
     return (
-      <div className="pt-16 text-center">
-        <h2 className="text-xl font-bold text-slate-900">Consorcio no encontrado</h2>
-        <Link to="/dashboard" className="text-brand-600 hover:text-brand-700 mt-4 inline-block">
-          Volver al dashboard
-        </Link>
+      <div style={{ padding: 32, textAlign: 'center' }}>
+        <p style={{ color: COLORS.danger, fontSize: 16 }}>Consorcio no encontrado.</p>
+        <Link to="/dashboard" style={{ color: COLORS.primary, textDecoration: 'none' }}>Volver al dashboard</Link>
       </div>
     )
   }
 
+  const statusInfo = STATUS_MAP[consortium.status] || STATUS_MAP.pending
+  const metrics = trainingStatus?.metrics || stats?.metrics || null
+
   return (
-    <div className="pt-16">
+    <div style={{ padding: 32, maxWidth: 1100, margin: '0 auto' }}>
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-slate-500 mb-6">
-        <Link to="/dashboard" className="hover:text-brand-600">Dashboard</Link>
-        <span>/</span>
-        <span className="text-slate-900">{consortium.name}</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24 }}>
+        <Link to="/dashboard" style={{ color: COLORS.muted, textDecoration: 'none', fontSize: 14 }}>Dashboard</Link>
+        <span style={{ color: COLORS.muted, fontSize: 14 }}>/</span>
+        <span style={{ color: COLORS.text, fontSize: 14, fontWeight: 500 }}>{consortium.name}</span>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+        <div style={{
+          background: COLORS.dangerLight, border: '1px solid #fecaca', color: COLORS.danger,
+          padding: '12px 16px', borderRadius: 10, marginBottom: 20, fontSize: 14,
+        }}>
           {error}
-          <button onClick={() => setError('')} className="float-right">&times;</button>
+        </div>
+      )}
+
+      {inviteMsg && (
+        <div style={{
+          background: inviteMsg.startsWith('Error') ? COLORS.dangerLight : COLORS.successLight,
+          border: `1px solid ${inviteMsg.startsWith('Error') ? '#fecaca' : '#bbf7d0'}`,
+          color: inviteMsg.startsWith('Error') ? COLORS.danger : COLORS.success,
+          padding: '12px 16px', borderRadius: 10, marginBottom: 20, fontSize: 14,
+        }}>
+          {inviteMsg}
         </div>
       )}
 
       {/* Header */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-6">
-        <div className="flex items-start justify-between">
+      <div style={{
+        background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`,
+        padding: 28, marginBottom: 24,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
           <div>
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-2xl font-bold text-slate-900">{consortium.name}</h1>
-              <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusLabels[consortium.status]?.color}`}>
-                {statusLabels[consortium.status]?.label}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+              <h1 style={{ fontSize: 26, fontWeight: 700, color: COLORS.text, margin: 0 }}>
+                {consortium.name}
+              </h1>
+              <span style={{
+                padding: '4px 12px', borderRadius: 6, fontSize: 13, fontWeight: 600,
+                background: statusInfo.bg, color: statusInfo.color,
+              }}>
+                {statusInfo.label}
               </span>
             </div>
-            <p className="text-slate-600">{consortium.description}</p>
+            {consortium.description && (
+              <p style={{ fontSize: 15, color: COLORS.muted, margin: '0 0 12px', maxWidth: 600 }}>
+                {consortium.description}
+              </p>
+            )}
+            <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+              <div style={{ fontSize: 14 }}>
+                <span style={{ color: COLORS.muted }}>Tipo de modelo: </span>
+                <span style={{ fontWeight: 500, color: COLORS.text }}>
+                  {MODEL_LABELS[consortium.model_type] || consortium.model_type || '-'}
+                </span>
+              </div>
+              <div style={{ fontSize: 14 }}>
+                <span style={{ color: COLORS.muted }}>Miembros: </span>
+                <span style={{ fontWeight: 500, color: COLORS.text }}>{members.length}</span>
+              </div>
+              {consortium.created_at && (
+                <div style={{ fontSize: 14 }}>
+                  <span style={{ color: COLORS.muted }}>Creado: </span>
+                  <span style={{ fontWeight: 500, color: COLORS.text }}>
+                    {new Date(consortium.created_at).toLocaleDateString('es-AR')}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
-
-          <div className="flex gap-3">
-            {consortium.status === 'draft' && (
-              <button
-                onClick={handleActivate}
-                className="bg-green-600 text-white px-4 py-2 rounded-xl font-medium hover:bg-green-700 transition"
-              >
-                Activar Consorcio
-              </button>
-            )}
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <button
+              onClick={() => setShowInvite(!showInvite)}
+              style={{
+                padding: '10px 18px', borderRadius: 8, border: `1px solid ${COLORS.border}`,
+                background: COLORS.card, color: COLORS.text, fontSize: 14, fontWeight: 500, cursor: 'pointer',
+              }}
+            >
+              Invitar miembro
+            </button>
+            <Link to={`/consortiums/${id}/upload`} style={{
+              padding: '10px 18px', borderRadius: 8, border: `1px solid ${COLORS.border}`,
+              background: COLORS.card, color: COLORS.text, fontSize: 14, fontWeight: 500,
+              textDecoration: 'none', display: 'inline-flex', alignItems: 'center',
+            }}>
+              Subir datos
+            </Link>
             {consortium.status === 'active' && (
-              <>
-                <Link
-                  to={`/consortiums/${id}/upload`}
-                  className="bg-brand-600 text-white px-4 py-2 rounded-xl font-medium hover:bg-brand-700 transition"
-                >
-                  Subir Datos
-                </Link>
-                <button
-                  onClick={handleStartTraining}
-                  className="bg-purple-600 text-white px-4 py-2 rounded-xl font-medium hover:bg-purple-700 transition"
-                >
-                  Iniciar Training
-                </button>
-              </>
-            )}
-            {consortium.status === 'completed' && (
               <button
-                onClick={handleDownloadResults}
-                className="bg-green-600 text-white px-4 py-2 rounded-xl font-medium hover:bg-green-700 transition"
+                onClick={handleStartTraining}
+                disabled={trainingLoading}
+                style={{
+                  padding: '10px 18px', borderRadius: 8, border: 'none',
+                  background: trainingLoading ? '#a5b4fc' : COLORS.primary,
+                  color: '#fff', fontSize: 14, fontWeight: 600,
+                  cursor: trainingLoading ? 'not-allowed' : 'pointer',
+                }}
               >
-                Descargar Resultados
+                {trainingLoading ? 'Iniciando...' : 'Iniciar entrenamiento'}
               </button>
             )}
           </div>
         </div>
 
-        {/* Stats */}
-        {stats && (
-          <div className="grid grid-cols-4 gap-4 mt-6 pt-6 border-t border-slate-100">
-            <div>
-              <p className="text-sm text-slate-500">Miembros</p>
-              <p className="text-2xl font-bold text-slate-900">{stats.total_members}</p>
+        {/* Invite form */}
+        {showInvite && (
+          <form onSubmit={handleInvite} style={{
+            marginTop: 20, padding: 20, background: COLORS.bg, borderRadius: 10,
+            display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap',
+          }}>
+            <div style={{ flex: '1 1 200px' }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: COLORS.muted, marginBottom: 4 }}>
+                Email del miembro
+              </label>
+              <input
+                type="email"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                placeholder="email@empresa.com"
+                required
+                style={{
+                  width: '100%', padding: '10px 14px', borderRadius: 8, border: `1px solid ${COLORS.border}`,
+                  fontSize: 14, outline: 'none', boxSizing: 'border-box',
+                }}
+              />
             </div>
-            <div>
-              <p className="text-sm text-slate-500">Contribuciones</p>
-              <p className="text-2xl font-bold text-slate-900">{stats.total_contributions}</p>
+            <div style={{ flex: '0 0 160px' }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: COLORS.muted, marginBottom: 4 }}>
+                Rol
+              </label>
+              <select
+                value={inviteRole}
+                onChange={(e) => setInviteRole(e.target.value)}
+                style={{
+                  width: '100%', padding: '10px 14px', borderRadius: 8, border: `1px solid ${COLORS.border}`,
+                  fontSize: 14, outline: 'none', background: '#fff', cursor: 'pointer',
+                }}
+              >
+                <option value="contributor">Contribuidor</option>
+                <option value="viewer">Observador</option>
+                <option value="admin">Admin</option>
+              </select>
             </div>
-            <div>
-              <p className="text-sm text-slate-500">Registros totales</p>
-              <p className="text-2xl font-bold text-slate-900">{stats.total_records?.toLocaleString() || 0}</p>
-            </div>
-            <div>
-              <p className="text-sm text-slate-500">Tipo de modelo</p>
-              <p className="text-lg font-medium text-slate-900">{consortium.model_type}</p>
-            </div>
-          </div>
+            <button
+              type="submit"
+              disabled={inviting}
+              style={{
+                padding: '10px 20px', borderRadius: 8, border: 'none', background: COLORS.primary,
+                color: '#fff', fontSize: 14, fontWeight: 600, cursor: inviting ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {inviting ? 'Enviando...' : 'Enviar invitacion'}
+            </button>
+          </form>
         )}
       </div>
 
-      {/* Training Progress */}
-      {consortium.status === 'training' && trainingStatus && (
-        <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6 mb-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-            <h3 className="font-medium text-blue-900">Entrenamiento en progreso</h3>
-          </div>
-          <div className="bg-blue-200 rounded-full h-2 mb-2">
-            <div
-              className="bg-blue-600 rounded-full h-2 transition-all"
-              style={{ width: `${trainingStatus.progress || 0}%` }}
-            />
-          </div>
-          <p className="text-sm text-blue-700">
-            {trainingStatus.current_step || 'Iniciando...'} - {trainingStatus.progress || 0}%
-          </p>
-        </div>
-      )}
-
-      {/* Tabs */}
-      <div className="flex gap-2 mb-6">
-        {[
-          { key: 'overview', label: 'General' },
-          { key: 'members', label: 'Miembros' },
-          { key: 'data', label: 'Datos' },
-        ].map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-              activeTab === tab.key
-                ? 'bg-brand-100 text-brand-700'
-                : 'text-slate-600 hover:bg-slate-100'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Tab Content */}
-      {activeTab === 'overview' && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-6">
-          <h3 className="text-lg font-medium text-slate-900 mb-4">Informacion del Consorcio</h3>
-          <dl className="space-y-4">
-            <div>
-              <dt className="text-sm text-slate-500">ID</dt>
-              <dd className="font-mono text-sm text-slate-900">{consortium.id}</dd>
-            </div>
-            <div>
-              <dt className="text-sm text-slate-500">Creado</dt>
-              <dd className="text-slate-900">{new Date(consortium.created_at).toLocaleDateString('es-ES')}</dd>
-            </div>
-            <div>
-              <dt className="text-sm text-slate-500">Tipo de Modelo</dt>
-              <dd className="text-slate-900">{consortium.model_type}</dd>
-            </div>
-          </dl>
-        </div>
-      )}
-
-      {activeTab === 'members' && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-medium text-slate-900">Miembros</h3>
-            <button
-              onClick={() => setShowInviteModal(true)}
-              className="bg-brand-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-brand-700 transition"
-            >
-              Invitar
-            </button>
-          </div>
-
-          {/* Members list */}
-          <div className="space-y-3">
-            {members.map((member) => (
-              <div
-                key={member.company_id}
-                className="flex items-center justify-between p-4 bg-slate-50 rounded-xl"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-brand-600 rounded-full flex items-center justify-center">
-                    <span className="text-white font-medium">
-                      {member.company_name?.charAt(0) || '?'}
-                    </span>
+      {/* Content grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+        {/* Members */}
+        <div style={{
+          background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`, padding: 24,
+        }}>
+          <h2 style={{ fontSize: 18, fontWeight: 600, color: COLORS.text, margin: '0 0 16px' }}>
+            Miembros ({members.length})
+          </h2>
+          {members.length === 0 ? (
+            <p style={{ color: COLORS.muted, fontSize: 14, textAlign: 'center', padding: '16px 0' }}>
+              No hay miembros todavia.
+            </p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+              {members.map((m, idx) => (
+                <div key={m.id || idx} style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '12px 0', borderBottom: idx < members.length - 1 ? `1px solid ${COLORS.border}` : 'none',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{
+                      width: 34, height: 34, borderRadius: '50%', background: COLORS.primaryLight,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 14, fontWeight: 600, color: COLORS.primary,
+                    }}>
+                      {(m.company_name || m.email || 'U')[0].toUpperCase()}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 500, color: COLORS.text }}>
+                        {m.company_name || m.email || 'Miembro'}
+                      </div>
+                      {m.email && (
+                        <div style={{ fontSize: 12, color: COLORS.muted }}>{m.email}</div>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium text-slate-900">{member.company_name}</p>
-                    <p className="text-sm text-slate-500">{roleLabels[member.role]}</p>
-                  </div>
+                  <span style={{
+                    padding: '3px 10px', borderRadius: 6, fontSize: 12, fontWeight: 600,
+                    background: m.role === 'owner' ? COLORS.primaryLight : m.role === 'admin' ? COLORS.warningLight : '#f3f4f6',
+                    color: m.role === 'owner' ? COLORS.primary : m.role === 'admin' ? COLORS.warning : COLORS.muted,
+                    textTransform: 'capitalize',
+                  }}>
+                    {m.role === 'owner' ? 'Propietario' : m.role === 'admin' ? 'Admin' : m.role === 'contributor' ? 'Contribuidor' : m.role || 'Miembro'}
+                  </span>
                 </div>
-                <span className={`px-2 py-1 rounded text-xs ${
-                  member.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'
-                }`}>
-                  {member.status === 'active' ? 'Activo' : member.status}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {/* Pending invitations */}
-          {invitations.length > 0 && (
-            <div className="mt-6 pt-6 border-t border-slate-100">
-              <h4 className="font-medium text-slate-900 mb-4">Invitaciones pendientes</h4>
-              <div className="space-y-2">
-                {invitations.filter(i => i.status === 'pending').map((inv) => (
-                  <div
-                    key={inv.id}
-                    className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg"
-                  >
-                    <span className="text-slate-900">{inv.email}</span>
-                    <span className="text-xs text-yellow-700">Pendiente</span>
-                  </div>
-                ))}
-              </div>
+              ))}
             </div>
           )}
         </div>
-      )}
 
-      {activeTab === 'data' && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-medium text-slate-900">Contribuciones de Datos</h3>
-            {consortium.status === 'active' && (
-              <Link
-                to={`/consortiums/${id}/upload`}
-                className="bg-brand-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-brand-700 transition"
-              >
-                Subir Datos
-              </Link>
-            )}
-          </div>
+        {/* Training results / metrics */}
+        <div style={{
+          background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`, padding: 24,
+        }}>
+          <h2 style={{ fontSize: 18, fontWeight: 600, color: COLORS.text, margin: '0 0 16px' }}>
+            Resultados del entrenamiento
+          </h2>
 
-          {stats?.total_contributions === 0 ? (
-            <div className="text-center py-8">
-              <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                </svg>
+          {trainingStatus?.status === 'training' && (
+            <div style={{
+              background: COLORS.warningLight, borderRadius: 10, padding: 16, marginBottom: 16, textAlign: 'center',
+            }}>
+              <div style={{
+                width: '100%', height: 8, background: '#fde68a', borderRadius: 4, overflow: 'hidden', marginBottom: 8,
+              }}>
+                <div style={{
+                  height: '100%', background: COLORS.warning, borderRadius: 4,
+                  width: `${trainingStatus.progress || 50}%`, transition: 'width 0.5s',
+                }} />
               </div>
-              <p className="text-slate-600">No hay datos subidos todavia.</p>
-              {consortium.status === 'active' && (
-                <Link
-                  to={`/consortiums/${id}/upload`}
-                  className="text-brand-600 font-medium hover:text-brand-700 mt-2 inline-block"
-                >
-                  Subir primera contribucion
-                </Link>
+              <p style={{ fontSize: 14, color: '#92400e', margin: 0, fontWeight: 500 }}>
+                Entrenamiento en progreso... {trainingStatus.progress || 50}%
+              </p>
+            </div>
+          )}
+
+          {metrics ? (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              {metrics.r2 !== undefined && (
+                <div style={{ background: COLORS.bg, borderRadius: 10, padding: 16, textAlign: 'center' }}>
+                  <p style={{ fontSize: 12, color: COLORS.muted, margin: '0 0 4px', textTransform: 'uppercase', fontWeight: 600 }}>R2</p>
+                  <p style={{ fontSize: 28, fontWeight: 700, color: COLORS.primary, margin: 0 }}>
+                    {typeof metrics.r2 === 'number' ? metrics.r2.toFixed(4) : metrics.r2}
+                  </p>
+                </div>
+              )}
+              {metrics.mae !== undefined && (
+                <div style={{ background: COLORS.bg, borderRadius: 10, padding: 16, textAlign: 'center' }}>
+                  <p style={{ fontSize: 12, color: COLORS.muted, margin: '0 0 4px', textTransform: 'uppercase', fontWeight: 600 }}>MAE</p>
+                  <p style={{ fontSize: 28, fontWeight: 700, color: COLORS.success, margin: 0 }}>
+                    {typeof metrics.mae === 'number' ? metrics.mae.toFixed(4) : metrics.mae}
+                  </p>
+                </div>
+              )}
+              {metrics.rmse !== undefined && (
+                <div style={{ background: COLORS.bg, borderRadius: 10, padding: 16, textAlign: 'center' }}>
+                  <p style={{ fontSize: 12, color: COLORS.muted, margin: '0 0 4px', textTransform: 'uppercase', fontWeight: 600 }}>RMSE</p>
+                  <p style={{ fontSize: 28, fontWeight: 700, color: COLORS.warning, margin: 0 }}>
+                    {typeof metrics.rmse === 'number' ? metrics.rmse.toFixed(4) : metrics.rmse}
+                  </p>
+                </div>
+              )}
+              {metrics.accuracy !== undefined && (
+                <div style={{ background: COLORS.bg, borderRadius: 10, padding: 16, textAlign: 'center' }}>
+                  <p style={{ fontSize: 12, color: COLORS.muted, margin: '0 0 4px', textTransform: 'uppercase', fontWeight: 600 }}>Precision</p>
+                  <p style={{ fontSize: 28, fontWeight: 700, color: '#8b5cf6', margin: 0 }}>
+                    {typeof metrics.accuracy === 'number' ? (metrics.accuracy * 100).toFixed(2) + '%' : metrics.accuracy}
+                  </p>
+                </div>
               )}
             </div>
           ) : (
-            <div className="space-y-4">
-              <div className="grid grid-cols-3 gap-4">
-                <div className="bg-slate-50 rounded-xl p-4">
-                  <p className="text-sm text-slate-500">Contribuciones</p>
-                  <p className="text-xl font-bold text-slate-900">{stats?.total_contributions}</p>
-                </div>
-                <div className="bg-slate-50 rounded-xl p-4">
-                  <p className="text-sm text-slate-500">Registros</p>
-                  <p className="text-xl font-bold text-slate-900">{stats?.total_records?.toLocaleString()}</p>
-                </div>
-                <div className="bg-slate-50 rounded-xl p-4">
-                  <p className="text-sm text-slate-500">Contribuidores</p>
-                  <p className="text-xl font-bold text-slate-900">{stats?.contributors_count}</p>
-                </div>
-              </div>
-            </div>
+            <p style={{ color: COLORS.muted, fontSize: 14, textAlign: 'center', padding: '24px 0' }}>
+              {consortium.status === 'active'
+                ? 'Aun no se ha iniciado el entrenamiento. Sube datos y presiona "Iniciar entrenamiento".'
+                : 'No hay resultados disponibles todavia.'}
+            </p>
+          )}
+
+          {metrics && (
+            <Link to={`/metrics/${id}`} style={{
+              display: 'block', textAlign: 'center', marginTop: 16, color: COLORS.primary,
+              textDecoration: 'none', fontSize: 14, fontWeight: 500,
+            }}>
+              Ver metricas detalladas
+            </Link>
           )}
         </div>
-      )}
+      </div>
 
-      {/* Invite Modal */}
-      {showInviteModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md">
-            <h3 className="text-lg font-bold text-slate-900 mb-4">Invitar participante</h3>
-
-            <form onSubmit={handleInvite} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-                  placeholder="contacto@empresa.com"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Rol
-                </label>
-                <select
-                  value={inviteRole}
-                  onChange={(e) => setInviteRole(e.target.value)}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-                >
-                  <option value="contributor">Contribuidor</option>
-                  <option value="admin">Administrador</option>
-                  <option value="viewer">Visualizador</option>
-                </select>
-              </div>
-
-              <div className="flex gap-3 mt-6">
-                <button
-                  type="button"
-                  onClick={() => setShowInviteModal(false)}
-                  className="flex-1 px-4 py-3 border border-slate-300 rounded-xl font-medium hover:bg-slate-50 transition"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={inviting}
-                  className="flex-1 bg-brand-600 text-white px-4 py-3 rounded-xl font-medium hover:bg-brand-700 transition disabled:opacity-50"
-                >
-                  {inviting ? 'Enviando...' : 'Enviar invitacion'}
-                </button>
-              </div>
-            </form>
-          </div>
+      {/* Contributions table */}
+      <div style={{
+        background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`,
+        padding: 24, marginTop: 24,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <h2 style={{ fontSize: 18, fontWeight: 600, color: COLORS.text, margin: 0 }}>
+            Contribuciones de datos
+          </h2>
+          <Link to={`/consortiums/${id}/upload`} style={{
+            padding: '8px 16px', borderRadius: 8, background: COLORS.primaryLight,
+            color: COLORS.primary, textDecoration: 'none', fontSize: 14, fontWeight: 500,
+          }}>
+            Subir datos
+          </Link>
         </div>
-      )}
+
+        {stats?.contributions && stats.contributions.length > 0 ? (
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ borderBottom: `2px solid ${COLORS.border}` }}>
+                {['Miembro', 'Registros', 'Tamano', 'Fecha', 'Estado'].map((h) => (
+                  <th key={h} style={{
+                    textAlign: 'left', padding: '10px 12px', fontSize: 13,
+                    fontWeight: 600, color: COLORS.muted,
+                  }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {stats.contributions.map((c, idx) => (
+                <tr key={idx} style={{ borderBottom: `1px solid ${COLORS.border}` }}>
+                  <td style={{ padding: 12, fontSize: 14, color: COLORS.text }}>{c.company_name || 'Anonimo'}</td>
+                  <td style={{ padding: 12, fontSize: 14, color: COLORS.muted }}>{c.records?.toLocaleString() || '-'}</td>
+                  <td style={{ padding: 12, fontSize: 14, color: COLORS.muted }}>{c.size || '-'}</td>
+                  <td style={{ padding: 12, fontSize: 14, color: COLORS.muted }}>
+                    {c.uploaded_at ? new Date(c.uploaded_at).toLocaleDateString('es-AR') : '-'}
+                  </td>
+                  <td style={{ padding: 12 }}>
+                    <span style={{
+                      padding: '3px 10px', borderRadius: 6, fontSize: 12, fontWeight: 600,
+                      background: COLORS.successLight, color: COLORS.success,
+                    }}>
+                      {c.status || 'Encriptado'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p style={{ color: COLORS.muted, fontSize: 14, textAlign: 'center', padding: '16px 0' }}>
+            No hay contribuciones todavia. Los miembros deben subir sus datos encriptados.
+          </p>
+        )}
+      </div>
     </div>
   )
 }

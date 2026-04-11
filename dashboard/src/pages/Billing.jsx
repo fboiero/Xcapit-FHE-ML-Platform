@@ -1,479 +1,305 @@
 import { useState, useEffect } from 'react'
-import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
+import { getTrialStatus, getTrialUsage, requestUpgrade } from '../api/trial'
+import { getCurrentCompany } from '../api/client'
 
-const plans = [
-  {
-    id: 'free',
-    name: 'Free',
-    price: 0,
-    period: 'forever',
-    description: 'For individuals and small projects',
-    features: [
-      '10 API requests/minute',
-      '100 requests/day',
-      '2 ML models',
-      '1 consortium',
-      'Community support',
-    ],
-    limits: { rate: 10, daily: 100, models: 2, consortiums: 1 },
-  },
-  {
-    id: 'starter',
-    name: 'Starter',
-    price: 49,
-    period: 'month',
-    description: 'For small teams getting started',
-    features: [
-      '100 API requests/minute',
-      '5,000 requests/day',
-      '10 ML models',
-      '5 consortiums',
-      'Email support',
-      'Basic analytics',
-    ],
-    limits: { rate: 100, daily: 5000, models: 10, consortiums: 5 },
-    popular: false,
-  },
-  {
-    id: 'professional',
-    name: 'Professional',
-    price: 199,
-    period: 'month',
-    description: 'For growing businesses',
-    features: [
-      '500 API requests/minute',
-      '50,000 requests/day',
-      '50 ML models',
-      '20 consortiums',
-      'Priority support',
-      'Advanced analytics',
-      'Webhooks',
-      'Custom integrations',
-    ],
-    limits: { rate: 500, daily: 50000, models: 50, consortiums: 20 },
-    popular: true,
-  },
-  {
-    id: 'enterprise',
-    name: 'Enterprise',
-    price: null,
-    period: 'custom',
-    description: 'For large organizations',
-    features: [
-      'Unlimited API requests',
-      'Unlimited daily requests',
-      'Unlimited ML models',
-      'Unlimited consortiums',
-      '24/7 dedicated support',
-      'SLA guarantees',
-      'Custom deployment',
-      'On-premise option',
-      'Advanced security',
-    ],
-    limits: { rate: -1, daily: -1, models: -1, consortiums: -1 },
-  },
+const COLORS = {
+  primary: '#6366f1',
+  primaryHover: '#4f46e5',
+  primaryLight: '#eef2ff',
+  success: '#10b981',
+  successLight: '#dcfce7',
+  warning: '#f59e0b',
+  warningLight: '#fef9c3',
+  danger: '#ef4444',
+  dangerLight: '#fef2f2',
+  bg: '#f9fafb',
+  card: '#ffffff',
+  text: '#111827',
+  muted: '#6b7280',
+  border: '#e5e7eb',
+}
+
+const PLAN_DETAILS = {
+  free: { name: 'Gratuito', price: '$0', period: '/mes', color: COLORS.muted },
+  starter: { name: 'Starter', price: '$99', period: '/mes', color: COLORS.primary },
+  professional: { name: 'Profesional', price: '$499', period: '/mes', color: '#8b5cf6' },
+  enterprise: { name: 'Enterprise', price: 'Custom', period: '', color: COLORS.text },
+}
+
+const USAGE_ITEMS = [
+  { key: 'daily_requests', label: 'Requests hoy', limit_key: 'daily_requests_limit' },
+  { key: 'storage_used_mb', label: 'Almacenamiento (MB)', limit_key: 'storage_limit_mb' },
+  { key: 'training_runs', label: 'Entrenamientos hoy', limit_key: 'training_runs_limit' },
+  { key: 'active_consortiums', label: 'Consorcios activos', limit_key: 'consortiums_limit' },
+  { key: 'active_models', label: 'Modelos activos', limit_key: 'models_limit' },
 ]
 
-const invoices = [
-  { id: 'INV-001', date: '2024-01-01', amount: 199, status: 'paid', description: 'Professional Plan - January 2024' },
-  { id: 'INV-002', date: '2023-12-01', amount: 199, status: 'paid', description: 'Professional Plan - December 2023' },
-  { id: 'INV-003', date: '2023-11-01', amount: 199, status: 'paid', description: 'Professional Plan - November 2023' },
-  { id: 'INV-004', date: '2023-10-01', amount: 49, status: 'paid', description: 'Starter Plan - October 2023' },
+const MOCK_INVOICES = [
+  { id: 'INV-2026-03', date: '2026-03-01', amount: '$499.00', status: 'Pagado', plan: 'Profesional' },
+  { id: 'INV-2026-02', date: '2026-02-01', amount: '$499.00', status: 'Pagado', plan: 'Profesional' },
+  { id: 'INV-2026-01', date: '2026-01-01', amount: '$99.00', status: 'Pagado', plan: 'Starter' },
 ]
+
+function UsageBar({ used, limit, label, color }) {
+  const unlimited = limit === -1
+  const percentage = unlimited ? 20 : Math.min((used / limit) * 100, 100)
+  const isHigh = !unlimited && percentage > 80
+  const barColor = isHigh ? COLORS.danger : color || COLORS.primary
+
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+        <span style={{ fontSize: 14, color: COLORS.text }}>{label}</span>
+        <span style={{ fontSize: 14, fontWeight: 600, color: isHigh ? COLORS.danger : COLORS.text }}>
+          {used.toLocaleString()} / {unlimited ? 'Ilimitado' : limit.toLocaleString()}
+        </span>
+      </div>
+      <div style={{
+        width: '100%', height: 8, background: COLORS.border, borderRadius: 4, overflow: 'hidden',
+      }}>
+        <div style={{
+          height: '100%', borderRadius: 4, background: barColor,
+          width: `${percentage}%`, transition: 'width 0.5s ease', minWidth: 2,
+        }} />
+      </div>
+      {isHigh && (
+        <p style={{ fontSize: 12, color: COLORS.danger, margin: '4px 0 0', fontWeight: 500 }}>
+          Cerca del limite. Considera hacer upgrade.
+        </p>
+      )}
+    </div>
+  )
+}
 
 export default function Billing() {
-  const { t } = useTranslation()
-  const [currentPlan, setCurrentPlan] = useState('professional')
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
-  const [selectedPlan, setSelectedPlan] = useState(null)
-  const [billingCycle, setBillingCycle] = useState('monthly')
+  const [company, setCompany] = useState(null)
+  const [trialStatus, setTrialStatus] = useState(null)
+  const [usage, setUsage] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [upgrading, setUpgrading] = useState(null)
+  const [upgradeMsg, setUpgradeMsg] = useState('')
 
-  // Simulated usage data
-  const usage = {
-    apiRequests: { used: 32450, limit: 50000 },
-    models: { used: 12, limit: 50 },
-    consortiums: { used: 8, limit: 20 },
-    storage: { used: 2.4, limit: 10 }, // GB
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [companyData, trialData, usageData] = await Promise.allSettled([
+          getCurrentCompany(),
+          getTrialStatus(),
+          getTrialUsage(),
+        ])
+        if (companyData.status === 'fulfilled') setCompany(companyData.value)
+        if (trialData.status === 'fulfilled') setTrialStatus(trialData.value)
+        if (usageData.status === 'fulfilled') setUsage(usageData.value)
+      } catch (err) {
+        // fallback
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [])
+
+  const handleUpgrade = async (tier) => {
+    setUpgrading(tier)
+    setUpgradeMsg('')
+    try {
+      await requestUpgrade(tier)
+      setUpgradeMsg(`Solicitud de upgrade a ${PLAN_DETAILS[tier]?.name || tier} enviada correctamente.`)
+    } catch (err) {
+      setUpgradeMsg(`Error: ${err.message}`)
+    } finally {
+      setUpgrading(null)
+    }
   }
 
-  const currentPlanData = plans.find(p => p.id === currentPlan)
+  const currentTier = trialStatus?.tier || company?.plan || company?.tier || 'free'
+  const planInfo = PLAN_DETAILS[currentTier] || PLAN_DETAILS.free
+  const isTrial = trialStatus?.is_trial && !trialStatus?.trial_expired
 
-  const getUsagePercentage = (used, limit) => {
-    if (limit === -1) return 0
-    return Math.min(100, (used / limit) * 100)
-  }
-
-  const getUsageColor = (percentage) => {
-    if (percentage >= 90) return 'bg-red-500'
-    if (percentage >= 70) return 'bg-yellow-500'
-    return 'bg-green-500'
-  }
-
-  const handleUpgrade = (planId) => {
-    setSelectedPlan(plans.find(p => p.id === planId))
-    setShowUpgradeModal(true)
-  }
-
-  const confirmUpgrade = () => {
-    setCurrentPlan(selectedPlan.id)
-    setShowUpgradeModal(false)
-    setSelectedPlan(null)
+  if (loading) {
+    return (
+      <div style={{ padding: 32, textAlign: 'center' }}>
+        <div style={{
+          width: 40, height: 40, border: `3px solid ${COLORS.border}`, borderTopColor: COLORS.primary,
+          borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '80px auto',
+        }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+        <p style={{ color: COLORS.muted }}>Cargando facturacion...</p>
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Billing & Subscription</h1>
-        <p className="text-gray-600">Manage your subscription and view usage</p>
-      </div>
+    <div style={{ padding: 32, maxWidth: 900, margin: '0 auto' }}>
+      <h1 style={{ fontSize: 28, fontWeight: 700, color: COLORS.text, margin: '0 0 8px' }}>
+        Facturacion
+      </h1>
+      <p style={{ fontSize: 16, color: COLORS.muted, margin: '0 0 32px' }}>
+        Gestiona tu suscripcion, uso y pagos
+      </p>
 
-      {/* Current Plan */}
-      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-6 text-white">
-        <div className="flex items-center justify-between">
+      {upgradeMsg && (
+        <div style={{
+          background: upgradeMsg.startsWith('Error') ? COLORS.dangerLight : COLORS.successLight,
+          color: upgradeMsg.startsWith('Error') ? COLORS.danger : COLORS.success,
+          padding: '12px 16px', borderRadius: 10, marginBottom: 20, fontSize: 14,
+          border: `1px solid ${upgradeMsg.startsWith('Error') ? '#fecaca' : '#bbf7d0'}`,
+        }}>
+          {upgradeMsg}
+        </div>
+      )}
+
+      {/* Current plan */}
+      <div style={{
+        background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`,
+        padding: 28, marginBottom: 24,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
           <div>
-            <p className="text-indigo-100 text-sm">Current Plan</p>
-            <h2 className="text-3xl font-bold">{currentPlanData?.name}</h2>
-            <p className="text-indigo-100 mt-1">{currentPlanData?.description}</p>
+            <p style={{ fontSize: 13, color: COLORS.muted, margin: '0 0 4px', textTransform: 'uppercase', fontWeight: 600, letterSpacing: 0.5 }}>
+              Plan actual
+            </p>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
+              <span style={{ fontSize: 32, fontWeight: 700, color: COLORS.text }}>{planInfo.name}</span>
+              {isTrial && (
+                <span style={{
+                  padding: '4px 10px', borderRadius: 6, fontSize: 12, fontWeight: 600,
+                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff',
+                }}>
+                  Periodo de prueba - {trialStatus.trial_days_remaining || 0} dias restantes
+                </span>
+              )}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+              <span style={{ fontSize: 28, fontWeight: 700, color: planInfo.color }}>{planInfo.price}</span>
+              <span style={{ fontSize: 15, color: COLORS.muted }}>{planInfo.period}</span>
+            </div>
           </div>
-          <div className="text-right">
-            {currentPlanData?.price !== null ? (
-              <>
-                <div className="text-4xl font-bold">${currentPlanData?.price}</div>
-                <div className="text-indigo-100">per month</div>
-              </>
-            ) : (
-              <div className="text-2xl font-bold">Custom pricing</div>
+          <Link to="/pricing" style={{
+            padding: '10px 20px', borderRadius: 8, border: `1px solid ${COLORS.border}`,
+            background: COLORS.card, color: COLORS.text, textDecoration: 'none',
+            fontSize: 14, fontWeight: 500,
+          }}>
+            Ver todos los planes
+          </Link>
+        </div>
+
+        {/* Upgrade buttons */}
+        {currentTier !== 'enterprise' && (
+          <div style={{ display: 'flex', gap: 12, marginTop: 24, flexWrap: 'wrap' }}>
+            {currentTier === 'free' && (
+              <button onClick={() => handleUpgrade('starter')} disabled={upgrading === 'starter'}
+                style={{
+                  padding: '10px 20px', borderRadius: 8, border: 'none',
+                  background: upgrading === 'starter' ? '#a5b4fc' : COLORS.primary,
+                  color: '#fff', fontSize: 14, fontWeight: 600, cursor: upgrading ? 'not-allowed' : 'pointer',
+                }}>
+                {upgrading === 'starter' ? 'Procesando...' : 'Upgrade a Starter ($99/mes)'}
+              </button>
             )}
+            {(currentTier === 'free' || currentTier === 'starter') && (
+              <button onClick={() => handleUpgrade('professional')} disabled={upgrading === 'professional'}
+                style={{
+                  padding: '10px 20px', borderRadius: 8, border: 'none',
+                  background: upgrading === 'professional' ? '#c4b5fd' : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                  color: '#fff', fontSize: 14, fontWeight: 600, cursor: upgrading ? 'not-allowed' : 'pointer',
+                }}>
+                {upgrading === 'professional' ? 'Procesando...' : 'Upgrade a Profesional ($499/mes)'}
+              </button>
+            )}
+            <button onClick={() => handleUpgrade('enterprise')} disabled={upgrading === 'enterprise'}
+              style={{
+                padding: '10px 20px', borderRadius: 8, border: `1px solid ${COLORS.border}`,
+                background: COLORS.card, color: COLORS.text, fontSize: 14, fontWeight: 500,
+                cursor: upgrading ? 'not-allowed' : 'pointer',
+              }}>
+              Contactar para Enterprise
+            </button>
           </div>
-        </div>
-        <div className="mt-4 pt-4 border-t border-white/20 flex items-center justify-between">
-          <div className="text-sm text-indigo-100">
-            Next billing date: February 1, 2024
-          </div>
-          <button
-            onClick={() => setShowUpgradeModal(true)}
-            className="px-4 py-2 bg-white text-indigo-600 rounded-lg font-medium hover:bg-indigo-50"
-          >
-            Change Plan
-          </button>
-        </div>
+        )}
       </div>
 
       {/* Usage */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold mb-4">Current Usage</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* API Requests */}
-          <div>
-            <div className="flex justify-between text-sm mb-1">
-              <span className="text-gray-600">API Requests (Today)</span>
-              <span className="font-medium">
-                {usage.apiRequests.used.toLocaleString()} / {usage.apiRequests.limit.toLocaleString()}
-              </span>
-            </div>
-            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-              <div
-                className={`h-full ${getUsageColor(getUsagePercentage(usage.apiRequests.used, usage.apiRequests.limit))}`}
-                style={{ width: `${getUsagePercentage(usage.apiRequests.used, usage.apiRequests.limit)}%` }}
-              />
-            </div>
-            <p className="text-xs text-gray-500 mt-1">
-              {Math.round(getUsagePercentage(usage.apiRequests.used, usage.apiRequests.limit))}% used
-            </p>
-          </div>
+      <div style={{
+        background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`,
+        padding: 28, marginBottom: 24,
+      }}>
+        <h2 style={{ fontSize: 18, fontWeight: 600, color: COLORS.text, margin: '0 0 20px' }}>
+          Uso actual
+        </h2>
 
-          {/* Models */}
-          <div>
-            <div className="flex justify-between text-sm mb-1">
-              <span className="text-gray-600">ML Models</span>
-              <span className="font-medium">{usage.models.used} / {usage.models.limit}</span>
-            </div>
-            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-              <div
-                className={`h-full ${getUsageColor(getUsagePercentage(usage.models.used, usage.models.limit))}`}
-                style={{ width: `${getUsagePercentage(usage.models.used, usage.models.limit)}%` }}
-              />
-            </div>
-            <p className="text-xs text-gray-500 mt-1">
-              {Math.round(getUsagePercentage(usage.models.used, usage.models.limit))}% used
-            </p>
-          </div>
-
-          {/* Consortiums */}
-          <div>
-            <div className="flex justify-between text-sm mb-1">
-              <span className="text-gray-600">Consortiums</span>
-              <span className="font-medium">{usage.consortiums.used} / {usage.consortiums.limit}</span>
-            </div>
-            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-              <div
-                className={`h-full ${getUsageColor(getUsagePercentage(usage.consortiums.used, usage.consortiums.limit))}`}
-                style={{ width: `${getUsagePercentage(usage.consortiums.used, usage.consortiums.limit)}%` }}
-              />
-            </div>
-            <p className="text-xs text-gray-500 mt-1">
-              {Math.round(getUsagePercentage(usage.consortiums.used, usage.consortiums.limit))}% used
-            </p>
-          </div>
-
-          {/* Storage */}
-          <div>
-            <div className="flex justify-between text-sm mb-1">
-              <span className="text-gray-600">Storage</span>
-              <span className="font-medium">{usage.storage.used} GB / {usage.storage.limit} GB</span>
-            </div>
-            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-              <div
-                className={`h-full ${getUsageColor(getUsagePercentage(usage.storage.used, usage.storage.limit))}`}
-                style={{ width: `${getUsagePercentage(usage.storage.used, usage.storage.limit)}%` }}
-              />
-            </div>
-            <p className="text-xs text-gray-500 mt-1">
-              {Math.round(getUsagePercentage(usage.storage.used, usage.storage.limit))}% used
-            </p>
-          </div>
-        </div>
+        {USAGE_ITEMS.map((item) => {
+          const used = usage?.[item.key] || 0
+          const limit = usage?.[item.limit_key] || trialStatus?.limits?.[item.limit_key] || 100
+          return (
+            <UsageBar
+              key={item.key}
+              used={used}
+              limit={limit}
+              label={item.label}
+              color={COLORS.primary}
+            />
+          )
+        })}
       </div>
 
-      {/* Plans Comparison */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold">Available Plans</h3>
-          <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
-            <button
-              onClick={() => setBillingCycle('monthly')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                billingCycle === 'monthly' ? 'bg-white shadow text-gray-900' : 'text-gray-600'
-              }`}
-            >
-              Monthly
-            </button>
-            <button
-              onClick={() => setBillingCycle('yearly')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                billingCycle === 'yearly' ? 'bg-white shadow text-gray-900' : 'text-gray-600'
-              }`}
-            >
-              Yearly (Save 20%)
-            </button>
-          </div>
-        </div>
+      {/* Payment history */}
+      <div style={{
+        background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`,
+        padding: 28,
+      }}>
+        <h2 style={{ fontSize: 18, fontWeight: 600, color: COLORS.text, margin: '0 0 20px' }}>
+          Historial de pagos
+        </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {plans.map(plan => {
-            const isCurrentPlan = plan.id === currentPlan
-            const yearlyPrice = plan.price ? Math.round(plan.price * 0.8 * 12) : null
-            const displayPrice = billingCycle === 'yearly' && plan.price ? Math.round(plan.price * 0.8) : plan.price
-
-            return (
-              <div
-                key={plan.id}
-                className={`relative rounded-xl border-2 p-6 ${
-                  plan.popular ? 'border-indigo-500' : isCurrentPlan ? 'border-green-500' : 'border-gray-200'
-                }`}
-              >
-                {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-indigo-500 text-white text-xs font-medium rounded-full">
-                    Most Popular
-                  </div>
-                )}
-                {isCurrentPlan && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-green-500 text-white text-xs font-medium rounded-full">
-                    Current Plan
-                  </div>
-                )}
-
-                <h4 className="text-xl font-bold text-gray-900">{plan.name}</h4>
-                <p className="text-sm text-gray-600 mt-1">{plan.description}</p>
-
-                <div className="mt-4">
-                  {displayPrice !== null ? (
-                    <>
-                      <span className="text-3xl font-bold">${displayPrice}</span>
-                      <span className="text-gray-500">/month</span>
-                      {billingCycle === 'yearly' && plan.price && (
-                        <p className="text-sm text-gray-500 mt-1">
-                          ${yearlyPrice} billed yearly
-                        </p>
-                      )}
-                    </>
-                  ) : (
-                    <span className="text-xl font-bold">Contact us</span>
-                  )}
-                </div>
-
-                <ul className="mt-6 space-y-3">
-                  {plan.features.map((feature, idx) => (
-                    <li key={idx} className="flex items-start gap-2 text-sm">
-                      <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      <span className="text-gray-600">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <button
-                  onClick={() => !isCurrentPlan && handleUpgrade(plan.id)}
-                  disabled={isCurrentPlan}
-                  className={`w-full mt-6 px-4 py-2 rounded-lg font-medium transition-colors ${
-                    isCurrentPlan
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : plan.popular
-                        ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-                        : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
-                  }`}
-                >
-                  {isCurrentPlan ? 'Current Plan' : plan.price === null ? 'Contact Sales' : 'Upgrade'}
-                </button>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* Payment Method */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold mb-4">Payment Method</h3>
-        <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-8 bg-gradient-to-r from-blue-600 to-blue-800 rounded flex items-center justify-center text-white text-xs font-bold">
-              VISA
-            </div>
-            <div>
-              <div className="font-medium">Visa ending in 4242</div>
-              <div className="text-sm text-gray-500">Expires 12/2025</div>
-            </div>
-          </div>
-          <button className="text-indigo-600 hover:text-indigo-800 font-medium">
-            Update
-          </button>
-        </div>
-      </div>
-
-      {/* Invoice History */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold mb-4">Invoice History</h3>
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-gray-200">
-              <th className="text-left py-3 text-sm font-medium text-gray-500">Invoice</th>
-              <th className="text-left py-3 text-sm font-medium text-gray-500">Date</th>
-              <th className="text-left py-3 text-sm font-medium text-gray-500">Description</th>
-              <th className="text-left py-3 text-sm font-medium text-gray-500">Amount</th>
-              <th className="text-left py-3 text-sm font-medium text-gray-500">Status</th>
-              <th className="text-right py-3 text-sm font-medium text-gray-500">Download</th>
-            </tr>
-          </thead>
-          <tbody>
-            {invoices.map(invoice => (
-              <tr key={invoice.id} className="border-b border-gray-100">
-                <td className="py-3 font-medium">{invoice.id}</td>
-                <td className="py-3 text-gray-600">{new Date(invoice.date).toLocaleDateString()}</td>
-                <td className="py-3 text-gray-600">{invoice.description}</td>
-                <td className="py-3 font-medium">${invoice.amount}</td>
-                <td className="py-3">
-                  <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium capitalize">
-                    {invoice.status}
-                  </span>
-                </td>
-                <td className="py-3 text-right">
-                  <button className="text-indigo-600 hover:text-indigo-800">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Upgrade Modal */}
-      {showUpgradeModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <h3 className="text-xl font-semibold mb-4">
-              {selectedPlan ? `Upgrade to ${selectedPlan.name}` : 'Change Plan'}
-            </h3>
-
-            {!selectedPlan ? (
-              <div className="space-y-3">
-                {plans.filter(p => p.id !== currentPlan).map(plan => (
-                  <button
-                    key={plan.id}
-                    onClick={() => setSelectedPlan(plan)}
-                    className="w-full p-4 border border-gray-200 rounded-lg hover:border-indigo-500 text-left"
-                  >
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <div className="font-medium">{plan.name}</div>
-                        <div className="text-sm text-gray-500">{plan.description}</div>
-                      </div>
-                      {plan.price !== null ? (
-                        <div className="font-bold">${plan.price}/mo</div>
-                      ) : (
-                        <div className="text-sm text-gray-500">Contact us</div>
-                      )}
-                    </div>
-                  </button>
+        {MOCK_INVOICES.length === 0 ? (
+          <p style={{ color: COLORS.muted, fontSize: 14, textAlign: 'center', padding: '16px 0' }}>
+            No hay pagos registrados.
+          </p>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ borderBottom: `2px solid ${COLORS.border}` }}>
+                {['Factura', 'Fecha', 'Plan', 'Monto', 'Estado'].map((h) => (
+                  <th key={h} style={{
+                    textAlign: 'left', padding: '10px 12px', fontSize: 13,
+                    fontWeight: 600, color: COLORS.muted, textTransform: 'uppercase',
+                  }}>{h}</th>
                 ))}
-              </div>
-            ) : (
-              <div>
-                <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                  <div className="flex justify-between mb-2">
-                    <span>New plan</span>
-                    <span className="font-medium">{selectedPlan.name}</span>
-                  </div>
-                  <div className="flex justify-between mb-2">
-                    <span>Price</span>
-                    <span className="font-medium">
-                      {selectedPlan.price !== null ? `$${selectedPlan.price}/mo` : 'Custom'}
+              </tr>
+            </thead>
+            <tbody>
+              {MOCK_INVOICES.map((inv) => (
+                <tr key={inv.id} style={{ borderBottom: `1px solid ${COLORS.border}` }}>
+                  <td style={{ padding: '12px', fontSize: 14, fontFamily: 'monospace', color: COLORS.text }}>
+                    {inv.id}
+                  </td>
+                  <td style={{ padding: '12px', fontSize: 14, color: COLORS.muted }}>
+                    {new Date(inv.date).toLocaleDateString('es-AR')}
+                  </td>
+                  <td style={{ padding: '12px', fontSize: 14, color: COLORS.text }}>{inv.plan}</td>
+                  <td style={{ padding: '12px', fontSize: 14, fontWeight: 600, color: COLORS.text }}>
+                    {inv.amount}
+                  </td>
+                  <td style={{ padding: '12px' }}>
+                    <span style={{
+                      padding: '4px 10px', borderRadius: 6, fontSize: 12, fontWeight: 600,
+                      background: COLORS.successLight, color: COLORS.success,
+                    }}>
+                      {inv.status}
                     </span>
-                  </div>
-                  <div className="flex justify-between border-t pt-2 mt-2">
-                    <span className="font-medium">Due today</span>
-                    <span className="font-bold">
-                      {selectedPlan.price !== null ? `$${selectedPlan.price}` : '-'}
-                    </span>
-                  </div>
-                </div>
-                <p className="text-sm text-gray-500 mb-4">
-                  Your new plan will take effect immediately. You'll be charged the prorated amount for the remaining days in your billing cycle.
-                </p>
-              </div>
-            )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
 
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => {
-                  setShowUpgradeModal(false)
-                  setSelectedPlan(null)
-                }}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              {selectedPlan && selectedPlan.price !== null && (
-                <button
-                  onClick={confirmUpgrade}
-                  className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-                >
-                  Confirm Upgrade
-                </button>
-              )}
-              {selectedPlan && selectedPlan.price === null && (
-                <button className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
-                  Contact Sales
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+        <p style={{ fontSize: 13, color: COLORS.muted, margin: '16px 0 0', textAlign: 'center' }}>
+          Para consultas sobre facturacion, contacta a soporte@xcapit.com
+        </p>
+      </div>
     </div>
   )
 }

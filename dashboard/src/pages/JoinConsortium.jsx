@@ -1,162 +1,253 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate, Link } from 'react-router-dom'
-import { acceptInvitation, isAuthenticated, setApiKey, getCurrentCompany } from '../api/client'
+import { acceptInvitation, listConsortiums, isAuthenticated } from '../api/client'
+
+const COLORS = {
+  primary: '#6366f1',
+  primaryHover: '#4f46e5',
+  primaryLight: '#eef2ff',
+  success: '#10b981',
+  successLight: '#dcfce7',
+  warning: '#f59e0b',
+  warningLight: '#fef9c3',
+  danger: '#ef4444',
+  dangerLight: '#fef2f2',
+  bg: '#f9fafb',
+  card: '#ffffff',
+  text: '#111827',
+  muted: '#6b7280',
+  border: '#e5e7eb',
+  borderFocus: '#6366f1',
+}
+
+const MODEL_LABELS = {
+  linear_regression: 'Regresion lineal',
+  logistic_regression: 'Regresion logistica',
+  random_forest: 'Random Forest',
+  neural_network: 'Red neuronal',
+}
 
 export default function JoinConsortium() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
-  const [inviteCode, setInviteCode] = useState(searchParams.get('code') || '')
-  const [apiKey, setApiKeyValue] = useState('')
+  const inviteCode = searchParams.get('code') || ''
+
+  const [code, setCode] = useState(inviteCode)
   const [loading, setLoading] = useState(false)
+  const [joining, setJoining] = useState(false)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState(null)
-  const [step, setStep] = useState(isAuthenticated() ? 'join' : 'auth')
+  const [success, setSuccess] = useState('')
+  const [availableConsortiums, setAvailableConsortiums] = useState([])
+
+  const authenticated = isAuthenticated()
 
   useEffect(() => {
-    if (isAuthenticated()) {
-      setStep('join')
+    if (!authenticated) return
+    const fetchConsortiums = async () => {
+      setLoading(true)
+      try {
+        const data = await listConsortiums()
+        const list = Array.isArray(data) ? data : data.results || []
+        setAvailableConsortiums(list.filter(c => c.status === 'active' || c.status === 'pending'))
+      } catch (err) {
+        // non-critical
+      } finally {
+        setLoading(false)
+      }
     }
-  }, [])
+    fetchConsortiums()
+  }, [authenticated])
 
-  const handleAuth = async (e) => {
-    e.preventDefault()
-    setLoading(true)
+  // Auto-join if code is in URL
+  useEffect(() => {
+    if (inviteCode && authenticated) {
+      handleJoin(inviteCode)
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleJoin = async (invCode) => {
+    if (!invCode.trim()) {
+      setError('Ingresa un codigo de invitacion valido.')
+      return
+    }
+    setJoining(true)
     setError('')
+    setSuccess('')
 
     try {
-      setApiKey(apiKey)
-      await getCurrentCompany()
-      setStep('join')
-    } catch (err) {
-      setApiKey('')
-      setError('API Key invalida. Verifica que sea correcta.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleJoin = async (e) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
-
-    try {
-      const result = await acceptInvitation(inviteCode)
-      setSuccess(result)
-      setTimeout(() => navigate(`/consortiums/${result.consortium_id}`), 2000)
+      const result = await acceptInvitation(invCode.trim())
+      setSuccess(`Te has unido al consorcio "${result.consortium_name || result.name || 'exitosamente'}"`)
+      setTimeout(() => {
+        if (result.consortium_id || result.id) {
+          navigate(`/consortiums/${result.consortium_id || result.id}`)
+        } else {
+          navigate('/dashboard')
+        }
+      }, 2000)
     } catch (err) {
       setError(err.message)
     } finally {
-      setLoading(false)
+      setJoining(false)
     }
   }
 
-  if (success) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h2 className="text-2xl font-bold text-slate-900 mb-2">Te uniste al consorcio!</h2>
-          <p className="text-slate-600 mb-6">
-            Ahora puedes contribuir datos y participar en el entrenamiento.
-          </p>
-          <p className="text-sm text-slate-500">Redirigiendo...</p>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+    <div style={{
+      minHeight: '100vh', background: COLORS.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: 16,
+    }}>
+      <div style={{ width: '100%', maxWidth: 560 }}>
         {/* Logo */}
-        <div className="flex items-center justify-center mb-8">
-          <div className="w-10 h-10 bg-brand-600 rounded-lg flex items-center justify-center mr-2">
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 32 }}>
+          <div style={{
+            width: 40, height: 40, background: COLORS.primary, borderRadius: 8,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 8,
+          }}>
+            <svg width="24" height="24" fill="none" stroke="#fff" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
           </div>
-          <span className="text-2xl font-semibold text-slate-900">Xcapit</span>
-          <span className="text-2xl font-light text-brand-600 ml-1">Privacy</span>
+          <span style={{ fontSize: 24, fontWeight: 600, color: COLORS.text }}>Xcapit</span>
+          <span style={{ fontSize: 24, fontWeight: 300, color: COLORS.primary, marginLeft: 4 }}>Privacy</span>
         </div>
 
-        <h1 className="text-2xl font-bold text-slate-900 text-center mb-2">Unirse a Consorcio</h1>
-        <p className="text-slate-600 text-center mb-8">
-          {step === 'auth'
-            ? 'Primero, ingresa tu API Key para identificarte.'
-            : 'Ingresa el codigo de invitacion para unirte.'}
-        </p>
+        {/* Main card - Join by code */}
+        <div style={{
+          background: COLORS.card, borderRadius: 16, boxShadow: '0 20px 60px rgba(0,0,0,0.08)',
+          padding: 32, marginBottom: 24,
+        }}>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: COLORS.text, margin: '0 0 8px', textAlign: 'center' }}>
+            Unirse a un consorcio
+          </h1>
+          <p style={{ color: COLORS.muted, textAlign: 'center', margin: '0 0 24px', fontSize: 15 }}>
+            Ingresa tu codigo de invitacion para unirte a un consorcio de aprendizaje federado.
+          </p>
 
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
-            {error}
-          </div>
-        )}
-
-        {step === 'auth' ? (
-          <form onSubmit={handleAuth} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                API Key
-              </label>
-              <input
-                type="password"
-                value={apiKey}
-                onChange={(e) => setApiKeyValue(e.target.value)}
-                className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent transition font-mono"
-                placeholder="xcp_..."
-                required
-              />
+          {!authenticated && (
+            <div style={{
+              background: COLORS.warningLight, borderRadius: 10, padding: '12px 16px', marginBottom: 20,
+              border: `1px solid #fde68a`,
+            }}>
+              <p style={{ margin: 0, fontSize: 14, color: '#92400e' }}>
+                Debes{' '}
+                <Link to="/login" style={{ color: COLORS.primary, fontWeight: 600 }}>iniciar sesion</Link>
+                {' '}o{' '}
+                <Link to="/register" style={{ color: COLORS.primary, fontWeight: 600 }}>registrarte</Link>
+                {' '}antes de unirte a un consorcio.
+              </p>
             </div>
+          )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-brand-600 text-white py-3 px-4 rounded-xl font-medium hover:bg-brand-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Verificando...' : 'Continuar'}
-            </button>
+          {error && (
+            <div style={{
+              background: COLORS.dangerLight, border: '1px solid #fecaca', color: COLORS.danger,
+              padding: '12px 16px', borderRadius: 10, marginBottom: 20, fontSize: 14,
+            }}>
+              {error}
+            </div>
+          )}
 
-            <p className="text-center text-slate-600">
-              No tienes cuenta?{' '}
-              <Link to="/register" className="text-brand-600 font-medium hover:text-brand-700">
-                Registrar empresa
-              </Link>
-            </p>
-          </form>
-        ) : (
-          <form onSubmit={handleJoin} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+          {success && (
+            <div style={{
+              background: COLORS.successLight, border: '1px solid #bbf7d0', color: COLORS.success,
+              padding: '12px 16px', borderRadius: 10, marginBottom: 20, fontSize: 14,
+            }}>
+              {success}
+            </div>
+          )}
+
+          <form onSubmit={(e) => { e.preventDefault(); handleJoin(code); }}>
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#374151', marginBottom: 6 }}>
                 Codigo de invitacion
               </label>
               <input
                 type="text"
-                value={inviteCode}
-                onChange={(e) => setInviteCode(e.target.value)}
-                className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent transition font-mono text-center text-lg tracking-wider"
-                placeholder="XXXXXX"
-                maxLength={6}
-                required
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                placeholder="Ej: INV-abc123def456"
+                disabled={!authenticated}
+                style={{
+                  width: '100%', padding: '12px 16px', border: `1px solid ${COLORS.border}`,
+                  borderRadius: 10, fontSize: 15, color: COLORS.text, outline: 'none',
+                  boxSizing: 'border-box', transition: 'border-color 0.2s',
+                  fontFamily: 'monospace', letterSpacing: 0.5,
+                  background: authenticated ? COLORS.card : '#f3f4f6',
+                }}
+                onFocus={(e) => e.target.style.borderColor = COLORS.borderFocus}
+                onBlur={(e) => e.target.style.borderColor = COLORS.border}
               />
-              <p className="text-xs text-slate-500 mt-2 text-center">
-                Recibiste este codigo por email al ser invitado.
-              </p>
             </div>
 
             <button
               type="submit"
-              disabled={loading || inviteCode.length < 6}
-              className="w-full bg-brand-600 text-white py-3 px-4 rounded-xl font-medium hover:bg-brand-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={joining || !authenticated || !code.trim()}
+              style={{
+                width: '100%', padding: '14px 0', borderRadius: 10, border: 'none',
+                background: (joining || !authenticated || !code.trim()) ? '#a5b4fc' : COLORS.primary,
+                color: '#fff', fontSize: 16, fontWeight: 600,
+                cursor: (joining || !authenticated || !code.trim()) ? 'not-allowed' : 'pointer',
+                transition: 'background 0.2s',
+              }}
+              onMouseOver={(e) => { if (!joining && authenticated && code.trim()) e.target.style.background = COLORS.primaryHover }}
+              onMouseOut={(e) => { if (!joining && authenticated && code.trim()) e.target.style.background = COLORS.primary }}
             >
-              {loading ? 'Uniendose...' : 'Unirse al Consorcio'}
+              {joining ? 'Uniendose...' : 'Unirse al consorcio'}
             </button>
           </form>
+        </div>
+
+        {/* Available consortiums (if authenticated) */}
+        {authenticated && availableConsortiums.length > 0 && (
+          <div style={{
+            background: COLORS.card, borderRadius: 16, boxShadow: '0 20px 60px rgba(0,0,0,0.08)',
+            padding: 32,
+          }}>
+            <h2 style={{ fontSize: 20, fontWeight: 600, color: COLORS.text, margin: '0 0 16px' }}>
+              Consorcios disponibles
+            </h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {availableConsortiums.map((c) => (
+                <div key={c.id || c.name} style={{
+                  border: `1px solid ${COLORS.border}`, borderRadius: 10, padding: 16,
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  transition: 'border-color 0.2s',
+                }}
+                  onMouseOver={(e) => e.currentTarget.style.borderColor = COLORS.primary}
+                  onMouseOut={(e) => e.currentTarget.style.borderColor = COLORS.border}
+                >
+                  <div>
+                    <div style={{ fontSize: 15, fontWeight: 600, color: COLORS.text, marginBottom: 4 }}>
+                      {c.name}
+                    </div>
+                    <div style={{ display: 'flex', gap: 16, fontSize: 13, color: COLORS.muted }}>
+                      <span>{MODEL_LABELS[c.model_type] || c.model_type || 'Sin modelo'}</span>
+                      <span>{c.member_count || c.members_count || 0} miembros</span>
+                    </div>
+                  </div>
+                  <Link to={`/consortiums/${c.id}`} style={{
+                    padding: '8px 16px', borderRadius: 8, background: COLORS.primaryLight,
+                    color: COLORS.primary, textDecoration: 'none', fontSize: 14, fontWeight: 500,
+                  }}>
+                    Ver
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
+
+        {/* Footer links */}
+        <div style={{ textAlign: 'center', marginTop: 24 }}>
+          <p style={{ fontSize: 14, color: COLORS.muted }}>
+            Quieres crear tu propio consorcio?{' '}
+            <Link to={authenticated ? '/consortiums/new' : '/register'} style={{
+              color: COLORS.primary, fontWeight: 500, textDecoration: 'none',
+            }}>
+              {authenticated ? 'Crear consorcio' : 'Registrate primero'}
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   )

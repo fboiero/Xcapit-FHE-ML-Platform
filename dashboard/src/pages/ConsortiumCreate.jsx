@@ -1,251 +1,371 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { createConsortium } from '../api/client'
 
-const modelTypes = [
-  {
-    id: 'linear_regression',
-    name: 'Regresion Lineal',
-    description: 'Prediccion de valores continuos basado en variables independientes.',
-    icon: (
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-      </svg>
-    ),
-  },
-  {
-    id: 'logistic_regression',
-    name: 'Regresion Logistica',
-    description: 'Clasificacion binaria para predecir categorias.',
-    icon: (
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-      </svg>
-    ),
-  },
-  {
-    id: 'neural_network',
-    name: 'Red Neuronal',
-    description: 'Modelos profundos para patrones complejos.',
-    icon: (
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-      </svg>
-    ),
-  },
+const COLORS = {
+  primary: '#6366f1',
+  primaryHover: '#4f46e5',
+  primaryLight: '#eef2ff',
+  success: '#10b981',
+  successLight: '#dcfce7',
+  warning: '#f59e0b',
+  warningLight: '#fef9c3',
+  danger: '#ef4444',
+  dangerLight: '#fef2f2',
+  bg: '#f9fafb',
+  card: '#ffffff',
+  text: '#111827',
+  muted: '#6b7280',
+  border: '#e5e7eb',
+  borderFocus: '#6366f1',
+}
+
+const MODEL_TYPES = [
+  { value: '', label: 'Selecciona un tipo de modelo' },
+  { value: 'linear_regression', label: 'Regresion lineal', desc: 'Ideal para predicciones numericas simples' },
+  { value: 'logistic_regression', label: 'Regresion logistica', desc: 'Clasificacion binaria con probabilidades' },
+  { value: 'random_forest', label: 'Random Forest', desc: 'Modelo de ensamble para clasificacion y regresion' },
+  { value: 'neural_network', label: 'Red neuronal', desc: 'Deep learning para patrones complejos' },
 ]
 
+const ENCRYPTION_OPTIONS = [
+  { value: 'ckks', label: 'CKKS', desc: 'Encriptacion homomorfica para operaciones con decimales' },
+  { value: 'bfv', label: 'BFV', desc: 'Encriptacion homomorfica para operaciones con enteros' },
+]
+
+const inputStyle = {
+  width: '100%',
+  padding: '12px 16px',
+  border: `1px solid ${COLORS.border}`,
+  borderRadius: 10,
+  fontSize: 15,
+  color: COLORS.text,
+  outline: 'none',
+  boxSizing: 'border-box',
+  transition: 'border-color 0.2s',
+  background: COLORS.card,
+}
+
+const labelStyle = {
+  display: 'block',
+  fontSize: 14,
+  fontWeight: 500,
+  color: '#374151',
+  marginBottom: 6,
+}
+
 export default function ConsortiumCreate() {
-  const [step, setStep] = useState(1)
+  const navigate = useNavigate()
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [modelType, setModelType] = useState('')
+  const [encryptionScheme, setEncryptionScheme] = useState('ckks')
+  const [polyDegree, setPolyDegree] = useState(8192)
+  const [minMembers, setMinMembers] = useState(2)
+  const [isPrivate, setIsPrivate] = useState(true)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const navigate = useNavigate()
+  const [step, setStep] = useState(1)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (!name.trim() || !modelType) {
+      setError('El nombre y tipo de modelo son obligatorios.')
+      return
+    }
     setLoading(true)
     setError('')
 
     try {
-      const consortium = await createConsortium(name, description, modelType)
-      navigate(`/consortiums/${consortium.id}`)
+      const mlConfig = {
+        encryption_scheme: encryptionScheme,
+        poly_modulus_degree: polyDegree,
+        min_members: minMembers,
+        is_private: isPrivate,
+      }
+      const result = await createConsortium(name, description, modelType, mlConfig)
+      navigate(`/consortiums/${result.id}`)
     } catch (err) {
       setError(err.message)
+    } finally {
       setLoading(false)
     }
   }
 
+  const canProceed = step === 1 ? (name.trim() && modelType) : true
+
   return (
-    <div className="pt-16 max-w-2xl mx-auto">
-      {/* Progress */}
-      <div className="flex items-center gap-4 mb-8">
-        {[1, 2, 3].map((s) => (
-          <div key={s} className="flex items-center">
-            <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                step >= s
-                  ? 'bg-brand-600 text-white'
-                  : 'bg-slate-100 text-slate-400'
-              }`}
+    <div style={{ padding: 32, maxWidth: 720, margin: '0 auto' }}>
+      {/* Breadcrumb */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24 }}>
+        <Link to="/dashboard" style={{ color: COLORS.muted, textDecoration: 'none', fontSize: 14 }}>Dashboard</Link>
+        <span style={{ color: COLORS.muted, fontSize: 14 }}>/</span>
+        <span style={{ color: COLORS.text, fontSize: 14, fontWeight: 500 }}>Crear consorcio</span>
+      </div>
+
+      <h1 style={{ fontSize: 28, fontWeight: 700, color: COLORS.text, margin: '0 0 8px' }}>
+        Crear nuevo consorcio
+      </h1>
+      <p style={{ fontSize: 16, color: COLORS.muted, margin: '0 0 32px' }}>
+        Configura un consorcio de aprendizaje federado con privacidad.
+      </p>
+
+      {/* Progress steps */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 32 }}>
+        {[{ n: 1, label: 'Informacion basica' }, { n: 2, label: 'Configuracion avanzada' }].map((s, idx) => (
+          <div key={s.n} style={{ display: 'flex', alignItems: 'center', flex: idx === 0 ? 1 : 0 }}>
+            <button
+              onClick={() => setStep(s.n)}
+              style={{
+                width: 32, height: 32, borderRadius: '50%', border: 'none', cursor: 'pointer',
+                background: step >= s.n ? COLORS.primary : COLORS.border,
+                color: step >= s.n ? '#fff' : COLORS.muted,
+                fontWeight: 600, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
             >
-              {s}
-            </div>
-            {s < 3 && (
-              <div
-                className={`w-16 h-1 mx-2 rounded ${
-                  step > s ? 'bg-brand-600' : 'bg-slate-100'
-                }`}
-              />
+              {s.n}
+            </button>
+            <span style={{
+              fontSize: 14, fontWeight: step === s.n ? 600 : 400,
+              color: step === s.n ? COLORS.text : COLORS.muted, marginLeft: 8,
+            }}>
+              {s.label}
+            </span>
+            {idx === 0 && (
+              <div style={{
+                flex: 1, height: 2, background: step >= 2 ? COLORS.primary : COLORS.border,
+                margin: '0 16px',
+              }} />
             )}
           </div>
         ))}
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 p-8">
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
-            {error}
-          </div>
-        )}
+      {error && (
+        <div style={{
+          background: COLORS.dangerLight, border: '1px solid #fecaca', color: COLORS.danger,
+          padding: '12px 16px', borderRadius: 10, marginBottom: 20, fontSize: 14,
+        }}>
+          {error}
+        </div>
+      )}
 
-        {/* Step 1: Basic Info */}
-        {step === 1 && (
-          <div>
-            <h2 className="text-xl font-bold text-slate-900 mb-2">Informacion basica</h2>
-            <p className="text-slate-600 mb-6">Define el nombre y proposito de tu consorcio.</p>
-
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Nombre del consorcio
-                </label>
+      <form onSubmit={handleSubmit}>
+        <div style={{
+          background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`, padding: 28,
+        }}>
+          {step === 1 && (
+            <>
+              {/* Name */}
+              <div style={{ marginBottom: 20 }}>
+                <label style={labelStyle}>Nombre del consorcio *</label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"
-                  placeholder="Ej: Analisis de Fraude Bancario"
+                  placeholder="Ej: Consorcio Salud Latam"
+                  required
+                  style={inputStyle}
+                  onFocus={(e) => e.target.style.borderColor = COLORS.borderFocus}
+                  onBlur={(e) => e.target.style.borderColor = COLORS.border}
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Descripcion
-                </label>
+              {/* Description */}
+              <div style={{ marginBottom: 20 }}>
+                <label style={labelStyle}>Descripcion</label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Describe el proposito del consorcio y los datos que se compartiran..."
                   rows={4}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent transition resize-none"
-                  placeholder="Describe el objetivo del consorcio y que tipo de datos se compartiran..."
+                  style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }}
+                  onFocus={(e) => e.target.style.borderColor = COLORS.borderFocus}
+                  onBlur={(e) => e.target.style.borderColor = COLORS.border}
                 />
               </div>
-            </div>
 
-            <div className="flex justify-end mt-8">
-              <button
-                onClick={() => setStep(2)}
-                disabled={!name || !description}
-                className="bg-brand-600 text-white px-6 py-3 rounded-xl font-medium hover:bg-brand-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Continuar
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Step 2: Model Type */}
-        {step === 2 && (
-          <div>
-            <h2 className="text-xl font-bold text-slate-900 mb-2">Tipo de modelo</h2>
-            <p className="text-slate-600 mb-6">Selecciona el algoritmo de ML que se entrenara.</p>
-
-            <div className="space-y-4">
-              {modelTypes.map((model) => (
-                <button
-                  key={model.id}
-                  onClick={() => setModelType(model.id)}
-                  className={`w-full p-4 rounded-xl border-2 text-left transition ${
-                    modelType === model.id
-                      ? 'border-brand-600 bg-brand-50'
-                      : 'border-slate-200 hover:border-slate-300'
-                  }`}
+              {/* Model type */}
+              <div style={{ marginBottom: 20 }}>
+                <label style={labelStyle}>Tipo de modelo *</label>
+                <select
+                  value={modelType}
+                  onChange={(e) => setModelType(e.target.value)}
+                  required
+                  style={{ ...inputStyle, cursor: 'pointer', color: modelType ? COLORS.text : COLORS.muted }}
+                  onFocus={(e) => e.target.style.borderColor = COLORS.borderFocus}
+                  onBlur={(e) => e.target.style.borderColor = COLORS.border}
                 >
-                  <div className="flex items-start gap-4">
-                    <div
-                      className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                        modelType === model.id
-                          ? 'bg-brand-600 text-white'
-                          : 'bg-slate-100 text-slate-600'
-                      }`}
-                    >
-                      {model.icon}
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-slate-900">{model.name}</h3>
-                      <p className="text-sm text-slate-600">{model.description}</p>
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-
-            <div className="flex justify-between mt-8">
-              <button
-                onClick={() => setStep(1)}
-                className="text-slate-600 px-6 py-3 rounded-xl font-medium hover:bg-slate-100 transition"
-              >
-                Atras
-              </button>
-              <button
-                onClick={() => setStep(3)}
-                disabled={!modelType}
-                className="bg-brand-600 text-white px-6 py-3 rounded-xl font-medium hover:bg-brand-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Continuar
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Step 3: Review */}
-        {step === 3 && (
-          <div>
-            <h2 className="text-xl font-bold text-slate-900 mb-2">Confirmar creacion</h2>
-            <p className="text-slate-600 mb-6">Revisa la informacion antes de crear el consorcio.</p>
-
-            <div className="bg-slate-50 rounded-xl p-6 space-y-4">
-              <div>
-                <p className="text-sm text-slate-500">Nombre</p>
-                <p className="font-medium text-slate-900">{name}</p>
-              </div>
-              <div>
-                <p className="text-sm text-slate-500">Descripcion</p>
-                <p className="text-slate-900">{description}</p>
-              </div>
-              <div>
-                <p className="text-sm text-slate-500">Tipo de modelo</p>
-                <p className="font-medium text-slate-900">
-                  {modelTypes.find((m) => m.id === modelType)?.name}
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mt-6">
-              <div className="flex items-start gap-3">
-                <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <div>
-                  <p className="text-sm font-medium text-blue-900">Siguiente paso</p>
-                  <p className="text-sm text-blue-700">
-                    Despues de crear el consorcio, podras invitar participantes y subir datos encriptados.
+                  {MODEL_TYPES.map((t) => (
+                    <option key={t.value} value={t.value}>{t.label}</option>
+                  ))}
+                </select>
+                {modelType && (
+                  <p style={{ fontSize: 13, color: COLORS.muted, margin: '6px 0 0' }}>
+                    {MODEL_TYPES.find(t => t.value === modelType)?.desc}
                   </p>
+                )}
+              </div>
+
+              {/* Privacy toggle */}
+              <div style={{ marginBottom: 8 }}>
+                <label style={{ ...labelStyle, marginBottom: 12 }}>Visibilidad</label>
+                <div style={{ display: 'flex', gap: 12 }}>
+                  {[{ val: true, label: 'Privado', desc: 'Solo por invitacion' }, { val: false, label: 'Publico', desc: 'Cualquiera puede unirse' }].map((opt) => (
+                    <button
+                      key={String(opt.val)}
+                      type="button"
+                      onClick={() => setIsPrivate(opt.val)}
+                      style={{
+                        flex: 1, padding: '14px 16px', borderRadius: 10, cursor: 'pointer',
+                        border: `2px solid ${isPrivate === opt.val ? COLORS.primary : COLORS.border}`,
+                        background: isPrivate === opt.val ? COLORS.primaryLight : COLORS.card,
+                        textAlign: 'left', transition: 'border-color 0.2s',
+                      }}
+                    >
+                      <div style={{ fontSize: 14, fontWeight: 600, color: COLORS.text }}>{opt.label}</div>
+                      <div style={{ fontSize: 13, color: COLORS.muted, marginTop: 2 }}>{opt.desc}</div>
+                    </button>
+                  ))}
                 </div>
               </div>
-            </div>
+            </>
+          )}
 
-            <div className="flex justify-between mt-8">
-              <button
-                onClick={() => setStep(2)}
-                className="text-slate-600 px-6 py-3 rounded-xl font-medium hover:bg-slate-100 transition"
-              >
-                Atras
-              </button>
-              <button
-                onClick={handleSubmit}
-                disabled={loading}
-                className="bg-brand-600 text-white px-6 py-3 rounded-xl font-medium hover:bg-brand-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Creando...' : 'Crear Consorcio'}
-              </button>
+          {step === 2 && (
+            <>
+              {/* Encryption scheme */}
+              <div style={{ marginBottom: 20 }}>
+                <label style={labelStyle}>Esquema de encriptacion</label>
+                <div style={{ display: 'flex', gap: 12 }}>
+                  {ENCRYPTION_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setEncryptionScheme(opt.value)}
+                      style={{
+                        flex: 1, padding: '14px 16px', borderRadius: 10, cursor: 'pointer',
+                        border: `2px solid ${encryptionScheme === opt.value ? COLORS.primary : COLORS.border}`,
+                        background: encryptionScheme === opt.value ? COLORS.primaryLight : COLORS.card,
+                        textAlign: 'left', transition: 'border-color 0.2s',
+                      }}
+                    >
+                      <div style={{ fontSize: 14, fontWeight: 600, color: COLORS.text }}>{opt.label}</div>
+                      <div style={{ fontSize: 13, color: COLORS.muted, marginTop: 2 }}>{opt.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Polynomial degree */}
+              <div style={{ marginBottom: 20 }}>
+                <label style={labelStyle}>Grado del polinomio (poly_modulus_degree)</label>
+                <select
+                  value={polyDegree}
+                  onChange={(e) => setPolyDegree(Number(e.target.value))}
+                  style={{ ...inputStyle, cursor: 'pointer' }}
+                >
+                  <option value={4096}>4096 - Rapido, menor seguridad</option>
+                  <option value={8192}>8192 - Balanceado (recomendado)</option>
+                  <option value={16384}>16384 - Alta seguridad, mas lento</option>
+                </select>
+                <p style={{ fontSize: 13, color: COLORS.muted, margin: '6px 0 0' }}>
+                  Mayor grado = mayor seguridad pero mas tiempo de computo.
+                </p>
+              </div>
+
+              {/* Min members */}
+              <div style={{ marginBottom: 8 }}>
+                <label style={labelStyle}>Miembros minimos para entrenar</label>
+                <input
+                  type="number"
+                  min={2}
+                  max={50}
+                  value={minMembers}
+                  onChange={(e) => setMinMembers(Number(e.target.value))}
+                  style={{ ...inputStyle, maxWidth: 120 }}
+                  onFocus={(e) => e.target.style.borderColor = COLORS.borderFocus}
+                  onBlur={(e) => e.target.style.borderColor = COLORS.border}
+                />
+                <p style={{ fontSize: 13, color: COLORS.muted, margin: '6px 0 0' }}>
+                  Cantidad minima de participantes antes de poder iniciar el entrenamiento.
+                </p>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Summary card on step 2 */}
+        {step === 2 && name && (
+          <div style={{
+            background: COLORS.primaryLight, borderRadius: 12, padding: 20, marginTop: 20,
+            border: `1px solid ${COLORS.primary}33`,
+          }}>
+            <h3 style={{ fontSize: 15, fontWeight: 600, color: COLORS.text, margin: '0 0 12px' }}>
+              Resumen de configuracion
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 24px', fontSize: 14 }}>
+              <div><span style={{ color: COLORS.muted }}>Nombre:</span> <strong>{name}</strong></div>
+              <div><span style={{ color: COLORS.muted }}>Modelo:</span> <strong>{MODEL_TYPES.find(t => t.value === modelType)?.label || '-'}</strong></div>
+              <div><span style={{ color: COLORS.muted }}>Encriptacion:</span> <strong>{encryptionScheme.toUpperCase()}</strong></div>
+              <div><span style={{ color: COLORS.muted }}>Poly degree:</span> <strong>{polyDegree}</strong></div>
+              <div><span style={{ color: COLORS.muted }}>Visibilidad:</span> <strong>{isPrivate ? 'Privado' : 'Publico'}</strong></div>
+              <div><span style={{ color: COLORS.muted }}>Min. miembros:</span> <strong>{minMembers}</strong></div>
             </div>
           </div>
         )}
-      </div>
+
+        {/* Action buttons */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 24 }}>
+          {step === 2 ? (
+            <button
+              type="button"
+              onClick={() => setStep(1)}
+              style={{
+                padding: '12px 24px', borderRadius: 10, border: `1px solid ${COLORS.border}`,
+                background: COLORS.card, color: COLORS.text, fontSize: 15, fontWeight: 500, cursor: 'pointer',
+              }}
+            >
+              Anterior
+            </button>
+          ) : (
+            <div />
+          )}
+
+          {step === 1 ? (
+            <button
+              type="button"
+              onClick={() => canProceed && setStep(2)}
+              disabled={!canProceed}
+              style={{
+                padding: '12px 28px', borderRadius: 10, border: 'none',
+                background: canProceed ? COLORS.primary : '#a5b4fc',
+                color: '#fff', fontSize: 15, fontWeight: 600,
+                cursor: canProceed ? 'pointer' : 'not-allowed', transition: 'background 0.2s',
+              }}
+              onMouseOver={(e) => { if (canProceed) e.target.style.background = COLORS.primaryHover }}
+              onMouseOut={(e) => { if (canProceed) e.target.style.background = COLORS.primary }}
+            >
+              Siguiente
+            </button>
+          ) : (
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                padding: '12px 28px', borderRadius: 10, border: 'none',
+                background: loading ? '#a5b4fc' : COLORS.primary,
+                color: '#fff', fontSize: 15, fontWeight: 600,
+                cursor: loading ? 'not-allowed' : 'pointer', transition: 'background 0.2s',
+              }}
+              onMouseOver={(e) => { if (!loading) e.target.style.background = COLORS.primaryHover }}
+              onMouseOut={(e) => { if (!loading) e.target.style.background = COLORS.primary }}
+            >
+              {loading ? 'Creando...' : 'Crear consorcio'}
+            </button>
+          )}
+        </div>
+      </form>
     </div>
   )
 }

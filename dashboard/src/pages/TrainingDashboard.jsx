@@ -1,418 +1,366 @@
-import { useState, useEffect, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useState, useEffect } from 'react'
+import { Link, useParams } from 'react-router-dom'
+import { listConsortiums, startTraining, getTrainingStatus } from '../api/client'
+
+const COLORS = {
+  primary: '#6366f1',
+  primaryHover: '#4f46e5',
+  primaryLight: '#eef2ff',
+  success: '#10b981',
+  successLight: '#dcfce7',
+  warning: '#f59e0b',
+  warningLight: '#fef9c3',
+  danger: '#ef4444',
+  dangerLight: '#fef2f2',
+  bg: '#f9fafb',
+  card: '#ffffff',
+  text: '#111827',
+  muted: '#6b7280',
+  border: '#e5e7eb',
+}
+
+const STATUS_STYLES = {
+  completed: { label: 'Completado', color: COLORS.success, bg: COLORS.successLight },
+  training: { label: 'Entrenando', color: COLORS.warning, bg: COLORS.warningLight },
+  queued: { label: 'En cola', color: COLORS.primary, bg: COLORS.primaryLight },
+  failed: { label: 'Fallido', color: COLORS.danger, bg: COLORS.dangerLight },
+  pending: { label: 'Pendiente', color: COLORS.muted, bg: '#f3f4f6' },
+}
+
+const MODEL_LABELS = {
+  linear_regression: 'Regresion lineal',
+  logistic_regression: 'Regresion logistica',
+  random_forest: 'Random Forest',
+  neural_network: 'Red neuronal',
+}
 
 export default function TrainingDashboard() {
-  const { t } = useTranslation();
-  const [isTraining, setIsTraining] = useState(false);
-  const [trainingProgress, setTrainingProgress] = useState(0);
-  const [currentEpoch, setCurrentEpoch] = useState(0);
-  const [totalEpochs, setTotalEpochs] = useState(100);
-  const [metrics, setMetrics] = useState([]);
-  const [logs, setLogs] = useState([]);
-  const [selectedModel, setSelectedModel] = useState('logistic_regression');
-  const [trainingConfig, setTrainingConfig] = useState({
-    learning_rate: 0.01,
-    batch_size: 32,
-    epochs: 100,
-    early_stopping: true,
-    patience: 10,
-  });
-  const logsEndRef = useRef(null);
+  const { consortiumId } = useParams()
+  const [consortiums, setConsortiums] = useState([])
+  const [trainingRuns, setTrainingRuns] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [startingId, setStartingId] = useState(null)
+  const [selectedRun, setSelectedRun] = useState(null)
 
-  const models = [
-    { id: 'logistic_regression', name: 'Logistic Regression' },
-    { id: 'linear_regression', name: 'Linear Regression' },
-    { id: 'random_forest', name: 'Random Forest' },
-    { id: 'neural_network', name: 'Neural Network' },
-    { id: 'gradient_boosting', name: 'Gradient Boosting' },
-    { id: 'svm', name: 'SVM' },
-  ];
-
-  // Simulate training progress
   useEffect(() => {
-    if (!isTraining) return;
+    const fetchData = async () => {
+      try {
+        const data = await listConsortiums()
+        const list = Array.isArray(data) ? data : data.results || []
+        setConsortiums(list)
 
-    const interval = setInterval(() => {
-      setCurrentEpoch((prev) => {
-        const next = prev + 1;
-        if (next >= totalEpochs) {
-          setIsTraining(false);
-          addLog('Training completed!', 'success');
-          return prev;
+        // Fetch training status for each consortium
+        const runs = []
+        const targets = consortiumId ? list.filter(c => c.id === consortiumId) : list.slice(0, 20)
+        for (const c of targets) {
+          try {
+            const ts = await getTrainingStatus(c.id)
+            runs.push({
+              consortium_id: c.id,
+              consortium_name: c.name,
+              model_type: c.model_type,
+              status: ts.status || c.status,
+              progress: ts.progress || 0,
+              started_at: ts.started_at || ts.created_at,
+              completed_at: ts.completed_at,
+              metrics: ts.metrics || null,
+              duration: ts.duration || null,
+              epochs: ts.epochs || null,
+            })
+          } catch (_) {
+            runs.push({
+              consortium_id: c.id,
+              consortium_name: c.name,
+              model_type: c.model_type,
+              status: c.status === 'completed' ? 'completed' : 'pending',
+              progress: c.status === 'completed' ? 100 : 0,
+              started_at: null,
+              completed_at: null,
+              metrics: null,
+            })
+          }
         }
+        setTrainingRuns(runs)
+      } catch (err) {
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [consortiumId])
 
-        // Simulate metrics
-        const loss = 0.5 * Math.exp(-next / 30) + Math.random() * 0.05;
-        const accuracy = 0.5 + 0.4 * (1 - Math.exp(-next / 25)) + Math.random() * 0.02;
-        const valLoss = loss + 0.1 + Math.random() * 0.05;
-        const valAccuracy = accuracy - 0.05 + Math.random() * 0.02;
+  const handleStartTraining = async (cId) => {
+    setStartingId(cId)
+    setError('')
+    try {
+      const result = await startTraining(cId)
+      setTrainingRuns((prev) =>
+        prev.map((r) =>
+          r.consortium_id === cId
+            ? { ...r, status: 'training', progress: 0, started_at: new Date().toISOString(), metrics: null }
+            : r
+        )
+      )
+    } catch (err) {
+      setError(`Error iniciando entrenamiento: ${err.message}`)
+    } finally {
+      setStartingId(null)
+    }
+  }
 
-        setMetrics((prev) => [
-          ...prev,
-          {
-            epoch: next,
-            loss: loss.toFixed(4),
-            accuracy: (accuracy * 100).toFixed(2),
-            val_loss: valLoss.toFixed(4),
-            val_accuracy: (valAccuracy * 100).toFixed(2),
-          },
-        ]);
+  const activeRuns = trainingRuns.filter(r => r.status === 'training' || r.status === 'queued')
+  const completedRuns = trainingRuns.filter(r => r.status === 'completed')
+  const pendingRuns = trainingRuns.filter(r => r.status === 'pending' || r.status === 'failed')
 
-        setTrainingProgress((next / totalEpochs) * 100);
-
-        if (next % 10 === 0) {
-          addLog(`Epoch ${next}/${totalEpochs} - loss: ${loss.toFixed(4)}, accuracy: ${(accuracy * 100).toFixed(2)}%`);
-        }
-
-        return next;
-      });
-    }, 200);
-
-    return () => clearInterval(interval);
-  }, [isTraining, totalEpochs]);
-
-  // Auto-scroll logs
-  useEffect(() => {
-    logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [logs]);
-
-  const addLog = (message, type = 'info') => {
-    const timestamp = new Date().toLocaleTimeString();
-    setLogs((prev) => [...prev, { timestamp, message, type }]);
-  };
-
-  const startTraining = () => {
-    setIsTraining(true);
-    setCurrentEpoch(0);
-    setTrainingProgress(0);
-    setMetrics([]);
-    setLogs([]);
-    setTotalEpochs(trainingConfig.epochs);
-    addLog(`Starting training with ${selectedModel}...`);
-    addLog(`Config: lr=${trainingConfig.learning_rate}, batch=${trainingConfig.batch_size}, epochs=${trainingConfig.epochs}`);
-  };
-
-  const stopTraining = () => {
-    setIsTraining(false);
-    addLog('Training stopped by user', 'warning');
-  };
-
-  const getLatestMetrics = () => {
-    if (metrics.length === 0) return null;
-    return metrics[metrics.length - 1];
-  };
-
-  const latest = getLatestMetrics();
+  if (loading) {
+    return (
+      <div style={{ padding: 32, textAlign: 'center' }}>
+        <div style={{
+          width: 40, height: 40, border: `3px solid ${COLORS.border}`, borderTopColor: COLORS.primary,
+          borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '80px auto',
+        }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+        <p style={{ color: COLORS.muted }}>Cargando entrenamientos...</p>
+      </div>
+    )
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
-            {t('training.title', 'Training Dashboard')}
+    <div style={{ padding: 32, maxWidth: 1100, margin: '0 auto' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <h1 style={{ fontSize: 28, fontWeight: 700, color: COLORS.text, margin: '0 0 8px' }}>
+            Entrenamiento
           </h1>
-          <p className="mt-2 text-gray-600">
-            {t('training.subtitle', 'Train FHE models with real-time progress monitoring')}
+          <p style={{ fontSize: 16, color: COLORS.muted, margin: 0 }}>
+            Gestiona y monitorea tus entrenamientos de ML federado
           </p>
         </div>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Training Configuration */}
-          <div className="lg:col-span-1 space-y-6">
-            {/* Model Selection */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold mb-4">
-                {t('training.modelSelection', 'Model Selection')}
-              </h2>
+      {error && (
+        <div style={{
+          background: COLORS.dangerLight, border: '1px solid #fecaca', color: COLORS.danger,
+          padding: '12px 16px', borderRadius: 10, marginBottom: 20, fontSize: 14,
+        }}>
+          {error}
+        </div>
+      )}
 
-              <select
-                value={selectedModel}
-                onChange={(e) => setSelectedModel(e.target.value)}
-                disabled={isTraining}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-purple-500 focus:border-purple-500 disabled:bg-gray-100"
-              >
-                {models.map((model) => (
-                  <option key={model.id} value={model.id}>
-                    {model.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Training Config */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold mb-4">
-                {t('training.configuration', 'Configuration')}
-              </h2>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Learning Rate
-                  </label>
-                  <input
-                    type="number"
-                    step="0.001"
-                    value={trainingConfig.learning_rate}
-                    onChange={(e) =>
-                      setTrainingConfig({ ...trainingConfig, learning_rate: parseFloat(e.target.value) })
-                    }
-                    disabled={isTraining}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 disabled:bg-gray-100"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Batch Size
-                  </label>
-                  <input
-                    type="number"
-                    value={trainingConfig.batch_size}
-                    onChange={(e) =>
-                      setTrainingConfig({ ...trainingConfig, batch_size: parseInt(e.target.value) })
-                    }
-                    disabled={isTraining}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 disabled:bg-gray-100"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Epochs
-                  </label>
-                  <input
-                    type="number"
-                    value={trainingConfig.epochs}
-                    onChange={(e) =>
-                      setTrainingConfig({ ...trainingConfig, epochs: parseInt(e.target.value) })
-                    }
-                    disabled={isTraining}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 disabled:bg-gray-100"
-                  />
-                </div>
-
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="earlyStop"
-                    checked={trainingConfig.early_stopping}
-                    onChange={(e) =>
-                      setTrainingConfig({ ...trainingConfig, early_stopping: e.target.checked })
-                    }
-                    disabled={isTraining}
-                    className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
-                  />
-                  <label htmlFor="earlyStop" className="ml-2 text-sm text-gray-700">
-                    Early Stopping
-                  </label>
-                </div>
-
-                {trainingConfig.early_stopping && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Patience
-                    </label>
-                    <input
-                      type="number"
-                      value={trainingConfig.patience}
-                      onChange={(e) =>
-                        setTrainingConfig({ ...trainingConfig, patience: parseInt(e.target.value) })
-                      }
-                      disabled={isTraining}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 disabled:bg-gray-100"
-                    />
-                  </div>
-                )}
-              </div>
-
-              <div className="mt-6">
-                {!isTraining ? (
-                  <button
-                    onClick={startTraining}
-                    className="w-full bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition flex items-center justify-center"
-                  >
-                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Start Training
-                  </button>
-                ) : (
-                  <button
-                    onClick={stopTraining}
-                    className="w-full bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition flex items-center justify-center"
-                  >
-                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
-                    </svg>
-                    Stop Training
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Training Progress & Metrics */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Progress Bar */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex justify-between items-center mb-2">
-                <h2 className="text-lg font-semibold">
-                  {t('training.progress', 'Training Progress')}
-                </h2>
-                <span className="text-sm text-gray-500">
-                  Epoch {currentEpoch} / {totalEpochs}
-                </span>
-              </div>
-
-              <div className="w-full bg-gray-200 rounded-full h-4 mb-4">
-                <div
-                  className="bg-gradient-to-r from-purple-500 to-indigo-600 h-4 rounded-full transition-all duration-300"
-                  style={{ width: `${trainingProgress}%` }}
-                />
-              </div>
-
-              {isTraining && (
-                <div className="flex items-center text-sm text-purple-600">
-                  <svg className="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                      fill="none"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                    />
-                  </svg>
-                  Training in progress...
-                </div>
-              )}
-            </div>
-
-            {/* Real-time Metrics */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold mb-4">
-                {t('training.metrics', 'Real-time Metrics')}
-              </h2>
-
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-blue-50 rounded-lg p-4">
-                  <div className="text-2xl font-bold text-blue-600">
-                    {latest?.loss || '--'}
-                  </div>
-                  <div className="text-sm text-blue-800">Train Loss</div>
-                </div>
-                <div className="bg-green-50 rounded-lg p-4">
-                  <div className="text-2xl font-bold text-green-600">
-                    {latest ? `${latest.accuracy}%` : '--'}
-                  </div>
-                  <div className="text-sm text-green-800">Train Accuracy</div>
-                </div>
-                <div className="bg-orange-50 rounded-lg p-4">
-                  <div className="text-2xl font-bold text-orange-600">
-                    {latest?.val_loss || '--'}
-                  </div>
-                  <div className="text-sm text-orange-800">Val Loss</div>
-                </div>
-                <div className="bg-purple-50 rounded-lg p-4">
-                  <div className="text-2xl font-bold text-purple-600">
-                    {latest ? `${latest.val_accuracy}%` : '--'}
-                  </div>
-                  <div className="text-sm text-purple-800">Val Accuracy</div>
-                </div>
-              </div>
-
-              {/* Metrics Chart (Simplified) */}
-              <div className="h-48 bg-gray-50 rounded-lg p-4 overflow-hidden">
-                <div className="h-full flex items-end space-x-1">
-                  {metrics.slice(-50).map((m, i) => (
-                    <div
-                      key={i}
-                      className="flex-1 bg-purple-500 rounded-t transition-all duration-200"
-                      style={{ height: `${parseFloat(m.accuracy)}%` }}
-                      title={`Epoch ${m.epoch}: ${m.accuracy}%`}
-                    />
-                  ))}
-                </div>
-                <div className="text-xs text-gray-500 mt-2 text-center">
-                  Accuracy over epochs
-                </div>
-              </div>
-            </div>
-
-            {/* Training Logs */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold mb-4">
-                {t('training.logs', 'Training Logs')}
-              </h2>
-
-              <div className="bg-gray-900 rounded-lg p-4 h-48 overflow-y-auto font-mono text-sm">
-                {logs.length === 0 ? (
-                  <div className="text-gray-500">No logs yet. Start training to see output.</div>
-                ) : (
-                  logs.map((log, i) => (
-                    <div
-                      key={i}
-                      className={`${
-                        log.type === 'success'
-                          ? 'text-green-400'
-                          : log.type === 'warning'
-                          ? 'text-yellow-400'
-                          : log.type === 'error'
-                          ? 'text-red-400'
-                          : 'text-gray-300'
-                      }`}
-                    >
-                      <span className="text-gray-500">[{log.timestamp}]</span> {log.message}
-                    </div>
-                  ))
-                )}
-                <div ref={logsEndRef} />
-              </div>
-            </div>
-
-            {/* FHE Status */}
-            <div className="bg-gradient-to-r from-purple-500 to-indigo-600 rounded-lg shadow p-6 text-white">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold">FHE Encryption Status</h3>
-                  <p className="text-purple-200 text-sm mt-1">
-                    All training computations performed on encrypted data
-                  </p>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse mr-2" />
-                  <span className="font-medium">Active</span>
-                </div>
-              </div>
-
-              <div className="mt-4 grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <div className="text-2xl font-bold">128-bit</div>
-                  <div className="text-purple-200 text-xs">Security Level</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold">CKKS</div>
-                  <div className="text-purple-200 text-xs">Encryption Scheme</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold">0</div>
-                  <div className="text-purple-200 text-xs">Data Leaks</div>
-                </div>
-              </div>
-            </div>
-          </div>
+      {/* Summary */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 24 }}>
+        <div style={{ background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`, padding: 20 }}>
+          <p style={{ fontSize: 13, color: COLORS.muted, margin: '0 0 4px' }}>En progreso</p>
+          <p style={{ fontSize: 28, fontWeight: 700, color: COLORS.warning, margin: 0 }}>{activeRuns.length}</p>
+        </div>
+        <div style={{ background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`, padding: 20 }}>
+          <p style={{ fontSize: 13, color: COLORS.muted, margin: '0 0 4px' }}>Completados</p>
+          <p style={{ fontSize: 28, fontWeight: 700, color: COLORS.success, margin: 0 }}>{completedRuns.length}</p>
+        </div>
+        <div style={{ background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`, padding: 20 }}>
+          <p style={{ fontSize: 13, color: COLORS.muted, margin: '0 0 4px' }}>Pendientes</p>
+          <p style={{ fontSize: 28, fontWeight: 700, color: COLORS.muted, margin: 0 }}>{pendingRuns.length}</p>
+        </div>
+        <div style={{ background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`, padding: 20 }}>
+          <p style={{ fontSize: 13, color: COLORS.muted, margin: '0 0 4px' }}>Total</p>
+          <p style={{ fontSize: 28, fontWeight: 700, color: COLORS.text, margin: 0 }}>{trainingRuns.length}</p>
         </div>
       </div>
+
+      {/* Active training runs */}
+      {activeRuns.length > 0 && (
+        <div style={{
+          background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`,
+          padding: 24, marginBottom: 24,
+        }}>
+          <h2 style={{ fontSize: 18, fontWeight: 600, color: COLORS.text, margin: '0 0 16px' }}>
+            Entrenamientos activos
+          </h2>
+          {activeRuns.map((run) => (
+            <div key={run.consortium_id} style={{
+              border: `1px solid ${COLORS.border}`, borderRadius: 10, padding: 16, marginBottom: 12,
+              background: COLORS.warningLight + '33',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                <div>
+                  <span style={{ fontSize: 15, fontWeight: 600, color: COLORS.text }}>{run.consortium_name}</span>
+                  <span style={{ fontSize: 13, color: COLORS.muted, marginLeft: 12 }}>
+                    {MODEL_LABELS[run.model_type] || run.model_type}
+                  </span>
+                </div>
+                <span style={{
+                  padding: '4px 10px', borderRadius: 6, fontSize: 12, fontWeight: 600,
+                  background: COLORS.warningLight, color: COLORS.warning,
+                }}>
+                  Entrenando
+                </span>
+              </div>
+              <div style={{
+                width: '100%', height: 8, background: '#fde68a', borderRadius: 4, overflow: 'hidden',
+              }}>
+                <div style={{
+                  height: '100%', background: COLORS.warning, borderRadius: 4,
+                  width: `${run.progress || 45}%`, transition: 'width 0.5s',
+                }} />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+                <span style={{ fontSize: 13, color: COLORS.muted }}>
+                  {run.started_at ? `Iniciado: ${new Date(run.started_at).toLocaleString('es-AR')}` : ''}
+                </span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: COLORS.warning }}>
+                  {run.progress || 45}%
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* All training runs table */}
+      <div style={{
+        background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`, overflow: 'hidden',
+      }}>
+        <div style={{ padding: '20px 24px', borderBottom: `1px solid ${COLORS.border}` }}>
+          <h2 style={{ fontSize: 18, fontWeight: 600, color: COLORS.text, margin: 0 }}>
+            Todos los entrenamientos
+          </h2>
+        </div>
+
+        {trainingRuns.length === 0 ? (
+          <div style={{ padding: 48, textAlign: 'center' }}>
+            <p style={{ color: COLORS.muted, fontSize: 16, marginBottom: 16 }}>
+              No hay entrenamientos todavia. Crea un consorcio y sube datos para comenzar.
+            </p>
+            <Link to="/consortiums/new" style={{
+              padding: '10px 20px', borderRadius: 8, background: COLORS.primary, color: '#fff',
+              textDecoration: 'none', fontSize: 14, fontWeight: 600,
+            }}>
+              Crear consorcio
+            </Link>
+          </div>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ background: '#f8fafc', borderBottom: `2px solid ${COLORS.border}` }}>
+                {['Consorcio', 'Modelo', 'Estado', 'Progreso', 'Metricas', 'Acciones'].map((h) => (
+                  <th key={h} style={{
+                    textAlign: 'left', padding: '12px 16px', fontSize: 13,
+                    fontWeight: 600, color: COLORS.muted, textTransform: 'uppercase',
+                  }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {trainingRuns.map((run) => {
+                const statusStyle = STATUS_STYLES[run.status] || STATUS_STYLES.pending
+                return (
+                  <tr key={run.consortium_id} style={{
+                    borderBottom: `1px solid ${COLORS.border}`,
+                    background: selectedRun === run.consortium_id ? COLORS.primaryLight : 'transparent',
+                    cursor: 'pointer',
+                  }}
+                    onClick={() => setSelectedRun(selectedRun === run.consortium_id ? null : run.consortium_id)}
+                  >
+                    <td style={{ padding: '12px 16px', fontSize: 14, fontWeight: 500, color: COLORS.text }}>
+                      {run.consortium_name}
+                    </td>
+                    <td style={{ padding: '12px 16px', fontSize: 14, color: COLORS.muted }}>
+                      {MODEL_LABELS[run.model_type] || run.model_type || '-'}
+                    </td>
+                    <td style={{ padding: '12px 16px' }}>
+                      <span style={{
+                        display: 'inline-block', padding: '4px 10px', borderRadius: 6, fontSize: 12, fontWeight: 600,
+                        background: statusStyle.bg, color: statusStyle.color,
+                      }}>
+                        {statusStyle.label}
+                      </span>
+                    </td>
+                    <td style={{ padding: '12px 16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div style={{
+                          flex: 1, height: 6, background: COLORS.border, borderRadius: 3, overflow: 'hidden', maxWidth: 100,
+                        }}>
+                          <div style={{
+                            height: '100%', borderRadius: 3,
+                            background: run.status === 'completed' ? COLORS.success : run.status === 'training' ? COLORS.warning : COLORS.muted,
+                            width: `${run.progress || (run.status === 'completed' ? 100 : 0)}%`,
+                          }} />
+                        </div>
+                        <span style={{ fontSize: 13, color: COLORS.muted }}>
+                          {run.progress || (run.status === 'completed' ? 100 : 0)}%
+                        </span>
+                      </div>
+                    </td>
+                    <td style={{ padding: '12px 16px', fontSize: 14, color: COLORS.muted }}>
+                      {run.metrics ? (
+                        <span>
+                          R2: {typeof run.metrics.r2 === 'number' ? run.metrics.r2.toFixed(3) : '-'}
+                        </span>
+                      ) : '-'}
+                    </td>
+                    <td style={{ padding: '12px 16px' }}>
+                      {(run.status === 'pending' || run.status === 'failed') && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleStartTraining(run.consortium_id) }}
+                          disabled={startingId === run.consortium_id}
+                          style={{
+                            padding: '6px 14px', borderRadius: 6, border: 'none',
+                            background: startingId === run.consortium_id ? '#a5b4fc' : COLORS.primary,
+                            color: '#fff', fontSize: 13, fontWeight: 600,
+                            cursor: startingId === run.consortium_id ? 'not-allowed' : 'pointer',
+                          }}
+                        >
+                          {startingId === run.consortium_id ? 'Iniciando...' : 'Iniciar'}
+                        </button>
+                      )}
+                      {run.status === 'completed' && (
+                        <Link
+                          to={`/metrics/${run.consortium_id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          style={{
+                            padding: '6px 14px', borderRadius: 6, background: COLORS.primaryLight,
+                            color: COLORS.primary, textDecoration: 'none', fontSize: 13, fontWeight: 600,
+                          }}
+                        >
+                          Ver metricas
+                        </Link>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Selected run details */}
+      {selectedRun && (() => {
+        const run = trainingRuns.find(r => r.consortium_id === selectedRun)
+        if (!run || !run.metrics) return null
+        return (
+          <div style={{
+            background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`,
+            padding: 24, marginTop: 20,
+          }}>
+            <h3 style={{ fontSize: 16, fontWeight: 600, color: COLORS.text, margin: '0 0 16px' }}>
+              Metricas: {run.consortium_name}
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
+              {Object.entries(run.metrics).map(([key, value]) => (
+                <div key={key} style={{ background: COLORS.bg, borderRadius: 10, padding: 16, textAlign: 'center' }}>
+                  <p style={{ fontSize: 12, color: COLORS.muted, margin: '0 0 4px', textTransform: 'uppercase', fontWeight: 600 }}>{key}</p>
+                  <p style={{ fontSize: 24, fontWeight: 700, color: COLORS.primary, margin: 0 }}>
+                    {typeof value === 'number' ? value.toFixed(4) : value}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      })()}
     </div>
-  );
+  )
 }

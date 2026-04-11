@@ -1,445 +1,286 @@
-import { useState, useEffect, useMemo } from 'react'
-import { useTranslation } from 'react-i18next'
+import { useState, useEffect } from 'react'
+import { Link, useParams } from 'react-router-dom'
+import { listConsortiums, getConsortiumStats } from '../api/client'
+
+const COLORS = {
+  primary: '#6366f1',
+  primaryHover: '#4f46e5',
+  primaryLight: '#eef2ff',
+  success: '#10b981',
+  successLight: '#dcfce7',
+  warning: '#f59e0b',
+  warningLight: '#fef9c3',
+  danger: '#ef4444',
+  dangerLight: '#fef2f2',
+  bg: '#f9fafb',
+  card: '#ffffff',
+  text: '#111827',
+  muted: '#6b7280',
+  border: '#e5e7eb',
+}
+
+const STATUS_BADGE = {
+  encrypted: { label: 'Encriptado', color: COLORS.success, bg: COLORS.successLight },
+  processing: { label: 'Procesando', color: COLORS.warning, bg: COLORS.warningLight },
+  validated: { label: 'Validado', color: COLORS.primary, bg: COLORS.primaryLight },
+  error: { label: 'Error', color: COLORS.danger, bg: COLORS.dangerLight },
+}
+
+const MOCK_UPLOADS = [
+  { id: 1, file_name: 'datos_ventas_2025.csv', records: 15420, size_mb: 2.3, status: 'encrypted', consortium_name: 'Consorcio Retail', uploaded_at: '2026-03-10T14:30:00Z' },
+  { id: 2, file_name: 'transacciones_q4.json', records: 8750, size_mb: 1.8, status: 'encrypted', consortium_name: 'Consorcio Finanzas', uploaded_at: '2026-03-09T10:15:00Z' },
+  { id: 3, file_name: 'pacientes_anonimizados.csv', records: 3200, size_mb: 0.9, status: 'validated', consortium_name: 'Consorcio Salud', uploaded_at: '2026-03-08T09:00:00Z' },
+  { id: 4, file_name: 'sensores_iot_marzo.csv', records: 45000, size_mb: 8.5, status: 'processing', consortium_name: 'Consorcio Manufactura', uploaded_at: '2026-03-07T16:45:00Z' },
+  { id: 5, file_name: 'clientes_segmentados.json', records: 6100, size_mb: 1.1, status: 'encrypted', consortium_name: 'Consorcio Retail', uploaded_at: '2026-03-06T11:20:00Z' },
+]
 
 export default function DataExplorer() {
-  const { t } = useTranslation()
-  const [data, setData] = useState(null)
-  const [columns, setColumns] = useState([])
-  const [selectedColumn, setSelectedColumn] = useState(null)
-  const [stats, setStats] = useState({})
-  const [filterValue, setFilterValue] = useState('')
-  const [sortColumn, setSortColumn] = useState(null)
-  const [sortDirection, setSortDirection] = useState('asc')
-  const [currentPage, setCurrentPage] = useState(1)
-  const [pageSize] = useState(20)
+  const { consortiumId } = useParams()
+  const [uploads, setUploads] = useState([])
+  const [consortiums, setConsortiums] = useState([])
+  const [filterConsortium, setFilterConsortium] = useState(consortiumId || '')
+  const [searchTerm, setSearchTerm] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [selectedUpload, setSelectedUpload] = useState(null)
 
-  // Generate sample data on mount
   useEffect(() => {
-    const sampleData = generateSampleData(200)
-    setData(sampleData.rows)
-    setColumns(sampleData.columns)
-    computeStats(sampleData.rows, sampleData.columns)
-  }, [])
+    const fetchData = async () => {
+      try {
+        const data = await listConsortiums()
+        const list = Array.isArray(data) ? data : data.results || []
+        setConsortiums(list)
 
-  const generateSampleData = (n) => {
-    const cols = ['id', 'age', 'income', 'score', 'category', 'region', 'active']
-    const categories = ['A', 'B', 'C', 'D']
-    const regions = ['North', 'South', 'East', 'West']
-
-    const rows = Array.from({ length: n }, (_, i) => ({
-      id: i + 1,
-      age: Math.floor(Math.random() * 50) + 20,
-      income: Math.floor(Math.random() * 100000) + 30000,
-      score: Math.round((Math.random() * 100) * 10) / 10,
-      category: categories[Math.floor(Math.random() * categories.length)],
-      region: regions[Math.floor(Math.random() * regions.length)],
-      active: Math.random() > 0.3,
-    }))
-
-    return { rows, columns: cols }
-  }
-
-  const computeStats = (rows, cols) => {
-    const newStats = {}
-    cols.forEach(col => {
-      const values = rows.map(r => r[col]).filter(v => v !== null && v !== undefined)
-      const numericValues = values.filter(v => typeof v === 'number')
-
-      if (numericValues.length > 0) {
-        newStats[col] = {
-          type: 'numeric',
-          count: values.length,
-          missing: rows.length - values.length,
-          mean: numericValues.reduce((a, b) => a + b, 0) / numericValues.length,
-          min: Math.min(...numericValues),
-          max: Math.max(...numericValues),
-          std: Math.sqrt(
-            numericValues.reduce((sq, n) => sq + Math.pow(n - (numericValues.reduce((a, b) => a + b, 0) / numericValues.length), 2), 0) / numericValues.length
-          ),
+        // Try to fetch real upload data from consortium stats
+        const allUploads = []
+        for (const c of list.slice(0, 10)) {
+          try {
+            const stats = await getConsortiumStats(c.id)
+            if (stats?.contributions) {
+              stats.contributions.forEach((contrib, idx) => {
+                allUploads.push({
+                  id: `${c.id}-${idx}`,
+                  file_name: contrib.file_name || `datos_${c.name.toLowerCase().replace(/\s/g, '_')}.csv`,
+                  records: contrib.records || 0,
+                  size_mb: contrib.size_mb || 0,
+                  status: contrib.status || 'encrypted',
+                  consortium_name: c.name,
+                  consortium_id: c.id,
+                  uploaded_at: contrib.uploaded_at || contrib.created_at,
+                })
+              })
+            }
+          } catch (_) { /* skip */ }
         }
-      } else if (typeof values[0] === 'boolean') {
-        const trueCount = values.filter(v => v === true).length
-        newStats[col] = {
-          type: 'boolean',
-          count: values.length,
-          trueCount,
-          falseCount: values.length - trueCount,
-          truePercent: (trueCount / values.length) * 100,
-        }
-      } else {
-        const uniqueValues = [...new Set(values)]
-        const valueCounts = {}
-        values.forEach(v => { valueCounts[v] = (valueCounts[v] || 0) + 1 })
-        newStats[col] = {
-          type: 'categorical',
-          count: values.length,
-          unique: uniqueValues.length,
-          topValues: Object.entries(valueCounts)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 5),
-        }
+
+        setUploads(allUploads.length > 0 ? allUploads : MOCK_UPLOADS)
+      } catch (err) {
+        setUploads(MOCK_UPLOADS)
+      } finally {
+        setLoading(false)
       }
-    })
-    setStats(newStats)
-  }
-
-  const filteredData = useMemo(() => {
-    if (!data) return []
-    let result = data
-
-    if (filterValue) {
-      result = result.filter(row =>
-        Object.values(row).some(val =>
-          String(val).toLowerCase().includes(filterValue.toLowerCase())
-        )
-      )
     }
+    fetchData()
+  }, [consortiumId])
 
-    if (sortColumn) {
-      result = [...result].sort((a, b) => {
-        const aVal = a[sortColumn]
-        const bVal = b[sortColumn]
-        const direction = sortDirection === 'asc' ? 1 : -1
-        if (typeof aVal === 'number' && typeof bVal === 'number') {
-          return (aVal - bVal) * direction
-        }
-        return String(aVal).localeCompare(String(bVal)) * direction
-      })
-    }
+  const filteredUploads = uploads.filter((u) => {
+    const matchConsortium = !filterConsortium || u.consortium_name === filterConsortium || u.consortium_id === filterConsortium
+    const matchSearch = !searchTerm || u.file_name.toLowerCase().includes(searchTerm.toLowerCase())
+    return matchConsortium && matchSearch
+  })
 
-    return result
-  }, [data, filterValue, sortColumn, sortDirection])
+  const totalRecords = filteredUploads.reduce((sum, u) => sum + (u.records || 0), 0)
+  const totalSize = filteredUploads.reduce((sum, u) => sum + (u.size_mb || 0), 0)
 
-  const paginatedData = useMemo(() => {
-    const start = (currentPage - 1) * pageSize
-    return filteredData.slice(start, start + pageSize)
-  }, [filteredData, currentPage, pageSize])
-
-  const totalPages = Math.ceil(filteredData.length / pageSize)
-
-  const handleSort = (column) => {
-    if (sortColumn === column) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
-    } else {
-      setSortColumn(column)
-      setSortDirection('asc')
-    }
-  }
-
-  const renderHistogram = (values, bins = 10) => {
-    const numericValues = values.filter(v => typeof v === 'number')
-    if (numericValues.length === 0) return null
-
-    const min = Math.min(...numericValues)
-    const max = Math.max(...numericValues)
-    const binWidth = (max - min) / bins
-    const histogram = new Array(bins).fill(0)
-
-    numericValues.forEach(v => {
-      const binIndex = Math.min(Math.floor((v - min) / binWidth), bins - 1)
-      histogram[binIndex]++
-    })
-
-    const maxCount = Math.max(...histogram)
-
+  if (loading) {
     return (
-      <div className="flex items-end space-x-1 h-24">
-        {histogram.map((count, i) => (
-          <div
-            key={i}
-            className="flex-1 bg-brand-500 rounded-t hover:bg-brand-600 transition-colors"
-            style={{ height: `${(count / maxCount) * 100}%` }}
-            title={`${(min + i * binWidth).toFixed(1)} - ${(min + (i + 1) * binWidth).toFixed(1)}: ${count}`}
-          />
-        ))}
-      </div>
-    )
-  }
-
-  const renderBarChart = (topValues) => {
-    const maxCount = Math.max(...topValues.map(([, count]) => count))
-
-    return (
-      <div className="space-y-2">
-        {topValues.map(([value, count]) => (
-          <div key={value} className="flex items-center">
-            <span className="w-16 text-xs text-slate-600 truncate">{value}</span>
-            <div className="flex-1 mx-2 h-4 bg-slate-100 rounded overflow-hidden">
-              <div
-                className="h-full bg-indigo-500 rounded"
-                style={{ width: `${(count / maxCount) * 100}%` }}
-              />
-            </div>
-            <span className="text-xs text-slate-500">{count}</span>
-          </div>
-        ))}
-      </div>
-    )
-  }
-
-  if (!data) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-500"></div>
+      <div style={{ padding: 32, textAlign: 'center' }}>
+        <div style={{
+          width: 40, height: 40, border: `3px solid ${COLORS.border}`, borderTopColor: COLORS.primary,
+          borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '80px auto',
+        }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+        <p style={{ color: COLORS.muted }}>Cargando datos...</p>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div style={{ padding: 32, maxWidth: 1100, margin: '0 auto' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">{t('dataExplorer.title')}</h1>
-          <p className="text-slate-600 mt-1">{t('dataExplorer.subtitle')}</p>
+          <h1 style={{ fontSize: 28, fontWeight: 700, color: COLORS.text, margin: '0 0 8px' }}>
+            Explorador de datos
+          </h1>
+          <p style={{ fontSize: 16, color: COLORS.muted, margin: 0 }}>
+            Visualiza y gestiona tus datasets subidos
+          </p>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="bg-white border border-slate-200 rounded-lg px-4 py-2">
-            <span className="text-sm text-slate-500">{t('dataExplorer.rows')}: </span>
-            <span className="font-semibold text-slate-900">{data.length}</span>
-          </div>
-          <div className="bg-white border border-slate-200 rounded-lg px-4 py-2">
-            <span className="text-sm text-slate-500">{t('dataExplorer.columns')}: </span>
-            <span className="font-semibold text-slate-900">{columns.length}</span>
-          </div>
+        <Link to="/data-upload" style={{
+          padding: '10px 20px', borderRadius: 8, background: COLORS.primary, color: '#fff',
+          textDecoration: 'none', fontSize: 14, fontWeight: 600,
+        }}>
+          Subir nuevos datos
+        </Link>
+      </div>
+
+      {/* Summary cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 24 }}>
+        <div style={{ background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`, padding: 20 }}>
+          <p style={{ fontSize: 13, color: COLORS.muted, margin: '0 0 4px' }}>Total datasets</p>
+          <p style={{ fontSize: 28, fontWeight: 700, color: COLORS.text, margin: 0 }}>{filteredUploads.length}</p>
+        </div>
+        <div style={{ background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`, padding: 20 }}>
+          <p style={{ fontSize: 13, color: COLORS.muted, margin: '0 0 4px' }}>Total registros</p>
+          <p style={{ fontSize: 28, fontWeight: 700, color: COLORS.primary, margin: 0 }}>{totalRecords.toLocaleString()}</p>
+        </div>
+        <div style={{ background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`, padding: 20 }}>
+          <p style={{ fontSize: 13, color: COLORS.muted, margin: '0 0 4px' }}>Tamano total</p>
+          <p style={{ fontSize: 28, fontWeight: 700, color: COLORS.success, margin: 0 }}>{totalSize.toFixed(1)} MB</p>
+        </div>
+        <div style={{ background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`, padding: 20 }}>
+          <p style={{ fontSize: 13, color: COLORS.muted, margin: '0 0 4px' }}>Consorcios</p>
+          <p style={{ fontSize: 28, fontWeight: 700, color: COLORS.warning, margin: 0 }}>
+            {new Set(filteredUploads.map(u => u.consortium_name)).size}
+          </p>
         </div>
       </div>
 
-      {/* Column Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {columns.map(col => (
-          <div
-            key={col}
-            className={`bg-white rounded-xl border p-4 cursor-pointer transition-all hover:shadow-md ${
-              selectedColumn === col ? 'border-brand-500 ring-2 ring-brand-100' : 'border-slate-200'
-            }`}
-            onClick={() => setSelectedColumn(selectedColumn === col ? null : col)}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="font-semibold text-slate-900">{col}</h3>
-              <span className={`text-xs px-2 py-1 rounded-full ${
-                stats[col]?.type === 'numeric' ? 'bg-blue-100 text-blue-700' :
-                stats[col]?.type === 'boolean' ? 'bg-green-100 text-green-700' :
-                'bg-purple-100 text-purple-700'
-              }`}>
-                {stats[col]?.type}
-              </span>
-            </div>
-
-            {stats[col]?.type === 'numeric' && (
-              <>
-                <div className="mb-3">
-                  {renderHistogram(data.map(r => r[col]))}
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div>
-                    <span className="text-slate-500">{t('dataExplorer.mean')}: </span>
-                    <span className="font-medium">{stats[col].mean.toFixed(2)}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-500">{t('dataExplorer.std')}: </span>
-                    <span className="font-medium">{stats[col].std.toFixed(2)}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-500">{t('dataExplorer.min')}: </span>
-                    <span className="font-medium">{stats[col].min.toFixed(2)}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-500">{t('dataExplorer.max')}: </span>
-                    <span className="font-medium">{stats[col].max.toFixed(2)}</span>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {stats[col]?.type === 'boolean' && (
-              <div className="space-y-2">
-                <div className="flex h-4 rounded-full overflow-hidden bg-slate-100">
-                  <div
-                    className="bg-green-500"
-                    style={{ width: `${stats[col].truePercent}%` }}
-                  />
-                  <div
-                    className="bg-red-400"
-                    style={{ width: `${100 - stats[col].truePercent}%` }}
-                  />
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-green-600">True: {stats[col].trueCount}</span>
-                  <span className="text-red-500">False: {stats[col].falseCount}</span>
-                </div>
-              </div>
-            )}
-
-            {stats[col]?.type === 'categorical' && (
-              <>
-                <p className="text-sm text-slate-500 mb-2">
-                  {stats[col].unique} {t('dataExplorer.uniqueValues')}
-                </p>
-                {renderBarChart(stats[col].topValues)}
-              </>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* Data Table */}
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-        <div className="p-4 border-b border-slate-200 flex items-center justify-between">
-          <h2 className="font-semibold text-slate-900">{t('dataExplorer.dataPreview')}</h2>
+      {/* Filters */}
+      <div style={{
+        background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`,
+        padding: '16px 20px', marginBottom: 20, display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center',
+      }}>
+        <div style={{ flex: '1 1 200px' }}>
           <input
             type="text"
-            placeholder={t('dataExplorer.filterPlaceholder')}
-            value={filterValue}
-            onChange={(e) => setFilterValue(e.target.value)}
-            className="px-4 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Buscar por nombre de archivo..."
+            style={{
+              width: '100%', padding: '10px 14px', borderRadius: 8, border: `1px solid ${COLORS.border}`,
+              fontSize: 14, outline: 'none', boxSizing: 'border-box',
+            }}
           />
         </div>
+        <div style={{ flex: '0 0 220px' }}>
+          <select
+            value={filterConsortium}
+            onChange={(e) => setFilterConsortium(e.target.value)}
+            style={{
+              width: '100%', padding: '10px 14px', borderRadius: 8, border: `1px solid ${COLORS.border}`,
+              fontSize: 14, outline: 'none', background: '#fff', cursor: 'pointer',
+            }}
+          >
+            <option value="">Todos los consorcios</option>
+            {[...new Set(uploads.map(u => u.consortium_name))].map((name) => (
+              <option key={name} value={name}>{name}</option>
+            ))}
+          </select>
+        </div>
+      </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-slate-50">
-              <tr>
-                {columns.map(col => (
-                  <th
-                    key={col}
-                    className="px-4 py-3 text-left text-sm font-medium text-slate-600 cursor-pointer hover:bg-slate-100"
-                    onClick={() => handleSort(col)}
-                  >
-                    <div className="flex items-center gap-1">
-                      {col}
-                      {sortColumn === col && (
-                        <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>
-                      )}
-                    </div>
-                  </th>
+      {/* Table */}
+      <div style={{
+        background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`, overflow: 'hidden',
+      }}>
+        {filteredUploads.length === 0 ? (
+          <div style={{ padding: 48, textAlign: 'center' }}>
+            <p style={{ color: COLORS.muted, fontSize: 16 }}>No se encontraron datasets con los filtros aplicados.</p>
+          </div>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ background: '#f8fafc', borderBottom: `2px solid ${COLORS.border}` }}>
+                {['Archivo', 'Consorcio', 'Registros', 'Tamano', 'Estado', 'Fecha'].map((h) => (
+                  <th key={h} style={{
+                    textAlign: 'left', padding: '12px 16px', fontSize: 13,
+                    fontWeight: 600, color: COLORS.muted, textTransform: 'uppercase', letterSpacing: 0.5,
+                  }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {paginatedData.map((row, idx) => (
-                <tr key={idx} className="border-t border-slate-100 hover:bg-slate-50">
-                  {columns.map(col => (
-                    <td key={col} className="px-4 py-3 text-sm text-slate-700">
-                      {typeof row[col] === 'boolean' ? (
-                        <span className={`px-2 py-1 rounded text-xs ${row[col] ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                          {row[col] ? 'True' : 'False'}
-                        </span>
-                      ) : (
-                        String(row[col])
-                      )}
+              {filteredUploads.map((u) => {
+                const status = STATUS_BADGE[u.status] || STATUS_BADGE.encrypted
+                return (
+                  <tr
+                    key={u.id}
+                    style={{
+                      borderBottom: `1px solid ${COLORS.border}`, cursor: 'pointer',
+                      background: selectedUpload === u.id ? COLORS.primaryLight : 'transparent',
+                      transition: 'background 0.15s',
+                    }}
+                    onClick={() => setSelectedUpload(selectedUpload === u.id ? null : u.id)}
+                    onMouseOver={(e) => { if (selectedUpload !== u.id) e.currentTarget.style.background = '#fafbfc' }}
+                    onMouseOut={(e) => { if (selectedUpload !== u.id) e.currentTarget.style.background = 'transparent' }}
+                  >
+                    <td style={{ padding: '12px 16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <svg width="18" height="18" fill="none" stroke={COLORS.muted} viewBox="0 0 24 24" strokeWidth={1.8}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                        </svg>
+                        <span style={{ fontSize: 14, fontWeight: 500, color: COLORS.text }}>{u.file_name}</span>
+                      </div>
                     </td>
-                  ))}
-                </tr>
-              ))}
+                    <td style={{ padding: '12px 16px', fontSize: 14, color: COLORS.muted }}>{u.consortium_name}</td>
+                    <td style={{ padding: '12px 16px', fontSize: 14, color: COLORS.text, fontWeight: 500 }}>
+                      {(u.records || 0).toLocaleString()}
+                    </td>
+                    <td style={{ padding: '12px 16px', fontSize: 14, color: COLORS.muted }}>
+                      {u.size_mb ? `${u.size_mb} MB` : '-'}
+                    </td>
+                    <td style={{ padding: '12px 16px' }}>
+                      <span style={{
+                        display: 'inline-block', padding: '4px 10px', borderRadius: 6, fontSize: 12, fontWeight: 600,
+                        background: status.bg, color: status.color,
+                      }}>
+                        {status.label}
+                      </span>
+                    </td>
+                    <td style={{ padding: '12px 16px', fontSize: 14, color: COLORS.muted }}>
+                      {u.uploaded_at ? new Date(u.uploaded_at).toLocaleDateString('es-AR') : '-'}
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
-        </div>
+        )}
+      </div>
 
-        {/* Pagination */}
-        <div className="p-4 border-t border-slate-200 flex items-center justify-between">
-          <span className="text-sm text-slate-500">
-            {t('dataExplorer.showing')} {(currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, filteredData.length)} {t('dataExplorer.of')} {filteredData.length}
-          </span>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-              disabled={currentPage === 1}
-              className="px-3 py-1 border border-slate-200 rounded text-sm disabled:opacity-50 hover:bg-slate-50"
-            >
-              {t('dataExplorer.previous')}
-            </button>
-            <span className="text-sm text-slate-600">
-              {currentPage} / {totalPages}
-            </span>
-            <button
-              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-              disabled={currentPage === totalPages}
-              className="px-3 py-1 border border-slate-200 rounded text-sm disabled:opacity-50 hover:bg-slate-50"
-            >
-              {t('dataExplorer.next')}
-            </button>
+      {/* Selected upload details */}
+      {selectedUpload && (() => {
+        const u = filteredUploads.find(up => up.id === selectedUpload)
+        if (!u) return null
+        return (
+          <div style={{
+            background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`,
+            padding: 24, marginTop: 20,
+          }}>
+            <h3 style={{ fontSize: 16, fontWeight: 600, color: COLORS.text, margin: '0 0 16px' }}>
+              Resumen del dataset: {u.file_name}
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 16 }}>
+              <div style={{ background: COLORS.bg, borderRadius: 8, padding: 14 }}>
+                <p style={{ fontSize: 12, color: COLORS.muted, margin: '0 0 4px' }}>Registros</p>
+                <p style={{ fontSize: 20, fontWeight: 700, color: COLORS.text, margin: 0 }}>{(u.records || 0).toLocaleString()}</p>
+              </div>
+              <div style={{ background: COLORS.bg, borderRadius: 8, padding: 14 }}>
+                <p style={{ fontSize: 12, color: COLORS.muted, margin: '0 0 4px' }}>Tamano</p>
+                <p style={{ fontSize: 20, fontWeight: 700, color: COLORS.text, margin: 0 }}>{u.size_mb} MB</p>
+              </div>
+              <div style={{ background: COLORS.bg, borderRadius: 8, padding: 14 }}>
+                <p style={{ fontSize: 12, color: COLORS.muted, margin: '0 0 4px' }}>Consorcio</p>
+                <p style={{ fontSize: 20, fontWeight: 700, color: COLORS.text, margin: 0 }}>{u.consortium_name}</p>
+              </div>
+              <div style={{ background: COLORS.bg, borderRadius: 8, padding: 14 }}>
+                <p style={{ fontSize: 12, color: COLORS.muted, margin: '0 0 4px' }}>Encriptacion</p>
+                <p style={{ fontSize: 20, fontWeight: 700, color: COLORS.success, margin: 0 }}>FHE (CKKS)</p>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-
-      {/* Correlation Matrix */}
-      <div className="bg-white rounded-xl border border-slate-200 p-6">
-        <h2 className="font-semibold text-slate-900 mb-4">{t('dataExplorer.correlationMatrix')}</h2>
-        <CorrelationMatrix data={data} columns={columns.filter(c => stats[c]?.type === 'numeric')} />
-      </div>
-    </div>
-  )
-}
-
-function CorrelationMatrix({ data, columns }) {
-  const correlations = useMemo(() => {
-    const matrix = {}
-    columns.forEach(col1 => {
-      matrix[col1] = {}
-      columns.forEach(col2 => {
-        const values1 = data.map(r => r[col1])
-        const values2 = data.map(r => r[col2])
-        matrix[col1][col2] = pearsonCorrelation(values1, values2)
-      })
-    })
-    return matrix
-  }, [data, columns])
-
-  const pearsonCorrelation = (x, y) => {
-    const n = x.length
-    const meanX = x.reduce((a, b) => a + b, 0) / n
-    const meanY = y.reduce((a, b) => a + b, 0) / n
-    const numerator = x.reduce((sum, xi, i) => sum + (xi - meanX) * (y[i] - meanY), 0)
-    const denomX = Math.sqrt(x.reduce((sum, xi) => sum + Math.pow(xi - meanX, 2), 0))
-    const denomY = Math.sqrt(y.reduce((sum, yi) => sum + Math.pow(yi - meanY, 2), 0))
-    return numerator / (denomX * denomY)
-  }
-
-  const getColor = (value) => {
-    if (value >= 0.7) return 'bg-green-500'
-    if (value >= 0.4) return 'bg-green-300'
-    if (value >= 0) return 'bg-green-100'
-    if (value >= -0.4) return 'bg-red-100'
-    if (value >= -0.7) return 'bg-red-300'
-    return 'bg-red-500'
-  }
-
-  return (
-    <div className="overflow-x-auto">
-      <table className="text-sm">
-        <thead>
-          <tr>
-            <th className="p-2"></th>
-            {columns.map(col => (
-              <th key={col} className="p-2 font-medium text-slate-600 text-center">
-                {col}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {columns.map(col1 => (
-            <tr key={col1}>
-              <td className="p-2 font-medium text-slate-600">{col1}</td>
-              {columns.map(col2 => (
-                <td key={col2} className="p-1">
-                  <div
-                    className={`w-12 h-12 flex items-center justify-center rounded ${getColor(correlations[col1][col2])} ${
-                      col1 === col2 ? 'bg-slate-200' : ''
-                    }`}
-                    title={`${col1} vs ${col2}: ${correlations[col1][col2].toFixed(3)}`}
-                  >
-                    <span className="text-xs font-medium text-slate-700">
-                      {correlations[col1][col2].toFixed(2)}
-                    </span>
-                  </div>
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+        )
+      })()}
     </div>
   )
 }

@@ -39,9 +39,12 @@ const ApiPlayground = lazy(() => import('./pages/ApiPlayground'))
 const NotificationCenter = lazy(() => import('./pages/NotificationCenter'))
 const TeamManagement = lazy(() => import('./pages/TeamManagement'))
 const Billing = lazy(() => import('./pages/Billing'))
+const TrialDashboard = lazy(() => import('./pages/TrialDashboard'))
 const ReportBuilder = lazy(() => import('./pages/ReportBuilder'))
 const WorkflowAutomation = lazy(() => import('./pages/WorkflowAutomation'))
 const AdminPanel = lazy(() => import('./pages/AdminPanel'))
+const Pricing = lazy(() => import('./pages/Pricing'))
+const NotFound = lazy(() => import('./pages/NotFound'))
 
 // Protected route wrapper
 const ProtectedRoute = ({ children }) => {
@@ -77,6 +80,8 @@ function App() {
           <Route path="/join" element={<JoinConsortium />} />
           {/* Sandbox entry point - requires email capture */}
           <Route path="/sandbox-demo" element={<SandboxDemo />} />
+          {/* Public pricing page */}
+          <Route path="/pricing" element={<Pricing />} />
           {/* Demo routes accessible after sandbox access */}
           <Route path="/demo-consorcio" element={<DemoConsorcio />} />
 
@@ -126,6 +131,7 @@ function App() {
           <Route path="/notifications" element={<NotificationCenter />} />
           <Route path="/team" element={<TeamManagement />} />
           <Route path="/billing" element={<Billing />} />
+          <Route path="/trial" element={<TrialDashboard />} />
           <Route path="/reports" element={<ReportBuilder />} />
           <Route path="/workflows" element={<WorkflowAutomation />} />
           <Route path="/admin" element={<AdminPanel />} />
@@ -134,8 +140,8 @@ function App() {
           <Route path="/consortiums/:id/upload" element={<UploadData />} />
         </Route>
 
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          {/* 404 */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
     </DemoProvider>

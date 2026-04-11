@@ -3,7 +3,7 @@ import { Component } from 'react'
 class ErrorBoundary extends Component {
   constructor(props) {
     super(props)
-    this.state = { hasError: false, error: null }
+    this.state = { hasError: false, error: null, errorInfo: null }
   }
 
   static getDerivedStateFromError(error) {
@@ -11,6 +11,7 @@ class ErrorBoundary extends Component {
   }
 
   componentDidCatch(error, errorInfo) {
+    this.setState({ errorInfo })
     import('../lib/sentry.js')
       .then(({ Sentry }) => {
         if (Sentry?.captureException) {
@@ -20,34 +21,81 @@ class ErrorBoundary extends Component {
       .catch(() => {})
   }
 
+  handleReset = () => {
+    this.setState({ hasError: false, error: null, errorInfo: null })
+  }
+
   render() {
     if (this.state.hasError) {
       if (this.props.fallback) {
-        return this.props.fallback
+        return typeof this.props.fallback === 'function'
+          ? this.props.fallback({ error: this.state.error, reset: this.handleReset })
+          : this.props.fallback
       }
 
       return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
-          <div className="text-center max-w-md">
-            <div className="text-5xl mb-4">&#9888;</div>
-            <h1 className="text-2xl font-bold text-slate-800 mb-2">
-              Something went wrong
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '100vh',
+          background: '#f8fafc',
+          padding: '24px',
+        }}>
+          <div style={{ textAlign: 'center', maxWidth: '440px' }}>
+            <div style={{ fontSize: '3.5rem', marginBottom: '16px' }}>&#9888;</div>
+            <h1 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e293b', marginBottom: '8px' }}>
+              Algo salio mal
             </h1>
-            <p className="text-slate-600 mb-6">
-              An unexpected error occurred. Please try again or return to the dashboard.
+            <p style={{ color: '#64748b', marginBottom: '24px', fontSize: '0.95rem' }}>
+              Ocurrio un error inesperado. Intenta de nuevo o vuelve al dashboard.
             </p>
-            <div className="flex gap-3 justify-center">
+            {this.state.error && (
+              <pre style={{
+                background: '#fef2f2',
+                border: '1px solid #fecaca',
+                borderRadius: '8px',
+                padding: '12px',
+                fontSize: '0.8rem',
+                color: '#991b1b',
+                textAlign: 'left',
+                overflow: 'auto',
+                maxHeight: '120px',
+                marginBottom: '24px',
+              }}>
+                {this.state.error.toString()}
+              </pre>
+            )}
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
               <button
-                onClick={() => window.location.reload()}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                onClick={this.handleReset}
+                style={{
+                  padding: '12px 24px',
+                  background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '10px',
+                  fontSize: '0.95rem',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                }}
               >
-                Try Again
+                Reintentar
               </button>
               <button
                 onClick={() => { window.location.href = '/dashboard' }}
-                className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors"
+                style={{
+                  padding: '12px 24px',
+                  background: '#fff',
+                  color: '#4f46e5',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '10px',
+                  fontSize: '0.95rem',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                }}
               >
-                Go to Dashboard
+                Ir al Dashboard
               </button>
             </div>
           </div>

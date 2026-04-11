@@ -1,337 +1,381 @@
-import { useState, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
-import { listConsortiums, isDemoMode } from '../api/client'
-import { useDemo } from '../context/DemoContext'
-import { SkeletonCard, EmptyState } from '../components/ui'
-import WelcomeOnboarding from '../components/WelcomeOnboarding'
-import {
-  BuildingOffice2Icon,
-  HeartIcon,
-  ShoppingBagIcon,
-  ShieldCheckIcon,
-  SparklesIcon,
-  ChartBarIcon,
-  PlusIcon,
-  UserGroupIcon,
-  CubeIcon
-} from '@heroicons/react/24/outline'
+import { useState, useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { listConsortiums, getCurrentCompany } from '../api/client'
+import { getTrialStatus, getTrialUsage } from '../api/trial'
 
-// Animated counter hook
-function useCounter(end, duration = 1500, startOnMount = true) {
-  const [count, setCount] = useState(0)
-
-  useEffect(() => {
-    if (!startOnMount) return
-    let startTime = null
-    const endValue = parseInt(String(end).replace(/[^0-9]/g, '')) || 0
-
-    const animate = (timestamp) => {
-      if (!startTime) startTime = timestamp
-      const progress = Math.min((timestamp - startTime) / duration, 1)
-      setCount(Math.floor(progress * endValue))
-      if (progress < 1) requestAnimationFrame(animate)
-    }
-    requestAnimationFrame(animate)
-  }, [end, duration, startOnMount])
-
-  return count
+const COLORS = {
+  primary: '#6366f1',
+  primaryHover: '#4f46e5',
+  primaryLight: '#eef2ff',
+  success: '#10b981',
+  successLight: '#dcfce7',
+  warning: '#f59e0b',
+  warningLight: '#fef9c3',
+  danger: '#ef4444',
+  dangerLight: '#fef2f2',
+  bg: '#f9fafb',
+  card: '#ffffff',
+  text: '#111827',
+  muted: '#6b7280',
+  border: '#e5e7eb',
 }
 
-// Stat card with animation
-function AnimatedStatCard({ label, value, icon: Icon, delay = 0 }) {
-  const [visible, setVisible] = useState(false)
-  const numericValue = parseInt(String(value).replace(/[^0-9]/g, '')) || 0
-  const suffix = String(value).replace(/[0-9]/g, '')
-  const count = useCounter(numericValue, 1500, visible)
+const STAT_CARDS = [
+  {
+    key: 'consortiums',
+    label: 'Consorcios activos',
+    icon: (
+      <svg width="24" height="24" fill="none" stroke={COLORS.primary} viewBox="0 0 24 24" strokeWidth={1.8}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772" />
+      </svg>
+    ),
+    color: COLORS.primary,
+    bg: COLORS.primaryLight,
+  },
+  {
+    key: 'models',
+    label: 'Modelos entrenados',
+    icon: (
+      <svg width="24" height="24" fill="none" stroke={COLORS.success} viewBox="0 0 24 24" strokeWidth={1.8}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23.693L5 14.5" />
+      </svg>
+    ),
+    color: COLORS.success,
+    bg: COLORS.successLight,
+  },
+  {
+    key: 'uploads',
+    label: 'Datos subidos',
+    icon: (
+      <svg width="24" height="24" fill="none" stroke={COLORS.warning} viewBox="0 0 24 24" strokeWidth={1.8}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+      </svg>
+    ),
+    color: COLORS.warning,
+    bg: COLORS.warningLight,
+  },
+  {
+    key: 'training_runs',
+    label: 'Training runs',
+    icon: (
+      <svg width="24" height="24" fill="none" stroke="#8b5cf6" viewBox="0 0 24 24" strokeWidth={1.8}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
+      </svg>
+    ),
+    color: '#8b5cf6',
+    bg: '#f5f3ff',
+  },
+]
 
-  useEffect(() => {
-    const timer = setTimeout(() => setVisible(true), delay)
-    return () => clearTimeout(timer)
-  }, [delay])
-
-  return (
-    <div
-      className={`bg-white rounded-xl border border-slate-200 p-4 transition-all duration-500 hover:shadow-md hover:border-brand-200 ${
-        visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-      }`}
-    >
-      <div className="flex items-center gap-2 mb-1">
-        {Icon && <Icon className="w-4 h-4 text-brand-500" />}
-        <span className="text-xs text-slate-500 capitalize">
-          {label.replace(/([A-Z])/g, ' $1').trim()}
-        </span>
-      </div>
-      <div className="text-2xl font-bold text-slate-900">
-        {count}{suffix}
-      </div>
-    </div>
-  )
-}
-
-const statusLabels = {
-  draft: { label: 'Borrador', color: 'bg-slate-100 text-slate-700' },
-  active: { label: 'Activo', color: 'bg-green-100 text-green-700' },
-  training: { label: 'Entrenando', color: 'bg-blue-100 text-blue-700' },
-  completed: { label: 'Completado', color: 'bg-purple-100 text-purple-700' },
-  archived: { label: 'Archivado', color: 'bg-slate-100 text-slate-500' },
-  pending: { label: 'Pendiente', color: 'bg-yellow-100 text-yellow-700' },
-}
-
-const ICONS = {
-  BuildingOffice2Icon,
-  HeartIcon,
-  ShoppingBagIcon,
-  ShieldCheckIcon
-}
+const QUICK_ACTIONS = [
+  { label: 'Crear consorcio', path: '/consortiums/new', icon: '+' },
+  { label: 'Subir datos', path: '/data-upload', icon: '\u2191' },
+  { label: 'Iniciar entrenamiento', path: '/training', icon: '\u25B6' },
+  { label: 'Ver metricas', path: '/metrics', icon: '\u2630' },
+]
 
 export default function Dashboard() {
-  const { t, i18n } = useTranslation()
-  const { isDemoMode: contextDemoMode, getScenarioData, scenarios, switchScenario, currentScenario } = useDemo()
+  const [company, setCompany] = useState(null)
   const [consortiums, setConsortiums] = useState([])
+  const [trialStatus, setTrialStatus] = useState(null)
+  const [usage, setUsage] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [filter, setFilter] = useState('all')
-
-  const isDemo = isDemoMode() || contextDemoMode
-  const currentLang = i18n.language?.startsWith('es') ? 'es' : 'en'
+  const navigate = useNavigate()
 
   useEffect(() => {
-    loadConsortiums()
-  }, [filter, currentScenario])
+    const fetchData = async () => {
+      try {
+        const [companyData, consortiumData] = await Promise.allSettled([
+          getCurrentCompany(),
+          listConsortiums(),
+        ])
+        if (companyData.status === 'fulfilled') setCompany(companyData.value)
+        if (consortiumData.status === 'fulfilled') {
+          const data = consortiumData.value
+          setConsortiums(Array.isArray(data) ? data : data.results || [])
+        }
 
-  const loadConsortiums = async () => {
-    // If in demo mode, use mock data
-    if (isDemo) {
-      const scenarioData = getScenarioData()
-      let mockConsortiums = scenarioData?.consortiums || []
+        try {
+          const ts = await getTrialStatus()
+          setTrialStatus(ts)
+        } catch (_) { /* non-critical */ }
 
-      if (filter !== 'all') {
-        mockConsortiums = mockConsortiums.filter(c => c.status === filter)
+        try {
+          const u = await getTrialUsage()
+          setUsage(u)
+        } catch (_) { /* non-critical */ }
+      } catch (err) {
+        setError(err.message)
+      } finally {
+        setLoading(false)
       }
-
-      setConsortiums(mockConsortiums)
-      setLoading(false)
-      return
     }
+    fetchData()
+  }, [])
 
-    try {
-      const data = await listConsortiums(filter === 'all' ? null : filter)
-      setConsortiums(data)
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
-    }
+  const stats = {
+    consortiums: consortiums.filter(c => c.status === 'active' || c.status === 'training').length || consortiums.length,
+    models: usage?.training_runs_used || 0,
+    uploads: usage?.uploads_used || 0,
+    training_runs: usage?.training_runs_used || 0,
   }
+
+  const recentActivity = consortiums.slice(0, 5).map((c, idx) => ({
+    id: idx,
+    text: `Consorcio "${c.name}" - ${c.status === 'active' ? 'Activo' : c.status === 'training' ? 'Entrenando' : c.status === 'completed' ? 'Completado' : 'Pendiente'}`,
+    time: c.created_at ? new Date(c.created_at).toLocaleDateString('es-AR') : 'Reciente',
+    type: c.status,
+  }))
 
   if (loading) {
     return (
-      <div className="pt-16">
-        {/* Skeleton header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <div className="h-8 bg-slate-200 rounded w-48 mb-2 animate-pulse"></div>
-            <div className="h-4 bg-slate-200 rounded w-64 animate-pulse"></div>
-          </div>
-          <div className="h-10 bg-slate-200 rounded-xl w-36 animate-pulse"></div>
-        </div>
-        {/* Skeleton filter tabs */}
-        <div className="flex gap-2 mb-6">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-10 bg-slate-200 rounded-lg w-24 animate-pulse"></div>
-          ))}
-        </div>
-        {/* Skeleton cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <SkeletonCard key={i} />
-          ))}
-        </div>
+      <div style={{ padding: 32, textAlign: 'center' }}>
+        <div style={{
+          width: 40, height: 40, border: `3px solid ${COLORS.border}`, borderTopColor: COLORS.primary,
+          borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '80px auto',
+        }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+        <p style={{ color: COLORS.muted }}>Cargando dashboard...</p>
       </div>
     )
   }
 
-  const scenarioData = isDemo ? getScenarioData() : null
-
   return (
-    <div className="pt-16">
-      {/* Demo Mode Banner */}
-      {isDemo && (
-        <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl p-4 mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <SparklesIcon className="w-6 h-6" />
-            <div>
-              <h3 className="font-semibold">
-                {currentLang === 'es' ? 'Modo Demo Activo' : 'Demo Mode Active'}
-              </h3>
-              <p className="text-sm text-white/80">
-                {currentLang === 'es'
-                  ? 'Explorando con datos ficticios. Selecciona una industria para cambiar el escenario.'
-                  : 'Exploring with mock data. Select an industry to change scenario.'}
-              </p>
-            </div>
+    <div style={{ padding: 32, maxWidth: 1200, margin: '0 auto' }}>
+      {/* Trial banner */}
+      {trialStatus?.is_trial && !trialStatus?.trial_expired && (
+        <div style={{
+          background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+          borderRadius: 12, padding: '16px 24px', marginBottom: 24,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <svg width="20" height="20" fill="none" stroke="#fff" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span style={{ color: '#fff', fontWeight: 600, fontSize: 15 }}>
+              Periodo de prueba: {trialStatus.trial_days_remaining || 0} dias restantes
+            </span>
           </div>
-          <div className="flex gap-2 flex-wrap">
-            {Object.entries(scenarios).map(([key, ind]) => {
-              const IndIcon = ICONS[ind.icon]
-              const isActive = currentScenario === key
-              return (
-                <button
-                  key={key}
-                  onClick={() => switchScenario(key)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition ${
-                    isActive
-                      ? 'bg-white text-orange-600'
-                      : 'bg-white/20 hover:bg-white/30'
-                  }`}
-                >
-                  <IndIcon className="w-4 h-4" />
-                  {currentLang === 'es' ? ind.name : ind.nameEn}
-                </button>
-              )
-            })}
-          </div>
+          <Link to="/trial" style={{
+            padding: '8px 20px', borderRadius: 8, background: '#fff', color: COLORS.primary,
+            fontWeight: 600, fontSize: 14, textDecoration: 'none',
+          }}>
+            Ver detalles
+          </Link>
         </div>
       )}
 
-      {/* Welcome Onboarding */}
-      {!isDemo && <WelcomeOnboarding />}
-
-      {/* Demo Stats */}
-      {isDemo && scenarioData && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          {Object.entries(scenarioData.stats).slice(0, 4).map(([key, value], index) => (
-            <AnimatedStatCard
-              key={key}
-              label={key}
-              value={value}
-              icon={ChartBarIcon}
-              delay={index * 100}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">
-            {currentLang === 'es' ? 'Mis Consorcios' : 'My Consortiums'}
-          </h1>
-          <p className="text-slate-600">
-            {currentLang === 'es' ? 'Gestiona tus colaboraciones de datos' : 'Manage your data collaborations'}
-          </p>
-        </div>
-        <Link
-          to="/consortiums/new"
-          className="bg-gradient-to-r from-brand-600 to-brand-700 text-white px-5 py-2.5 rounded-xl font-medium hover:from-brand-700 hover:to-brand-800 hover:shadow-lg hover:shadow-brand-500/25 transition-all duration-300 flex items-center gap-2 group"
-        >
-          <PlusIcon className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
-          {currentLang === 'es' ? 'Crear Consorcio' : 'Create Consortium'}
-        </Link>
-      </div>
-
-      {/* Filter tabs */}
-      <div className="flex gap-2 mb-6">
-        {[
-          { key: 'all', label: 'Todos' },
-          { key: 'active', label: 'Activos' },
-          { key: 'training', label: 'Entrenando' },
-          { key: 'completed', label: 'Completados' },
-        ].map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setFilter(tab.key)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-              filter === tab.key
-                ? 'bg-brand-100 text-brand-700'
-                : 'text-slate-600 hover:bg-slate-100'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      {/* Welcome */}
+      <div style={{ marginBottom: 32 }}>
+        <h1 style={{ fontSize: 28, fontWeight: 700, color: COLORS.text, margin: '0 0 8px' }}>
+          Bienvenido{company?.name ? `, ${company.name}` : ''}
+        </h1>
+        <p style={{ fontSize: 16, color: COLORS.muted, margin: 0 }}>
+          Resumen de tu plataforma de ML con privacidad
+        </p>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+        <div style={{
+          background: COLORS.dangerLight, border: '1px solid #fecaca', color: COLORS.danger,
+          padding: '12px 16px', borderRadius: 10, marginBottom: 20, fontSize: 14,
+        }}>
           {error}
         </div>
       )}
 
-      {/* Consortiums grid */}
-      {consortiums.length === 0 ? (
-        <EmptyState
-          icon={UserGroupIcon}
-          title={t('emptyState.noConsortiums')}
-          description={t('emptyState.noConsortiumsDescription')}
-          action={{
-            label: currentLang === 'es' ? 'Crear Consorcio' : 'Create Consortium',
-            to: '/consortiums/new',
-            icon: PlusIcon,
-          }}
-        />
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {consortiums.map((consortium, index) => (
-            <Link
-              key={consortium.id}
-              to={`/consortiums/${consortium.id}`}
-              className="bg-white rounded-2xl border border-slate-200 p-6 hover:shadow-xl hover:border-brand-300 hover:-translate-y-1 transition-all duration-300 group animate-fade-in"
-              style={{ animationDelay: `${index * 75}ms` }}
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-brand-100 to-brand-200 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                  <UserGroupIcon className="w-6 h-6 text-brand-600" />
-                </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusLabels[consortium.status]?.color || 'bg-slate-100'}`}>
-                  {statusLabels[consortium.status]?.label || consortium.status}
-                </span>
-              </div>
-
-              <h3 className="text-lg font-semibold text-slate-900 mb-2 group-hover:text-brand-600 transition-colors">
-                {consortium.name}
-              </h3>
-              <p className="text-slate-600 text-sm mb-4 line-clamp-2">
-                {consortium.description}
+      {/* Stats cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20, marginBottom: 32 }}>
+        {STAT_CARDS.map((card) => (
+          <div key={card.key} style={{
+            background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`,
+            padding: 24, display: 'flex', alignItems: 'flex-start', gap: 16,
+          }}>
+            <div style={{
+              width: 48, height: 48, borderRadius: 12, background: card.bg,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}>
+              {card.icon}
+            </div>
+            <div>
+              <p style={{ fontSize: 13, color: COLORS.muted, margin: '0 0 4px' }}>{card.label}</p>
+              <p style={{ fontSize: 28, fontWeight: 700, color: COLORS.text, margin: 0 }}>
+                {stats[card.key]}
               </p>
+            </div>
+          </div>
+        ))}
+      </div>
 
-              <div className="flex items-center gap-4 text-sm text-slate-500">
-                <div className="flex items-center gap-1.5">
-                  <UserGroupIcon className="w-4 h-4" />
-                  <span>{consortium.member_count || 1} miembros</span>
+      {/* Two column layout */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+        {/* Recent activity */}
+        <div style={{
+          background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`, padding: 24,
+        }}>
+          <h2 style={{ fontSize: 18, fontWeight: 600, color: COLORS.text, margin: '0 0 16px' }}>
+            Actividad reciente
+          </h2>
+          {recentActivity.length === 0 ? (
+            <p style={{ color: COLORS.muted, fontSize: 14, textAlign: 'center', padding: '24px 0' }}>
+              No hay actividad reciente. Crea tu primer consorcio para comenzar.
+            </p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+              {recentActivity.map((act) => (
+                <div key={act.id} style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '12px 0', borderBottom: `1px solid ${COLORS.border}`,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{
+                      width: 8, height: 8, borderRadius: '50%',
+                      background: act.type === 'active' ? COLORS.success
+                        : act.type === 'training' ? COLORS.warning
+                        : act.type === 'completed' ? COLORS.primary
+                        : COLORS.muted,
+                    }} />
+                    <span style={{ fontSize: 14, color: COLORS.text }}>{act.text}</span>
+                  </div>
+                  <span style={{ fontSize: 12, color: COLORS.muted, whiteSpace: 'nowrap', marginLeft: 12 }}>
+                    {act.time}
+                  </span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <CubeIcon className="w-4 h-4" />
-                  <span>{consortium.model_type}</span>
-                </div>
-              </div>
-
-              {/* Hover indicator */}
-              <div className="mt-4 pt-4 border-t border-slate-100 opacity-0 group-hover:opacity-100 transition-opacity">
-                <span className="text-brand-600 text-sm font-medium flex items-center gap-1">
-                  Ver detalles
-                  <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </span>
-              </div>
-            </Link>
-          ))}
+              ))}
+            </div>
+          )}
         </div>
-      )}
 
-      <style>{`
-        @keyframes fade-in {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in {
-          animation: fade-in 0.5s ease-out forwards;
-          opacity: 0;
-        }
-      `}</style>
+        {/* Quick actions */}
+        <div style={{
+          background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`, padding: 24,
+        }}>
+          <h2 style={{ fontSize: 18, fontWeight: 600, color: COLORS.text, margin: '0 0 16px' }}>
+            Acciones rapidas
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            {QUICK_ACTIONS.map((action) => (
+              <Link
+                key={action.path}
+                to={action.path}
+                style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+                  padding: '20px 16px', borderRadius: 10, border: `1px solid ${COLORS.border}`,
+                  textDecoration: 'none', transition: 'border-color 0.2s, background 0.2s',
+                  background: COLORS.card,
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.borderColor = COLORS.primary
+                  e.currentTarget.style.background = COLORS.primaryLight
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.borderColor = COLORS.border
+                  e.currentTarget.style.background = COLORS.card
+                }}
+              >
+                <span style={{
+                  width: 40, height: 40, borderRadius: 10, background: COLORS.primaryLight,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 20, color: COLORS.primary, fontWeight: 700,
+                }}>
+                  {action.icon}
+                </span>
+                <span style={{ fontSize: 14, fontWeight: 500, color: COLORS.text, textAlign: 'center' }}>
+                  {action.label}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Consortiums list */}
+      <div style={{
+        background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`,
+        padding: 24, marginTop: 24,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <h2 style={{ fontSize: 18, fontWeight: 600, color: COLORS.text, margin: 0 }}>
+            Mis consorcios
+          </h2>
+          <Link to="/consortiums/new" style={{
+            padding: '8px 16px', borderRadius: 8, background: COLORS.primary, color: '#fff',
+            textDecoration: 'none', fontSize: 14, fontWeight: 500,
+          }}>
+            Nuevo consorcio
+          </Link>
+        </div>
+
+        {consortiums.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '32px 0' }}>
+            <p style={{ color: COLORS.muted, fontSize: 15, marginBottom: 16 }}>
+              Aun no tienes consorcios. Crea uno para empezar a colaborar.
+            </p>
+            <Link to="/consortiums/new" style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              padding: '10px 24px', borderRadius: 8, background: COLORS.primaryLight,
+              color: COLORS.primary, textDecoration: 'none', fontWeight: 500, fontSize: 14,
+            }}>
+              Crear primer consorcio
+            </Link>
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: `2px solid ${COLORS.border}` }}>
+                  {['Nombre', 'Tipo de modelo', 'Estado', 'Miembros', 'Acciones'].map((h) => (
+                    <th key={h} style={{
+                      textAlign: 'left', padding: '10px 12px', fontSize: 13,
+                      fontWeight: 600, color: COLORS.muted, textTransform: 'uppercase', letterSpacing: 0.5,
+                    }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {consortiums.map((c) => (
+                  <tr key={c.id || c.name} style={{ borderBottom: `1px solid ${COLORS.border}` }}>
+                    <td style={{ padding: '12px', fontSize: 14, fontWeight: 500, color: COLORS.text }}>
+                      {c.name}
+                    </td>
+                    <td style={{ padding: '12px', fontSize: 14, color: COLORS.muted }}>
+                      {c.model_type || '-'}
+                    </td>
+                    <td style={{ padding: '12px' }}>
+                      <span style={{
+                        display: 'inline-block', padding: '4px 10px', borderRadius: 6, fontSize: 12, fontWeight: 600,
+                        background: c.status === 'active' ? COLORS.successLight
+                          : c.status === 'training' ? COLORS.warningLight
+                          : c.status === 'completed' ? COLORS.primaryLight
+                          : '#f3f4f6',
+                        color: c.status === 'active' ? COLORS.success
+                          : c.status === 'training' ? COLORS.warning
+                          : c.status === 'completed' ? COLORS.primary
+                          : COLORS.muted,
+                      }}>
+                        {c.status === 'active' ? 'Activo' : c.status === 'training' ? 'Entrenando'
+                          : c.status === 'completed' ? 'Completado' : c.status || 'Pendiente'}
+                      </span>
+                    </td>
+                    <td style={{ padding: '12px', fontSize: 14, color: COLORS.muted }}>
+                      {c.member_count || c.members_count || '-'}
+                    </td>
+                    <td style={{ padding: '12px' }}>
+                      <Link to={`/consortiums/${c.id}`} style={{
+                        color: COLORS.primary, textDecoration: 'none', fontSize: 14, fontWeight: 500,
+                      }}>
+                        Ver detalle
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

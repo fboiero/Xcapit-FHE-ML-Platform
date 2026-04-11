@@ -1,267 +1,351 @@
-import { useState, useCallback, useEffect } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
-import { getConsortium, uploadEncryptedData } from '../api/client'
+import { useState, useEffect, useRef } from 'react'
+import { useParams, Link } from 'react-router-dom'
+import { listConsortiums, uploadEncryptedData } from '../api/client'
+import { uploadTrialData } from '../api/trial'
+
+const COLORS = {
+  primary: '#6366f1',
+  primaryHover: '#4f46e5',
+  primaryLight: '#eef2ff',
+  success: '#10b981',
+  successLight: '#dcfce7',
+  warning: '#f59e0b',
+  warningLight: '#fef9c3',
+  danger: '#ef4444',
+  dangerLight: '#fef2f2',
+  bg: '#f9fafb',
+  card: '#ffffff',
+  text: '#111827',
+  muted: '#6b7280',
+  border: '#e5e7eb',
+}
+
+const ALLOWED_TYPES = ['.csv', '.json', '.xlsx']
+const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50 MB
 
 export default function UploadData() {
-  const { id } = useParams()
-  const navigate = useNavigate()
-  const [consortium, setConsortium] = useState(null)
+  const { id: paramId } = useParams()
+  const fileInputRef = useRef(null)
+
+  const [consortiums, setConsortiums] = useState([])
+  const [selectedConsortium, setSelectedConsortium] = useState(paramId || '')
   const [file, setFile] = useState(null)
-  const [dragActive, setDragActive] = useState(false)
   const [uploading, setUploading] = useState(false)
-  const [uploadProgress, setUploadProgress] = useState(0)
+  const [progress, setProgress] = useState(0)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState(false)
+  const [success, setSuccess] = useState(null)
+  const [validationResults, setValidationResults] = useState(null)
+  const [dragOver, setDragOver] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    loadConsortium()
-  }, [id])
+    const fetchConsortiums = async () => {
+      try {
+        const data = await listConsortiums()
+        const list = Array.isArray(data) ? data : data.results || []
+        setConsortiums(list)
+      } catch (_) { /* fallback */ }
+      setLoading(false)
+    }
+    fetchConsortiums()
+  }, [])
 
-  const loadConsortium = async () => {
-    try {
-      const data = await getConsortium(id)
-      setConsortium(data)
-    } catch (err) {
-      setError(err.message)
+  const validateFile = (f) => {
+    const errors = []
+    const ext = '.' + f.name.split('.').pop().toLowerCase()
+
+    if (!ALLOWED_TYPES.includes(ext)) {
+      errors.push(`Formato no soportado: ${ext}. Usa CSV, JSON o XLSX.`)
+    }
+    if (f.size > MAX_FILE_SIZE) {
+      errors.push(`El archivo excede el limite de 50 MB (${(f.size / 1024 / 1024).toFixed(1)} MB).`)
+    }
+    if (f.size === 0) {
+      errors.push('El archivo esta vacio.')
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors,
+      fileName: f.name,
+      fileSize: f.size,
+      fileType: ext,
     }
   }
 
-  const handleDrag = useCallback((e) => {
-    e.preventDefault()
-    e.stopPropagation()
-    if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true)
-    } else if (e.type === 'dragleave') {
-      setDragActive(false)
-    }
-  }, [])
-
-  const handleDrop = useCallback((e) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setDragActive(false)
-
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFile(e.dataTransfer.files[0])
-    }
-  }, [])
-
-  const handleChange = (e) => {
-    e.preventDefault()
-    if (e.target.files && e.target.files[0]) {
-      handleFile(e.target.files[0])
-    }
-  }
-
-  const handleFile = (file) => {
-    // Validate file type
-    const validTypes = ['text/csv', 'application/json', 'application/octet-stream']
-    const validExtensions = ['.csv', '.json', '.enc']
-
-    const hasValidExtension = validExtensions.some(ext =>
-      file.name.toLowerCase().endsWith(ext)
-    )
-
-    if (!validTypes.includes(file.type) && !hasValidExtension) {
-      setError('Formato de archivo no soportado. Usa CSV, JSON o archivos encriptados (.enc)')
-      return
-    }
-
-    setFile(file)
+  const handleFileSelect = (f) => {
     setError('')
+    setSuccess(null)
+    setValidationResults(null)
+
+    if (!f) return
+
+    const validation = validateFile(f)
+    setValidationResults(validation)
+
+    if (validation.valid) {
+      setFile(f)
+    } else {
+      setFile(null)
+    }
+  }
+
+  const handleDrop = (e) => {
+    e.preventDefault()
+    setDragOver(false)
+    const droppedFile = e.dataTransfer.files[0]
+    if (droppedFile) handleFileSelect(droppedFile)
   }
 
   const handleUpload = async () => {
-    if (!file) return
+    if (!file || !selectedConsortium) {
+      setError('Selecciona un consorcio y un archivo para subir.')
+      return
+    }
 
     setUploading(true)
-    setUploadProgress(0)
     setError('')
+    setProgress(0)
+
+    // Simulate progress since fetch doesn't provide upload progress
+    const progressInterval = setInterval(() => {
+      setProgress((p) => {
+        if (p >= 90) { clearInterval(progressInterval); return 90 }
+        return p + Math.random() * 15
+      })
+    }, 300)
 
     try {
-      // Simulate progress
-      const progressInterval = setInterval(() => {
-        setUploadProgress((prev) => Math.min(prev + 10, 90))
-      }, 200)
-
-      await uploadEncryptedData(id, file, {
-        filename: file.name,
-        size: file.size,
-        uploaded_at: new Date().toISOString(),
-      })
+      let result
+      try {
+        result = await uploadTrialData(selectedConsortium, file)
+      } catch (_) {
+        result = await uploadEncryptedData(selectedConsortium, file)
+      }
 
       clearInterval(progressInterval)
-      setUploadProgress(100)
-      setSuccess(true)
+      setProgress(100)
 
-      setTimeout(() => {
-        navigate(`/consortiums/${id}`)
-      }, 2000)
+      setSuccess({
+        message: 'Datos subidos exitosamente',
+        details: result,
+      })
+      setFile(null)
+      setValidationResults(null)
+      if (fileInputRef.current) fileInputRef.current.value = ''
     } catch (err) {
+      clearInterval(progressInterval)
       setError(err.message)
+      setProgress(0)
     } finally {
       setUploading(false)
     }
   }
 
-  const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes'
+  const formatSize = (bytes) => {
+    if (bytes === 0) return '0 B'
     const k = 1024
-    const sizes = ['Bytes', 'KB', 'MB', 'GB']
+    const sizes = ['B', 'KB', 'MB', 'GB']
     const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-  }
-
-  if (success) {
-    return (
-      <div className="pt-16 max-w-2xl mx-auto">
-        <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h2 className="text-2xl font-bold text-slate-900 mb-2">Datos subidos exitosamente!</h2>
-          <p className="text-slate-600 mb-6">
-            Tu contribucion ha sido agregada al consorcio.
-          </p>
-          <p className="text-sm text-slate-500">Redirigiendo...</p>
-        </div>
-      </div>
-    )
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
   }
 
   return (
-    <div className="pt-16 max-w-2xl mx-auto">
+    <div style={{ padding: 32, maxWidth: 720, margin: '0 auto' }}>
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-slate-500 mb-6">
-        <Link to="/dashboard" className="hover:text-brand-600">Dashboard</Link>
-        <span>/</span>
-        <Link to={`/consortiums/${id}`} className="hover:text-brand-600">
-          {consortium?.name || 'Consorcio'}
-        </Link>
-        <span>/</span>
-        <span className="text-slate-900">Subir Datos</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24 }}>
+        <Link to="/dashboard" style={{ color: COLORS.muted, textDecoration: 'none', fontSize: 14 }}>Dashboard</Link>
+        <span style={{ color: COLORS.muted, fontSize: 14 }}>/</span>
+        <span style={{ color: COLORS.text, fontSize: 14, fontWeight: 500 }}>Subir datos</span>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 p-8">
-        <h1 className="text-2xl font-bold text-slate-900 mb-2">Subir datos encriptados</h1>
-        <p className="text-slate-600 mb-8">
-          Tus datos seran procesados de forma segura usando encriptacion homomorfica.
-        </p>
+      <h1 style={{ fontSize: 28, fontWeight: 700, color: COLORS.text, margin: '0 0 8px' }}>
+        Subir datos
+      </h1>
+      <p style={{ fontSize: 16, color: COLORS.muted, margin: '0 0 32px' }}>
+        Sube tus datos encriptados a un consorcio para entrenamiento colaborativo.
+      </p>
 
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
-            {error}
-          </div>
-        )}
-
-        {/* Info box */}
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-          <div className="flex items-start gap-3">
-            <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-            <div>
-              <p className="text-sm font-medium text-blue-900">Encriptacion end-to-end</p>
-              <p className="text-sm text-blue-700">
-                Tus datos son encriptados localmente antes de subirse. Ningun participante puede ver los datos originales.
-              </p>
-            </div>
-          </div>
+      {error && (
+        <div style={{
+          background: COLORS.dangerLight, border: '1px solid #fecaca', color: COLORS.danger,
+          padding: '12px 16px', borderRadius: 10, marginBottom: 20, fontSize: 14,
+        }}>
+          {error}
         </div>
+      )}
 
-        {/* Drop zone */}
-        <div
-          className={`border-2 border-dashed rounded-xl p-8 text-center transition ${
-            dragActive
-              ? 'border-brand-500 bg-brand-50'
-              : file
-              ? 'border-green-500 bg-green-50'
-              : 'border-slate-300 hover:border-brand-500'
-          }`}
-          onDragEnter={handleDrag}
-          onDragLeave={handleDrag}
-          onDragOver={handleDrag}
-          onDrop={handleDrop}
-        >
-          {file ? (
-            <div>
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-              <p className="font-medium text-slate-900">{file.name}</p>
-              <p className="text-sm text-slate-500">{formatFileSize(file.size)}</p>
-              <button
-                onClick={() => setFile(null)}
-                className="text-red-600 text-sm hover:text-red-700 mt-2"
-              >
-                Eliminar
-              </button>
-            </div>
-          ) : (
-            <div>
-              <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                </svg>
-              </div>
-              <p className="font-medium text-slate-900 mb-1">
-                Arrastra tu archivo aqui
-              </p>
-              <p className="text-sm text-slate-500 mb-4">
-                o haz clic para seleccionar
-              </p>
-              <label className="inline-block bg-slate-100 text-slate-700 px-4 py-2 rounded-lg cursor-pointer hover:bg-slate-200 transition">
-                <span>Seleccionar archivo</span>
-                <input
-                  type="file"
-                  className="hidden"
-                  accept=".csv,.json,.enc"
-                  onChange={handleChange}
-                />
-              </label>
-              <p className="text-xs text-slate-400 mt-4">
-                Formatos soportados: CSV, JSON, .enc (pre-encriptado)
-              </p>
+      {success && (
+        <div style={{
+          background: COLORS.successLight, border: '1px solid #bbf7d0', borderRadius: 12,
+          padding: 20, marginBottom: 20,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+            <svg width="20" height="20" fill="none" stroke={COLORS.success} viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+            <span style={{ fontSize: 16, fontWeight: 600, color: COLORS.success }}>{success.message}</span>
+          </div>
+          {success.details && (
+            <div style={{ fontSize: 14, color: '#166534' }}>
+              {success.details.records && <p style={{ margin: '4px 0' }}>Registros procesados: {success.details.records}</p>}
+              {success.details.size && <p style={{ margin: '4px 0' }}>Tamano: {success.details.size}</p>}
+              {success.details.status && <p style={{ margin: '4px 0' }}>Estado: {success.details.status}</p>}
             </div>
           )}
         </div>
+      )}
 
-        {/* Upload progress */}
-        {uploading && (
-          <div className="mt-6">
-            <div className="flex items-center justify-between text-sm mb-2">
-              <span className="text-slate-600">Subiendo y encriptando...</span>
-              <span className="text-slate-900 font-medium">{uploadProgress}%</span>
+      <div style={{
+        background: COLORS.card, borderRadius: 12, border: `1px solid ${COLORS.border}`, padding: 28,
+      }}>
+        {/* Consortium selector */}
+        <div style={{ marginBottom: 24 }}>
+          <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#374151', marginBottom: 6 }}>
+            Consorcio destino
+          </label>
+          <select
+            value={selectedConsortium}
+            onChange={(e) => setSelectedConsortium(e.target.value)}
+            disabled={!!paramId}
+            style={{
+              width: '100%', padding: '12px 16px', border: `1px solid ${COLORS.border}`,
+              borderRadius: 10, fontSize: 15, color: selectedConsortium ? COLORS.text : COLORS.muted,
+              outline: 'none', boxSizing: 'border-box', background: COLORS.card, cursor: 'pointer',
+            }}
+          >
+            <option value="">Selecciona un consorcio</option>
+            {consortiums.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* File drop zone */}
+        <div style={{ marginBottom: 24 }}>
+          <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#374151', marginBottom: 6 }}>
+            Archivo de datos
+          </label>
+          <div
+            style={{
+              border: `2px dashed ${dragOver ? COLORS.primary : COLORS.border}`,
+              borderRadius: 12, padding: '40px 24px', textAlign: 'center',
+              background: dragOver ? COLORS.primaryLight : COLORS.bg,
+              transition: 'border-color 0.2s, background 0.2s', cursor: 'pointer',
+            }}
+            onClick={() => fileInputRef.current?.click()}
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={handleDrop}
+          >
+            <svg width="40" height="40" fill="none" stroke={COLORS.muted} viewBox="0 0 24 24" strokeWidth={1.5}
+              style={{ margin: '0 auto 12px', display: 'block' }}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+            </svg>
+            <p style={{ fontSize: 16, fontWeight: 500, color: COLORS.text, margin: '0 0 6px' }}>
+              Arrastra tu archivo aqui o haz clic para seleccionar
+            </p>
+            <p style={{ fontSize: 13, color: COLORS.muted, margin: 0 }}>
+              Formatos soportados: CSV, JSON, XLSX. Maximo 50 MB.
+            </p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv,.json,.xlsx"
+              onChange={(e) => handleFileSelect(e.target.files[0])}
+              style={{ display: 'none' }}
+            />
+          </div>
+        </div>
+
+        {/* Validation results */}
+        {validationResults && (
+          <div style={{
+            background: validationResults.valid ? COLORS.successLight : COLORS.dangerLight,
+            borderRadius: 10, padding: 16, marginBottom: 24,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              {validationResults.valid ? (
+                <svg width="18" height="18" fill="none" stroke={COLORS.success} viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              ) : (
+                <svg width="18" height="18" fill="none" stroke={COLORS.danger} viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              )}
+              <span style={{
+                fontSize: 14, fontWeight: 600,
+                color: validationResults.valid ? COLORS.success : COLORS.danger,
+              }}>
+                {validationResults.valid ? 'Archivo valido' : 'Archivo invalido'}
+              </span>
             </div>
-            <div className="bg-slate-200 rounded-full h-2">
-              <div
-                className="bg-brand-600 rounded-full h-2 transition-all"
-                style={{ width: `${uploadProgress}%` }}
-              />
+            <div style={{ fontSize: 14, color: validationResults.valid ? '#166534' : '#991b1b' }}>
+              <p style={{ margin: '2px 0' }}>Nombre: {validationResults.fileName}</p>
+              <p style={{ margin: '2px 0' }}>Tamano: {formatSize(validationResults.fileSize)}</p>
+              <p style={{ margin: '2px 0' }}>Formato: {validationResults.fileType}</p>
+              {validationResults.errors.map((err, idx) => (
+                <p key={idx} style={{ margin: '4px 0', fontWeight: 500 }}>{err}</p>
+              ))}
             </div>
           </div>
         )}
 
-        {/* Actions */}
-        <div className="flex gap-4 mt-8">
-          <Link
-            to={`/consortiums/${id}`}
-            className="flex-1 text-center px-4 py-3 border border-slate-300 rounded-xl font-medium hover:bg-slate-50 transition"
-          >
-            Cancelar
-          </Link>
-          <button
-            onClick={handleUpload}
-            disabled={!file || uploading}
-            className="flex-1 bg-brand-600 text-white px-4 py-3 rounded-xl font-medium hover:bg-brand-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {uploading ? 'Subiendo...' : 'Subir Datos'}
-          </button>
-        </div>
+        {/* Upload progress */}
+        {uploading && (
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+              <span style={{ fontSize: 14, fontWeight: 500, color: COLORS.text }}>Subiendo...</span>
+              <span style={{ fontSize: 14, fontWeight: 600, color: COLORS.primary }}>{Math.round(progress)}%</span>
+            </div>
+            <div style={{
+              width: '100%', height: 10, background: COLORS.border, borderRadius: 5, overflow: 'hidden',
+            }}>
+              <div style={{
+                height: '100%', background: progress === 100
+                  ? COLORS.success
+                  : 'linear-gradient(90deg, #6366f1, #8b5cf6)',
+                borderRadius: 5, width: `${progress}%`, transition: 'width 0.3s ease',
+              }} />
+            </div>
+            <p style={{ fontSize: 13, color: COLORS.muted, marginTop: 6 }}>
+              Encriptando y subiendo datos al consorcio...
+            </p>
+          </div>
+        )}
+
+        {/* Upload button */}
+        <button
+          onClick={handleUpload}
+          disabled={uploading || !file || !selectedConsortium}
+          style={{
+            width: '100%', padding: '14px 0', borderRadius: 10, border: 'none',
+            background: (uploading || !file || !selectedConsortium) ? '#a5b4fc' : COLORS.primary,
+            color: '#fff', fontSize: 16, fontWeight: 600,
+            cursor: (uploading || !file || !selectedConsortium) ? 'not-allowed' : 'pointer',
+            transition: 'background 0.2s',
+          }}
+          onMouseOver={(e) => { if (!uploading && file && selectedConsortium) e.target.style.background = COLORS.primaryHover }}
+          onMouseOut={(e) => { if (!uploading && file && selectedConsortium) e.target.style.background = COLORS.primary }}
+        >
+          {uploading ? 'Subiendo...' : 'Subir datos encriptados'}
+        </button>
+      </div>
+
+      {/* Info card */}
+      <div style={{
+        background: COLORS.primaryLight, borderRadius: 12, padding: 20, marginTop: 24,
+        border: `1px solid ${COLORS.primary}33`,
+      }}>
+        <h3 style={{ fontSize: 15, fontWeight: 600, color: COLORS.text, margin: '0 0 8px' }}>
+          Sobre la privacidad de tus datos
+        </h3>
+        <p style={{ fontSize: 14, color: COLORS.muted, margin: 0, lineHeight: 1.6 }}>
+          Tus datos son encriptados con encriptacion homomorfica (FHE) antes de ser enviados al servidor.
+          Nunca tenemos acceso a tus datos en texto plano. Solo los parametros del modelo son compartidos
+          durante el entrenamiento federado.
+        </p>
       </div>
     </div>
   )
