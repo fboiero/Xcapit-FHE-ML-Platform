@@ -237,10 +237,11 @@ FIELD_ENCRYPTION_KEY=<base64-32-bytes>
    - KeyCeremony: no almacenar todos los secretos en memoria
    - Secure aggregation: derivar seeds de intercambio de claves (no de indices)
 
-2. **Testing**:
-   - Resolver 12 archivos de test con errores de importacion
-   - Agregar tests de integracion end-to-end
-   - Performance testing bajo carga
+2. **Testing** (actualizado 2026-04-12):
+   - ✅ 1,968 tests Django + 195 SDK = 2,163 tests pasando, 0 fallas (verificado 2026-04-12)
+   - ✅ Cobertura 96.23% (threshold CI: 90%)
+   - Pendiente: tests de performance bajo carga (Locust/k6, p95 < 500ms a 1K req/s)
+   - Pendiente: tests E2E browser-based con Playwright para flujos críticos del dashboard
 
 3. **Operaciones**:
    - Configurar alerting (PagerDuty/OpsGenie)
