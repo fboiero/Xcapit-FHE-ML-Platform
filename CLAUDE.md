@@ -79,6 +79,23 @@ Detailed patterns and conventions are in `.claude/skills/`:
 - `/deploy-check` — Full pre-deployment checklist (tests, lint, security, Docker, contracts)
 - `/review-app` — Code review a Django app against project standards
 
+## Testing strategy
+
+Complete guide: [docs/TESTING.md](docs/TESTING.md).
+
+Quick reference:
+
+| Layer | Tool | Makefile target |
+|-------|------|-----------------|
+| Unit + Integration (Django) | pytest | `make test`, `make coverage` |
+| Unit (SDK) | pytest | `make sdk-test` |
+| E2E (dashboard) | Playwright | `make e2e-install`, `make e2e-test`, `make e2e-test-ui` |
+| Performance (load) | Locust | `make perf-install`, `make perf-test`, `make perf-test-fhe` |
+
+SLO targets for perf tests (enforced in CI):
+- Health: p95 <200ms, Auth: p95 <500ms, Standard API: p95 <500ms, FHE/MPC: p95 <5s
+- Failure rate: <1% overall
+
 ## User Preferences
 
 - Spanish communication preferred

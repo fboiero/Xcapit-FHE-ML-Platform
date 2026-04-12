@@ -168,6 +168,80 @@ sdk-test: ## Ejecuta tests del SDK
 	cd sdk && pytest tests/ -v --tb=short
 
 # =============================================================================
+# PERFORMANCE TESTING (Locust)
+# =============================================================================
+
+perf-install: ## Instala dependencias de perf testing (Locust)
+	@echo "$(CYAN)▶ Instalando Locust...$(RESET)"
+	cd $(BACKEND) && . .venv/bin/activate && \
+		pip install -q -r requirements-perf.txt
+	@echo "$(GREEN)✓ Locust instalado$(RESET)"
+
+perf-test-seed: ## Crea usuario de prueba para perf tests
+	@echo "$(CYAN)▶ Creando usuario perf@xcapit.test...$(RESET)"
+	cd $(BACKEND) && . .venv/bin/activate && \
+		DJANGO_SETTINGS_MODULE=config.settings python manage.py shell -c "\
+from apps.core.models import User, Company; \
+c, _ = Company.objects.get_or_create(name='Xcapit Perf Test', defaults={'email': 'perf@xcapit.test'}); \
+u, created = User.objects.get_or_create(email='perf@xcapit.test', defaults={'company': c, 'is_active': True}); \
+u.set_password('perf-test-password'); u.save(); \
+print('✓ Perf user ready:', u.email)"
+
+perf-test: ## Load test headless (50 users, 3 min) - valida SLOs
+	@echo "$(CYAN)▶ Load test (50 users, 3min)...$(RESET)"
+	cd $(BACKEND) && . .venv/bin/activate && \
+		locust -f tests/performance/locustfile.py \
+			--host http://localhost:8000 \
+			--users 50 --spawn-rate 5 --run-time 3m \
+			--headless --only-summary
+
+perf-test-ui: ## Load test con web UI interactiva (localhost:8089)
+	@echo "$(CYAN)▶ Locust UI disponible en http://localhost:8089$(RESET)"
+	cd $(BACKEND) && . .venv/bin/activate && \
+		locust -f tests/performance/locustfile.py \
+			--host http://localhost:8000
+
+perf-test-fhe: ## Stress test específico de FHE (5 users, 10 min)
+	@echo "$(CYAN)▶ FHE stress test (5 users, 10min)...$(RESET)"
+	cd $(BACKEND) && . .venv/bin/activate && \
+		locust -f tests/performance/locustfile.py \
+			--host http://localhost:8000 \
+			--users 5 --spawn-rate 1 --run-time 10m \
+			--headless --only-summary \
+			FHEHeavyUser
+
+perf-test-soak: ## Soak test largo (50 users, 2h) - detecta memory leaks
+	@echo "$(CYAN)▶ Soak test (50 users, 2h)...$(RESET)"
+	cd $(BACKEND) && . .venv/bin/activate && \
+		locust -f tests/performance/locustfile.py \
+			--host http://localhost:8000 \
+			--users 50 --spawn-rate 2 --run-time 2h \
+			--headless --only-summary
+
+# =============================================================================
+# E2E TESTING (Playwright)
+# =============================================================================
+
+e2e-install: ## Instala Playwright y sus browsers
+	@echo "$(CYAN)▶ Instalando Playwright...$(RESET)"
+	cd $(DASHBOARD) && npm install -D @playwright/test
+	cd $(DASHBOARD) && npx playwright install --with-deps chromium
+	@echo "$(GREEN)✓ Playwright instalado$(RESET)"
+
+e2e-test: ## E2E tests del dashboard (headless)
+	@echo "$(CYAN)▶ E2E tests...$(RESET)"
+	cd $(DASHBOARD) && npx playwright test
+
+e2e-test-ui: ## E2E tests con UI mode (interactivo)
+	cd $(DASHBOARD) && npx playwright test --ui
+
+e2e-test-debug: ## E2E tests modo debug (headed, inspector)
+	cd $(DASHBOARD) && npx playwright test --debug
+
+e2e-test-report: ## Abre el último reporte HTML de E2E
+	cd $(DASHBOARD) && npx playwright show-report
+
+# =============================================================================
 # BASE DE DATOS
 # =============================================================================
 

@@ -8,3 +8,8 @@ dist/
 .DS_Store
 *.timestamp-*.mjs
 coverage/
+
+# Playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/

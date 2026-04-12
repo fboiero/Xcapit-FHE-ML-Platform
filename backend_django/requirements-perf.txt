@@ -1,0 +1,7 @@
+# Performance testing dependencies
+# Install with: pip install -r requirements-perf.txt
+# Run with: make perf-test (or manually: locust -f tests/performance/locustfile.py)
+#
+# Keep separate from requirements.txt to avoid bloating production image.
+
+locust>=2.31.0
