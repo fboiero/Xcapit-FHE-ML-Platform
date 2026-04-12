@@ -1,0 +1,2 @@
+docs/demos/**/*.mp4 filter=lfs diff=lfs merge=lfs -text
+docs/demos/**/*.webm filter=lfs diff=lfs merge=lfs -text
