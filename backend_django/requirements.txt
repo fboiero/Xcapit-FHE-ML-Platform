@@ -22,7 +22,7 @@ django-encrypted-model-fields~=0.6.5
 hvac~=2.3.0
 
 # Redis (Rate limiting, caching, Celery)
-redis~=5.0.0
+redis~=7.0.1
 django-redis~=5.4.0
 hiredis~=3.0.0
 
