@@ -6,7 +6,7 @@ Django~=5.2.0
 djangorestframework~=3.15.0
 drf-nested-routers~=0.94.0
 django-cors-headers~=4.4.0
-django-filter~=24.0
+django-filter~=25.1
 
 # Database
 psycopg2-binary~=2.9.9
