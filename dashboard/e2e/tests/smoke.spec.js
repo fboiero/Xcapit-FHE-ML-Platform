@@ -9,7 +9,7 @@ import { test, expect } from '@playwright/test'
  */
 
 test.describe('Smoke: the stack is up', () => {
-  test('dashboard serves HTML on port 5173', async ({ page }) => {
+  test('dashboard root responds', async ({ page }) => {
     const response = await page.goto('/')
     expect(response?.status()).toBeLessThan(500)
   })

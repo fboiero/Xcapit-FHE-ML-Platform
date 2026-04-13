@@ -22,16 +22,22 @@ test.describe('Trial / freemium flows', () => {
   test('pricing tier information is visible', async ({ page }) => {
     await page.goto('/pricing')
 
-    // Should list at least 3 of the 4 tiers
-    const tierTexts = ['free', 'starter', 'professional', 'enterprise']
-    let visibleCount = 0
+    // Dashboard uses Spanish tier names: Gratuito, Starter, Profesional, Enterprise
+    // Also accept English names for i18n flexibility
+    const tierPatterns = [
+      /gratuito|free/i,
+      /starter/i,
+      /profesional|professional/i,
+      /enterprise/i,
+    ]
 
-    for (const tier of tierTexts) {
-      const count = await page.locator(`text=/${tier}/i`).count()
+    let visibleCount = 0
+    for (const pattern of tierPatterns) {
+      const count = await page.locator('body').filter({ hasText: pattern }).count()
       if (count > 0) visibleCount++
     }
 
-    expect(visibleCount).toBeGreaterThanOrEqual(3)
+    expect(visibleCount, 'at least 3 of 4 tiers visible').toBeGreaterThanOrEqual(3)
   })
 
   test('settings page is accessible', async ({ page, request }) => {

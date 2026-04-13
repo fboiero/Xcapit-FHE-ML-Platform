@@ -33,7 +33,7 @@ export default defineConfig({
 
   // Opciones compartidas entre todos los tests
   use: {
-    baseURL: process.env.E2E_BASE_URL || 'http://localhost:5173',
+    baseURL: process.env.E2E_BASE_URL || 'http://localhost:3000',
 
     // Trace cuando falla un test (re-corrido via --trace retain-on-failure)
     trace: 'retain-on-failure',
@@ -74,7 +74,7 @@ export default defineConfig({
     ? undefined
     : {
         command: 'npm run dev',
-        url: 'http://localhost:5173',
+        url: 'http://localhost:3000',
         reuseExistingServer: true,
         timeout: 120_000,
       },

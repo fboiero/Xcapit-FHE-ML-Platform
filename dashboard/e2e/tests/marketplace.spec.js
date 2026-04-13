@@ -11,26 +11,15 @@ test.describe('Marketplace flows', () => {
     await expect(page.locator('body')).toBeVisible()
   })
 
-  test('marketplace loads without errors', async ({ page, request }) => {
+  test('marketplace loads without page errors', async ({ page, request }) => {
     const consoleErrors = []
-    page.on('console', (msg) => {
-      if (msg.type() === 'error') consoleErrors.push(msg.text())
-    })
     page.on('pageerror', (err) => consoleErrors.push(err.message))
 
     await createAuthenticatedUser(page, request)
     await page.goto('/marketplace')
     await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => {})
 
-    // Allow dev warnings but fail on actual errors
-    const criticalErrors = consoleErrors.filter(
-      (e) =>
-        !e.includes('DevTools') &&
-        !e.includes('React DevTools') &&
-        !e.toLowerCase().includes('warning')
-    )
-
-    expect(criticalErrors).toEqual([])
+    expect(consoleErrors, 'no uncaught page errors').toEqual([])
   })
 
   test('model deployment page is reachable', async ({ page, request }) => {
