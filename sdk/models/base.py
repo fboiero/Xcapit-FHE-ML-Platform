@@ -10,8 +10,18 @@ from ..encryption.ckks_wrapper import CKKSEncryptor, EncryptedMatrix, EncryptedV
 
 
 class FHELevel(Enum):
-    """Level of FHE support."""
+    """Level of FHE support for a model.
+
+    - NONE: no encryption at any stage.
+    - TRANSPORT: data encrypted in transit and at rest, but decrypted before
+      computation (training and inference operate on plaintext).
+    - PARTIAL: some operations run on encrypted data (e.g., single-sample
+      inference) but not all paths are fully homomorphic.
+    - FULL: training or inference can operate entirely on encrypted data
+      without decryption (e.g., CKKS dot product for linear models).
+    """
     NONE = "none"
+    TRANSPORT = "transport"
     PARTIAL = "partial"
     FULL = "full"
 

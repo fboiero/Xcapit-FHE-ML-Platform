@@ -405,17 +405,23 @@ class ContributionProof:
         r_features = _rand_below_q()
         C_features, _ = self._pedersen.commit(n_features % q, r_features)
 
-        # --- Step 3: Schnorr proof for data hash knowledge ---
-        k_data = _rand_below_q()
-        R_data = pow(g, k_data, p)
+        h = self._pedersen.h
 
-        # --- Step 4: Schnorr proof for sample count ---
-        k_samples = _rand_below_q()
-        R_samples = pow(g, k_samples, p)
+        # --- Step 3: Schnorr proof of knowledge for Pedersen commitment ---
+        # For each C = g^v * h^r, prove knowledge of (v, r) without revealing r.
+        # R = g^k_v * h^k_r, then s_v = k_v + c*v, s_r = k_r + c*r.
+        # Verifier checks: g^s_v * h^s_r == R * C^c (mod p).
+        k_v_data = _rand_below_q()
+        k_r_data = _rand_below_q()
+        R_data = (pow(g, k_v_data, p) * pow(h, k_r_data, p)) % p
 
-        # --- Step 5: Schnorr proof for feature count ---
-        k_features = _rand_below_q()
-        R_features = pow(g, k_features, p)
+        k_v_samples = _rand_below_q()
+        k_r_samples = _rand_below_q()
+        R_samples = (pow(g, k_v_samples, p) * pow(h, k_r_samples, p)) % p
+
+        k_v_features = _rand_below_q()
+        k_r_features = _rand_below_q()
+        R_features = (pow(g, k_v_features, p) * pow(h, k_r_features, p)) % p
 
         # --- Step 6: Fiat-Shamir binding challenge ---
         # Bind all commitments, public inputs, and contributor identity.
@@ -432,10 +438,15 @@ class ContributionProof:
             contributor_id.encode("utf-8"),
         )
 
-        # --- Step 7: Schnorr responses ---
-        s_data = (k_data + binding_challenge * v_data) % q
-        s_samples = (k_samples + binding_challenge * (n_samples % q)) % q
-        s_features = (k_features + binding_challenge * (n_features % q)) % q
+        # --- Step 7: Schnorr responses (value + blinding factor) ---
+        s_v_data = (k_v_data + binding_challenge * v_data) % q
+        s_r_data = (k_r_data + binding_challenge * r_data) % q
+
+        s_v_samples = (k_v_samples + binding_challenge * (n_samples % q)) % q
+        s_r_samples = (k_r_samples + binding_challenge * r_samples) % q
+
+        s_v_features = (k_v_features + binding_challenge * (n_features % q)) % q
+        s_r_features = (k_r_features + binding_challenge * r_features) % q
 
         timestamp = datetime.now(timezone.utc).isoformat()
 
@@ -456,20 +467,20 @@ class ContributionProof:
                 "C_samples": _int_to_hex(C_samples),
                 "C_features": _int_to_hex(C_features),
             },
-            # Schnorr proof components
+            # Schnorr proof of knowledge for Pedersen openings.
+            # For each commitment C = g^v * h^r, proves knowledge of (v, r)
+            # without revealing the blinding factor r.
+            # Verifier checks: g^s_v * h^s_r == R * C^c (mod p).
             "schnorr_proofs": {
                 "R_data": _int_to_hex(R_data),
-                "s_data": _int_to_hex(s_data),
+                "s_v_data": _int_to_hex(s_v_data),
+                "s_r_data": _int_to_hex(s_r_data),
                 "R_samples": _int_to_hex(R_samples),
-                "s_samples": _int_to_hex(s_samples),
+                "s_v_samples": _int_to_hex(s_v_samples),
+                "s_r_samples": _int_to_hex(s_r_samples),
                 "R_features": _int_to_hex(R_features),
-                "s_features": _int_to_hex(s_features),
-            },
-            # Blinding factors (needed for commitment opening verification)
-            "blinding_factors": {
-                "r_data": _int_to_hex(r_data),
-                "r_samples": _int_to_hex(r_samples),
-                "r_features": _int_to_hex(r_features),
+                "s_v_features": _int_to_hex(s_v_features),
+                "s_r_features": _int_to_hex(s_r_features),
             },
             # Binding challenge (can be recomputed by verifier)
             "binding_challenge": _int_to_hex(binding_challenge),
@@ -497,15 +508,25 @@ class ContributionProof:
             return False
 
     def _verify_proof_inner(self, proof: Dict[str, Any]) -> bool:
-        """Inner verification logic (may raise on malformed proofs)."""
+        """Inner verification logic (may raise on malformed proofs).
+
+        Verification uses Schnorr proof of knowledge of Pedersen commitment
+        openings. For each commitment C = g^v * h^r, the proof contains
+        (R, s_v, s_r) such that:
+
+            g^s_v * h^s_r ≡ R * C^c  (mod p)
+
+        This proves the prover knows (v, r) without revealing the blinding
+        factor r — achieving the zero-knowledge property.
+        """
         q = self._pedersen.q
         p = self._pedersen.p
         g = self._pedersen.g
+        h = self._pedersen.h
 
         pub = proof["public_inputs"]
         comms = proof["commitments"]
         schnorr = proof["schnorr_proofs"]
-        blinds = proof["blinding_factors"]
         contributor_id: str = proof["contributor_id"]
 
         data_hash: str = pub["data_hash"]
@@ -513,21 +534,23 @@ class ContributionProof:
         n_features: int = pub["n_features"]
         digest_bytes = bytes.fromhex(data_hash)
 
-        # --- Decode all hex values ---
+        # --- Decode commitments ---
         C_data = _hex_to_int(comms["C_data"])
         C_samples = _hex_to_int(comms["C_samples"])
         C_features = _hex_to_int(comms["C_features"])
 
+        # --- Decode Schnorr proof components ---
         R_data = _hex_to_int(schnorr["R_data"])
-        s_data = _hex_to_int(schnorr["s_data"])
-        R_samples = _hex_to_int(schnorr["R_samples"])
-        s_samples = _hex_to_int(schnorr["s_samples"])
-        R_features = _hex_to_int(schnorr["R_features"])
-        s_features = _hex_to_int(schnorr["s_features"])
+        s_v_data = _hex_to_int(schnorr["s_v_data"])
+        s_r_data = _hex_to_int(schnorr["s_r_data"])
 
-        r_data = _hex_to_int(blinds["r_data"])
-        r_samples = _hex_to_int(blinds["r_samples"])
-        r_features = _hex_to_int(blinds["r_features"])
+        R_samples = _hex_to_int(schnorr["R_samples"])
+        s_v_samples = _hex_to_int(schnorr["s_v_samples"])
+        s_r_samples = _hex_to_int(schnorr["s_r_samples"])
+
+        R_features = _hex_to_int(schnorr["R_features"])
+        s_v_features = _hex_to_int(schnorr["s_v_features"])
+        s_r_features = _hex_to_int(schnorr["s_r_features"])
 
         # --- Step 1: Recompute and verify binding challenge ---
         expected_challenge = _hash_to_int(
@@ -548,32 +571,27 @@ class ContributionProof:
 
         c = expected_challenge
 
-        # --- Step 2: Verify Pedersen commitment openings ---
-        v_data = int.from_bytes(digest_bytes, "big") % q
+        # --- Step 2: Verify Schnorr proof of Pedersen opening ---
+        # For each commitment C = g^v * h^r:
+        #   g^s_v * h^s_r ≡ R * C^c  (mod p)
+        #
+        # This proves the prover knows both v and r without revealing r.
 
-        if not self._pedersen.verify(C_data, v_data, r_data):
-            return False
-        if not self._pedersen.verify(C_samples, n_samples % q, r_samples):
-            return False
-        if not self._pedersen.verify(C_features, n_features % q, r_features):
-            return False
-
-        # --- Step 3: Verify Schnorr equations ---
-        # Data hash: g^s_data == R_data * (g^v_data)^c  (mod p)
-        lhs = pow(g, s_data, p)
-        rhs = (R_data * pow(pow(g, v_data, p), c, p)) % p
+        # Data hash commitment
+        lhs = (pow(g, s_v_data, p) * pow(h, s_r_data, p)) % p
+        rhs = (R_data * pow(C_data, c, p)) % p
         if lhs != rhs:
             return False
 
-        # Sample count: g^s_samples == R_samples * (g^n_samples)^c  (mod p)
-        lhs = pow(g, s_samples, p)
-        rhs = (R_samples * pow(pow(g, n_samples % q, p), c, p)) % p
+        # Sample count commitment
+        lhs = (pow(g, s_v_samples, p) * pow(h, s_r_samples, p)) % p
+        rhs = (R_samples * pow(C_samples, c, p)) % p
         if lhs != rhs:
             return False
 
-        # Feature count: g^s_features == R_features * (g^n_features)^c  (mod p)
-        lhs = pow(g, s_features, p)
-        rhs = (R_features * pow(pow(g, n_features % q, p), c, p)) % p
+        # Feature count commitment
+        lhs = (pow(g, s_v_features, p) * pow(h, s_r_features, p)) % p
+        rhs = (R_features * pow(C_features, c, p)) % p
         if lhs != rhs:
             return False
 

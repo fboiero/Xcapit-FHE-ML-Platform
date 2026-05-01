@@ -236,7 +236,8 @@ class TestContributionProof:
         assert "public_inputs" in proof
         assert "commitments" in proof
         assert "schnorr_proofs" in proof
-        assert "blinding_factors" in proof
+        assert "blinding_factors" not in proof  # ZK: blinding factors must NOT leak
+        assert "s_r_data" in proof["schnorr_proofs"]  # ZK response for blinding
         assert "binding_challenge" in proof
         assert proof["contributor_id"] == "m1"
 

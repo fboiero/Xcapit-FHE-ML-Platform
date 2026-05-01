@@ -31,6 +31,7 @@ from typing import Callable, Optional
 import numpy as np
 
 from .accountant import PrivacyAccountant
+from .mechanisms import _crypto_rng
 
 
 @dataclass
@@ -183,8 +184,8 @@ class DPTrainer:
         # Compute noise scale: sigma = noise_multiplier * max_grad_norm
         sigma = self.noise_multiplier * self.max_grad_norm
 
-        # Add Gaussian noise
-        noise = np.random.normal(loc=0.0, scale=sigma, size=grad_sum.shape)
+        # Add Gaussian noise (CSPRNG-seeded for unpredictability)
+        noise = _crypto_rng().normal(loc=0.0, scale=sigma, size=grad_sum.shape)
         noisy_sum = grad_sum + noise
 
         # Average
@@ -671,9 +672,9 @@ class DPSGDTrainer:
             per_sample_grads
         )
 
-        # Add calibrated Gaussian noise
+        # Add calibrated Gaussian noise (CSPRNG-seeded for unpredictability)
         sigma: float = self.compute_noise_sigma()
-        noise = np.random.normal(loc=0.0, scale=sigma, size=clipped_sum.shape)
+        noise = _crypto_rng().normal(loc=0.0, scale=sigma, size=clipped_sum.shape)
         noisy_sum: np.ndarray = clipped_sum + noise
 
         # Average
