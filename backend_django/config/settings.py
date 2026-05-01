@@ -427,11 +427,64 @@ LOGGING = {
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "Xcapit FHE-ML Platform API",
-    "DESCRIPTION": "Privacy-preserving machine learning using Fully Homomorphic Encryption",
+    "DESCRIPTION": (
+        "Privacy-preserving machine learning platform with 4 cryptographic layers "
+        "(FHE, ZKP, MPC, Differential Privacy) and on-chain governance via Arbitrum.\n\n"
+        "## Authentication\n\n"
+        "Two methods supported:\n"
+        "- **JWT Bearer**: `Authorization: Bearer <token>` — obtained via `/api/v2/auth/login/`\n"
+        "- **API Key**: `X-API-Key: <key>` — created via `/api/v2/auth/api-keys/create/`\n\n"
+        "## Rate Limiting\n\n"
+        "Endpoints are rate-limited by tier (free/starter/professional/enterprise). "
+        "See response headers `X-RateLimit-Limit` and `X-RateLimit-Remaining`.\n\n"
+        "## Errors\n\n"
+        "All errors follow RFC 7807 format with `code`, `message`, `status`, and `details` fields."
+    ),
     "VERSION": "2.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
-    "SECURITY": [{"Bearer": []}],
     "SCHEMA_PATH_PREFIX": "/api/v2/",
+    "CONTACT": {
+        "name": "Xcapit Team",
+        "email": "dev@xcapit.com",
+    },
+    "LICENSE": {
+        "name": "AGPL-3.0-or-later",
+    },
+    "TAGS": [
+        {"name": "auth", "description": "Authentication: register, login, API keys, password management"},
+        {"name": "consortiums", "description": "Data consortiums: CRUD, membership, contributions, training"},
+        {"name": "governance", "description": "On-chain governance: proposals, voting, rewards, audit trail"},
+        {"name": "marketplace", "description": "Model marketplace: catalog, deployments, reviews, pricing"},
+        {"name": "compliance", "description": "Regulatory compliance: GDPR, HIPAA, SOC2, PCI-DSS, ISO 27001"},
+        {"name": "models", "description": "ML models: training, predictions, versioning, export"},
+        {"name": "data-quality", "description": "Data quality: assessments, rules, alerts"},
+        {"name": "federated", "description": "Federated learning: models, inference endpoints, edge nodes"},
+        {"name": "ensemble", "description": "Multi-model ensembles: voting, stacking, evaluation"},
+        {"name": "explainability", "description": "Model explainability: SHAP, LIME, feature importance"},
+        {"name": "competitive", "description": "Competitive insights: benchmarks, industry comparisons"},
+        {"name": "blockchain", "description": "Blockchain: Arbitrum transactions, smart contracts, key management"},
+        {"name": "sandbox", "description": "Sandbox: trial access, demos, synthetic datasets, plans"},
+    ],
+    "SECURITY": [
+        {"Bearer": []},
+        {"ApiKey": []},
+    ],
+    "APPEND_COMPONENTS": {
+        "securitySchemes": {
+            "Bearer": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+                "description": "JWT access token from /api/v2/auth/login/",
+            },
+            "ApiKey": {
+                "type": "apiKey",
+                "in": "header",
+                "name": "X-API-Key",
+                "description": "API key from /api/v2/auth/api-keys/create/",
+            },
+        },
+    },
 }
 
 # =============================================================================

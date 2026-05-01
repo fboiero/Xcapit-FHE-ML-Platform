@@ -242,6 +242,42 @@ e2e-test-report: ## Abre el último reporte HTML de E2E
 	cd $(DASHBOARD) && npx playwright show-report
 
 # =============================================================================
+# API DOCUMENTATION
+# =============================================================================
+
+api-schema: ## Genera el schema OpenAPI 3.0 (YAML)
+	@echo "$(CYAN)▶ Generando schema OpenAPI...$(RESET)"
+	cd $(BACKEND) && . .venv/bin/activate && \
+		DJANGO_SETTINGS_MODULE=config.settings python manage.py spectacular \
+			--color --file ../docs/api-schema.yaml
+	@echo "$(GREEN)✓ Schema generado en docs/api-schema.yaml$(RESET)"
+
+api-schema-json: ## Genera el schema OpenAPI 3.0 (JSON)
+	cd $(BACKEND) && . .venv/bin/activate && \
+		DJANGO_SETTINGS_MODULE=config.settings python manage.py spectacular \
+			--format openapi-json --file ../docs/api-schema.json
+	@echo "$(GREEN)✓ Schema JSON generado en docs/api-schema.json$(RESET)"
+
+api-docs: ## Muestra la URL de la documentación interactiva
+	@echo ""
+	@echo "$(CYAN)╔════════════════════════════════════════════════════════╗$(RESET)"
+	@echo "$(CYAN)║     Xcapit FHE-ML Platform — API Documentation       ║$(RESET)"
+	@echo "$(CYAN)╚════════════════════════════════════════════════════════╝$(RESET)"
+	@echo ""
+	@echo "  $(GREEN)Swagger UI$(RESET):  http://localhost:8000/api/v2/docs/"
+	@echo "  $(GREEN)ReDoc$(RESET):       http://localhost:8000/api/v2/redoc/"
+	@echo "  $(GREEN)Schema YAML$(RESET): http://localhost:8000/api/v2/schema/"
+	@echo ""
+	@echo "  Requiere: $(YELLOW)make dev$(RESET) o $(YELLOW)make dev-local$(RESET) corriendo"
+	@echo ""
+
+api-validate: ## Valida el schema OpenAPI contra la especificación
+	@echo "$(CYAN)▶ Validando schema...$(RESET)"
+	cd $(BACKEND) && . .venv/bin/activate && \
+		DJANGO_SETTINGS_MODULE=config.settings python manage.py spectacular --validate
+	@echo "$(GREEN)✓ Schema válido$(RESET)"
+
+# =============================================================================
 # BASE DE DATOS
 # =============================================================================
 
