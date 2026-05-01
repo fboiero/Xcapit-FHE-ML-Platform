@@ -5,7 +5,7 @@ All notable changes to Xcapit FHE-ML Platform will be documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] — Post-RC1 Improvements
+## [1.0.0-rc2] - 2026-05-01
 
 ### Security
 - **ZKP**: ContributionProof no longer leaks blinding factors — refactored to Schnorr proof of knowledge of Pedersen opening (g^s_v * h^s_r == R * C^c), achieving true zero-knowledge property
