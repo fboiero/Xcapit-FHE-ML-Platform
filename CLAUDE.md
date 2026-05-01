@@ -106,11 +106,12 @@ SLO targets for perf tests (enforced in CI):
 
 ## Current Stats
 
-- **Tests**: 1,496+ Django + ~620 SDK + 27 security = ~2,143 total
+- **Tests**: 1,968 Django + 195 SDK + 28 E2E + Locust perf = ~2,191 total
 - **Coverage**: 96.23% (`--cov-fail-under=90` in CI)
+- **SDK models**: 65 exportable classes across 20 modules (4 FHE levels)
 - **Security tests**: 27 (IDOR, SSRF, tenant isolation, privilege escalation)
 - **CI/CD**: GitHub Actions (10 jobs) + GitLab CI (9 jobs), both green
-- **Docs**: 43+ files in `/docs/`, 21 SVG diagrams, 7 Jupyter notebooks
+- **Docs**: 50+ files in `/docs/`, 21 SVG diagrams, 7 Jupyter notebooks, 1 whitepaper
 
 ## Key Documentation
 

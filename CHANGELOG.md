@@ -5,6 +5,34 @@ All notable changes to Xcapit FHE-ML Platform will be documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] — Post-RC1 Improvements
+
+### Security
+- **ZKP**: ContributionProof no longer leaks blinding factors — refactored to Schnorr proof of knowledge of Pedersen opening (g^s_v * h^s_r == R * C^c), achieving true zero-knowledge property
+- **DP**: Replaced non-cryptographic PRNG (`np.random.normal`) with CSPRNG-seeded generator (`secrets.randbits(128) → PCG64`) in both DPTrainer and DPSGDTrainer noise paths
+- **FHE**: Added `FHELevel.TRANSPORT` to enum — 6 models (NeuralNetwork, SVM, KMeans, DecisionTree, RandomForest, GradientBoosting) previously caused AttributeError at runtime
+
+### Added
+- **Performance tests**: Locust-based load testing suite with 3 user classes (Anonymous, Authenticated, FHEHeavy), 10 critical endpoints, SLO enforcement (p95 thresholds per endpoint group, non-zero exit on breach), 4 predefined scenarios (baseline, production-like, FHE stress, soak)
+- **E2E tests**: Playwright suite with 28 specs covering smoke, auth (API key flow), consortium, sandbox, marketplace, trial — verified against real stack
+- **CI/CD**: Added `e2e-tests` and `perf-tests` jobs to GitHub Actions (total: 10 jobs). E2E on every PR+main; perf on main only or PRs with `perf-test` label
+- **Technical whitepaper**: 380-line paper covering 4-layer architecture, honest FHE assessment, comparison with Zama/PySyft/NVFlare/Duality/TripleBlind, roadmap
+- **Design partners program**: Complete 7-document kit (overview, target list, pilot scope, intake form, outreach templates, success metrics) for recruiting 3-5 pilot organizations
+- **Git LFS**: Configured for docs/demos/*.mp4 and *.webm (25.5MB videos)
+- **SDK exports**: `sdk/models/__init__.py` now exports all 65 model classes — `from sdk.models import LinearRegression` works
+- **Testing docs**: Comprehensive testing strategy document (docs/TESTING.md) covering all 4 layers with cadence matrix and SLO targets
+- **Makefile targets**: 11 new targets for perf (install, seed, test, ui, fhe, soak) and E2E (install, test, ui, debug, report)
+
+### Fixed
+- Updated RELEASE_NOTES_RC1.md — "12 broken tests" resolved, verified 2,163 tests passing
+- Removed macOS duplicate file (test_blockchain_services_views 2.py)
+
+### Stats (as of 2026-05-01)
+- Tests: 1,968 Django + 195 SDK + 28 E2E = 2,191 total (all passing)
+- Coverage: 96.23% (threshold: 90%)
+- CI/CD: 10 GitHub Actions jobs + GitLab CI mirroring
+- SDK models: 65 exportable classes across 20 modules
+
 ## [1.0.0-rc1] - 2026-03-14
 
 ### Added
