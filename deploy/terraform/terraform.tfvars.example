@@ -1,0 +1,43 @@
+# =============================================================================
+# Xcapit FHE-ML Platform — Terraform Variables
+# =============================================================================
+# Copy this file to terraform.tfvars and fill in your values.
+# NEVER commit terraform.tfvars — it contains secrets.
+
+# --- Project ---
+project     = "xcapit-fhe-ml"
+environment = "dev" # dev | staging | production
+aws_region  = "us-east-1"
+
+# --- Database ---
+# Generate password: openssl rand -hex 16
+db_password = "CHANGE_ME_generate_with_openssl"
+db_username = "xcapit"
+db_name     = "xcapit_fhe_ml"
+
+# --- Application ---
+# Generate key: openssl rand -hex 32
+django_secret_key = "CHANGE_ME_generate_with_openssl"
+
+# --- Blockchain ---
+# Sepolia for dev/staging, Arbitrum One for production
+arbitrum_rpc_url = "https://sepolia-rollup.arbitrum.io/rpc"
+
+# --- Domain (optional — leave empty for dev, ALB DNS will be used) ---
+# domain_name       = "api.xcapit.com"
+# acm_certificate_arn = "arn:aws:acm:us-east-1:123456789:certificate/abc-123"
+
+# --- Sizing (adjust for environment) ---
+# Dev defaults (smallest):
+# db_instance_class    = "db.t3.micro"
+# redis_node_type      = "cache.t3.micro"
+# api_cpu              = 512
+# api_memory           = 1024
+# api_desired_count    = 1
+
+# Production recommended:
+# db_instance_class    = "db.r6g.large"
+# redis_node_type      = "cache.r6g.large"
+# api_cpu              = 1024
+# api_memory           = 2048
+# api_desired_count    = 2
