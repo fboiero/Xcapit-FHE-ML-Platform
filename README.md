@@ -7,9 +7,11 @@ The platform where companies collaborate on data without sharing it. Form data c
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Django 5.2](https://img.shields.io/badge/Django-5.2%20LTS-green.svg)](https://www.djangoproject.com/)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-2,116%20passing-brightgreen.svg)](#testing)
+[![Tests](https://img.shields.io/badge/tests-2,191%20passing-brightgreen.svg)](#testing)
 [![Coverage](https://img.shields.io/badge/coverage-96.23%25-brightgreen.svg)](#testing)
 [![Security Audit](https://img.shields.io/badge/security-audited-blue.svg)](docs/SECURITY_AUDIT_REPORT.md)
+[![API Docs](https://img.shields.io/badge/API-OpenAPI%203.0-orange.svg)](#api-documentation)
+[![Whitepaper](https://img.shields.io/badge/whitepaper-available-purple.svg)](docs/WHITEPAPER.md)
 
 [Version en Espanol](README_ES.md)
 
@@ -113,15 +115,30 @@ docker compose up
 
 ## Quick Start
 
+### One-Command Setup (recommended)
+
+```bash
+make setup    # creates venv, installs deps, configures everything
+make dev      # starts full stack (Docker) — API, Dashboard, DB, Redis
+```
+
 ### Python SDK
 
 ```python
-from sdk import LinearRegression, ModelConfig
+from sdk.models import LinearRegression, FHELevel, ModelConfig
+from sdk.encryption import CKKSEncryptor, CKKSParameters, SecurityLevel
 
-config = ModelConfig(learning_rate=0.01, n_epochs=100)
-model = LinearRegression(config=config)
-model._fit_plaintext(X_train, y_train)
-predictions = model._predict_plaintext(X_test)
+# Train a model
+model = LinearRegression(config=ModelConfig(learning_rate=0.01, n_epochs=100))
+model.fit(X_train, y_train)
+
+# Predict on encrypted data (FHE FULL — no decryption needed)
+params = CKKSParameters(poly_modulus_degree=8192, security_level=SecurityLevel.BITS_128)
+encryptor = CKKSEncryptor(params)
+encrypted_input = encryptor.encrypt_vector(X_test[0])
+encrypted_prediction = model.predict_encrypted(encrypted_input)
+
+print(model.fhe_level)  # FHELevel.FULL
 ```
 
 ### CLI
@@ -197,32 +214,45 @@ Production-ready V2 contracts with security fixes:
 | ConsortiumGovernanceV2 | Multi-party governance | Commit-reveal voting, pull-over-push rewards |
 | ComputationVerifierV2 | Computation verification | Proof validation, result caching |
 
+## API Documentation
+
+Interactive API docs are available when the backend is running:
+
+| URL | Format |
+|-----|--------|
+| `/api/v2/docs/` | **Swagger UI** — interactive API explorer |
+| `/api/v2/redoc/` | **ReDoc** — clean API reference |
+| `/api/v2/schema/` | **OpenAPI 3.0** YAML — import into Postman/Insomnia |
+
+305 endpoints, 451 operations, 13 tagged groups, dual auth (JWT + API Key).
+
+Schema also available at [docs/api-schema.yaml](docs/api-schema.yaml).
+
 ## Testing
 
 ```bash
-# Backend tests (1,496+ passing, 96.23% coverage)
-cd backend_django
-DJANGO_SETTINGS_MODULE=config.settings_test pytest --cov=apps --cov-fail-under=90
-
-# SDK tests (620+ passing)
-pytest sdk/tests/ -v
-
-# Security tests (27 passing)
-pytest tests/test_security_idor.py -v
+make test           # Django backend (1,968 tests, 96.23% coverage)
+make sdk-test       # SDK (195 tests — MPC, ZKP, DP, encryption)
+make test-security  # Security tests (IDOR, SSRF, tenant isolation)
+make e2e-test       # Playwright E2E (28 specs — auth, consortium, sandbox)
+make perf-test      # Locust performance (SLO enforcement, 10 endpoints)
 ```
+
+Full testing strategy: [docs/TESTING.md](docs/TESTING.md)
 
 ## Documentation
 
 | Document | Description |
 |----------|-------------|
+| [Technical Whitepaper](docs/WHITEPAPER.md) | 4-layer crypto architecture, honest FHE assessment, comparison |
 | [User Manual](docs/USER_MANUAL.md) | Complete user manual (Spanish) |
-| [Release Notes RC1](docs/RELEASE_NOTES_RC1.md) | RC1 release notes |
-| [API Reference](docs/openapi.yaml) | OpenAPI 3.0 specification |
+| [API Schema](docs/api-schema.yaml) | OpenAPI 3.0 specification (305 endpoints) |
+| [Testing Strategy](docs/TESTING.md) | 4-layer testing pyramid with SLO targets |
+| [Release Notes RC2](docs/RELEASE_NOTES_RC1.md) | Latest release notes |
 | [Security Audit](docs/SECURITY_AUDIT_REPORT.md) | Security audit report |
-| [Architecture](docs/guides/01-architecture.md) | System architecture |
-| [FHE Theory](docs/theory/) | Homomorphic encryption theory (4 chapters) |
-| [Onboarding Guide](docs/ONBOARDING_PASO_A_PASO.md) | Step-by-step onboarding |
-| [ISO 27001](docs/compliance/) | ISO 27001 compliance |
+| [ISO 27001](docs/compliance/) | ISO 27001 compliance documentation |
+| [Design Partners](docs/design-partners/) | Pilot program kit for organizations |
+| [Deployment Guide](deploy/terraform/README.md) | AWS deployment with Terraform |
 
 ## Pricing Tiers
 
@@ -242,29 +272,62 @@ xcapit-fhe-ml/
 │   ├── apps/               # Django applications
 │   ├── config/             # Django settings
 │   └── tests/              # Backend tests (1,496+)
-├── sdk/                    # Python SDK v0.7.0 (24+ models, 4 crypto layers)
-│   ├── models/             # ML model implementations
+├── sdk/                    # Python SDK (65 model classes, 4 crypto layers)
+│   ├── models/             # 65 ML model implementations (4 FHE levels)
 │   ├── encryption/         # FHE encryption layer (CKKS/TenSEAL)
-│   ├── zkp/                # Zero-Knowledge Proofs
-│   ├── mpc/                # Multi-Party Computation
-│   ├── privacy/            # Differential Privacy
-│   ├── blockchain/         # Smart contract integration
+│   ├── zkp/                # Zero-Knowledge Proofs (Pedersen/Schnorr/R1CS)
+│   ├── mpc/                # Multi-Party Computation (Shamir/SecureAgg)
+│   ├── privacy/            # Differential Privacy (DP-SGD, RDP accounting)
+│   ├── blockchain/         # Smart contract integration (Arbitrum)
 │   └── cli/                # Command-line interface
 ├── dashboard/              # React 18 frontend (45+ pages, ES/EN)
+│   └── e2e/                # Playwright E2E tests (28 specs)
 ├── contracts/              # Solidity smart contracts (Foundry)
-│   └── src/v2/             # Secure V2 contracts
-├── docs/                   # Documentation (43+ files)
+│   └── src/v2/             # Secure V2 contracts (3 contracts)
+├── deploy/                 # Deployment infrastructure
+│   ├── terraform/          # AWS IaC (VPC, ECS, RDS, Redis, ALB)
+│   ├── aws/                # CodeBuild + ECS task definitions
+│   ├── nginx/              # Production nginx config (TLS, rate limiting)
+│   └── openbao/            # Secrets management (Vault alternative)
+├── docs/                   # Documentation (50+ files)
+│   ├── design-partners/    # Design Partners program kit (7 docs)
+│   └── WHITEPAPER.md       # Technical whitepaper
 ├── examples/               # Jupyter notebooks (7)
-└── docker-compose.yml      # Full stack Docker setup
+├── Makefile                # 27+ targets (setup, dev, test, deploy, docs)
+└── docker-compose.yml      # Full stack Docker setup (6 services)
 ```
+
+## Deployment
+
+### Docker (single host)
+
+```bash
+docker compose --profile dev up     # development
+docker compose up                   # production
+```
+
+### AWS (Terraform)
+
+```bash
+cd deploy/terraform
+cp terraform.tfvars.example terraform.tfvars  # fill in secrets
+terraform init && terraform apply             # VPC + ECS + RDS + Redis + ALB
+```
+
+See [deploy/terraform/README.md](deploy/terraform/README.md) for full guide (~15 min to running platform).
+
+## Design Partners
+
+We're recruiting 3-5 organizations for our Design Partners program (banking, healthcare, insurance). 90-day pilot with full platform access and direct roadmap input.
+
+See [docs/design-partners/](docs/design-partners/) for details.
 
 ## Contributing
 
 1. Fork the repository
 2. Create a feature branch
-3. Make your changes
-4. Run tests: `pytest --cov=apps`
-5. Submit a pull request
+3. Run tests: `make test && make e2e-test`
+4. Submit a pull request
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
@@ -275,6 +338,8 @@ AGPL v3 - See [LICENSE](LICENSE) for details.
 ## About Xcapit
 
 Built by the team behind [QuarkID](https://quarkid.org) (3.6M+ users), bringing enterprise-grade privacy to machine learning.
+
+Read our [Technical Whitepaper](docs/WHITEPAPER.md) for a deep dive into the 4-layer cryptographic architecture.
 
 ---
 
