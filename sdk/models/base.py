@@ -47,15 +47,25 @@ class ModelConfig:
     early_stopping_patience: Optional[int] = None
     tolerance: float = 1e-4
 
+    def __post_init__(self):
+        """Validate base config. Subclass configs call super().__post_init__()."""
+        if self.learning_rate <= 0:
+            raise ValueError(f"learning_rate must be positive, got {self.learning_rate}")
+        if self.n_epochs < 1:
+            raise ValueError(f"n_epochs must be >= 1, got {self.n_epochs}")
+
 
 @dataclass
 class TrainingHistory:
     """Records training metrics per epoch."""
 
     losses: list[float] = field(default_factory=list)
+    metrics: dict[str, list[float]] = field(default_factory=dict)
 
-    def add_epoch(self, loss: float):
+    def add_epoch(self, loss: float = 0.0, **kwargs: float):
         self.losses.append(loss)
+        for key, value in kwargs.items():
+            self.metrics.setdefault(key, []).append(value)
 
     @property
     def best_loss(self) -> float:
