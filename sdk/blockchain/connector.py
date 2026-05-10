@@ -3,6 +3,7 @@
 Provides a high-level interface for connecting to Arbitrum and Ethereum
 networks, managing accounts, and sending transactions.
 """
+
 from __future__ import annotations
 
 import json
@@ -24,8 +25,7 @@ def _require_web3():
     """Raise ImportError with installation instructions if web3 is missing."""
     if not HAS_WEB3:
         raise ImportError(
-            "web3 is required for blockchain operations. "
-            "Install it with: pip install web3"
+            "web3 is required for blockchain operations. Install it with: pip install web3"
         )
 
 
@@ -126,8 +126,7 @@ class BlockchainConnector:
                         break
                 else:
                     raise ValueError(
-                        f"Unknown network: {network}. "
-                        f"Valid options: {[n.value for n in Network]}"
+                        f"Unknown network: {network}. Valid options: {[n.value for n in Network]}"
                     )
 
         self._network = network
@@ -151,9 +150,7 @@ class BlockchainConnector:
     def web3(self) -> Web3:
         """The Web3 instance. Raises if not connected."""
         if self._web3 is None:
-            raise ConnectionError(
-                "Not connected. Call connect() first."
-            )
+            raise ConnectionError("Not connected. Call connect() first.")
         return self._web3
 
     @property
@@ -192,16 +189,12 @@ class BlockchainConnector:
         # Inject POA middleware for Arbitrum / L2 chains
         if self._config.chain_id in (42161, 421614):
             try:
-                self._web3.middleware_onion.inject(
-                    ExtraDataToPOAMiddleware, layer=0
-                )
+                self._web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
             except Exception:
                 pass  # Middleware may already be injected
 
         if not self._web3.is_connected():
-            raise ConnectionError(
-                f"Failed to connect to {self._rpc_url}"
-            )
+            raise ConnectionError(f"Failed to connect to {self._rpc_url}")
 
         self._connected = True
         return self
@@ -226,9 +219,7 @@ class BlockchainConnector:
         self._account = Web3().eth.account.from_key(private_key)
         return self
 
-    def set_account_from_keyfile(
-        self, keyfile_path: str, password: str
-    ) -> BlockchainConnector:
+    def set_account_from_keyfile(self, keyfile_path: str, password: str) -> BlockchainConnector:
         """Set the active account from an encrypted keyfile.
 
         Args:
@@ -257,9 +248,7 @@ class BlockchainConnector:
         address = address or self.address
         if address is None:
             raise ValueError("No address provided and no account set.")
-        return self.web3.eth.get_balance(
-            Web3.to_checksum_address(address)
-        )
+        return self.web3.eth.get_balance(Web3.to_checksum_address(address))
 
     def get_balance_eth(self, address: Optional[str] = None) -> float:
         """Get balance in ETH.
@@ -285,9 +274,7 @@ class BlockchainConnector:
         address = address or self.address
         if address is None:
             raise ValueError("No address provided and no account set.")
-        return self.web3.eth.get_transaction_count(
-            Web3.to_checksum_address(address)
-        )
+        return self.web3.eth.get_transaction_count(Web3.to_checksum_address(address))
 
     def estimate_gas(
         self,
@@ -328,9 +315,7 @@ class BlockchainConnector:
             ValueError: If no account is set.
         """
         if self._account is None:
-            raise ValueError(
-                "No account set. Call set_account() first."
-            )
+            raise ValueError("No account set. Call set_account() first.")
 
         address = self.address
         checksum = Web3.to_checksum_address(address)
@@ -365,9 +350,7 @@ class BlockchainConnector:
         Returns:
             Transaction receipt as a dict.
         """
-        receipt = self.web3.eth.wait_for_transaction_receipt(
-            tx_hash, timeout=timeout
-        )
+        receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash, timeout=timeout)
         return dict(receipt)
 
     def deploy_contract(
@@ -439,8 +422,5 @@ class BlockchainConnector:
         status = "connected" if self.is_connected else "disconnected"
         addr = self.address or "no account"
         return (
-            f"BlockchainConnector("
-            f"network={self._network.value}, "
-            f"status={status}, "
-            f"address={addr})"
+            f"BlockchainConnector(network={self._network.value}, status={status}, address={addr})"
         )

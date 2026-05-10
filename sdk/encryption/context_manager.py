@@ -8,6 +8,7 @@ import tenseal as ts
 
 class SecurityLevel(Enum):
     """CKKS security levels."""
+
     TC128 = 128
     TC192 = 192
     TC256 = 256
@@ -23,6 +24,7 @@ class SecurityLevel(Enum):
 @dataclass
 class CKKSParameters:
     """Parameters for CKKS encryption scheme."""
+
     poly_modulus_degree: int = 8192
     coeff_mod_bit_sizes: tuple = (60, 40, 40, 60)
     scale: float = 2**40

@@ -22,9 +22,7 @@ from typing import Final
 # This gives us a finite field large enough for 256-bit secrets (AES-256
 # keys, HMAC secrets, etc.) while keeping arithmetic fast in pure Python.
 # ---------------------------------------------------------------------------
-SAFE_PRIME: Final[int] = (
-    0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F
-)
+SAFE_PRIME: Final[int] = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F
 # This is the field prime of the secp256k1 elliptic curve:
 #   p = 2^256 - 2^32 - 2^9 - 2^8 - 2^7 - 2^6 - 2^4 - 1
 #   p = 2^256 - 4294968273
@@ -176,10 +174,7 @@ class SecretSharer:
         # represent any element in the field.
         share_byte_len = (self.prime.bit_length() + 7) // 8
 
-        return [
-            (x, y.to_bytes(share_byte_len, byteorder="big"))
-            for x, y in int_shares
-        ]
+        return [(x, y.to_bytes(share_byte_len, byteorder="big")) for x, y in int_shares]
 
     def reconstruct_bytes(
         self,
@@ -202,8 +197,7 @@ class SecretSharer:
             The reconstructed secret byte string.
         """
         int_shares: list[tuple[int, int]] = [
-            (x, int.from_bytes(y_bytes, byteorder="big"))
-            for x, y_bytes in shares
+            (x, int.from_bytes(y_bytes, byteorder="big")) for x, y_bytes in shares
         ]
 
         secret_int = self.reconstruct(int_shares)
@@ -229,19 +223,13 @@ class SecretSharer:
         if threshold < 2:
             raise ValueError("Threshold must be >= 2.")
         if n_shares < threshold:
-            raise ValueError(
-                f"n_shares ({n_shares}) must be >= threshold ({threshold})."
-            )
+            raise ValueError(f"n_shares ({n_shares}) must be >= threshold ({threshold}).")
         if secret < 0:
             raise ValueError("Secret must be non-negative.")
         if secret >= self.prime:
-            raise ValueError(
-                f"Secret must be less than the prime ({self.prime})."
-            )
+            raise ValueError(f"Secret must be less than the prime ({self.prime}).")
         if n_shares >= self.prime:
-            raise ValueError(
-                f"n_shares ({n_shares}) must be less than the prime."
-            )
+            raise ValueError(f"n_shares ({n_shares}) must be less than the prime.")
 
     def _evaluate_polynomial(self, coefficients: list[int], x: int) -> int:
         """Evaluate polynomial at *x* using Horner's method (mod prime).
@@ -297,9 +285,7 @@ class SecretSharer:
                 denominator = (denominator * (x_i - x_j)) % prime
 
             # Lagrange basis value at 0
-            lagrange_coeff = (
-                numerator * SecretSharer._mod_inverse(denominator, prime)
-            ) % prime
+            lagrange_coeff = (numerator * SecretSharer._mod_inverse(denominator, prime)) % prime
 
             secret = (secret + y_i * lagrange_coeff) % prime
 
@@ -330,8 +316,6 @@ class SecretSharer:
             old_s, s = s, old_s - quotient * s
 
         if old_r != 1:
-            raise ValueError(
-                f"{a} is not invertible modulo {p} (gcd = {old_r})."
-            )
+            raise ValueError(f"{a} is not invertible modulo {p} (gcd = {old_r}).")
 
         return old_s % p

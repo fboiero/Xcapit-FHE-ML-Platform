@@ -127,17 +127,12 @@ class GovernanceClient:
         self._gov: Optional[GovernanceContract] = None
 
         if contract_address:
-            self._gov = GovernanceContract(
-                connector, contract_address, self._abi
-            )
+            self._gov = GovernanceContract(connector, contract_address, self._abi)
 
     def _ensure_contract(self):
         """Ensure the governance contract is available."""
         if self._gov is None:
-            raise ValueError(
-                "No contract address set. "
-                "Pass contract_address to the constructor."
-            )
+            raise ValueError("No contract address set. Pass contract_address to the constructor.")
 
     def create_proposal(
         self,

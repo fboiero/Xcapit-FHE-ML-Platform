@@ -56,10 +56,7 @@ class ThresholdDecryptor:
         if threshold < 2:
             raise ValueError("Threshold must be >= 2.")
         if total_parties < threshold:
-            raise ValueError(
-                f"total_parties ({total_parties}) must be >= "
-                f"threshold ({threshold})."
-            )
+            raise ValueError(f"total_parties ({total_parties}) must be >= threshold ({threshold}).")
 
         self._sharer: SecretSharer = SecretSharer()
         self.threshold: int = threshold
@@ -210,13 +207,9 @@ class ThresholdDecryptor:
         ciphertext = bundle[_NONCE_LENGTH:-_hmac_tag_len]
 
         # Verify tag
-        expected_tag = hmac.new(
-            key, nonce + ciphertext, hashlib.sha256
-        ).digest()
+        expected_tag = hmac.new(key, nonce + ciphertext, hashlib.sha256).digest()
         if not hmac.compare_digest(tag, expected_tag):
-            raise ValueError(
-                "Authentication failed — wrong key or tampered ciphertext."
-            )
+            raise ValueError("Authentication failed — wrong key or tampered ciphertext.")
 
         stream = ThresholdDecryptor._keystream(key, nonce, len(ciphertext))
         return bytes(a ^ b for a, b in zip(ciphertext, stream))
@@ -314,16 +307,12 @@ class ThresholdDecryptor:
             share_bytes = token[4:-32]
 
             if not hmac.compare_digest(token_ct_hash, ct_hash):
-                raise ValueError(
-                    f"Token from party {idx} references a different ciphertext."
-                )
+                raise ValueError(f"Token from party {idx} references a different ciphertext.")
 
             shares.append((idx, share_bytes))
 
         # Reconstruct key
-        master_key = self._sharer.reconstruct_bytes(
-            shares, secret_length=_KEY_LENGTH
-        )
+        master_key = self._sharer.reconstruct_bytes(shares, secret_length=_KEY_LENGTH)
 
         # Decrypt
         return self.decrypt(ciphertext, master_key)
@@ -378,9 +367,7 @@ class ThresholdDecryptor:
     @staticmethod
     def _compute_verification(master_key: bytes) -> bytes:
         """Compute a verification commitment for the master key."""
-        return hmac.new(
-            master_key, _HMAC_DERIVE_INFO, hashlib.sha256
-        ).digest()
+        return hmac.new(master_key, _HMAC_DERIVE_INFO, hashlib.sha256).digest()
 
     @staticmethod
     def _keystream(key: bytes, nonce: bytes, length: int) -> bytes:
@@ -435,9 +422,7 @@ class KeyCeremony:
         if threshold < 2:
             raise ValueError("Threshold must be >= 2.")
         if n_parties < threshold:
-            raise ValueError(
-                f"n_parties ({n_parties}) must be >= threshold ({threshold})."
-            )
+            raise ValueError(f"n_parties ({n_parties}) must be >= threshold ({threshold}).")
 
         self.threshold: int = threshold
         self.n_parties: int = n_parties
@@ -481,31 +466,23 @@ class KeyCeremony:
             If *party_id* is out of range.
         """
         if not 1 <= party_id <= self.n_parties:
-            raise ValueError(
-                f"party_id must be in [1, {self.n_parties}], got {party_id}."
-            )
+            raise ValueError(f"party_id must be in [1, {self.n_parties}], got {party_id}.")
 
         prime = self._sharer.prime
 
         # Random secret and polynomial coefficients
         secret_i = secrets.randbelow(prime)
-        coefficients = [secret_i] + [
-            secrets.randbelow(prime) for _ in range(self.threshold - 1)
-        ]
+        coefficients = [secret_i] + [secrets.randbelow(prime) for _ in range(self.threshold - 1)]
 
         self._party_secrets[party_id] = secret_i
         self._party_coefficients[party_id] = coefficients
 
         # Commitment = H(coeff_0 || coeff_1 || ... || coeff_{k-1})
-        coeff_bytes = b"".join(
-            c.to_bytes(32, byteorder="big") for c in coefficients
-        )
+        coeff_bytes = b"".join(c.to_bytes(32, byteorder="big") for c in coefficients)
         commitment_hash = hashlib.sha256(coeff_bytes).hexdigest()
 
         # Public share = H(secret) — for post-ceremony auditing
-        public_share_hash = hashlib.sha256(
-            secret_i.to_bytes(32, byteorder="big")
-        ).hexdigest()
+        public_share_hash = hashlib.sha256(secret_i.to_bytes(32, byteorder="big")).hexdigest()
 
         commitment: dict[str, object] = {
             "party_id": party_id,
@@ -603,7 +580,6 @@ class KeyCeremony:
                 f"first."
             )
 
-
         # For each recipient j, collect f_i(j) from every sender i
         distribution: dict[int, list[tuple[int, int]]] = {
             j: [] for j in range(1, self.n_parties + 1)
@@ -612,9 +588,7 @@ class KeyCeremony:
         for sender_id in range(1, self.n_parties + 1):
             coefficients = self._party_coefficients[sender_id]
             for recipient_id in range(1, self.n_parties + 1):
-                share_value = self._sharer._evaluate_polynomial(
-                    coefficients, recipient_id
-                )
+                share_value = self._sharer._evaluate_polynomial(coefficients, recipient_id)
                 distribution[recipient_id].append((sender_id, share_value))
 
         return distribution

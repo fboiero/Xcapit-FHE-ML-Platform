@@ -26,8 +26,26 @@ if TYPE_CHECKING:
 # Default Renyi divergence orders used for RDP accounting.
 # These cover a range that works well in practice for Gaussian mechanisms.
 DEFAULT_RDP_ORDERS: tuple[float, ...] = (
-    1.25, 1.5, 1.75, 2.0, 2.5, 3.0, 4.0, 5.0, 6.0, 8.0,
-    10.0, 12.0, 16.0, 20.0, 24.0, 32.0, 48.0, 64.0, 128.0, 256.0,
+    1.25,
+    1.5,
+    1.75,
+    2.0,
+    2.5,
+    3.0,
+    4.0,
+    5.0,
+    6.0,
+    8.0,
+    10.0,
+    12.0,
+    16.0,
+    20.0,
+    24.0,
+    32.0,
+    48.0,
+    64.0,
+    128.0,
+    256.0,
 )
 
 
@@ -55,13 +73,9 @@ class PrivacyBudget:
 
     def __post_init__(self) -> None:
         if self.epsilon <= 0:
-            raise ValueError(
-                f"Total epsilon budget must be positive, got {self.epsilon}"
-            )
+            raise ValueError(f"Total epsilon budget must be positive, got {self.epsilon}")
         if self.delta < 0 or self.delta >= 1:
-            raise ValueError(
-                f"Total delta budget must be in [0, 1), got {self.delta}"
-            )
+            raise ValueError(f"Total delta budget must be in [0, 1), got {self.delta}")
 
     @property
     def epsilon_remaining(self) -> float:
@@ -155,9 +169,7 @@ class PrivacyAccountant:
         8.0
     """
 
-    def __init__(
-        self, total_epsilon: float, total_delta: float = 1e-5
-    ) -> None:
+    def __init__(self, total_epsilon: float, total_delta: float = 1e-5) -> None:
         self.budget = PrivacyBudget(epsilon=total_epsilon, delta=total_delta)
         self._history: list[_PrivacyExpenditure] = []
         self._step: int = 0
@@ -304,9 +316,7 @@ class PrivacyAccountant:
         total_delta = sum(e.delta for e in self._history)
         return total_eps, total_delta
 
-    def compose_advanced(
-        self, delta_prime: Optional[float] = None
-    ) -> tuple[float, float]:
+    def compose_advanced(self, delta_prime: Optional[float] = None) -> tuple[float, float]:
         """Advanced composition theorem (tighter for many queries).
 
         For k mechanisms each satisfying (eps_i, 0)-DP:
@@ -337,9 +347,8 @@ class PrivacyAccountant:
         delta_max = max(e.delta for e in self._history)
 
         # Advanced composition formula
-        eps_total = (
-            math.sqrt(2.0 * k * math.log(1.0 / delta_prime)) * eps_max
-            + k * eps_max * (math.exp(eps_max) - 1.0)
+        eps_total = math.sqrt(2.0 * k * math.log(1.0 / delta_prime)) * eps_max + k * eps_max * (
+            math.exp(eps_max) - 1.0
         )
         delta_total = k * delta_max + delta_prime
 
@@ -368,7 +377,7 @@ class PrivacyAccountant:
                 sensitivity = 1).
         """
         for i, alpha in enumerate(self._rdp_orders):
-            self._rdp_epsilons[i] += alpha / (2.0 * sigma ** 2)
+            self._rdp_epsilons[i] += alpha / (2.0 * sigma**2)
 
     def compose_rdp(self, delta: Optional[float] = None) -> tuple[float, float]:
         """Convert accumulated RDP guarantees to (epsilon, delta)-DP.
@@ -409,9 +418,7 @@ class PrivacyAccountant:
         for i, alpha in enumerate(self._rdp_orders):
             if alpha <= 1.0:
                 continue
-            candidate: float = (
-                self._rdp_epsilons[i] + log_inv_delta / (alpha - 1.0)
-            )
+            candidate: float = self._rdp_epsilons[i] + log_inv_delta / (alpha - 1.0)
             best_eps = min(best_eps, candidate)
 
         if math.isinf(best_eps):
@@ -442,9 +449,7 @@ class PrivacyAccountant:
             ValueError: If per_query_epsilon is not positive.
         """
         if per_query_epsilon <= 0:
-            raise ValueError(
-                f"Per-query epsilon must be positive, got {per_query_epsilon}"
-            )
+            raise ValueError(f"Per-query epsilon must be positive, got {per_query_epsilon}")
 
         eps_remaining = self.budget.epsilon_remaining
         delta_remaining = self.budget.delta_remaining
@@ -532,8 +537,4 @@ class PrivacyAccountant:
         self._rdp_epsilons = np.zeros(len(self._rdp_orders))
 
     def __repr__(self) -> str:
-        return (
-            f"PrivacyAccountant("
-            f"budget={self.budget}, "
-            f"history_len={len(self._history)})"
-        )
+        return f"PrivacyAccountant(budget={self.budget}, history_len={len(self._history)})"

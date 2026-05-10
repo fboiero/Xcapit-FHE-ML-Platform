@@ -98,22 +98,16 @@ class DPTrainer:
         if epsilon <= 0:
             raise ValueError(f"Epsilon must be positive, got {epsilon}")
         if max_grad_norm <= 0:
-            raise ValueError(
-                f"max_grad_norm must be positive, got {max_grad_norm}"
-            )
+            raise ValueError(f"max_grad_norm must be positive, got {max_grad_norm}")
         if noise_multiplier <= 0:
-            raise ValueError(
-                f"noise_multiplier must be positive, got {noise_multiplier}"
-            )
+            raise ValueError(f"noise_multiplier must be positive, got {noise_multiplier}")
 
         self.epsilon: float = epsilon
         self.delta: float = delta
         self.max_grad_norm: float = max_grad_norm
         self.noise_multiplier: float = noise_multiplier
 
-        self.accountant = PrivacyAccountant(
-            total_epsilon=epsilon, total_delta=delta
-        )
+        self.accountant = PrivacyAccountant(total_epsilon=epsilon, total_delta=delta)
 
         self._steps: int = 0
         self._training_history: list[dict] = []
@@ -152,9 +146,7 @@ class DPTrainer:
                 clipped[i] = grad
         return clipped
 
-    def noise_gradients(
-        self, clipped_gradients: np.ndarray, batch_size: int
-    ) -> np.ndarray:
+    def noise_gradients(self, clipped_gradients: np.ndarray, batch_size: int) -> np.ndarray:
         """Add calibrated Gaussian noise to aggregated clipped gradients.
 
         Computes the noisy average gradient:
@@ -197,9 +189,7 @@ class DPTrainer:
         X_batch: np.ndarray,
         y_batch: np.ndarray,
         learning_rate: float,
-        compute_gradients_fn: Callable[
-            [np.ndarray, np.ndarray, np.ndarray], np.ndarray
-        ],
+        compute_gradients_fn: Callable[[np.ndarray, np.ndarray, np.ndarray], np.ndarray],
     ) -> tuple[np.ndarray, float]:
         """Execute one DP-SGD training step.
 
@@ -253,9 +243,7 @@ class DPTrainer:
             {
                 "step": self._steps,
                 "epsilon_spent": eps_step,
-                "grad_norm_before_clip": float(
-                    np.linalg.norm(per_sample_grads)
-                ),
+                "grad_norm_before_clip": float(np.linalg.norm(per_sample_grads)),
                 "grad_norm_after_noise": float(np.linalg.norm(noisy_grad)),
                 "batch_size": batch_size,
             }
@@ -268,9 +256,7 @@ class DPTrainer:
         model_weights: np.ndarray,
         X: np.ndarray,
         y: np.ndarray,
-        compute_gradients_fn: Callable[
-            [np.ndarray, np.ndarray, np.ndarray], np.ndarray
-        ],
+        compute_gradients_fn: Callable[[np.ndarray, np.ndarray, np.ndarray], np.ndarray],
         n_epochs: int = 10,
         batch_size: int = 32,
         learning_rate: float = 0.01,
@@ -309,7 +295,10 @@ class DPTrainer:
                     return weights, self.get_training_report()
 
                 weights, _ = self.private_step(
-                    weights, X_batch, y_batch, learning_rate,
+                    weights,
+                    X_batch,
+                    y_batch,
+                    learning_rate,
                     compute_gradients_fn,
                 )
 
@@ -348,18 +337,14 @@ class DPTrainer:
         if batch_size <= 0:
             raise ValueError(f"batch_size must be positive, got {batch_size}")
         if dataset_size <= 0:
-            raise ValueError(
-                f"dataset_size must be positive, got {dataset_size}"
-            )
+            raise ValueError(f"dataset_size must be positive, got {dataset_size}")
 
         q = batch_size / dataset_size  # Sampling rate
 
         # Upper bound via advanced composition + subsampling amplification
         # epsilon ~ q * sqrt(2T * ln(1/delta)) / sigma
         epsilon_estimate = (
-            q
-            * math.sqrt(2.0 * n_steps * math.log(1.0 / self.delta))
-            / self.noise_multiplier
+            q * math.sqrt(2.0 * n_steps * math.log(1.0 / self.delta)) / self.noise_multiplier
         )
 
         return epsilon_estimate
@@ -410,10 +395,7 @@ class DPTrainer:
         # epsilon_base = max_grad_norm * sqrt(2 * ln(1.25/delta)) /
         #                (noise_multiplier * max_grad_norm)
         #              = sqrt(2 * ln(1.25/delta)) / noise_multiplier
-        eps_base = (
-            math.sqrt(2.0 * math.log(1.25 / self.delta))
-            / self.noise_multiplier
-        )
+        eps_base = math.sqrt(2.0 * math.log(1.25 / self.delta)) / self.noise_multiplier
 
         if dataset_size is not None and dataset_size > 0:
             # Privacy amplification by subsampling
@@ -495,9 +477,7 @@ class GradientClipper:
         scales = np.minimum(1.0, self.max_norm / norms)
         return gradients * scales
 
-    def clip_and_accumulate(
-        self, per_sample_grads: np.ndarray
-    ) -> np.ndarray:
+    def clip_and_accumulate(self, per_sample_grads: np.ndarray) -> np.ndarray:
         """Clip per-sample gradients then sum them.
 
         This is the core aggregation step of DP-SGD: each gradient is
@@ -549,37 +529,21 @@ class DPSGDConfig:
 
     def __post_init__(self) -> None:
         if self.learning_rate <= 0:
-            raise ValueError(
-                f"learning_rate must be positive, got {self.learning_rate}"
-            )
+            raise ValueError(f"learning_rate must be positive, got {self.learning_rate}")
         if self.max_grad_norm <= 0:
-            raise ValueError(
-                f"max_grad_norm must be positive, got {self.max_grad_norm}"
-            )
+            raise ValueError(f"max_grad_norm must be positive, got {self.max_grad_norm}")
         if self.noise_multiplier <= 0:
-            raise ValueError(
-                f"noise_multiplier must be positive, got {self.noise_multiplier}"
-            )
+            raise ValueError(f"noise_multiplier must be positive, got {self.noise_multiplier}")
         if self.batch_size <= 0:
-            raise ValueError(
-                f"batch_size must be positive, got {self.batch_size}"
-            )
+            raise ValueError(f"batch_size must be positive, got {self.batch_size}")
         if self.n_samples <= 0:
-            raise ValueError(
-                f"n_samples must be positive, got {self.n_samples}"
-            )
+            raise ValueError(f"n_samples must be positive, got {self.n_samples}")
         if self.epochs <= 0:
-            raise ValueError(
-                f"epochs must be positive, got {self.epochs}"
-            )
+            raise ValueError(f"epochs must be positive, got {self.epochs}")
         if self.target_epsilon <= 0:
-            raise ValueError(
-                f"target_epsilon must be positive, got {self.target_epsilon}"
-            )
+            raise ValueError(f"target_epsilon must be positive, got {self.target_epsilon}")
         if not (0 < self.target_delta < 1):
-            raise ValueError(
-                f"target_delta must be in (0, 1), got {self.target_delta}"
-            )
+            raise ValueError(f"target_delta must be in (0, 1), got {self.target_delta}")
 
     @property
     def sampling_rate(self) -> float:
@@ -649,9 +613,7 @@ class DPSGDTrainer:
         """
         return self.config.noise_multiplier * self.config.max_grad_norm
 
-    def private_gradient_step(
-        self, per_sample_grads: np.ndarray
-    ) -> np.ndarray:
+    def private_gradient_step(self, per_sample_grads: np.ndarray) -> np.ndarray:
         """Clip per-sample gradients, add noise, and average.
 
         This is the core DP-SGD aggregation step:
@@ -668,9 +630,7 @@ class DPSGDTrainer:
         batch_size: int = per_sample_grads.shape[0]
 
         # Clip and sum
-        clipped_sum: np.ndarray = self._clipper.clip_and_accumulate(
-            per_sample_grads
-        )
+        clipped_sum: np.ndarray = self._clipper.clip_and_accumulate(per_sample_grads)
 
         # Add calibrated Gaussian noise (CSPRNG-seeded for unpredictability)
         sigma: float = self.compute_noise_sigma()
@@ -680,9 +640,7 @@ class DPSGDTrainer:
         # Average
         return noisy_sum / batch_size
 
-    def estimate_privacy_spent(
-        self, n_steps: int
-    ) -> tuple[float, float]:
+    def estimate_privacy_spent(self, n_steps: int) -> tuple[float, float]:
         """Estimate (epsilon, delta) after ``n_steps`` of DP-SGD.
 
         Uses simple composition (upper bound):
@@ -707,9 +665,7 @@ class DPSGDTrainer:
         #   eps_base = sensitivity * sqrt(2 ln(1.25/delta)) / sigma
         #   eps_step = ln(1 + q * (exp(eps_base) - 1))
         eps_base: float = (
-            sensitivity
-            * math.sqrt(2.0 * math.log(1.25 / self.config.target_delta))
-            / sigma
+            sensitivity * math.sqrt(2.0 * math.log(1.25 / self.config.target_delta)) / sigma
         )
         eps_step: float = math.log(1.0 + q * (math.exp(eps_base) - 1.0))
 
@@ -723,9 +679,7 @@ class DPSGDTrainer:
         y: np.ndarray,
         weights: np.ndarray,
         loss_fn: Callable[[np.ndarray, np.ndarray, np.ndarray], float],
-        grad_fn: Callable[
-            [np.ndarray, np.ndarray, np.ndarray], np.ndarray
-        ],
+        grad_fn: Callable[[np.ndarray, np.ndarray, np.ndarray], np.ndarray],
     ) -> tuple[np.ndarray, float]:
         """Run one full epoch of DP-SGD training.
 
@@ -773,9 +727,7 @@ class DPSGDTrainer:
             per_sample_grads: np.ndarray = grad_fn(weights, X_batch, y_batch)
 
             # Private aggregation: clip + noise + average
-            noisy_grad: np.ndarray = self.private_gradient_step(
-                per_sample_grads
-            )
+            noisy_grad: np.ndarray = self.private_gradient_step(per_sample_grads)
 
             # SGD update
             weights = weights - self.config.learning_rate * noisy_grad
@@ -797,6 +749,4 @@ class DPSGDTrainer:
         return weights, mean_loss
 
     def __repr__(self) -> str:
-        return (
-            f"DPSGDTrainer(config={self.config!r}, steps={self._steps})"
-        )
+        return f"DPSGDTrainer(config={self.config!r}, steps={self._steps})"

@@ -22,6 +22,7 @@ from sdk.mpc import (
 # SecretSharer
 # =====================================================================
 
+
 class TestSecretSharer:
     """Tests for Shamir's Secret Sharing."""
 
@@ -97,8 +98,12 @@ class TestSecretSharer:
     def test_split_bytes_different_subsets(self) -> None:
         key = b"secret_key_12345"
         shares = self.sharer.split_bytes(key, n_shares=5, threshold=3)
-        r1 = self.sharer.reconstruct_bytes([shares[0], shares[1], shares[2]], secret_length=len(key))
-        r2 = self.sharer.reconstruct_bytes([shares[2], shares[3], shares[4]], secret_length=len(key))
+        r1 = self.sharer.reconstruct_bytes(
+            [shares[0], shares[1], shares[2]], secret_length=len(key)
+        )
+        r2 = self.sharer.reconstruct_bytes(
+            [shares[2], shares[3], shares[4]], secret_length=len(key)
+        )
         assert r1 == key
         assert r2 == key
 
@@ -154,6 +159,7 @@ class TestSecretSharer:
 # =====================================================================
 # SecureAggregator
 # =====================================================================
+
 
 class TestSecureAggregator:
     """Tests for secure aggregation via pairwise masking."""
@@ -304,6 +310,7 @@ class TestSecureAggregator:
 # MaskGenerator
 # =====================================================================
 
+
 class TestMaskGenerator:
     """Tests for the MaskGenerator helper class."""
 
@@ -356,6 +363,7 @@ class TestMaskGenerator:
 # =====================================================================
 # ThresholdDecryptor
 # =====================================================================
+
 
 class TestThresholdDecryptor:
     """Tests for threshold decryption."""
@@ -455,6 +463,7 @@ class TestThresholdDecryptor:
 # MPCProtocol
 # =====================================================================
 
+
 class TestMPCProtocol:
     """Tests for the high-level MPC protocol."""
 
@@ -501,6 +510,7 @@ class TestMPCProtocol:
 # =====================================================================
 # Integration
 # =====================================================================
+
 
 class TestMPCIntegration:
     """End-to-end integration tests."""
@@ -563,6 +573,7 @@ class TestMPCIntegration:
 # ThresholdDecryptor.generate_key_shares
 # =====================================================================
 
+
 class TestGenerateKeyShares:
     """Tests for ThresholdDecryptor.generate_key_shares."""
 
@@ -585,6 +596,7 @@ class TestGenerateKeyShares:
 # =====================================================================
 # KeyCeremony
 # =====================================================================
+
 
 class TestKeyCeremony:
     """Tests for distributed key generation ceremony."""
@@ -674,7 +686,5 @@ class TestKeyCeremony:
         expected_secret = sum(ceremony._party_secrets.values()) % prime
 
         # Reconstruct from any threshold-size subset
-        reconstructed = SecretSharer._lagrange_interpolation(
-            combined_shares[:threshold], prime
-        )
+        reconstructed = SecretSharer._lagrange_interpolation(combined_shares[:threshold], prime)
         assert reconstructed == expected_secret

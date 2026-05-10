@@ -148,9 +148,7 @@ class PedersenCommitment:
         self.h: int = h if h is not None else _H
         self.q: int = (self.p - 1) // 2
 
-    def commit(
-        self, value: int, randomness: Optional[int] = None
-    ) -> Tuple[int, int]:
+    def commit(self, value: int, randomness: Optional[int] = None) -> Tuple[int, int]:
         """Create a Pedersen commitment to *value*.
 
         ``C = g^value * h^randomness  (mod p)``
@@ -166,8 +164,7 @@ class PedersenCommitment:
         if randomness is None:
             randomness = secrets.randbelow(self.q - 1) + 1
         commitment = (
-            pow(self.g, value % self.q, self.p)
-            * pow(self.h, randomness % self.q, self.p)
+            pow(self.g, value % self.q, self.p) * pow(self.h, randomness % self.q, self.p)
         ) % self.p
         return commitment, randomness
 
@@ -185,8 +182,7 @@ class PedersenCommitment:
             ``True`` if the commitment is valid.
         """
         expected = (
-            pow(self.g, value % self.q, self.p)
-            * pow(self.h, randomness % self.q, self.p)
+            pow(self.g, value % self.q, self.p) * pow(self.h, randomness % self.q, self.p)
         ) % self.p
         return hmac.compare_digest(
             commitment.to_bytes(256, "big"),
@@ -692,13 +688,11 @@ class ZKProver:
         q = self._pedersen.q
         p = self._pedersen.p
         g = self._pedersen.g
-        scale = 10 ** 8
+        scale = 10**8
 
         for name, value in metrics.items():
             if not (0.0 <= value <= 1.0):
-                raise ValueError(
-                    f"Metric '{name}' = {value} is outside [0.0, 1.0]."
-                )
+                raise ValueError(f"Metric '{name}' = {value} is outside [0.0, 1.0].")
 
         metric_proofs: Dict[str, Any] = {}
 

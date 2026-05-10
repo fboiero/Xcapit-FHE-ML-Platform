@@ -69,9 +69,7 @@ class ModelInterpreter:
         X = np.asarray(X, dtype=np.float64)
 
         feature_values = X[:, feature_idx]
-        grid = np.linspace(
-            feature_values.min(), feature_values.max(), grid_resolution
-        )
+        grid = np.linspace(feature_values.min(), feature_values.max(), grid_resolution)
 
         avg_predictions = np.zeros(grid_resolution)
 
@@ -119,9 +117,7 @@ class ModelInterpreter:
 
         # Detect task type
         unique_vals = np.unique(y)
-        is_regression = (
-            np.issubdtype(y.dtype, np.floating) and len(unique_vals) > 20
-        )
+        is_regression = np.issubdtype(y.dtype, np.floating) and len(unique_vals) > 20
 
         if is_regression:
             base_score = calc.regression(y, y_pred_base).r2_score

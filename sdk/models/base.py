@@ -20,6 +20,7 @@ class FHELevel(Enum):
     - FULL: training or inference can operate entirely on encrypted data
       without decryption (e.g., CKKS dot product for linear models).
     """
+
     NONE = "none"
     TRANSPORT = "transport"
     PARTIAL = "partial"
@@ -28,6 +29,7 @@ class FHELevel(Enum):
 
 class ModelState(Enum):
     """Model lifecycle state."""
+
     INITIALIZED = "initialized"
     TRAINING = "training"
     TRAINED = "trained"
@@ -37,6 +39,7 @@ class ModelState(Enum):
 @dataclass
 class ModelConfig:
     """Training configuration."""
+
     learning_rate: float = 0.01
     n_epochs: int = 100
     batch_size: Optional[int] = None
@@ -48,6 +51,7 @@ class ModelConfig:
 @dataclass
 class TrainingHistory:
     """Records training metrics per epoch."""
+
     losses: list[float] = field(default_factory=list)
 
     def add_epoch(self, loss: float):

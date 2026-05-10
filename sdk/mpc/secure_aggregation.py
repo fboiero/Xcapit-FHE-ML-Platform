@@ -76,17 +76,13 @@ class MaskGenerator:
         if not seed:
             raise ValueError("Seed must be non-empty.")
         if any(d < 1 for d in shape):
-            raise ValueError(
-                f"All shape dimensions must be >= 1, got {shape}."
-            )
+            raise ValueError(f"All shape dimensions must be >= 1, got {shape}.")
 
         # Derive a 128-bit integer seed from the byte seed via SHA-256
         digest = hashlib.sha256(seed).digest()
         seed_int = int.from_bytes(digest[:16], byteorder="big")
 
-        rng = np.random.Generator(
-            np.random.PCG64(np.random.SeedSequence(seed_int))
-        )
+        rng = np.random.Generator(np.random.PCG64(np.random.SeedSequence(seed_int)))
         return rng.uniform(-_MASK_RANGE, _MASK_RANGE, size=shape)
 
     def generate_pairwise_seeds(
@@ -125,8 +121,7 @@ class MaskGenerator:
         """
         if not 0 <= participant_id < n_participants:
             raise ValueError(
-                f"participant_id must be in [0, {n_participants}), "
-                f"got {participant_id}."
+                f"participant_id must be in [0, {n_participants}), got {participant_id}."
             )
 
         pairwise_seeds: list[bytes] = []
@@ -252,10 +247,7 @@ class SecureAggregator:
         self._validate_party_id(party_id)
 
         if update.shape != (self.vector_size,):
-            raise ValueError(
-                f"Expected update of shape ({self.vector_size},), "
-                f"got {update.shape}."
-            )
+            raise ValueError(f"Expected update of shape ({self.vector_size},), got {update.shape}.")
 
         masked = update.copy().astype(np.float64)
         for mask in masks.values():
@@ -290,9 +282,7 @@ class SecureAggregator:
             If the number of updates does not match ``n_parties``.
         """
         if len(masked_updates) != self.n_parties:
-            raise ValueError(
-                f"Expected {self.n_parties} updates, got {len(masked_updates)}."
-            )
+            raise ValueError(f"Expected {self.n_parties} updates, got {len(masked_updates)}.")
 
         return np.sum(masked_updates, axis=0)
 
@@ -401,13 +391,9 @@ class SecureAggregator:
             The weighted aggregate.
         """
         if len(masked_updates) != self.n_parties:
-            raise ValueError(
-                f"Expected {self.n_parties} updates, got {len(masked_updates)}."
-            )
+            raise ValueError(f"Expected {self.n_parties} updates, got {len(masked_updates)}.")
         if len(weights) != self.n_parties:
-            raise ValueError(
-                f"Expected {self.n_parties} weights, got {len(weights)}."
-            )
+            raise ValueError(f"Expected {self.n_parties} weights, got {len(weights)}.")
 
         result = np.zeros(self.vector_size, dtype=np.float64)
         for update, w in zip(masked_updates, weights):
@@ -421,9 +407,7 @@ class SecureAggregator:
 
     def _validate_party_id(self, party_id: int) -> None:
         if not (0 <= int(party_id) < int(self.n_parties)):
-            raise ValueError(
-                f"party_id must be in [0, {self.n_parties}), got {party_id}."
-            )
+            raise ValueError(f"party_id must be in [0, {self.n_parties}), got {party_id}.")
 
     @staticmethod
     def _derive_pair_seed(base_seed: int, lo: int, hi: int) -> int:
@@ -446,9 +430,7 @@ class SecureAggregator:
         """
         # Truncate seed to 128 bits for numpy compatibility
         seed_128 = seed & ((1 << 128) - 1)
-        rng = np.random.Generator(
-            np.random.PCG64(np.random.SeedSequence(seed_128))
-        )
+        rng = np.random.Generator(np.random.PCG64(np.random.SeedSequence(seed_128)))
         return rng.uniform(-_MASK_RANGE, _MASK_RANGE, size=size)
 
 
@@ -568,9 +550,7 @@ class MPCProtocol:
             If the number of vectors does not match ``n_parties``.
         """
         if len(private_values) != self.n_parties:
-            raise ValueError(
-                f"Expected {self.n_parties} values, got {len(private_values)}."
-            )
+            raise ValueError(f"Expected {self.n_parties} values, got {len(private_values)}.")
 
         vector_size = private_values[0].shape[0]
         aggregator = self.create_aggregator(vector_size)

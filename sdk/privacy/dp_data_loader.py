@@ -103,9 +103,7 @@ class DPDataLoader:
         if epsilon <= 0:
             raise ValueError(f"Epsilon must be positive, got {epsilon}")
         if mechanism not in ("gaussian", "laplace"):
-            raise ValueError(
-                f"Mechanism must be 'gaussian' or 'laplace', got '{mechanism}'"
-            )
+            raise ValueError(f"Mechanism must be 'gaussian' or 'laplace', got '{mechanism}'")
 
         self.epsilon: float = epsilon
         self.delta: float = delta
@@ -113,14 +111,10 @@ class DPDataLoader:
         self.mechanism_name: str = mechanism
         self.ckks_params = ckks_params
 
-        self.accountant = PrivacyAccountant(
-            total_epsilon=epsilon, total_delta=delta
-        )
+        self.accountant = PrivacyAccountant(total_epsilon=epsilon, total_delta=delta)
 
         if mechanism == "gaussian":
-            self._mechanism: DPMechanism = GaussianMechanism(
-                epsilon=epsilon, delta=delta
-            )
+            self._mechanism: DPMechanism = GaussianMechanism(epsilon=epsilon, delta=delta)
         else:
             self._mechanism = LaplaceMechanism(epsilon=epsilon)
 
@@ -208,9 +202,7 @@ class DPDataLoader:
             else:
                 col_mechanism = LaplaceMechanism(epsilon=col_epsilon)
 
-            X_noised[:, col_idx] = col_mechanism.add_noise(
-                col_data, sensitivity=sensitivity
-            )
+            X_noised[:, col_idx] = col_mechanism.add_noise(col_data, sensitivity=sensitivity)
 
             self.accountant.consume(
                 epsilon=col_epsilon,
@@ -268,10 +260,7 @@ class DPDataLoader:
             ImportError: If TenSEAL is not available.
         """
         if not _HAS_FHE:
-            raise ImportError(
-                "FHE encryption requires TenSEAL. "
-                "Install with: pip install tenseal"
-            )
+            raise ImportError("FHE encryption requires TenSEAL. Install with: pip install tenseal")
 
         # Step 1: Apply DP noise
         private_ds = self.load_private(
@@ -282,18 +271,14 @@ class DPDataLoader:
 
         # Step 2: Encrypt with CKKS
         params = self.ckks_params if self.ckks_params is not None else CKKSParameters()
-        noised_df = pd.DataFrame(
-            private_ds.X, columns=private_ds.feature_names
-        )
+        noised_df = pd.DataFrame(private_ds.X, columns=private_ds.feature_names)
         if private_ds.y is not None and target_column:
             noised_df[target_column] = private_ds.y
 
         loader = SecureDataLoader(params=params, normalize=True)
         return loader.encrypt(noised_df, target_column=target_column)
 
-    def clip_and_noise(
-        self, data: np.ndarray, sensitivity: float
-    ) -> np.ndarray:
+    def clip_and_noise(self, data: np.ndarray, sensitivity: float) -> np.ndarray:
         """Clip values to bound sensitivity and add calibrated noise.
 
         Args:
@@ -388,9 +373,7 @@ class DPDataLoader:
         data = np.asarray(data, dtype=np.float64).ravel()
 
         if data_range is not None:
-            counts, bin_edges = np.histogram(
-                data, bins=bins, range=data_range
-            )
+            counts, bin_edges = np.histogram(data, bins=bins, range=data_range)
         else:
             counts, bin_edges = np.histogram(data, bins=bins)
 
@@ -589,9 +572,7 @@ class SubsampledMechanism:
         sampling_rate: float,
     ) -> None:
         if not (0.0 < sampling_rate <= 1.0):
-            raise ValueError(
-                f"sampling_rate must be in (0, 1], got {sampling_rate}"
-            )
+            raise ValueError(f"sampling_rate must be in (0, 1], got {sampling_rate}")
         self.mechanism: DPMechanism = mechanism
         self.sampling_rate: float = sampling_rate
 
@@ -634,7 +615,5 @@ class SubsampledMechanism:
 
     def __repr__(self) -> str:
         return (
-            f"SubsampledMechanism("
-            f"mechanism={self.mechanism!r}, "
-            f"sampling_rate={self.sampling_rate})"
+            f"SubsampledMechanism(mechanism={self.mechanism!r}, sampling_rate={self.sampling_rate})"
         )

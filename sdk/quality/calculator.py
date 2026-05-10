@@ -19,8 +19,7 @@ except ImportError:
 def _require_pandas():
     if not HAS_PANDAS:
         raise ImportError(
-            "pandas is required for data quality analysis. "
-            "Install it with: pip install pandas"
+            "pandas is required for data quality analysis. Install it with: pip install pandas"
         )
 
 
@@ -52,9 +51,7 @@ class DataQualityCalculator:
         _require_pandas()
 
         numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
-        categorical_cols = df.select_dtypes(
-            include=["object", "category"]
-        ).columns.tolist()
+        categorical_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
 
         return {
             "n_rows": len(df),
@@ -93,13 +90,11 @@ class DataQualityCalculator:
         return {
             "total_missing": total_missing,
             "total_cells": total_cells,
-            "overall_missing_pct": round(
-                total_missing / total_cells * 100, 2
-            ) if total_cells > 0 else 0.0,
+            "overall_missing_pct": round(total_missing / total_cells * 100, 2)
+            if total_cells > 0
+            else 0.0,
             "per_column": per_column,
-            "columns_with_missing": [
-                col for col, info in per_column.items() if info["count"] > 0
-            ],
+            "columns_with_missing": [col for col, info in per_column.items() if info["count"] > 0],
         }
 
     def outlier_detection(
@@ -140,9 +135,7 @@ class DataQualityCalculator:
                 if std == 0:
                     outlier_mask = np.zeros(len(numeric_df[col]), dtype=bool)
                 else:
-                    z_scores = np.abs(
-                        (numeric_df[col].values - mean) / std
-                    )
+                    z_scores = np.abs((numeric_df[col].values - mean) / std)
                     outlier_mask = z_scores > z_threshold
             else:
                 # IQR method
@@ -165,9 +158,7 @@ class DataQualityCalculator:
 
             results[col] = {
                 "count": count,
-                "percentage": round(
-                    count / len(df) * 100, 2
-                ) if len(df) > 0 else 0.0,
+                "percentage": round(count / len(df) * 100, 2) if len(df) > 0 else 0.0,
                 "indices": indices[:100],  # Limit for readability
             }
 
@@ -297,17 +288,11 @@ class DataQualityCalculator:
         total_values = df.select_dtypes(include=[np.number]).shape[0] * max(
             df.select_dtypes(include=[np.number]).shape[1], 1
         )
-        outlier_ratio = (
-            outliers["total_outliers"] / total_values
-            if total_values > 0
-            else 0.0
-        )
+        outlier_ratio = outliers["total_outliers"] / total_values if total_values > 0 else 0.0
         outlier_score = max(0.0, 1.0 - outlier_ratio * 5)  # Penalise heavily
 
         # Overall score: weighted average
-        overall = round(
-            completeness * 0.4 + consistency * 0.3 + outlier_score * 0.3, 4
-        )
+        overall = round(completeness * 0.4 + consistency * 0.3 + outlier_score * 0.3, 4)
 
         return {
             "profile": profile,

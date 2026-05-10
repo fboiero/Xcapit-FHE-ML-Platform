@@ -121,9 +121,7 @@ class MetricCalculator:
         # MAPE — guard against division by zero
         mask = y_true != 0
         if mask.any():
-            mape = float(
-                np.mean(np.abs((y_true[mask] - y_pred[mask]) / y_true[mask]))
-            )
+            mape = float(np.mean(np.abs((y_true[mask] - y_pred[mask]) / y_true[mask])))
         else:
             mape = float("inf")
 
@@ -134,9 +132,7 @@ class MetricCalculator:
 
         # Explained variance
         y_diff = y_true - y_pred
-        ev = float(
-            1.0 - np.var(y_diff) / np.var(y_true)
-        ) if np.var(y_true) != 0 else 0.0
+        ev = float(1.0 - np.var(y_diff) / np.var(y_true)) if np.var(y_true) != 0 else 0.0
 
         return RegressionMetrics(
             r2_score=r2,
@@ -204,15 +200,9 @@ class MetricCalculator:
         total = supports.sum()
 
         # Weighted averages
-        precision = float(
-            np.sum(np.array(precisions) * supports) / total
-        ) if total > 0 else 0.0
-        recall = float(
-            np.sum(np.array(recalls) * supports) / total
-        ) if total > 0 else 0.0
-        f1_score = float(
-            np.sum(np.array(f1s) * supports) / total
-        ) if total > 0 else 0.0
+        precision = float(np.sum(np.array(precisions) * supports) / total) if total > 0 else 0.0
+        recall = float(np.sum(np.array(recalls) * supports) / total) if total > 0 else 0.0
+        f1_score = float(np.sum(np.array(f1s) * supports) / total) if total > 0 else 0.0
 
         # ROC-AUC (binary only)
         roc_auc = None
@@ -233,9 +223,7 @@ class MetricCalculator:
             else:
                 # Multi-class log loss
                 if y_prob.ndim == 2:
-                    log_loss_val = self._log_loss_multiclass(
-                        y_true, y_prob, classes
-                    )
+                    log_loss_val = self._log_loss_multiclass(y_true, y_prob, classes)
 
         return ClassificationMetrics(
             accuracy=accuracy,
@@ -396,9 +384,7 @@ class MetricCalculator:
         pos_label = classes[1]
         y_bin = (y_true == pos_label).astype(np.float64)
         prob_pos = np.clip(prob_pos, eps, 1 - eps)
-        loss = -(
-            y_bin * np.log(prob_pos) + (1 - y_bin) * np.log(1 - prob_pos)
-        )
+        loss = -(y_bin * np.log(prob_pos) + (1 - y_bin) * np.log(1 - prob_pos))
         return float(np.mean(loss))
 
     @staticmethod
@@ -485,9 +471,7 @@ class MetricCalculator:
         if wgss == 0:
             return 0.0
 
-        return float(
-            (bgss / (n_clusters - 1)) / (wgss / (n_samples - n_clusters))
-        )
+        return float((bgss / (n_clusters - 1)) / (wgss / (n_samples - n_clusters)))
 
     @staticmethod
     def _davies_bouldin(X: np.ndarray, labels: np.ndarray) -> float:
@@ -506,9 +490,7 @@ class MetricCalculator:
             cluster_points = X[labels == lbl]
             centroid = np.mean(cluster_points, axis=0)
             centroids.append(centroid)
-            avg_dist = np.mean(
-                np.sqrt(np.sum((cluster_points - centroid) ** 2, axis=1))
-            )
+            avg_dist = np.mean(np.sqrt(np.sum((cluster_points - centroid) ** 2, axis=1)))
             avg_dists.append(avg_dist)
 
         centroids = np.array(centroids)
@@ -521,9 +503,7 @@ class MetricCalculator:
             for j in range(n_clusters):
                 if i == j:
                     continue
-                inter_dist = np.sqrt(
-                    np.sum((centroids[i] - centroids[j]) ** 2)
-                )
+                inter_dist = np.sqrt(np.sum((centroids[i] - centroids[j]) ** 2))
                 if inter_dist == 0:
                     continue
                 ratio = (avg_dists[i] + avg_dists[j]) / inter_dist

@@ -13,6 +13,7 @@ from ..encryption.context_manager import CKKSParameters
 @dataclass
 class EncryptedDataset:
     """Encrypted feature matrix and target vector."""
+
     X: EncryptedMatrix
     y: Optional[EncryptedVector]
     n_features: int

@@ -369,7 +369,7 @@ class TestZKVerifierEdgeCases:
     def test_verify_model_accuracy_missing_metric_proof(self) -> None:
         verifier = ZKVerifier()
         proof = {
-            "scale": 10 ** 8,
+            "scale": 10**8,
             "metrics": {"accuracy": 0.9},
             "metric_proofs": {},  # Missing proof for "accuracy"
             "metrics_digest": hashlib.sha256(
@@ -466,7 +466,7 @@ class TestArithmeticCircuit:
         # produces expected intermediate values.
         wire_values = list(result.values())
         # x=5: diff_lo = 5-0 = 5, diff_hi = 10-5 = 5, product = 25
-        assert 5 in wire_values   # diff_lo or diff_hi
+        assert 5 in wire_values  # diff_lo or diff_hi
         assert 25 in wire_values  # product
 
     def test_sum_check_circuit(self) -> None:

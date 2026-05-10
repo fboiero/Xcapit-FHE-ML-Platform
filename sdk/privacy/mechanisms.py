@@ -62,9 +62,7 @@ class DPMechanism(ABC):
         """
         ...
 
-    def _validate_inputs(
-        self, value: np.ndarray, sensitivity: float
-    ) -> np.ndarray:
+    def _validate_inputs(self, value: np.ndarray, sensitivity: float) -> np.ndarray:
         """Validate and coerce inputs.
 
         Args:
@@ -78,9 +76,7 @@ class DPMechanism(ABC):
             ValueError: If sensitivity is non-positive or value is empty.
         """
         if sensitivity <= 0:
-            raise ValueError(
-                f"Sensitivity must be positive, got {sensitivity}"
-            )
+            raise ValueError(f"Sensitivity must be positive, got {sensitivity}")
         arr = np.asarray(value, dtype=np.float64)
         if arr.size == 0:
             raise ValueError("Input array must not be empty")
@@ -151,7 +147,7 @@ class LaplaceMechanism(DPMechanism):
             Noise variance.
         """
         b: float = sensitivity / self.epsilon
-        return 2.0 * b ** 2
+        return 2.0 * b**2
 
     def __repr__(self) -> str:
         return f"LaplaceMechanism(epsilon={self.epsilon})"
@@ -211,11 +207,7 @@ class GaussianMechanism(DPMechanism):
         Returns:
             Standard deviation sigma for the Gaussian noise.
         """
-        return (
-            sensitivity
-            * np.sqrt(2.0 * np.log(1.25 / self.delta))
-            / self.epsilon
-        )
+        return sensitivity * np.sqrt(2.0 * np.log(1.25 / self.delta)) / self.epsilon
 
     def add_noise(self, value: np.ndarray, sensitivity: float) -> np.ndarray:
         """Add Gaussian noise calibrated to L2 sensitivity.
@@ -246,12 +238,10 @@ class GaussianMechanism(DPMechanism):
             Noise variance (sigma^2).
         """
         sigma: float = self.compute_sigma(sensitivity)
-        return sigma ** 2
+        return sigma**2
 
     def __repr__(self) -> str:
-        return (
-            f"GaussianMechanism(epsilon={self.epsilon}, delta={self.delta})"
-        )
+        return f"GaussianMechanism(epsilon={self.epsilon}, delta={self.delta})"
 
 
 class ExponentialMechanism(DPMechanism):
@@ -303,9 +293,7 @@ class ExponentialMechanism(DPMechanism):
         if utilities.size == 0:
             raise ValueError("Utilities array must not be empty")
         if sensitivity <= 0:
-            raise ValueError(
-                f"Sensitivity must be positive, got {sensitivity}"
-            )
+            raise ValueError(f"Sensitivity must be positive, got {sensitivity}")
 
         # Compute log-probabilities with numerical stability
         scores = self.epsilon * utilities / (2.0 * sensitivity)
@@ -359,15 +347,11 @@ class NoiseCalibrator:
         if epsilon <= 0:
             raise ValueError(f"Epsilon must be positive, got {epsilon}")
         if sensitivity <= 0:
-            raise ValueError(
-                f"Sensitivity must be positive, got {sensitivity}"
-            )
+            raise ValueError(f"Sensitivity must be positive, got {sensitivity}")
         return sensitivity / epsilon
 
     @staticmethod
-    def gaussian_sigma(
-        epsilon: float, delta: float, sensitivity: float
-    ) -> float:
+    def gaussian_sigma(epsilon: float, delta: float, sensitivity: float) -> float:
         """Compute Gaussian sigma = sensitivity * sqrt(2*ln(1.25/delta)) / eps.
 
         Args:
@@ -383,15 +367,11 @@ class NoiseCalibrator:
         if not (0 < delta < 1):
             raise ValueError(f"Delta must be in (0, 1), got {delta}")
         if sensitivity <= 0:
-            raise ValueError(
-                f"Sensitivity must be positive, got {sensitivity}"
-            )
+            raise ValueError(f"Sensitivity must be positive, got {sensitivity}")
         return sensitivity * np.sqrt(2.0 * np.log(1.25 / delta)) / epsilon
 
     @staticmethod
-    def epsilon_from_sigma(
-        sigma: float, delta: float, sensitivity: float
-    ) -> float:
+    def epsilon_from_sigma(sigma: float, delta: float, sensitivity: float) -> float:
         """Compute epsilon given sigma, delta, and sensitivity.
 
         Inverse of the Gaussian calibration formula:
@@ -410,7 +390,5 @@ class NoiseCalibrator:
         if not (0 < delta < 1):
             raise ValueError(f"Delta must be in (0, 1), got {delta}")
         if sensitivity <= 0:
-            raise ValueError(
-                f"Sensitivity must be positive, got {sensitivity}"
-            )
+            raise ValueError(f"Sensitivity must be positive, got {sensitivity}")
         return sensitivity * np.sqrt(2.0 * np.log(1.25 / delta)) / sigma

@@ -140,7 +140,7 @@ class TestGaussianMechanism:
         mechanism = GaussianMechanism(epsilon=1.0, delta=1e-5)
         sensitivity = 1.0
         sigma = mechanism.compute_sigma(sensitivity)
-        assert mechanism.variance(sensitivity) == pytest.approx(sigma ** 2)
+        assert mechanism.variance(sensitivity) == pytest.approx(sigma**2)
 
 
 # =====================================================================
@@ -329,10 +329,12 @@ class TestGradientClipper:
     def test_clip_and_accumulate(self) -> None:
         """clip_and_accumulate clips then sums."""
         clipper = GradientClipper(max_norm=1.0)
-        grads = np.array([
-            [3.0, 4.0],   # norm=5, will be clipped
-            [0.1, 0.2],   # norm<1, stays as-is
-        ])
+        grads = np.array(
+            [
+                [3.0, 4.0],  # norm=5, will be clipped
+                [0.1, 0.2],  # norm<1, stays as-is
+            ]
+        )
         result = clipper.clip_and_accumulate(grads)
         assert result.shape == (2,)
         # First row clipped to norm 1.0, then summed with second row
@@ -343,11 +345,13 @@ class TestGradientClipper:
     def test_clip_batch(self) -> None:
         """Batch clipping clips each row independently."""
         clipper = GradientClipper(max_norm=1.0)
-        grads = np.array([
-            [3.0, 4.0],    # norm=5
-            [0.6, 0.8],    # norm=1.0, exactly at boundary
-            [10.0, 0.0],   # norm=10
-        ])
+        grads = np.array(
+            [
+                [3.0, 4.0],  # norm=5
+                [0.6, 0.8],  # norm=1.0, exactly at boundary
+                [10.0, 0.0],  # norm=10
+            ]
+        )
         clipped = clipper.clip(grads)
         for i in range(3):
             norm = np.linalg.norm(clipped[i])

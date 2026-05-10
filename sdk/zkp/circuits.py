@@ -206,8 +206,7 @@ class ArithmeticCircuit:
         if gate_type in (Gate.ADD, Gate.MUL):
             if len(inputs) != 2:
                 raise ValueError(
-                    f"{gate_type.value.upper()} gate requires exactly 2 "
-                    f"inputs, got {len(inputs)}."
+                    f"{gate_type.value.upper()} gate requires exactly 2 inputs, got {len(inputs)}."
                 )
             for wid in inputs:
                 if wid not in self._wires:
@@ -272,25 +271,17 @@ class ArithmeticCircuit:
                 left = self._wires[gate.inputs[0]].value
                 right = self._wires[gate.inputs[1]].value
                 if left is None or right is None:
-                    raise ValueError(
-                        f"ADD gate inputs {gate.inputs} have unset values."
-                    )
+                    raise ValueError(f"ADD gate inputs {gate.inputs} have unset values.")
                 self._wires[gate.output].value = left + right
 
             elif gate.gate_type == Gate.MUL:
                 left = self._wires[gate.inputs[0]].value
                 right = self._wires[gate.inputs[1]].value
                 if left is None or right is None:
-                    raise ValueError(
-                        f"MUL gate inputs {gate.inputs} have unset values."
-                    )
+                    raise ValueError(f"MUL gate inputs {gate.inputs} have unset values.")
                 self._wires[gate.output].value = left * right
 
-        return {
-            wid: w.value
-            for wid, w in self._wires.items()
-            if w.value is not None
-        }
+        return {wid: w.value for wid, w in self._wires.items() if w.value is not None}
 
     # ------------------------------------------------------------------
     # R1CS conversion

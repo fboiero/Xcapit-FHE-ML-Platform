@@ -100,17 +100,12 @@ class ModelRegistryClient:
         self._contract = None
 
         if contract_address:
-            self._contract = connector.get_contract(
-                contract_address, self._abi
-            )
+            self._contract = connector.get_contract(contract_address, self._abi)
 
     def _ensure_contract(self):
         """Ensure contract is available."""
         if self._contract is None:
-            raise ValueError(
-                "No contract address set. "
-                "Pass contract_address to the constructor."
-            )
+            raise ValueError("No contract address set. Pass contract_address to the constructor.")
 
     def register(
         self,
@@ -134,9 +129,7 @@ class ModelRegistryClient:
 
         from .contracts import ModelRegistryContract
 
-        registry = ModelRegistryContract(
-            self._connector, self._contract_address, self._abi
-        )
+        registry = ModelRegistryContract(self._connector, self._contract_address, self._abi)
         return registry.register_model(model_hash, metadata_uri)
 
     def get(self, model_id: int) -> ModelRecord:
@@ -152,9 +145,7 @@ class ModelRegistryClient:
 
         from .contracts import ModelRegistryContract
 
-        registry = ModelRegistryContract(
-            self._connector, self._contract_address, self._abi
-        )
+        registry = ModelRegistryContract(self._connector, self._contract_address, self._abi)
         data = registry.get_model(model_id)
         return ModelRecord(
             model_id=model_id,
@@ -175,9 +166,7 @@ class ModelRegistryClient:
 
         from .contracts import ModelRegistryContract
 
-        registry = ModelRegistryContract(
-            self._connector, self._contract_address, self._abi
-        )
+        registry = ModelRegistryContract(self._connector, self._contract_address, self._abi)
         raw_models = registry.list_models()
         records = []
         for m in raw_models:

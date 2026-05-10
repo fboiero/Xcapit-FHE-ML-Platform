@@ -67,9 +67,7 @@ class CrossValidator:
         current = 0
         for fold_size in fold_sizes:
             test_idx = indices[current : current + fold_size]
-            train_idx = np.concatenate(
-                [indices[:current], indices[current + fold_size :]]
-            )
+            train_idx = np.concatenate([indices[:current], indices[current + fold_size :]])
             splits.append((train_idx, test_idx))
             current += fold_size
 
@@ -118,9 +116,7 @@ class CrossValidator:
 
             # Auto-detect task type
             unique_vals = np.unique(y)
-            is_regression = (
-                np.issubdtype(y.dtype, np.floating) and len(unique_vals) > 20
-            )
+            is_regression = np.issubdtype(y.dtype, np.floating) and len(unique_vals) > 20
 
             if is_regression:
                 reg = calc.regression(y_test, y_pred)

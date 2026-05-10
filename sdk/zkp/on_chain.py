@@ -131,9 +131,7 @@ class ProofSerializer:
         Returns:
             Deterministic byte representation of the proof.
         """
-        canonical = json.dumps(
-            proof, sort_keys=True, separators=(",", ":"), default=str
-        )
+        canonical = json.dumps(proof, sort_keys=True, separators=(",", ":"), default=str)
         return canonical.encode("utf-8")
 
     @staticmethod
@@ -252,21 +250,14 @@ class ProofSerializer:
         if not commitments:
             # Fall back to commitment field for simpler proof formats.
             commitment_str = proof.get("commitment", "")
-            commitment_bytes = hashlib.sha256(
-                commitment_str.encode("utf-8")
-            ).digest()
+            commitment_bytes = hashlib.sha256(commitment_str.encode("utf-8")).digest()
         else:
-            commitment_json = json.dumps(
-                commitments, sort_keys=True, separators=(",", ":")
-            )
-            commitment_bytes = hashlib.sha256(
-                commitment_json.encode("utf-8")
-            ).digest()
+            commitment_json = json.dumps(commitments, sort_keys=True, separators=(",", ":"))
+            commitment_bytes = hashlib.sha256(commitment_json.encode("utf-8")).digest()
 
         # --- Proof data: serialized Schnorr proofs + blinding factors ---
         proof_payload: Dict[str, Any] = {}
-        for key in ("schnorr_proofs", "blinding_factors", "binding_challenge",
-                     "metric_proofs"):
+        for key in ("schnorr_proofs", "blinding_factors", "binding_challenge", "metric_proofs"):
             if key in proof:
                 proof_payload[key] = proof[key]
         # Also include the raw proof dict if using the simpler format.

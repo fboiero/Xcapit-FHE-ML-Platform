@@ -95,9 +95,7 @@ class ModelRegistryContract(ContractBase):
     and verifying ML models on-chain.
     """
 
-    def register_model(
-        self, model_hash: str, metadata_uri: str
-    ) -> str:
+    def register_model(self, model_hash: str, metadata_uri: str) -> str:
         """Register a new model on-chain.
 
         Args:
@@ -131,9 +129,7 @@ class ModelRegistryContract(ContractBase):
             return dict(zip(keys, result))
         return result
 
-    def update_model(
-        self, model_id: int, new_hash: str
-    ) -> str:
+    def update_model(self, model_id: int, new_hash: str) -> str:
         """Update the hash for an existing model.
 
         Args:
@@ -188,9 +184,7 @@ class GovernanceContract(ContractBase):
     and executing governance actions.
     """
 
-    def create_proposal(
-        self, description: str, actions: list[dict]
-    ) -> str:
+    def create_proposal(self, description: str, actions: list[dict]) -> str:
         """Create a new governance proposal.
 
         Args:
@@ -203,9 +197,7 @@ class GovernanceContract(ContractBase):
         targets = [a.get("target", "") for a in actions]
         calldatas = [a.get("calldata", b"") for a in actions]
         values = [a.get("value", 0) for a in actions]
-        return self.transact(
-            "createProposal", description, targets, calldatas, values
-        )
+        return self.transact("createProposal", description, targets, calldatas, values)
 
     def vote(self, proposal_id: int, support: bool) -> str:
         """Cast a vote on a proposal.
