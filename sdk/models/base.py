@@ -6,7 +6,7 @@ from typing import Optional
 
 import numpy as np
 
-from ..encryption.ckks_wrapper import CKKSEncryptor, EncryptedMatrix, EncryptedVector
+from ..encryption.ckks_wrapper import CKKSEncryptor, EncryptedMatrix
 
 
 class FHELevel(Enum):

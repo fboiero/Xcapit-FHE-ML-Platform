@@ -603,7 +603,6 @@ class KeyCeremony:
                 f"first."
             )
 
-        prime = self._sharer.prime
 
         # For each recipient j, collect f_i(j) from every sender i
         distribution: dict[int, list[tuple[int, int]]] = {

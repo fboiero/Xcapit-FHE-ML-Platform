@@ -25,10 +25,8 @@ import hashlib
 import hmac
 import json
 import secrets
-from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Tuple
-
+from typing import Any, Dict, Optional, Tuple
 
 # ============================================================================
 # Constants -- safe prime parameters for Pedersen commitments
@@ -519,7 +517,6 @@ class ContributionProof:
         This proves the prover knows (v, r) without revealing the blinding
         factor r — achieving the zero-knowledge property.
         """
-        q = self._pedersen.q
         p = self._pedersen.p
         g = self._pedersen.g
         h = self._pedersen.h
@@ -748,7 +745,7 @@ class ZKProver:
             "timestamp": timestamp,
             "scale": scale,
             "metrics_digest": metrics_digest.hex(),
-            "metrics": {name: value for name, value in sorted(metrics.items())},
+            "metrics": dict(sorted(metrics.items())),
             "metric_proofs": metric_proofs,
         }
 

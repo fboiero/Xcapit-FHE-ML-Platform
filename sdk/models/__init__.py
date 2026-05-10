@@ -19,36 +19,56 @@ All models follow the scikit-learn fit/predict interface and declare an
 """
 
 # Base classes and enums
+from .anomaly_detection import EllipticEnvelope, IsolationForest, LocalOutlierFactor, OneClassSVM
 from .base import BaseFHEModel, FHELevel, ModelConfig, ModelState, TrainingHistory
+from .calibration import CalibratedClassifierCV, IsotonicRegression, TemperatureScaling
+from .clustering import (
+    DBSCAN,
+    AgglomerativeClustering,
+    GaussianMixture,
+    MeanShift,
+    SpectralClustering,
+)
+from .decision_tree import DecisionTree, DecisionTreeClassifier, DecisionTreeRegressor
+from .deep_learning import Autoencoder, MLPClassifier, MLPRegressor, VariationalAutoencoder
+from .ensemble import StackingClassifier, VotingClassifier, VotingRegressor
+from .feature_selection import (
+    RFE,
+    SelectFromModel,
+    SelectKBest,
+    SelectPercentile,
+    VarianceThreshold,
+)
+from .gradient_boosting import (
+    GradientBoosting,
+    GradientBoostingClassifier,
+    GradientBoostingRegressor,
+)
+from .kmeans import KMeans, MiniBatchKMeans
 
 # --- Core models (ordered by FHE support level) ---
-
 # FHE FULL — genuine encrypted inference
 from .linear_regression import LinearRegression
 
 # FHE PARTIAL — partial encrypted paths
 from .logistic_regression import LogisticRegression
+from .multioutput import (
+    ClassifierChain,
+    MultiOutputClassifier,
+    MultiOutputRegressor,
+    RegressorChain,
+)
+from .naive_bayes import BernoulliNaiveBayes, GaussianNaiveBayes, MultinomialNaiveBayes
 
 # FHE TRANSPORT — encrypted in transit, plaintext compute
 from .neural_network import NeuralNetwork, NeuralNetworkClassifier, NeuralNetworkRegressor
-from .svm import SVM, SVMClassifier, SVMRegressor
-from .kmeans import KMeans, MiniBatchKMeans
-from .decision_tree import DecisionTree, DecisionTreeClassifier, DecisionTreeRegressor
-from .random_forest import RandomForest, RandomForestClassifier, RandomForestRegressor
-from .gradient_boosting import GradientBoosting, GradientBoostingClassifier, GradientBoostingRegressor
 
 # FHE NONE — standard ML (no encryption)
 from .pca import PCA
-from .naive_bayes import GaussianNaiveBayes, MultinomialNaiveBayes, BernoulliNaiveBayes
-from .anomaly_detection import IsolationForest, OneClassSVM, LocalOutlierFactor, EllipticEnvelope
+from .random_forest import RandomForest, RandomForestClassifier, RandomForestRegressor
+from .regularization import ElasticNet, Lasso, Ridge, RidgeClassifier, SGDRegressor
+from .svm import SVM, SVMClassifier, SVMRegressor
 from .time_series import ARIMA, ExponentialSmoothing, ProphetLike, SimpleMovingAverage
-from .regularization import Ridge, Lasso, ElasticNet, RidgeClassifier, SGDRegressor
-from .clustering import DBSCAN, AgglomerativeClustering, MeanShift, SpectralClustering, GaussianMixture
-from .ensemble import VotingClassifier, VotingRegressor, StackingClassifier
-from .multioutput import MultiOutputClassifier, MultiOutputRegressor, ClassifierChain, RegressorChain
-from .calibration import CalibratedClassifierCV, IsotonicRegression, TemperatureScaling
-from .feature_selection import SelectKBest, SelectFromModel, RFE, VarianceThreshold, SelectPercentile
-from .deep_learning import MLPClassifier, MLPRegressor, Autoencoder, VariationalAutoencoder
 
 __all__ = [
     # Base

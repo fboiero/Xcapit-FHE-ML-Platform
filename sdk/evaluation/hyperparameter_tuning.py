@@ -5,13 +5,11 @@ model implementing the fit/predict/score interface.
 """
 
 import itertools
-from copy import deepcopy
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import numpy as np
 
 from .cross_validation import CrossValidator
-from .metrics import MetricCalculator
 
 
 class GridSearchCV:

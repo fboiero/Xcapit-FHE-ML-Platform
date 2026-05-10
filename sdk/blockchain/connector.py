@@ -8,7 +8,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Optional, Union
+from typing import Optional, Union
 
 try:
     from web3 import Web3
@@ -178,7 +178,7 @@ class BlockchainConnector:
         except Exception:
             return False
 
-    def connect(self) -> "BlockchainConnector":
+    def connect(self) -> BlockchainConnector:
         """Establish connection to the RPC endpoint.
 
         Returns:
@@ -211,7 +211,7 @@ class BlockchainConnector:
         self._web3 = None
         self._connected = False
 
-    def set_account(self, private_key: str) -> "BlockchainConnector":
+    def set_account(self, private_key: str) -> BlockchainConnector:
         """Set the active account from a private key.
 
         Args:
@@ -228,7 +228,7 @@ class BlockchainConnector:
 
     def set_account_from_keyfile(
         self, keyfile_path: str, password: str
-    ) -> "BlockchainConnector":
+    ) -> BlockchainConnector:
         """Set the active account from an encrypted keyfile.
 
         Args:

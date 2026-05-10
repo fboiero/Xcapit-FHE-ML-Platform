@@ -1,6 +1,6 @@
 """CKKS encryption wrapper around TenSEAL."""
 
-from typing import Optional, Union
+from typing import Union
 
 import numpy as np
 import tenseal as ts

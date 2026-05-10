@@ -5,7 +5,7 @@ configurable metrics.
 """
 
 from copy import deepcopy
-from typing import Any, Callable, Optional, Union
+from typing import Any, Optional
 
 import numpy as np
 

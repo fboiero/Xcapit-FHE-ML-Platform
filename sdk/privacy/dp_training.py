@@ -25,7 +25,7 @@ References:
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Callable, Optional
 
 import numpy as np
@@ -293,7 +293,7 @@ class DPTrainer:
         n_samples = X.shape[0]
         n_batches = max(1, n_samples // batch_size)
 
-        for epoch in range(n_epochs):
+        for _epoch in range(n_epochs):
             # Shuffle data each epoch
             indices = np.random.permutation(n_samples)
 

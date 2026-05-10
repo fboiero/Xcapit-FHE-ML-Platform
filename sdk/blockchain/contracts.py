@@ -3,7 +3,7 @@
 Provides typed interfaces for the ModelRegistry and Governance contracts.
 """
 
-from typing import Any, Optional
+from typing import Any
 
 try:
     from web3 import Web3

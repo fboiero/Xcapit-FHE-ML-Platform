@@ -18,7 +18,6 @@ from sdk.mpc import (
     ThresholdDecryptor,
 )
 
-
 # =====================================================================
 # SecretSharer
 # =====================================================================
@@ -530,7 +529,7 @@ class TestMPCIntegration:
         ciphertext = td.encrypt(aggregate_bytes, master_key)
 
         # 5. Threshold decryption (3 of 4 parties)
-        partials = [td.partial_decrypt(key_shares[i], ciphertext) for i in [0, 1, 3]]
+        [td.partial_decrypt(key_shares[i], ciphertext) for i in [0, 1, 3]]
 
         # We need the partial decryptions to reconstruct the key and decrypt
         # The combine method does this internally
@@ -548,7 +547,6 @@ class TestMPCIntegration:
 
     def test_key_share_reconstruction_is_deterministic(self) -> None:
         """Any K-subset of shares must reconstruct the same key."""
-        import itertools
 
         sharer = SecretSharer()
         key = b"\x42" * 32

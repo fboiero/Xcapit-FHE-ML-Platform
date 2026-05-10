@@ -204,7 +204,7 @@ class LazyEncryptedVector:
         self._pending_ops = pending_ops or []
         self._evaluated = data is not None and not pending_ops
 
-    def _record_op(self, op: Callable) -> "LazyEncryptedVector":
+    def _record_op(self, op: Callable) -> LazyEncryptedVector:
         """Record an operation for lazy evaluation."""
         new_ops = self._pending_ops + [op]
         return LazyEncryptedVector(
@@ -227,19 +227,19 @@ class LazyEncryptedVector:
         self._evaluated = True
         return result
 
-    def __add__(self, other: "LazyEncryptedVector") -> "LazyEncryptedVector":
+    def __add__(self, other: LazyEncryptedVector) -> LazyEncryptedVector:
         if isinstance(other, LazyEncryptedVector):
             other_data = other.evaluate()
             return self._record_op(lambda x: x + other_data)
         return self._record_op(lambda x: x + other)
 
-    def __mul__(self, other: Union["LazyEncryptedVector", float]) -> "LazyEncryptedVector":
+    def __mul__(self, other: Union[LazyEncryptedVector, float]) -> LazyEncryptedVector:
         if isinstance(other, LazyEncryptedVector):
             other_data = other.evaluate()
             return self._record_op(lambda x: x * other_data)
         return self._record_op(lambda x: x * other)
 
-    def __sub__(self, other: "LazyEncryptedVector") -> "LazyEncryptedVector":
+    def __sub__(self, other: LazyEncryptedVector) -> LazyEncryptedVector:
         if isinstance(other, LazyEncryptedVector):
             other_data = other.evaluate()
             return self._record_op(lambda x: x - other_data)

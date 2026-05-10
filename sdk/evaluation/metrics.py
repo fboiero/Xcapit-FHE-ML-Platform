@@ -4,9 +4,9 @@ All calculations use numpy for performance and to avoid heavy sklearn
 dependencies in the core SDK.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
-from typing import Optional, Union
+from typing import Optional
 
 import numpy as np
 
@@ -185,7 +185,7 @@ class MetricCalculator:
         f1s = []
         supports = []
 
-        for i, cls in enumerate(classes):
+        for i, _cls in enumerate(classes):
             tp = cm[i, i]
             fp = cm[:, i].sum() - tp
             fn = cm[i, :].sum() - tp

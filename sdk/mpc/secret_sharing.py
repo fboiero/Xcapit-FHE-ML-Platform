@@ -160,7 +160,7 @@ class SecretSharer:
         list[tuple[int, bytes]]
             Shares as ``(index, y_bytes)`` tuples.
         """
-        byte_len = len(secret_bytes)
+        len(secret_bytes)
         secret_int = int.from_bytes(secret_bytes, byteorder="big")
 
         if secret_int >= self.prime:

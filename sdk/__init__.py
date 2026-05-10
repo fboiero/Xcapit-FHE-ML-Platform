@@ -11,21 +11,21 @@ __version__ = "0.7.0"
 
 # ── Crypto modules (always available — pure Python + numpy) ──────────────
 
-from sdk.zkp import ZKProver, ZKVerifier, PedersenCommitment  # noqa: E402
 from sdk.mpc import SecretSharer, SecureAggregator, ThresholdDecryptor  # noqa: E402
 from sdk.privacy import (  # noqa: E402
-    LaplaceMechanism,
-    GaussianMechanism,
-    PrivacyAccountant,
-    GradientClipper,
     DPDataLoader,
+    GaussianMechanism,
+    GradientClipper,
+    LaplaceMechanism,
+    PrivacyAccountant,
 )
+from sdk.zkp import PedersenCommitment, ZKProver, ZKVerifier  # noqa: E402
 
 # ── FHE modules (require tenseal) ───────────────────────────────────────
 
 try:
-    from sdk.encryption.context_manager import CKKSParameters, SecurityLevel
     from sdk.encryption.ckks_wrapper import CKKSEncryptor
+    from sdk.encryption.context_manager import CKKSParameters, SecurityLevel
     from sdk.utils.data_loader import SecureDataLoader
 except ImportError:
     CKKSParameters = None  # type: ignore[assignment,misc]

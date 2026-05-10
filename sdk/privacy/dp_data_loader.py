@@ -20,20 +20,20 @@ Reference:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Callable, Optional, Union
+from typing import Any, Optional
 
 import numpy as np
 import pandas as pd
 
 from .accountant import PrivacyAccountant
-from .mechanisms import GaussianMechanism, LaplaceMechanism, DPMechanism
+from .mechanisms import DPMechanism, GaussianMechanism, LaplaceMechanism
 
 # Optional FHE dependencies -- the DP module works standalone with numpy,
 # but gains CKKS encryption when the TenSEAL-backed modules are available.
 try:
+    from ..encryption.ckks_wrapper import CKKSEncryptor  # noqa: F401
     from ..encryption.context_manager import CKKSParameters
-    from ..encryption.ckks_wrapper import CKKSEncryptor
-    from ..utils.data_loader import EncryptedDataset, SecureDataLoader
+    from ..utils.data_loader import EncryptedDataset, SecureDataLoader  # noqa: F401
 
     _HAS_FHE = True
 except (ImportError, ModuleNotFoundError):

@@ -6,11 +6,10 @@ registering, querying, and verifying ML models on-chain.
 
 import hashlib
 import json
-from dataclasses import asdict, dataclass
-from typing import Any, Optional
+from dataclasses import dataclass
+from typing import Optional
 
 from .connector import BlockchainConnector
-
 
 # Default ABI for the ModelRegistry contract.
 # In production this would be loaded from a compiled artefact.

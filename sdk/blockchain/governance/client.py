@@ -6,11 +6,10 @@ such as creating proposals, voting, and executing approved proposals.
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Optional
+from typing import Optional
 
 from ..connector import BlockchainConnector
 from ..contracts import GovernanceContract
-
 
 # Default ABI for the Governance contract.
 GOVERNANCE_ABI: list[dict] = [

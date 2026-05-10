@@ -4,7 +4,6 @@ Provides feature importance, partial dependence, and
 permutation importance for any model with a predict interface.
 """
 
-from copy import deepcopy
 from typing import Any, Optional
 
 import numpy as np
