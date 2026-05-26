@@ -15,7 +15,7 @@ dj-database-url~=2.1.0
 # Authentication & Security
 djangorestframework-simplejwt~=5.3.1
 django-ratelimit~=4.1.0
-django-axes~=6.5.0
+django-axes~=8.0.0
 django-encrypted-model-fields~=0.6.5
 
 # Secret Management (OpenBao/Vault)
