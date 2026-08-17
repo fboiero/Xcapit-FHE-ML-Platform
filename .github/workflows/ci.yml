@@ -359,7 +359,7 @@ jobs:
         continue-on-error: true
 
       - name: Check for secrets
-        uses: trufflesecurity/trufflehog@v3.88.0
+        uses: trufflesecurity/trufflehog@v3.97.0
         if: github.event_name == 'pull_request'
         with:
           path: ./
@@ -367,7 +367,7 @@ jobs:
           head: ${{ github.event.pull_request.head.sha }}
 
       - name: Check for secrets (push)
-        uses: trufflesecurity/trufflehog@v3.88.0
+        uses: trufflesecurity/trufflehog@v3.97.0
         if: github.event_name == 'push'
         with:
           path: ./
